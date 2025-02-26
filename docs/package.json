@@ -1,0 +1,23 @@
+{
+  "devDependencies": {
+    "docsify-cli": "^4.4.4",
+    "now": "^21.0.1"
+  },
+  "name": "my-project",
+  "scripts": {
+    "start": "docsify serve . -c ssr.config.js",
+    "deploy": "now -p"
+  },
+  "files": [
+    "docs"
+  ],
+  "docsify": {
+    "config": {
+      "basePath": "https://docsify.js.org/",
+      "loadSidebar": true,
+      "loadNavbar": true,
+      "coverpage": true,
+      "name": "docsify"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+env/
+.vscode/
+build/
+nexios.egg-info/
+__pycache__/
+index.py
+dist/
+.env
+.mypy_cache/
+docs/site
+.tox/
+dev/
+sandbox.py
+/**/node_modules/
