@@ -27,21 +27,52 @@
 </head>
 <body>
   <div id="app"></div>
+  <div id="gitalk-container"></div>
   
   <script>
     window.$docsify = {
+      search:"auto",
       name: 'Nexios Docs',
       repo: 'https://github.com/nexios-labs/nexios',
+      logo :"./_media/icon.svg",
       coverpage:true,
+      loadNavbar: true,
       loadSidebar:true,
-      subMaxLevel: 2
+      subMaxLevel: 1,
+      search: {
+      maxDepth: 2, // Adjust search depth
+      placeholder: 'Search...', // Custom placeholder
+      noData: 'No results found!', // Custom no results message
+      },
+      alias: {
+      '/.*/_sidebar.md': '/_sidebar.md'
+    },
+    
     }
   </script>
   <!-- Docsify v4 -->
   <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-progress/dist/progress.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-copy-code"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.css">
+  <script src="https://cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+  <!-- <script>
+    const gitalk = new Gitalk({
+      clientID: 'YOUR_GITHUB_CLIENT_ID', // GitHub OAuth App Client ID
+      clientSecret: 'YOUR_GITHUB_CLIENT_SECRET', // GitHub OAuth App Client Secret
+      repo: 'YOUR_REPO_NAME', // Repository to store comments
+      owner: 'YOUR_GITHUB_USERNAME', // GitHub username
+      admin: ['YOUR_GITHUB_USERNAME'], // GitHub username(s) who can manage comments
+      id: location.pathname, // Unique ID for each page
+      distractionFreeMode: false // Enable distraction-free mode
+    });
+  </script> -->
+  <script>
+    gitalk.render('gitalk-container');
+  </script>
 
 </body>
 </html>

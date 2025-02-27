@@ -1,9 +1,9 @@
-<!-- docs/_sidebar.md -->
+ * [Home](/)
+* [Introduction](introduction.md)
+* [Comparison](comparison.md)
+* [Integration](integration.md)
+* [Basic Example](basic-example.md)
+* [Getting Started](#)
+  * [Installation](installation.md)
+  * [Routing](routing.md)
 
-* [Home](/)
-* **Getting Started**
-  * [Introduction](introduction.md)
-  * [Comparison](comparison.md)
-  * [Integration](integration.md)
-  * [Basic Example](basic-example.md)
-* [Guide](guide.md)
