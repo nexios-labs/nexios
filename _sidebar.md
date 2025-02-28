@@ -12,5 +12,6 @@
   * [Exceptions](exceptions.md)
   * [Static Files](staticfiles.md)
   * [Authentication](authentication.md)
+  * [Session Management](session.md)
 
 
