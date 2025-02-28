@@ -439,3 +439,30 @@ response.resp(b"Raw Data", 200, content_type="application/octet-stream")
 
 ---
 
+**funny example**
+
+```py
+
+@app.get("user-data")
+async def create_user(request :Request, response :Response) -> None:
+   
+    user_data = {
+            "id": "user_id",
+            "name": "John Doe",
+            "email": "john.doe@example.com",
+            "created_at": datetime.now().isoformat(),
+        }
+    (response.status(200)  # Set status code
+    .json(user_data, indent=4)  # Send JSON response with pretty-printing
+    .header("X-User-ID", str("user_id"))  # Add a custom header
+    .set_cookie(
+        key="last_profile_view",
+        value=datetime.now().isoformat(),
+        max_age=3600,  # Expires in 1 hour
+        path=f"/users/{"user_id"}",  # Cookie only valid for this path
+        secure=True,  # HTTPS-only
+        httponly=True,  # Prevent client-side JS access
+        samesite="strict"  # Strict SameSite policy
+    )
+    .cache(max_age=300, private=True) )
+```
