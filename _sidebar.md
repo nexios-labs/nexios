@@ -13,5 +13,11 @@
   * [Static Files](staticfiles.md)
   * [Authentication](authentication.md)
   * [Session Management](session.md)
+  * [Cors](cors.md)
+  * [Pagination](pagination.md)
 
+* [Guides](#)
+  * [Templating](templating.md)
+
+* [Contributing](contributing.md)
 
