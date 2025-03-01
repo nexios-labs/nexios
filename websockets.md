@@ -10,7 +10,7 @@ from nexios import get_application, WebSocket
 from nexios.routing import WSRouter
 app = get_application()
 
-ws_app = WSRouter()
+ws_router = WSRouter()
 app.mount_ws_router(ws_app)
 @ws_router.ws_route("/ws")
 async def websocket_endpoint(ws: WebSocket):
@@ -161,12 +161,31 @@ async def broadcast_ws(ws: WebSocket):
 Nexios allows adding middleware to WebSocket connections for authentication, logging, etc.
 
 ```python
-@app.middleware("websocket")
 async def log_requests(ws: WebSocket, call_next):
     print(f"New WebSocket connection from {ws.client}")
-    await call_next(ws)
-```
+    await call_next()
 
+app.add_ws_middleware(log_requests) #global middleware
+ws_router.add_ws_middleware(log_requests) #router  middleware
+
+
+```
+Nexios websocket also support route specific middlewares
+
+```python
+async def log_requests(ws: WebSocket, call_next):
+    print(f"New WebSocket connection from {ws.client}")
+    await call_next()
+
+
+@ws_router.ws_route("/chat", middleware = [
+    log_requests
+])
+async def ws_handler(ws):
+    ...
+
+
+```
 ---
 
 ## **Handling Custom Close Codes**
