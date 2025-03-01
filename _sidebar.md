@@ -14,6 +14,8 @@
   * [Cors](cors.md)
   * [Pagination](pagination.md)
   * [Life Span](lifespan.md)
+  * [Web Sockets](websockets.md)
+
 
 * [Guides](#)
   * [Templating](templating.md)
