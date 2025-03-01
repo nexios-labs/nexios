@@ -2,7 +2,7 @@
 
 ![logo](_media/icon.svg)
 
-# Nexios <small>2.1.0</small>
+# Nexios <small>2.1.0beta</small>
 
 > A modern, high-performance async backend framework for Python.
 
