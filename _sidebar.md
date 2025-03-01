@@ -1,7 +1,5 @@
  * [Home](/)
-* [Introduction](introduction.md)
 * [Comparison](comparison.md)
-* [Integration](integration.md)
 * [Basic Example](basic-example.md)
 * [Tutorials](#)
   * [Installation](installation.md)
@@ -15,9 +13,12 @@
   * [Session Management](session.md)
   * [Cors](cors.md)
   * [Pagination](pagination.md)
+  * [Life Span](lifespan.md)
 
 * [Guides](#)
   * [Templating](templating.md)
+  * [Tortoise Orm](tortoiseorm.md)
 
 * [Contributing](contributing.md)
+* [Source Code](https://github.com/nexios-labs/nexios)
 
