@@ -15,6 +15,7 @@
   * [Pagination](pagination.md)
   * [Life Span](lifespan.md)
   * [WebSockets](websockets.md)
+  * [Class based handlers](cbc.md)
 
 
 * [Guides](#)
