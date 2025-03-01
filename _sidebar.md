@@ -14,7 +14,7 @@
   * [Cors](cors.md)
   * [Pagination](pagination.md)
   * [Life Span](lifespan.md)
-  * [Web Sockets](websockets.md)
+  * [WebSockets](websockets.md)
 
 
 * [Guides](#)
@@ -23,4 +23,5 @@
 
 * [Contributing](contributing.md)
 * [Source Code](https://github.com/nexios-labs/nexios)
+
 
