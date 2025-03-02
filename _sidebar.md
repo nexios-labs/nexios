@@ -21,6 +21,8 @@
 * [Guides](#)
   * [Templating](templating.md)
   * [Tortoise Orm](tortoiseorm.md)
+  * [Logging](logging.md)
+  * [Gzip](gzip.md)
 
 * [Contributing](contributing.md)
 * [Source Code](https://github.com/nexios-labs/nexios)

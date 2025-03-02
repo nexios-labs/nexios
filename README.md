@@ -14,11 +14,11 @@
 
 ---
 
-## Welcome to Nexios!
+**Welcome to Nexios**
 
 Nexios is not just another backend framework – it's your new best friend in the world of async Python development! Whether you're building a high-performance API, a real-time application, or just want to make your backend code more efficient, Nexios has got your back.
 
-##  Why Nexios?
+**Why Nexios?**
 
 -  **Blazing Fast**: Built on asyncio, Nexios is designed for speed from the ground up.
 -  **Intuitive API**: Write clean, expressive code that's a joy to read and maintain.
