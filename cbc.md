@@ -9,20 +9,17 @@ The `APIHandler` class in Nexios is a **base class** for creating class based ha
 A class based handlers using `APIHandler` can be implemented as follows:
 
 ```python
-from nexios.http import request, response
-from nexios.http.response import NexiosResponse
-from nexios.types import HandlerType
 from api_handler import APIHandler  # Import the base class
 
 class UserView(APIHandler):
-    async def get(self, request: request.Request, response: response.NexiosResponse) -> NexiosResponse:
+    async def get(self, request, response):
         return response.json({"message": "GET request received"})
 
-    async def post(self, request: request.Request, response: response.NexiosResponse) -> NexiosResponse:
-        data = await request.json()
+    async def post(self, request: , response) :
+        data = await request.json
         return response.json({"message": "POST request received", "data": data})
 
-    async def handle_error(self, error: Exception, request: request.Request, response: response.NexiosResponse):
+    async def handle_error(self, error, request, response):
         return response.json({"error": str(error)}, status_code=500)
 ```
 
@@ -35,13 +32,33 @@ class UserView(APIHandler):
 ---
 
 ## Advantages of Using Class-Based Views
-| Feature | Benefit |
-|---------|---------|
-| **Code Reusability** | Common request-handling logic (e.g., error handling, logging) can be shared across views. |
-| **Separation of Concerns** | Preprocessing, error handling, and request execution are modularized. |
-| **Better Organization** | Each HTTP method (`get`, `post`, etc.) is defined in its own function. |
-| **Middleware-like Hooks** | `before_request` and `after_request` provide a simple way to modify request/response behavior. |
-| **Improved Error Handling** | Centralized exception handling with `handle_error` prevents repeated try-except blocks. |
+<table>
+    <tr>
+        <th>Feature</th>
+        <th>Benefit</th>
+    </tr>
+    <tr>
+        <td><b>Code Reusability</b></td>
+        <td>Common request-handling logic (e.g., error handling, logging) can be shared across views.</td>
+    </tr>
+    <tr>
+        <td><b>Separation of Concerns</b></td>
+        <td>Preprocessing, error handling, and request execution are modularized.</td>
+    </tr>
+    <tr>
+        <td><b>Better Organization</b></td>
+        <td>Each HTTP method (<code>get</code>, <code>post</code>, etc.) is defined in its own function.</td>
+    </tr>
+    <tr>
+        <td><b>Middleware-like Hooks</b></td>
+        <td><code>before_request</code> and <code>after_request</code> provide a simple way to modify request/response behavior.</td>
+    </tr>
+    <tr>
+        <td><b>Improved Error Handling</b></td>
+        <td>Centralized exception handling with <code>handle_error</code> prevents repeated try-except blocks.</td>
+    </tr>
+</table>
+
 
 ---
 
