@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python Versions](https://img.shields.io/pypi/pyversions/nexios.svg)](https://pypi.org/project/nexios/)
 
-[Quick Start](#quick-start) • [Documentation](./introduction.md) • [Example](https://github.com/nexios/examples) • [Contributing](#contributing)
+[Quick Start](#quick-start) • [Documentation](./introduction.md) • [Example](https://github.com/nexios-labs/nexios-exmples) • [Contributing](#contributing)
 
 </div>
 
