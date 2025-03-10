@@ -5,7 +5,7 @@
 *The async Python backend framework that makes your code fly!*
 
 [![PyPI version](https://badge.fury.io/py/nexios.svg)](https://badge.fury.io/py/nexios)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-BSD-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python Versions](https://img.shields.io/pypi/pyversions/nexios.svg)](https://pypi.org/project/nexios/)
 
 [Quick Start](#quick-start) • [Documentation](./introduction.md) • [Example](https://github.com/nexios-labs/nexios-exmples) • [Contributing](#contributing)
