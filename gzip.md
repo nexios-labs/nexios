@@ -93,8 +93,8 @@ Vary: Accept-Encoding
 ---
 
 ## **Benefits of Using Gzip Compression**
-✅ **Reduces Response Size** – Helps in reducing bandwidth usage.  
-✅ **Improves Load Times** – Faster delivery of text-based content.  
-✅ **Supported by All Modern Browsers** – Works across various clients seamlessly.  
+ **Reduces Response Size** – Helps in reducing bandwidth usage.  
+ **Improves Load Times** – Faster delivery of text-based content.  
+ **Supported by All Modern Browsers** – Works across various clients seamlessly.  
 
-This middleware is ideal for optimizing API responses and web pages without affecting functionality. 🚀
+This middleware is ideal for optimizing API responses and web pages without affecting functionality. 
