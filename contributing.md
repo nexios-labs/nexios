@@ -10,7 +10,7 @@ The first step is to clone the Nexios repository from GitHub. Open your terminal
 
 ```sh
 # Replace "your-username" with your GitHub username if you have forked the repository
-git clone https://github.com/your-username/nexios.git
+git clone https://github.com/nexios-labs/nexios.git
 cd nexios
 ```
 
