@@ -1,4 +1,3 @@
-from nexios.types import MiddlewareType
 from .base import WebSocket
 from nexios import status
 import typing, json
