@@ -4,8 +4,7 @@ import json
 import typing
 from http import cookies as http_cookies
 
-import anyio #type:ignore
-
+import anyio 
 from nexios._utils.async_helpers import AwaitableOrContextManager, AwaitableOrContextManagerWrapper
 from nexios.structs import URL, Address, FormData, Headers, QueryParams, State
 from .formparsers import FormParser, MultiPartException, MultiPartParser
@@ -302,8 +301,8 @@ class Request(HTTPConnection):
         return AwaitableOrContextManagerWrapper(self._get_form(max_files=max_files, max_fields=max_fields))
 
     async def close(self) -> None:
-        if self._form is not None:  # pragma: no branch
-            await self._form.close() #type:ignore
+        if self._form is not None:  
+            await self._form.close() 
 
     async def is_disconnected(self) -> bool:
         if not self._is_disconnected:
@@ -338,12 +337,12 @@ class Request(HTTPConnection):
         files_dict = {}
         for key, value in form_data.items():
             if isinstance(value, (list, tuple)):
-                for item in value:  #type: ignore
-                    if hasattr(item, 'filename'):  #type: ignore
+                for item in value:  
+                    if hasattr(item, 'filename'):  
                         files_dict[key] = item
             elif hasattr(value, 'filename'):
                 files_dict[key] = value
-        return files_dict  #type: ignore
+        return files_dict
 
     @property
     async def text(self) -> str:

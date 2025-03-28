@@ -1,8 +1,5 @@
 """
 implemented from from starlatte,
-this is module is considered an internal structure and should not be used by users
-
-
 """
 
 from __future__ import annotations
