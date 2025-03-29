@@ -78,7 +78,7 @@ class XML(BaseModel):
 
 
 class ExternalDocumentation(BaseModel):
-    url: AnyUrl
+    url: Optional[AnyUrl] = None
     description: Optional[str] = None
 
 
@@ -160,26 +160,33 @@ class ParameterBase(BaseModel):
 
 class ConcreteParameter(ParameterBase):
     name: str
-    in_: ParameterLocations
+    in_: ParameterLocations = Field(alias="in")
 
 
 class Header(ConcreteParameter):
-    in_: Annotated[Literal["header"], Field(alias="in")] = "header"
+    in_: Literal["header"] = Field(default="header", alias="in")
     style: HeaderParamStyles = "simple"
     explode: bool = False
 
 
 class Query(ConcreteParameter):
-    in_: Annotated[Literal["query"], Field(alias="in")] = "query"
+    in_: Annotated[Literal["query"], Field(alias="in")] = Field(
+        default="query",  # Explicit default
+        alias="in"       # Explicit alias for OpenAPI compliance
+    )
     style: QueryParamStyles = "form"
     explode: bool = True
 
 
 class Path(ConcreteParameter):
-    in_: Annotated[Literal["path"], Field(alias="in")] = "path"
+    in_: Annotated[Literal["path"], Field(alias="in")] = Field(
+        default="path",  # Explicit default
+        alias="in"  
+    )
     style: PathParamStyles = "simple"
     explode: bool = False
     required: Literal[True] = True
+
 
 
 class Cookie(ConcreteParameter):
