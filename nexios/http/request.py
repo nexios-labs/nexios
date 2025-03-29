@@ -60,7 +60,7 @@ def cookie_parser(cookie_string: str) -> dict[str, str]:
 class ClientDisconnect(Exception):
     pass
 
-
+T = typing.TypeVar("T")
 class HTTPConnection(object):
     """
     A base class for incoming HTTP connections, that is used to provide
@@ -201,7 +201,7 @@ async def empty_send(message :Message) -> typing.NoReturn:
     raise RuntimeError("Send channel has not been made available")
 
 
-class Request(HTTPConnection):
+class Request(HTTPConnection,typing.Generic[T]):
     _form: typing.Union[FormData , None , typing.Dict[str,typing.Any]] #type: ignore
 
     def __init__(self, scope :Scope, receive :Receive = empty_receive, send :Send = empty_send):

@@ -1,10 +1,12 @@
 from __future__ import annotations
-from typing import Any, List, Optional, Pattern,Dict,TypeVar,Tuple,Callable,Union
+from typing import Any, List, Optional, Pattern,Dict,TypeVar,Tuple,Callable,Union,Type
 from dataclasses import dataclass
 import re
 import warnings,typing
 from enum import Enum
 from abc import abstractmethod,ABC
+
+from nexios.openapi.models import Path,Schema
 from nexios.types import MiddlewareType,WsMiddlewareType,HandlerType,WsHandlerType
 from nexios.decorators import allowed_methods
 from typing_extensions import Doc,Annotated #type: ignore
@@ -18,6 +20,9 @@ from nexios.middlewares.core import BaseMiddleware
 from nexios.middlewares.core import Middleware, wrap_middleware
 from nexios.exceptions import NotFoundException
 from nexios.websockets.errors import WebSocketErrorMiddleware
+from pydantic import BaseModel
+
+
 T = TypeVar("T")
 allowed_methods_default = ['get','post','delete','put','patch','options']
 
@@ -289,12 +294,39 @@ class Routes:
             - POST: Create resources
             - PUT: Update resources
             - DELETE: Remove resources
-            - PATCH: Partial updates
+            - PATCH: Partial updatess
 
             Defaults to ['GET'] if not specified. Use uppercase method names.
             """)
         ] = None,
-        name :Optional[str] = None,
+        name :Annotated[Optional[str],
+                        Doc("""The unique identifier for the route. This name is used to generate 
+            URLs dynamically with `url_for`. It should be a valid, unique string 
+            that represents the route within the application.""")] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
+        
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
         middlewares :List[Any] = [],
         **kwargs :Dict[str,Any]
     ):
@@ -317,6 +349,8 @@ class Routes:
             AssertionError: If handler is not callable.
         """
         assert callable(handler), "Route handler must be callable"
+        from nexios.openapi._builder import APIDocumentation
+        self.docs = APIDocumentation.get_instance()
         
         self.raw_path = path
         self.handler = handler
@@ -329,7 +363,22 @@ class Routes:
         self.param_names = self.route_info.param_names
         self.route_type = self.route_info.route_type
         self.middlewares :typing.List[MiddlewareType] = list(middlewares)
+        self.summary = summary
+        self.description = description
+        self.responses = responses
+        self.request_model = request_model
         self.kwargs = kwargs
+        self.tags = tags,
+        self.security= security
+        self.operation_id = operation_id
+        for method in self.methods:
+            
+            self.docs.document_endpoint( #type:ignore
+                path = self.raw_path,
+                method=method,
+                parameters=[Path(name = x,schema = Schema(type="integer")) for x in self.param_names] #type:ignore
+                
+            )(handler)
     def match(self, path: str, method:str) -> typing.Tuple[Any,Any,Any]:
         """
         Match a path against this route's pattern and return captured parameters.
@@ -442,11 +491,6 @@ class Router(BaseRouter):
             warnings.warn("Router prefix should start with '/'")
             self.prefix = f"/{self.prefix}"
             
-        
-        
-       
-    
-    
     def build_middleware_stack(self, app: ASGIApp) -> ASGIApp:
         """
         Builds the middleware stack by applying all registered middlewares to the app.
@@ -508,6 +552,25 @@ class Router(BaseRouter):
             Optional[str],
             Doc("A unique name for the route.")
         ] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
         middlewares : Annotated[
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
@@ -536,6 +599,10 @@ class Router(BaseRouter):
         return self.route(path=f"{path}", 
                            methods=["GET"], 
                            name=name,
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
                            middlewares = middlewares)
 
 
@@ -549,6 +616,25 @@ class Router(BaseRouter):
             Optional[str],
             Doc("A unique name for the route.")
         ] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
         middlewares : Annotated[
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
@@ -577,6 +663,10 @@ class Router(BaseRouter):
         return self.route(path=f"{path}", 
                            methods=["POST"], 
                            name=name,
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
                            middlewares = middlewares)
 
 
@@ -590,6 +680,25 @@ class Router(BaseRouter):
             Optional[str],
             Doc("A unique name for the route.")
         ] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
         middlewares : Annotated[
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
@@ -619,6 +728,10 @@ class Router(BaseRouter):
         return self.route(path=f"{path}", 
                            methods=["DELETE"],                      
                            name=name,
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
                            middlewares = middlewares)
 
 
@@ -632,6 +745,25 @@ class Router(BaseRouter):
             Optional[str],
             Doc("A unique name for the route.")
         ] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
         middlewares : Annotated[
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
@@ -660,6 +792,10 @@ class Router(BaseRouter):
         return self.route(path=f"{path}", 
                            methods=["PUT"], 
                            name=name,
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
                            middlewares = middlewares)
 
     def patch(
@@ -672,6 +808,25 @@ class Router(BaseRouter):
             Optional[str],
             Doc("A unique name for the route.")
         ] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
         middlewares : Annotated[
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
@@ -702,6 +857,10 @@ class Router(BaseRouter):
         return self.route(path=f"{path}", 
                            methods=["PATCH"], 
                            name=name,
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
                            middlewares = middlewares,
                            )
 
@@ -716,6 +875,25 @@ class Router(BaseRouter):
             Optional[str],
             Doc("A unique name for the route.")
         ] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
         middlewares : Annotated[
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
@@ -749,6 +927,10 @@ class Router(BaseRouter):
         return self.route(path=f"{path}", 
                            methods=["OPTIONS"], 
                            name=name,
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
                            middlewares=middlewares)
 
 
@@ -764,6 +946,25 @@ class Router(BaseRouter):
             Optional[str],
             Doc("A unique name for the route.")
         ] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
         middlewares : Annotated[
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
@@ -773,6 +974,10 @@ class Router(BaseRouter):
          return self.route(path=f"{path}", 
                            methods=["HEAD"], 
                            name=name,
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
                            middlewares = middlewares)
     
     def route(
@@ -789,6 +994,25 @@ class Router(BaseRouter):
             Optional[str],
             Doc("A unique name for the route.")
         ] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
         middlewares : Annotated[
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
@@ -821,7 +1045,11 @@ class Router(BaseRouter):
                            handler=_handler, 
                            methods=methods, 
                            name=name,
-                           middlewares = middlewares,
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
+                            middlewares = middlewares,
                            
                            )
             self.add_route(route)

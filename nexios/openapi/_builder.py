@@ -1,6 +1,8 @@
 from functools import wraps
-from typing import Optional,Dict,List,Union
+from typing import Optional,Dict,List,Union,Awaitable
 from pydantic import BaseModel
+from inspect import signature, getdoc
+from typing import get_type_hints, get_origin, get_args
 from nexios.application import NexiosApp
 from nexios.http import Request, Response
 from .config import  OpenAPIConfig
@@ -21,28 +23,29 @@ class APIDocumentation:
     
     def __init__(
         self, 
-        app :NexiosApp, 
+        app :Optional[NexiosApp]  = None,
         config: Optional[OpenAPIConfig] = None
     ):
         self.app = app 
         self.config = config or OpenAPIConfig()
-        
-        # Add documentation routes
-        self._setup_doc_routes()
+        if app:        
+            self._setup_doc_routes()
     
     def _setup_doc_routes(self):
         """Set up routes for serving OpenAPI specification"""
-        @self.app.route("/openapi.json", methods=["GET"])
+        @self.app.get("/openapi.json") #type:ignore
         async def serve_openapi(request: Request, response: Response):
             openapi_json = self.config.openapi_spec.model_dump(by_alias=True, exclude_none=True)
             return response.json(
                 openapi_json
             )
         
-        @self.app.route("/docs", methods=["GET"])
+        @self.app.get("/docs") #type:ignore
         async def swagger_ui(request: Request, response: Response):
             return response.html(self._generate_swagger_ui())
-    
+    @classmethod
+    def get_instance(cls):
+        return cls._instance
     def _generate_swagger_ui(self) -> str:
         """Generate Swagger UI HTML"""
         return f"""
@@ -72,6 +75,43 @@ class APIDocumentation:
         </html>
         """
     
+    def auto_document(self, path: str, methods: List[str]):
+        """Decorator to automatically document endpoints based on type hints."""
+        def decorator(func):
+            sig = signature(func)
+            type_hints = get_type_hints(func)
+            docstring = getdoc(func) or ""
+            
+            request_model = None
+            response_model = None
+            
+            if 'request' in type_hints and 'response' in type_hints:
+                request_type = type_hints['request']
+                response_type = type_hints['response']
+                
+                if get_origin(response_type) is Awaitable:
+                    response_type = get_args(response_type)[0]
+                
+                if hasattr(response_type, '__origin__') and response_type.__origin__ is Response:
+                    if hasattr(response_type, '__args__') and response_type.__args__:
+                        response_model = response_type.__args__[0]
+            
+            doc_lines = docstring.split('\n')
+            summary = doc_lines[0] if doc_lines else ""
+            description = "\n".join(doc_lines[1:]).strip() if len(doc_lines) > 1 else ""
+            
+            for method in methods:
+                self.document_endpoint(
+                    path=path,
+                    method=method,
+                    summary=summary,
+                    description=description,
+                    request_body=request_model,
+                    responses={200: response_model} if response_model else None
+                )
+            
+            return func
+        return decorator
     def document_endpoint(
         self,
         path: str,
@@ -155,7 +195,7 @@ class APIDocumentation:
                 security=security,
                 operationId=operation_id or func.__name__,
                 deprecated=deprecated,
-                externalDocs=external_docs
+                externalDocs=external_docs,
             )
             
             # Add operation to the OpenAPI specification

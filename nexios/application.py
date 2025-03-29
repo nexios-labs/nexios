@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Union
+from typing import Any, Callable, List, Type, Union,Type
 from .routing import Router, WSRouter, WebsocketRoutes,Routes
 import  typing
 from .exception_handler import ExceptionMiddleware
@@ -10,7 +10,7 @@ from nexios.middlewares.core import BaseMiddleware
 from nexios.middlewares.core import Middleware
 from nexios.middlewares.errors.server_error_handler import ServerErrorMiddleware,ServerErrHandlerType
 from nexios.structs import URLPath
-
+from pydantic import BaseModel
 from .types import (
     MiddlewareType,
     Scope,
@@ -62,6 +62,7 @@ class NexiosApp(object):
         ] = None,
         lifespan: Optional[Callable[["NexiosApp"], AsyncIterator[None]]] = None,
     ):
+        
         self.config = config
         self.server_error_handler = None
         super().__init__()
@@ -78,8 +79,8 @@ class NexiosApp(object):
         self.app = Router()
         self.router = self.app
         self.route = self.router.route
+        self._setup_openapi()
         self.lifespan_context :Optional[Callable[["NexiosApp"], AsyncIterator[None]]] = lifespan
-       
 
     def on_startup(self, handler: Callable[[], Awaitable[None]]) -> None:
         """
@@ -231,7 +232,28 @@ class NexiosApp(object):
 
    
 
-    
+    def _setup_openapi(self):
+        """Set up automatic OpenAPI documentation"""
+        from nexios.openapi.config import OpenAPIConfig
+        from nexios.openapi.models import  HTTPBearer
+        from nexios.openapi._builder import APIDocumentation
+        self.openapi_config = OpenAPIConfig(
+            title="Nexios API",
+            version="1.0.0",
+            description="Automatically generated API documentation"
+        )
+        
+        
+        self.openapi_config.add_security_scheme(
+            "bearerAuth", 
+            HTTPBearer(
+                type="http",
+                scheme="bearer",
+                bearerFormat="JWT"
+            )
+        )
+        
+        APIDocumentation(app = self,config=self.openapi_config)
     
     def add_middleware(
         self,
@@ -438,10 +460,25 @@ class NexiosApp(object):
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
          ] = [],
-        **kwargs: Annotated[
-            Dict[str, Any],
-            Doc("Additional arguments to pass to the Routes class.")
-        ]
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
     ) -> Callable[..., Any]:
         """
         Registers a GET route.
@@ -466,8 +503,12 @@ class NexiosApp(object):
         return self.route(path=f"{path}", 
                            methods=["GET"], 
                            name=name,
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
                            middlewares = middlewares,
-                            **kwargs)
+                            )
 
 
     def post(
@@ -480,15 +521,29 @@ class NexiosApp(object):
             Optional[str],
             Doc("A unique name for the route.")
         ] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
         middlewares : Annotated[
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
-        ] = [],
-       
-        **kwargs: Annotated[
-            Dict[str, Any],
-            Doc("Additional arguments to pass to the Routes class.")
-        ]
+        ] = []
     ) -> Callable[..., Any]:
         """
         Registers a POST route.
@@ -513,8 +568,11 @@ class NexiosApp(object):
         return self.route(path=f"{path}", 
                            methods=["POST"], 
                            name=name,
-                           middlewares = middlewares,
-                            **kwargs)
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
+                           middlewares = middlewares)
 
 
     def delete(
@@ -527,15 +585,29 @@ class NexiosApp(object):
             Optional[str],
             Doc("A unique name for the route.")
         ] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
         middlewares : Annotated[
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
-        ] = [],
-       
-        **kwargs: Annotated[
-            Dict[str, Any],
-            Doc("Additional arguments to pass to the Routes class.")
-        ]
+        ] = []
     ) -> Callable[..., Any]:
         """
         Registers a DELETE route.
@@ -561,8 +633,11 @@ class NexiosApp(object):
         return self.route(path=f"{path}", 
                            methods=["DELETE"],                      
                            name=name,
-                           middlewares = middlewares,
-                            **kwargs)
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
+                           middlewares = middlewares)
 
 
     def put(
@@ -575,14 +650,29 @@ class NexiosApp(object):
             Optional[str],
             Doc("A unique name for the route.")
         ] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
         middlewares : Annotated[
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
-        ] = [],
-        **kwargs: Annotated[
-            Dict[str, Any],
-            Doc("Additional arguments to pass to the Routes class.")
-        ]
+        ] = []
     ) -> Callable[..., Any]:
         """
         Registers a PUT route.
@@ -607,8 +697,11 @@ class NexiosApp(object):
         return self.route(path=f"{path}", 
                            methods=["PUT"], 
                            name=name,
-                           middlewares = middlewares,
-                            **kwargs)
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
+                           middlewares = middlewares)
 
     def patch(
         self,
@@ -620,15 +713,29 @@ class NexiosApp(object):
             Optional[str],
             Doc("A unique name for the route.")
         ] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
         middlewares : Annotated[
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
-        ] = [],
-       
-        **kwargs: Annotated[
-            Dict[str, Any],
-            Doc("Additional arguments to pass to the Routes class.")
-        ]
+        ] = []
     ) -> Callable[..., Any]:
         """
         Registers a PATCH route.
@@ -655,8 +762,12 @@ class NexiosApp(object):
         return self.route(path=f"{path}", 
                            methods=["PATCH"], 
                            name=name,
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
                            middlewares = middlewares,
-                            **kwargs)
+                           )
 
 
     def options(
@@ -669,10 +780,30 @@ class NexiosApp(object):
             Optional[str],
             Doc("A unique name for the route.")
         ] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
         middlewares : Annotated[
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
         ] = []
+       
     ) -> Callable[..., Any]:
         """
         Registers an OPTIONS route.
@@ -701,8 +832,11 @@ class NexiosApp(object):
         return self.route(path=f"{path}", 
                            methods=["OPTIONS"], 
                            name=name,
-                           middlewares=middlewares
-                            )
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
+                           middlewares=middlewares)
 
 
 
@@ -717,22 +851,41 @@ class NexiosApp(object):
             Optional[str],
             Doc("A unique name for the route.")
         ] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
         middlewares : Annotated[
             List[Any],
             Doc("Optional Middleware that should be executed before the route handler")
-        ] = [],
-        **kwargs: Annotated[
-            Dict[str, Any],
-            Doc("Additional arguments to pass to the Routes class.")
-        ]
+        ] = []
     ) -> Callable[..., Any]:
         
          return self.route(path=f"{path}", 
                            methods=["HEAD"], 
                            name=name,
-                           middlewares = [],
-                            **kwargs)
-
+                           summary=summary,
+                            description=description,
+                            responses=responses,
+                            request_model=request_model,
+                           middlewares = middlewares)
+    
+    
     
     def add_route(
         self, 
