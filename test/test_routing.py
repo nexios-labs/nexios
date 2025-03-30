@@ -4,6 +4,7 @@ from nexios.testing import Client
 from nexios.http import Request, Response
 from nexios.routing import Router, Routes
 
+
 @pytest.fixture
 async def async_client():
     app = get_application()  # Fresh app instance for each test
@@ -13,7 +14,7 @@ async def async_client():
 
 async def test_route_decorator(async_client):
     client, app = async_client  # Extract client and app
-    
+
     @app.get("/get")
     async def handle_get(req: Request, res: Response):
         return res.json({"method": req.method})
@@ -76,8 +77,7 @@ async def test_url_for_with_params(async_client):
     client, app = async_client
 
     @app.get("/get/name/{age}", name="name")
-    async def get(req: Request, res: Response):
-        ...
+    async def get(req: Request, res: Response): ...
 
     url = app.url_for("name", age=0)
     assert url == "/get/name/0"
@@ -95,7 +95,8 @@ async def test_url_parameters(async_client):
     response = await client.get("/user/123")
     assert response.status_code == 200
     assert response.json() == {"user_id": "123"}
-    
+
+
 async def test_route_prefixes(async_client):
     client, app = async_client
 
@@ -121,8 +122,8 @@ async def test_route_prefixes(async_client):
     posts_response = await client.post("/api/posts")
     assert posts_response.status_code == 200
     assert posts_response.json() == {"message": "Posts Route"}
-    
-    
+
+
 async def test_invalid_routes(async_client):
     client, app = async_client
 
@@ -133,8 +134,8 @@ async def test_invalid_routes(async_client):
 
     # Test an invalid route
     invalid_response = await client.get("/invalid")
-    
-    
+
+
 async def test_nested_routers(async_client):
     client, app = async_client
 
