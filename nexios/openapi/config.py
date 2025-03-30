@@ -1,4 +1,4 @@
-from .models import Server,OpenAPI,Info,SecurityScheme,Components
+from .models import Contact, License, Server,OpenAPI,Info,SecurityScheme,Components
 from typing import Dict, List, Optional
 class OpenAPIConfig:
     def __init__(
@@ -6,14 +6,18 @@ class OpenAPIConfig:
         title: str = "API Documentation", 
         version: str = "1.0.0",
         description: str = "",
-        servers: Optional[List[Server]] = None
+        servers: Optional[List[Server]] = None,
+        contact: Optional[Contact] = None,
+        license :Optional[License] = None
     ):
         self.openapi_spec = OpenAPI(
             openapi="3.0.0",
             info=Info(
                 title=title,
                 version=version,
-                description=description
+                description=description,
+                contact  = contact,
+                license=license
             ),
             paths={},
             servers=servers or [Server(url="/")],

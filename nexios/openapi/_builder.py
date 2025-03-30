@@ -1,5 +1,6 @@
 from functools import wraps
-from typing import Optional,Dict,List,Union,Awaitable
+from typing import Optional,Dict,List, Type,Union,Awaitable
+from uuid import uuid4
 from pydantic import BaseModel
 from inspect import signature, getdoc
 from typing import get_type_hints, get_origin, get_args
@@ -119,13 +120,13 @@ class APIDocumentation:
         summary: str = "",
         description: Optional[str] = None,
         parameters: Optional[List[Parameter]] = None,
-        request_body: Optional[BaseModel] = None,
+        request_body: Optional[Type[BaseModel]] = None,
         responses: Optional[Union[BaseModel, Dict[int, BaseModel]]] = None,
         tags: Optional[List[str]] = None,
         security: Optional[List[Dict[str, List[str]]]] = None,
         operation_id: Optional[str] = None,
         deprecated: bool = False,
-        external_docs: Optional[ExternalDocumentation] = ExternalDocumentation()
+        external_docs: Optional[ExternalDocumentation] = None
     ):
         """
         Decorator to document API endpoints with OpenAPI specification
@@ -193,7 +194,7 @@ class APIDocumentation:
                 parameters=parameters or [], #type:ignore
                 requestBody=request_body_spec,
                 security=security,
-                operationId=operation_id or func.__name__,
+                operationId=operation_id or str(uuid4()),
                 deprecated=deprecated,
                 externalDocs=external_docs,
             )

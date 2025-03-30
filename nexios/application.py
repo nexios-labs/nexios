@@ -11,6 +11,7 @@ from nexios.middlewares.core import Middleware
 from nexios.middlewares.errors.server_error_handler import ServerErrorMiddleware,ServerErrHandlerType
 from nexios.structs import URLPath
 from pydantic import BaseModel
+from nexios.openapi.models import Parameter
 from .types import (
     MiddlewareType,
     Scope,
@@ -237,10 +238,13 @@ class NexiosApp(object):
         from nexios.openapi.config import OpenAPIConfig
         from nexios.openapi.models import  HTTPBearer
         from nexios.openapi._builder import APIDocumentation
+        openapi_config :Dict[str,Any]= self.config.to_dict().get("openapi",{}) #type:ignore
         self.openapi_config = OpenAPIConfig(
-            title="Nexios API",
-            version="1.0.0",
-            description="Automatically generated API documentation"
+            title=openapi_config.get("title","Nexios API"),
+            version=openapi_config.get("version","1.0.0"),
+            description=openapi_config.get("description","Automatically generated API documentation"),
+            license=openapi_config.get("license"),
+            contact=openapi_config.get("contact")
         )
         
         
@@ -253,7 +257,9 @@ class NexiosApp(object):
             )
         )
         
-        APIDocumentation(app = self,config=self.openapi_config)
+        APIDocumentation(app = self,
+                         config=self.openapi_config,
+                         )
     
     def add_middleware(
         self,
@@ -448,442 +454,283 @@ class NexiosApp(object):
    
     def get(
         self,
-        path: Annotated[
-            str,
-            Doc("The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax.")
-        ],
-        name: Annotated[
-            Optional[str],
-            Doc("A unique name for the route.")
-        ] = None,
-        middlewares : Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler")
-         ] = [],
-        summary: Annotated[
-            Optional[str], 
-            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
-        ] = None,
-
-        description: Annotated[
-            Optional[str], 
-            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
-        ] = None,
-
-        responses: Annotated[
-            Optional[Dict[int, Any]], 
-            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
-        ] = None,
-
-        request_model: Annotated[
-            Optional[Type[BaseModel]], 
-            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
-] = None,
+        path: str,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
+        **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
-        Registers a GET route.
-
-        This decorator allows you to define an endpoint that handles HTTP GET requests. 
-        GET requests are typically used for retrieving resources.
-
-        Args:
-            route (Routes): The route definition, including path and handler function.
-            validator (Callable, optional): A function to validate the request data before passing it to the handler.
-
-        Returns:
-            Callable: The decorated handler function.
-
-        Example:
-            ```python
-            @app.get("/users")
-            async def get_users(request,response):
-                return response.json({"users": ["Alice", "Bob"]})
-            ```
+        Registers a GET route with all available parameters.
         """
-        return self.route(path=f"{path}", 
-                           methods=["GET"], 
-                           name=name,
-                           summary=summary,
-                            description=description,
-                            responses=responses,
-                            request_model=request_model,
-                           middlewares = middlewares,
-                            )
-
+        
+        return self.route(
+            path=path,
+            handler=handler,
+            methods=["GET"],
+            name=name,
+            summary=summary,
+            description=description,
+            responses=responses,
+            request_model=request_model,
+            middlewares=middlewares,
+            tags=tags,
+            security=security,
+            operation_id=operation_id,
+            deprecated=deprecated,
+            parameters=parameters,
+            **kwargs
+        )
+           
 
     def post(
         self,
-        path: Annotated[
-            str,
-            Doc("The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax.")
-        ],
-        name: Annotated[
-            Optional[str],
-            Doc("A unique name for the route.")
-        ] = None,
-        summary: Annotated[
-            Optional[str], 
-            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
-        ] = None,
-
-        description: Annotated[
-            Optional[str], 
-            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
-        ] = None,
-
-        responses: Annotated[
-            Optional[Dict[int, Any]], 
-            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
-        ] = None,
-
-        request_model: Annotated[
-            Optional[Type[BaseModel]], 
-            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
-] = None,
-        middlewares : Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler")
-        ] = []
+        path: str,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
+        **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
-        Registers a POST route.
-
-        This decorator is used to define an endpoint that handles HTTP POST requests, 
-        typically for creating resources.
-
-        Args:
-            route (Routes): The route definition, including path and handler function.
-            validator (Callable, optional): A function to validate the request data before passing it to the handler.
-
-        Returns:
-            Callable: The decorated handler function.
-
-        Example:
-            ```python
-            @app.post("/users")
-            async def create_user(request,response):
-                return response.json({"message": "User created"})
-            ```
+        Registers a POST route with all available parameters.
         """
-        return self.route(path=f"{path}", 
-                           methods=["POST"], 
-                           name=name,
-                           summary=summary,
-                            description=description,
-                            responses=responses,
-                            request_model=request_model,
-                           middlewares = middlewares)
-
+        
+        return self.route(
+                path=path,
+                handler=handler,
+                methods=["POST"],
+                name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
+                middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
+                **kwargs
+            )
+          
 
     def delete(
         self,
-        path: Annotated[
-            str,
-            Doc("The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax.")
-        ],
-        name: Annotated[
-            Optional[str],
-            Doc("A unique name for the route.")
-        ] = None,
-        summary: Annotated[
-            Optional[str], 
-            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
-        ] = None,
-
-        description: Annotated[
-            Optional[str], 
-            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
-        ] = None,
-
-        responses: Annotated[
-            Optional[Dict[int, Any]], 
-            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
-        ] = None,
-
-        request_model: Annotated[
-            Optional[Type[BaseModel]], 
-            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
-] = None,
-        middlewares : Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler")
-        ] = []
+        path: str,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
+        **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
-        Registers a DELETE route.
-
-        This decorator allows defining an endpoint that handles HTTP DELETE requests, 
-        typically for deleting resources.
-
-        Args:
-            route (Routes): The route definition, including path and handler function.
-            validator (Callable, optional): A function to validate the request data before passing it to the handler.
-
-        Returns:
-            Callable: The decorated handler function.
-
-        Example:
-            ```python
-            @app.delete("/users/{user_id}")
-            def delete_user(request, response):
-                user_id = request.path_params.user_id
-                return responsejson({"message": f"User {user_id} deleted"})
-            ```
+        Registers a DELETE route with all available parameters.
         """
-        return self.route(path=f"{path}", 
-                           methods=["DELETE"],                      
-                           name=name,
-                           summary=summary,
-                            description=description,
-                            responses=responses,
-                            request_model=request_model,
-                           middlewares = middlewares)
-
+        
+        return self.route(
+                path=path,
+                handler=handler,
+                methods=["DELETE"],
+                name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
+                middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
+                **kwargs
+            )
+            
 
     def put(
         self,
-        path: Annotated[
-            str,
-            Doc("The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax.")
-        ],
-        name: Annotated[
-            Optional[str],
-            Doc("A unique name for the route.")
-        ] = None,
-        summary: Annotated[
-            Optional[str], 
-            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
-        ] = None,
-
-        description: Annotated[
-            Optional[str], 
-            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
-        ] = None,
-
-        responses: Annotated[
-            Optional[Dict[int, Any]], 
-            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
-        ] = None,
-
-        request_model: Annotated[
-            Optional[Type[BaseModel]], 
-            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
-] = None,
-        middlewares : Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler")
-        ] = []
+        path: str,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
+        **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
-        Registers a PUT route.
-
-        This decorator defines an endpoint that handles HTTP PUT requests, 
-        typically for updating or replacing a resource.
-
-        Args:
-            route (Routes): The route definition, including path and handler function.
-            validator (Callable, optional): A function to validate the request data before passing it to the handler.
-
-        Returns:
-            Callable: The decorated handler function.
-
-        Example:
-            ```python
-            @app.delete("/users/{user_id}")
-            def delete_user(request, response):
-                user_id = request.path_params.user_id
-                return responsejson({"message": f"User {user_id} updated"})
+        Registers a PUT route with all available parameters.
         """
-        return self.route(path=f"{path}", 
-                           methods=["PUT"], 
-                           name=name,
-                           summary=summary,
-                            description=description,
-                            responses=responses,
-                            request_model=request_model,
-                           middlewares = middlewares)
+       
+        return self.route(
+                path=path,
+                handler=handler,
+                methods=["PUT"],
+                name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
+                middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
+                **kwargs
+            )
+            
 
     def patch(
         self,
-        path: Annotated[
-            str,
-            Doc("The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax.")
-        ],
-        name: Annotated[
-            Optional[str],
-            Doc("A unique name for the route.")
-        ] = None,
-        summary: Annotated[
-            Optional[str], 
-            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
-        ] = None,
-
-        description: Annotated[
-            Optional[str], 
-            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
-        ] = None,
-
-        responses: Annotated[
-            Optional[Dict[int, Any]], 
-            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
-        ] = None,
-
-        request_model: Annotated[
-            Optional[Type[BaseModel]], 
-            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
-] = None,
-        middlewares : Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler")
-        ] = []
+        path: str,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
+        **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
-        Registers a PATCH route.
-
-        This decorator defines an endpoint that handles HTTP PATCH requests, 
-        which are used to apply partial modifications to a resource.
-
-        Args:
-            route (Routes): The route definition, including path and handler function.
-            validator (Callable, optional): A function to validate the request data before passing it to the handler.
-
-        Returns:
-            Callable: The decorated handler function.
-
-        Example:
-            ```python
-            @app.patch("/users/{user_id}")
-            def partial_update_user(request, response):
-                user_id = request.path_params.user_id
-            
-                return respoonse.json({"message": f"User {user_id} partially updated"})
-            ```
+        Registers a PATCH route with all available parameters.
         """
-        return self.route(path=f"{path}", 
-                           methods=["PATCH"], 
-                           name=name,
-                           summary=summary,
-                            description=description,
-                            responses=responses,
-                            request_model=request_model,
-                           middlewares = middlewares,
-                           )
-
+        return self.route(
+                path=path,
+                handler=handler,
+                methods=["PATCH"],
+                name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
+                middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
+                **kwargs
+            )
+            
 
     def options(
         self,
-        path: Annotated[
-            str,
-            Doc("The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax.")
-        ],
-        name: Annotated[
-            Optional[str],
-            Doc("A unique name for the route.")
-        ] = None,
-        summary: Annotated[
-            Optional[str], 
-            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
-        ] = None,
-
-        description: Annotated[
-            Optional[str], 
-            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
-        ] = None,
-
-        responses: Annotated[
-            Optional[Dict[int, Any]], 
-            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
-        ] = None,
-
-        request_model: Annotated[
-            Optional[Type[BaseModel]], 
-            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
-] = None,
-        middlewares : Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler")
-        ] = []
-       
+        path: str,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
+        **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
-        Registers an OPTIONS route.
-
-        This decorator defines an endpoint that handles HTTP OPTIONS requests, 
-        which are used to describe the communication options for the target resource. 
-        OPTIONS requests are commonly used in CORS (Cross-Origin Resource Sharing) 
-        to check allowed methods, headers, and authentication rules.
-
-        Args:
-            route (Routes): The route definition, including path and handler function.
-            validator (Callable, optional): A function to validate the request data before passing it to the handler.
-
-        Returns:
-            Callable: The decorated handler function.
-
-        Example:
-            ```python
-            @app.options("/users")
-            def options_users(request):
-                return response.json({
-                    "Allow": "GET, POST, DELETE, OPTIONS"
-                })
-            ```
+        Registers an OPTIONS route with all available parameters.
         """
-        return self.route(path=f"{path}", 
-                           methods=["OPTIONS"], 
-                           name=name,
-                           summary=summary,
-                            description=description,
-                            responses=responses,
-                            request_model=request_model,
-                           middlewares=middlewares)
-
-
+        return self.route(
+                path=path,
+                handler=handler,
+                methods=["OPTIONS"],
+                name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
+                middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
+                **kwargs
+            )
+            
 
     def head(
         self,
-        path: Annotated[
-            str,
-            Doc("The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax.")
-        ],
-
-        name: Annotated[
-            Optional[str],
-            Doc("A unique name for the route.")
-        ] = None,
-        summary: Annotated[
-            Optional[str], 
-            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
-        ] = None,
-
-        description: Annotated[
-            Optional[str], 
-            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
-        ] = None,
-
-        responses: Annotated[
-            Optional[Dict[int, Any]], 
-            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
-        ] = None,
-
-        request_model: Annotated[
-            Optional[Type[BaseModel]], 
-            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
-] = None,
-        middlewares : Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler")
-        ] = []
+        path: str,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
+        **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
-        
-         return self.route(path=f"{path}", 
-                           methods=["HEAD"], 
-                           name=name,
-                           summary=summary,
-                            description=description,
-                            responses=responses,
-                            request_model=request_model,
-                           middlewares = middlewares)
+        """
+        Registers a HEAD route with all available parameters.
+        """
+       
+        return self.route(
+                path=path,
+                handler=handler,
+                methods=["HEAD"],
+                name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
+                middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
+                **kwargs
+            )
+            
+
+    
     
     
     
