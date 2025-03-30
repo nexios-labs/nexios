@@ -1,11 +1,10 @@
 import importlib
 import os
 from typing import TypedDict
-
 from nexios.application import NexiosApp
 from nexios.logging import create_logger
 from nexios.routing import Routes
-
+from pathlib import Path
 logger = create_logger("nexios")
 
 
@@ -54,68 +53,26 @@ class FileRouterPlugin:
     def _build_route(self, route_file_path: str) -> list[Routes]:
         handlers: list[Routes] = []
         path = self._get_path(route_file_path.replace(self.config["root"], ""))
-        module = importlib.import_module(
-            route_file_path.replace("/", ".").replace(".py", "")
-        )
 
-        get_handler = hasattr(module, "get")
-        if get_handler:
-            logger.debug("Mapped GET %s" % path)
+        # Convert file path to a valid module import path
+        module_path = (
+            Path(route_file_path)
+            .with_suffix("")  # Remove .py
+            .as_posix()  # Convert Windows paths to Unix-style
+            .replace("/", ".")  # Replace slashes with dots for module import
+        ).lstrip(".")  # Remove leading dot if present
 
-            handlers.append(
-                Routes(
-                    path,
-                    getattr(module, "get"),
-                    methods=["GET"],
+        module = importlib.import_module(module_path)  # Import dynamically
+
+        for method in ["get", "post", "patch", "put", "delete"]:
+            if hasattr(module, method):
+                logger.debug(f"Mapped {method.upper()} {path}")
+                handlers.append(
+                    Routes(
+                       path.replace("\\", "/"),
+                        getattr(module, method),
+                        methods=[method.upper()],
+                    )
                 )
-            )
-
-        post_handler = hasattr(module, "post")
-        if post_handler:
-            logger.debug("Mapped POST %s" % path)
-
-            handlers.append(
-                Routes(
-                    path,
-                    getattr(module, "post"),
-                    methods=["POST"],
-                )
-            )
-
-        patch_handler = hasattr(module, "patch")
-        if patch_handler:
-            logger.debug("Mapped PATCH %s" % path)
-
-            handlers.append(
-                Routes(
-                    path,
-                    getattr(module, "patch"),
-                    methods=["PATCH"],
-                )
-            )
-
-        put_handler = hasattr(module, "put")
-        if put_handler:
-            logger.debug("Mapped PUT %s" % path)
-
-            handlers.append(
-                Routes(
-                    path,
-                    getattr(module, "put"),
-                    methods=["PUT"],
-                )
-            )
-
-        delete_handler = hasattr(module, "delete")
-        if delete_handler:
-            logger.debug("Mapped DELETE %s" % path)
-
-            handlers.append(
-                Routes(
-                    path,
-                    getattr(module, "delete"),
-                    methods=["DELETE"],
-                )
-            )
 
         return handlers
