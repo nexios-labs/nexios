@@ -27,10 +27,10 @@ jobs:
 
       - name: Commit and Push Changes
         env:
-          GITHUB_TOKEN: ${{secrets.PAT_TOKEN}}
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
           git add .
           git commit -m 'Auto-format Python code with Black' || echo "No changes to commit"
-          git push origin HEAD:main
+          git push https://x-access-token:${PAT_TOKEN}@github.com/nexios-labs/nexios.git HEAD:main
