@@ -1,8 +1,9 @@
-from typing import Dict,Any,Union
-from nexios.config import get_config,MakeConfig
-from datetime import datetime,timedelta,timezone
+from typing import Dict, Any, Union
+from nexios.config import get_config, MakeConfig
+from datetime import datetime, timedelta, timezone
 import secrets
 import typing
+
 
 class BaseSessionInterface:
 
@@ -12,52 +13,47 @@ class BaseSessionInterface:
 
     deleted = False
 
-    _session_cache :Dict[str,Any] = {} 
+    _session_cache: Dict[str, Any] = {}
 
+    def __init__(self, session_key: str) -> None:
 
-    def __init__(self,session_key :str) -> None:
-        
-        config :MakeConfig = get_config()
-        self.session_key = session_key 
+        config: MakeConfig = get_config()
+        self.session_key = session_key
         if not config.secret_key:
-            return 
+            return
         self.config = config
         self.session_config = config.session
 
+    def set_session(self, key: str, value: str):
 
-
-
-    def set_session(self,key :str,value :str):
-        
         self.modified = True
         self.accessed = True
-        
-        self._session_cache[key] = value
-    
-    def get_session(self, key :str):
-        self.accessed = True
-        
-        return self._session_cache.get(key, None)
-        
 
-    def get_all(self) :
+        self._session_cache[key] = value
+
+    def get_session(self, key: str):
+        self.accessed = True
+
+        return self._session_cache.get(key, None)
+
+    def get_all(self):
         self.accessed = True
         return self._session_cache.items()
-    
-    def delete_session(self, key :str):
+
+    def delete_session(self, key: str):
         self.modified = True
         self.deleted = True
         if key in self._session_cache:
             del self._session_cache[key]
+
     def keys(self):
         return self._session_cache.keys()
-    
+
     def values(self):
         return self._session_cache.values()
-    
+
     def is_empty(self):
         return self._session_cache.items().__len__() == 0
-    
 
     async def save(self):
 
@@ -75,13 +71,13 @@ class BaseSessionInterface:
             return None
         return self.session_config.session_cookie_domain
 
-    def get_cookie_path(self) -> Union[str,None]:
+    def get_cookie_path(self) -> Union[str, None]:
         """Returns the path for which the cookie is valid. Uses `config.SESSION_COOKIE_PATH`."""
         if not self.session_config:
             return None
         return self.session_config.session_cookie_path
 
-    def get_cookie_httponly(self) -> typing.Optional[bool] :
+    def get_cookie_httponly(self) -> typing.Optional[bool]:
         """Returns whether the session cookie should be HTTPOnly. Uses `session_config.session_cookie_httponly`."""
         if not self.session_config:
             return None
@@ -108,37 +104,32 @@ class BaseSessionInterface:
     def get_expiration_time(self) -> typing.Optional[datetime]:
         """Returns the expiration time for the session. Uses `self.session_config.session_expiration_time`."""
         if not self.session_config:
-            return datetime.now(timezone.utc) + timedelta(minutes=86400) #type: ignore
+            return datetime.now(timezone.utc) + timedelta(minutes=86400)  # type: ignore
         if self.session_config.session_permanent:
-            return datetime.now(timezone.utc) + timedelta(minutes=self.session_config.session_expiration_time or 86400) #type: ignore
-        return datetime.now(timezone.utc) + timedelta(minutes=86400) #type: ignore
+            return datetime.now(timezone.utc) + timedelta(minutes=self.session_config.session_expiration_time or 86400)  # type: ignore
+        return datetime.now(timezone.utc) + timedelta(minutes=86400)  # type: ignore
 
     @property
     def should_set_cookie(self) -> bool:
         """Determines if the cookie should be set. Depends on `config.SESSION_REFRESH_EACH_REQUEST`."""
-        
+
         if not self.session_config:
-            
+
             return self.modified
         return self.modified or (
-            self.session_config.session_permanent and self.session_config.session_refresh_each_request
+            self.session_config.session_permanent
+            and self.session_config.session_refresh_each_request
         )
-        
 
     def has_expired(self) -> bool:
         """Returns True if the session has expired."""
         expiration_time = self.get_expiration_time()
-        if expiration_time and datetime.now(timezone.utc) > expiration_time: #type: ignore
+        if expiration_time and datetime.now(timezone.utc) > expiration_time:  # type: ignore
             return True
         return False
-
 
     def get_session_key(self) -> str:
         """Returns the session key."""
         if self.session_key:
             return self.session_key
         return secrets.token_hex(32)
-    
-    
-    
-    

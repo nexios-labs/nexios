@@ -11,7 +11,9 @@ class AuthException(HTTPException):
     Base class for all authentication-related exceptions.
     """
 
-    def __init__(self, status_code: int, detail: str, headers: Optional[HeadersType] = None) -> None:
+    def __init__(
+        self, status_code: int, detail: str, headers: Optional[HeadersType] = None
+    ) -> None:
         """
         Initialize an authentication exception.
 
@@ -28,13 +30,17 @@ class AuthenticationFailed(AuthException):
     Raised when authentication fails.
     """
 
-    def __init__(self, detail: str = "Authentication failed", headers: Optional[HeadersType] = None) -> None:
+    def __init__(
+        self,
+        detail: str = "Authentication failed",
+        headers: Optional[HeadersType] = None,
+    ) -> None:
         super().__init__(401, detail, headers)
 
 
-
-
-async def AuthErrorHandler(req: Request, res: NexiosResponse, exc: HTTPException) -> Any:
+async def AuthErrorHandler(
+    req: Request, res: NexiosResponse, exc: HTTPException
+) -> Any:
     """
     Handle authentication exceptions and return a JSON response.
 

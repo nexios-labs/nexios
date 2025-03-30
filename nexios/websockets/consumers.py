@@ -4,13 +4,20 @@ import typing, json
 from .channels import Channel, ChannelBox, PayloadTypeEnum
 from nexios import logging
 import uuid
+
 Message = typing.MutableMapping[str, typing.Any]
 
+
 class WebSocketEndpoint:
-   
+
     channel: typing.Optional[Channel] = None
     middleware = []
-    def __init__(self, logging_enabled: bool = True, logger: typing.Optional[logging.Logger] = None):
+
+    def __init__(
+        self,
+        logging_enabled: bool = True,
+        logger: typing.Optional[logging.Logger] = None,
+    ):
         """
         Args:
             logging_enabled: Whether logging is enabled for this endpoint.
@@ -19,25 +26,32 @@ class WebSocketEndpoint:
         self.logging_enabled = logging_enabled
         self.logger = logger if logger else logging.getLogger("nexios")
         self.encoding: typing.Optional[str] = None
+
     @classmethod
     def as_route(cls, path: str):
         from nexios.routing import WebsocketRoutes
-        
+
         """
         Convert the WebSocketConsumer class into a Route that can be registered with the app or router.
         """
+
         async def handler(websocket: WebSocket, **kwargs) -> None:
             instance = cls()
             await instance(websocket, **kwargs)
 
-        return WebsocketRoutes(path, handler,  middlewares=cls.middleware)
+        return WebsocketRoutes(path, handler, middlewares=cls.middleware)
+
     async def __call__(self, ws: WebSocket) -> None:
         self.websocket = ws
 
         self.channel = Channel(
             websocket=self.websocket,
             expires=3600,  # Set your desired TTL for the channel
-            payload_type=PayloadTypeEnum.JSON.value if self.encoding == "json" else PayloadTypeEnum.TEXT.value,
+            payload_type=(
+                PayloadTypeEnum.JSON.value
+                if self.encoding == "json"
+                else PayloadTypeEnum.TEXT.value
+            ),
         )
         await self.on_connect(self.websocket)
 
@@ -50,7 +64,9 @@ class WebSocketEndpoint:
                     data = await self.decode(self.websocket, message)
                     await self.on_receive(self.websocket, data)
                 elif message["type"] == "websocket.disconnect":
-                    close_code = int(message.get("code") or status.WS_1000_NORMAL_CLOSURE)
+                    close_code = int(
+                        message.get("code") or status.WS_1000_NORMAL_CLOSURE
+                    )
                     break
         except Exception as exc:
             close_code = status.WS_1011_INTERNAL_ERROR
@@ -83,7 +99,9 @@ class WebSocketEndpoint:
                 await websocket.close(code=status.WS_1003_UNSUPPORTED_DATA)
                 raise RuntimeError("Malformed JSON data received.")
 
-        assert self.encoding is None, f"Unsupported 'encoding' attribute {self.encoding}"
+        assert (
+            self.encoding is None
+        ), f"Unsupported 'encoding' attribute {self.encoding}"
         return message["text"] if message.get("text") else message["bytes"]
 
     async def on_connect(self, websocket: WebSocket) -> None:
@@ -103,7 +121,12 @@ class WebSocketEndpoint:
             self.logger.info(f"WebSocket disconnected with code: {close_code}")
 
     # New Methods for Channel and Group Management
-    async def broadcast(self, payload: typing.Any, group_name: str = "default", save_history: bool = False) -> None:
+    async def broadcast(
+        self,
+        payload: typing.Any,
+        group_name: str = "default",
+        save_history: bool = False,
+    ) -> None:
         """
         Broadcast a message to all channels in a group.
         Args:
@@ -111,7 +134,9 @@ class WebSocketEndpoint:
             group_name: The name of the group to broadcast to.
             save_history: Whether to save the message in the group's history.
         """
-        await ChannelBox.group_send(group_name=group_name, payload=payload, save_history=save_history)
+        await ChannelBox.group_send(
+            group_name=group_name, payload=payload, save_history=save_history
+        )
         if self.logging_enabled:
             self.logger.info(f"Broadcasted message to group '{group_name}': {payload}")
 
@@ -127,7 +152,9 @@ class WebSocketEndpoint:
                 if channel.uuid == channel_id:
                     await channel._send(payload)
                     if self.logging_enabled:
-                        self.logger.info(f"Sent message to channel {channel_id}: {payload}")
+                        self.logger.info(
+                            f"Sent message to channel {channel_id}: {payload}"
+                        )
                     return
         if self.logging_enabled:
             self.logger.warning(f"Channel with ID {channel_id} not found.")
@@ -142,7 +169,9 @@ class WebSocketEndpoint:
         """
         channels = list(ChannelBox.CHANNEL_GROUPS.get(group_name, {}).keys())
         if self.logging_enabled:
-            self.logger.info(f"Retrieved channels in group '{group_name}': {len(channels)} channels")
+            self.logger.info(
+                f"Retrieved channels in group '{group_name}': {len(channels)} channels"
+            )
         return channels
 
     async def join_group(self, group_name: str) -> None:
@@ -152,7 +181,7 @@ class WebSocketEndpoint:
             group_name: The name of the group to join.
         """
         if self.channel:
-            
+
             await ChannelBox.add_channel_to_group(self.channel, group_name=group_name)
             if self.logging_enabled:
                 self.logger.info(f"Channel joined group '{group_name}'")
@@ -164,6 +193,8 @@ class WebSocketEndpoint:
             group_name: The name of the group to leave.
         """
         if self.channel:
-            await ChannelBox.remove_channel_from_group(self.channel, group_name=group_name)
+            await ChannelBox.remove_channel_from_group(
+                self.channel, group_name=group_name
+            )
             if self.logging_enabled:
                 self.logger.info(f"Channel left group '{group_name}'")

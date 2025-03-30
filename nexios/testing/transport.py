@@ -2,12 +2,13 @@ import httpx
 import anyio
 import io
 import typing
-from typing import Any,Tuple
+from typing import Any, Tuple
 from urllib.parse import unquote
 
 ASGIScope = dict[str, typing.Any]
 Message = dict[str, typing.Any]
 HeaderList = list[tuple[bytes, bytes]]
+
 
 class NexiosAsyncTransport(httpx.AsyncBaseTransport):
     """Custom ASGI transport for Nexios test client, bypassing real network requests."""
@@ -35,7 +36,9 @@ class NexiosAsyncTransport(httpx.AsyncBaseTransport):
         if scheme in {"ws", "wss"}:
             raise NotImplementedError("WebSocket transport is not supported yet.")
 
-        scope = self._build_http_scope(request, scheme, path, raw_path, query, headers, host, port)
+        scope = self._build_http_scope(
+            request, scheme, path, raw_path, query, headers, host, port
+        )
         return await self._send_request(scope, request)
 
     def _parse_url(self, request: httpx.Request) -> tuple[str, str, str, bytes, str]:
@@ -56,14 +59,33 @@ class NexiosAsyncTransport(httpx.AsyncBaseTransport):
             return host, int(port)
         return netloc, default_ports.get(scheme, 80)
 
-    def _prepare_headers(self, request: httpx.Request, host: str, port: int) -> HeaderList:
+    def _prepare_headers(
+        self, request: httpx.Request, host: str, port: int
+    ) -> HeaderList:
         """Prepares headers for the ASGI request."""
-        headers = [(b"host", f"{host}:{port}".encode())] if "host" not in request.headers else []
-        headers.extend([(key.lower().encode(), value.encode()) for key, value in request.headers.multi_items()])
+        headers = (
+            [(b"host", f"{host}:{port}".encode())]
+            if "host" not in request.headers
+            else []
+        )
+        headers.extend(
+            [
+                (key.lower().encode(), value.encode())
+                for key, value in request.headers.multi_items()
+            ]
+        )
         return headers
 
     def _build_http_scope(
-        self, request: httpx.Request, scheme: str, path: str, raw_path: bytes, query: str, headers: HeaderList, host: str, port: int
+        self,
+        request: httpx.Request,
+        scheme: str,
+        path: str,
+        raw_path: bytes,
+        query: str,
+        headers: HeaderList,
+        host: str,
+        port: int,
     ) -> ASGIScope:
         """Constructs the ASGI scope for HTTP requests."""
         return {
@@ -81,13 +103,15 @@ class NexiosAsyncTransport(httpx.AsyncBaseTransport):
             "state": self.app_state.copy(),
         }
 
-    async def _send_request(self, scope: ASGIScope, request: httpx.Request) -> httpx.Response:
+    async def _send_request(
+        self, scope: ASGIScope, request: httpx.Request
+    ) -> httpx.Response:
         """Handles ASGI request sending and response collection asynchronously."""
         request_complete = False
         response_started = False
         response_complete = anyio.Event()
         response_body = io.BytesIO()
-        response_headers:list[Tuple[Any , Any]] = []
+        response_headers: list[Tuple[Any, Any]] = []
         status_code = 500
 
         async def receive() -> Message:
@@ -106,9 +130,10 @@ class NexiosAsyncTransport(httpx.AsyncBaseTransport):
             nonlocal response_started, status_code, response_headers
             if message["type"] == "http.response.start":
                 status_code = message["status"]
-                response_headers = [(k.decode(), v.decode()) for k, v in message.get("headers")] #type:ignore
-               
-                
+                response_headers = [
+                    (k.decode(), v.decode()) for k, v in message.get("headers")
+                ]  # type:ignore
+
                 response_started = True
             elif message["type"] == "http.response.body":
                 assert response_started, "Received body before response start"
@@ -128,4 +153,9 @@ class NexiosAsyncTransport(httpx.AsyncBaseTransport):
         if self.raise_exceptions and not response_started:
             raise RuntimeError("TestClient did not receive any response.")
 
-        return httpx.Response(status_code, headers=dict(response_headers), content=response_body.read(), request=request)
+        return httpx.Response(
+            status_code,
+            headers=dict(response_headers),
+            content=response_body.read(),
+            request=request,
+        )

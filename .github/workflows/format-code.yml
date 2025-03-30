@@ -26,9 +26,11 @@ jobs:
         run: black .
 
       - name: Commit and Push Changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN  }}
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
           git add .
           git commit -m 'Auto-format Python code with Black' || echo "No changes to commit"
-          git push
+          git push origin HEAD:main

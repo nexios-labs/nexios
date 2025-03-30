@@ -1,6 +1,7 @@
 from nexios.http import Request, Response
 import typing
-from typing_extensions import Annotated, Doc,Any
+from typing_extensions import Annotated, Doc, Any
+
 
 class BaseMiddleware:
     """
@@ -43,13 +44,15 @@ class BaseMiddleware:
             Request,
             Doc("The incoming HTTP request object representing the client request."),
         ],
-        response:Annotated[
-                           Response,Doc("The HTTP response object that will be returned to the client.")],
+        response: Annotated[
+            Response,
+            Doc("The HTTP response object that will be returned to the client."),
+        ],
         call_next: Annotated[
-            typing.Coroutine[None,None,typing.Awaitable[Any]],
+            typing.Coroutine[None, None, typing.Awaitable[Any]],
             Doc("The next middleware function in the processing chain."),
         ],
-    ) ->Any:
+    ) -> Any:
         """
         Handles the request-response cycle for the middleware.
 
@@ -66,21 +69,24 @@ class BaseMiddleware:
             Response: The final HTTP response object.
         """
         self._call_next = False
+
         async def wrapped_call_next() -> Any:
             self._call_next = True
-            return await call_next() #type:ignore
-        await self.process_request(request, response,wrapped_call_next)
+            return await call_next()  # type:ignore
+
+        await self.process_request(request, response, wrapped_call_next)
         if self._call_next:
             await self.process_response(request, response)
-
 
     async def process_request(
         self,
         request: Annotated[
             Request, Doc("The HTTP request object that needs to be processed.")
         ],
-        response:Annotated[
-                           Response,Doc("The HTTP response object that will be returned to the client.")],
+        response: Annotated[
+            Response,
+            Doc("The HTTP response object that will be returned to the client."),
+        ],
         call_next: Annotated[
             typing.Callable[..., typing.Awaitable[Response]],
             Doc("The next middleware or handler to call."),

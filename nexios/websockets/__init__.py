@@ -1,5 +1,5 @@
-from .base import WebSocket, WebSocketDisconnect   # type:ignore
-from .channels import Channel,ChannelBox
+from .base import WebSocket, WebSocketDisconnect  # type:ignore
+from .channels import Channel, ChannelBox
 from .consumers import WebSocketEndpoint
 import typing
 
@@ -10,6 +10,4 @@ Receive = typing.Callable[[], typing.Awaitable[Message]]
 Send = typing.Callable[[Message], typing.Awaitable[None]]
 
 
-__all__ = [
-    "WebSocket","Channel","ChannelBox","WebSocketEndpoint"
-]
+__all__ = ["WebSocket", "Channel", "ChannelBox", "WebSocketEndpoint"]

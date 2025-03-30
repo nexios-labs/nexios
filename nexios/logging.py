@@ -1,9 +1,17 @@
-
 from __future__ import annotations
 import logging
 import sys
 from logging import (
-    DEBUG, ERROR, Formatter, Handler, INFO, Logger, LogRecord, NOTSET, StreamHandler, getLogger
+    DEBUG,
+    ERROR,
+    Formatter,
+    Handler,
+    INFO,
+    Logger,
+    LogRecord,
+    NOTSET,
+    StreamHandler,
+    getLogger,
 )
 from logging.handlers import QueueHandler, QueueListener, RotatingFileHandler
 from queue import SimpleQueue as Queue
@@ -19,6 +27,7 @@ class LocalQueueHandler(QueueHandler):
     Since we use an in-process queue, there's no need to prepare records,
     reducing logging overhead.
     """
+
     def prepare(self, record: LogRecord) -> LogRecord:
         return record
 
@@ -79,7 +88,9 @@ def create_logger(
     handlers: Tuple[Handler, ...] = (console_handler,)
 
     if log_file:
-        file_handler = RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count)
+        file_handler = RotatingFileHandler(
+            log_file, maxBytes=max_bytes, backupCount=backup_count
+        )
         file_handler.setFormatter(
             Formatter("[%(asctime)s] %(levelname)s in %(module)s: %(message)s")
         )
@@ -90,6 +101,3 @@ def create_logger(
         logger.addHandler(queue_handler)
 
     return logger
-
-
-

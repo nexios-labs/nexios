@@ -198,4 +198,4 @@ def __getattr__(name: str) -> int:
 
 
 def __dir__() -> list[str]:
-    return sorted(list(__all__) + list(__deprecated__.keys()))  
+    return sorted(list(__all__) + list(__deprecated__.keys()))

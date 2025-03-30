@@ -1,6 +1,6 @@
 from typing import Any, Callable, List, Union
-from .routing import Router, WSRouter, WebsocketRoutes,Routes
-import  typing
+from .routing import Router, WSRouter, WebsocketRoutes, Routes
+import typing
 from .exception_handler import ExceptionMiddleware
 from typing_extensions import Doc, Annotated  # type:ignore
 from nexios.config import MakeConfig
@@ -8,18 +8,13 @@ from typing import Awaitable, Optional, AsyncIterator
 from nexios.logging import create_logger
 from nexios.middlewares.core import BaseMiddleware
 from nexios.middlewares.core import Middleware
-from nexios.middlewares.errors.server_error_handler import ServerErrorMiddleware,ServerErrHandlerType
+from nexios.middlewares.errors.server_error_handler import (
+    ServerErrorMiddleware,
+    ServerErrHandlerType,
+)
 from nexios.structs import URLPath
 
-from .types import (
-    MiddlewareType,
-    Scope,
-    Send,
-    Receive,
-    Message,
-    HandlerType,
-    ASGIApp
-)
+from .types import MiddlewareType, Scope, Send, Receive, Message, HandlerType, ASGIApp
 
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
 
@@ -29,7 +24,6 @@ AppType = typing.TypeVar("AppType", bound="NexiosApp")
 
 
 logger = create_logger("nexios")
-
 
 
 class NexiosApp(object):
@@ -67,19 +61,20 @@ class NexiosApp(object):
         super().__init__()
         self.ws_router = WSRouter()
         self.ws_routes: List[WebsocketRoutes] = []
-        self.http_middlewares: List[Middleware] =  middlewares or []
+        self.http_middlewares: List[Middleware] = middlewares or []
         self.ws_middlewares: List[ASGIApp] = []
         self.startup_handlers: List[Callable[[], Awaitable[None]]] = []
         self.shutdown_handlers: List[Callable[[], Awaitable[None]]] = []
         self.exceptions_handler: Any[ExceptionMiddleware, None] = (
             server_error_handler or ExceptionMiddleware()
         )
-        
+
         self.app = Router()
         self.router = self.app
         self.route = self.router.route
-        self.lifespan_context :Optional[Callable[["NexiosApp"], AsyncIterator[None]]] = lifespan
-       
+        self.lifespan_context: Optional[
+            Callable[["NexiosApp"], AsyncIterator[None]]
+        ] = lifespan
 
     def on_startup(self, handler: Callable[[], Awaitable[None]]) -> None:
         """
@@ -193,14 +188,16 @@ class NexiosApp(object):
                     try:
                         if self.lifespan_context:
                             # If a lifespan context manager is provided, use it
-                            self.lifespan_manager :Any  = self.lifespan_context(self)
+                            self.lifespan_manager: Any = self.lifespan_context(self)
                             await self.lifespan_manager.__aenter__()
                         else:
                             # Otherwise, fall back to the default startup handlers
                             await self._startup()
                         await send({"type": "lifespan.startup.complete"})
                     except Exception as e:
-                        await send({"type": "lifespan.startup.failed", "message": str(e)})
+                        await send(
+                            {"type": "lifespan.startup.failed", "message": str(e)}
+                        )
                         return
 
                 elif message["type"] == "lifespan.shutdown":
@@ -214,7 +211,9 @@ class NexiosApp(object):
                         await send({"type": "lifespan.shutdown.complete"})
                         return
                     except Exception as e:
-                        await send({"type": "lifespan.shutdown.failed", "message": str(e)})
+                        await send(
+                            {"type": "lifespan.shutdown.failed", "message": str(e)}
+                        )
                         return
 
         except Exception as e:
@@ -223,16 +222,12 @@ class NexiosApp(object):
             else:
                 await send({"type": "lifespan.shutdown.failed", "message": str(e)})
 
-        except Exception as e: #type:ignore
+        except Exception as e:  # type:ignore
             if message["type"].startswith("lifespan.startup"):  # type: ignore
                 await send({"type": "lifespan.startup.failed", "message": str(e)})
             else:
                 await send({"type": "lifespan.shutdown.failed", "message": str(e)})
 
-   
-
-    
-    
     def add_middleware(
         self,
         middleware: Annotated[
@@ -265,12 +260,17 @@ class NexiosApp(object):
             app.add_middleware(logging_middleware)
             ```
         """
-        
-        self.http_middlewares.insert(0,Middleware(BaseMiddleware, dispatch = middleware)) #type:ignore
-    
+
+        self.http_middlewares.insert(
+            0, Middleware(BaseMiddleware, dispatch=middleware)
+        )  # type:ignore
+
     def add_ws_route(
-        self, 
-        route: Annotated[WebsocketRoutes, Doc("An instance of the Routes class representing a WebSocket route.")]
+        self,
+        route: Annotated[
+            WebsocketRoutes,
+            Doc("An instance of the Routes class representing a WebSocket route."),
+        ],
     ) -> None:
         """
         Adds a WebSocket route to the application.
@@ -290,11 +290,12 @@ class NexiosApp(object):
             ```
         """
         self.ws_router.add_ws_route(route)
-        
-    def ws_route(self, route :str):
-        
+
+    def ws_route(self, route: str):
+
         return self.ws_router.ws_route(route)
-    def mount_router(self,router :Router, path :typing.Optional[str] = None):
+
+    def mount_router(self, router: Router, path: typing.Optional[str] = None):
         """
         Mounts a router and all its routes to the application.
 
@@ -320,7 +321,7 @@ class NexiosApp(object):
             ```
         """
         self.router.mount_router(router, path=path)
-        
+
     def mount_ws_router(
         self,
         router: Annotated[
@@ -354,15 +355,13 @@ class NexiosApp(object):
         """
         self.ws_router.mount_router(router)
 
-    
-            
-
-    async def handle_websocket(self, scope: Scope, receive: Receive, send: Send) -> None:
+    async def handle_websocket(
+        self, scope: Scope, receive: Receive, send: Send
+    ) -> None:
         app = self.ws_router
         for mdw in reversed(self.ws_middlewares):
-            app =   mdw(app) #type:ignore
+            app = mdw(app)  # type:ignore
         await app(scope, receive, send)
-            
 
     def add_ws_middleware(
         self,
@@ -397,56 +396,56 @@ class NexiosApp(object):
             ```
         """
         self.ws_middlewares.append(middleware)
-    
+
     def handle_http_request(self) -> Router:
         app = self.app
         middleware = (
-            [Middleware(BaseMiddleware, dispatch = ServerErrorMiddleware(handler=self.server_error_handler))] +
-            self.http_middlewares +
-            [Middleware(BaseMiddleware, dispatch =self.exceptions_handler)]
-            
+            [
+                Middleware(
+                    BaseMiddleware,
+                    dispatch=ServerErrorMiddleware(handler=self.server_error_handler),
+                )
+            ]
+            + self.http_middlewares
+            + [Middleware(BaseMiddleware, dispatch=self.exceptions_handler)]
         )
         for cls, args, kwargs in reversed(middleware):
-            app = cls(app,*args,**kwargs)
+            app = cls(app, *args, **kwargs)
         return app
+
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """ASGI application callable"""
-        scope['app'] = self
+        scope["app"] = self
         if scope["type"] == "lifespan":
             await self.handle_lifespan(receive, send)
         elif scope["type"] == "http":
             await self.handle_http_request()(scope, receive, send)
 
         else:
-            
+
             await self.handle_websocket(scope, receive, send)
 
-   
-   
-   
     def get(
         self,
         path: Annotated[
             str,
-            Doc("The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax.")
+            Doc(
+                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
+            ),
         ],
-        name: Annotated[
-            Optional[str],
-            Doc("A unique name for the route.")
-        ] = None,
-        middlewares : Annotated[
+        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
+        middlewares: Annotated[
             List[Any],
-            Doc("Optional Middleware that should be executed before the route handler")
-         ] = [],
+            Doc("Optional Middleware that should be executed before the route handler"),
+        ] = [],
         **kwargs: Annotated[
-            Dict[str, Any],
-            Doc("Additional arguments to pass to the Routes class.")
-        ]
+            Dict[str, Any], Doc("Additional arguments to pass to the Routes class.")
+        ],
     ) -> Callable[..., Any]:
         """
         Registers a GET route.
 
-        This decorator allows you to define an endpoint that handles HTTP GET requests. 
+        This decorator allows you to define an endpoint that handles HTTP GET requests.
         GET requests are typically used for retrieving resources.
 
         Args:
@@ -463,37 +462,35 @@ class NexiosApp(object):
                 return response.json({"users": ["Alice", "Bob"]})
             ```
         """
-        return self.route(path=f"{path}", 
-                           methods=["GET"], 
-                           name=name,
-                           middlewares = middlewares,
-                            **kwargs)
-
+        return self.route(
+            path=f"{path}",
+            methods=["GET"],
+            name=name,
+            middlewares=middlewares,
+            **kwargs,
+        )
 
     def post(
         self,
         path: Annotated[
             str,
-            Doc("The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax.")
+            Doc(
+                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
+            ),
         ],
-        name: Annotated[
-            Optional[str],
-            Doc("A unique name for the route.")
-        ] = None,
-        middlewares : Annotated[
+        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
+        middlewares: Annotated[
             List[Any],
-            Doc("Optional Middleware that should be executed before the route handler")
+            Doc("Optional Middleware that should be executed before the route handler"),
         ] = [],
-       
         **kwargs: Annotated[
-            Dict[str, Any],
-            Doc("Additional arguments to pass to the Routes class.")
-        ]
+            Dict[str, Any], Doc("Additional arguments to pass to the Routes class.")
+        ],
     ) -> Callable[..., Any]:
         """
         Registers a POST route.
 
-        This decorator is used to define an endpoint that handles HTTP POST requests, 
+        This decorator is used to define an endpoint that handles HTTP POST requests,
         typically for creating resources.
 
         Args:
@@ -510,37 +507,35 @@ class NexiosApp(object):
                 return response.json({"message": "User created"})
             ```
         """
-        return self.route(path=f"{path}", 
-                           methods=["POST"], 
-                           name=name,
-                           middlewares = middlewares,
-                            **kwargs)
-
+        return self.route(
+            path=f"{path}",
+            methods=["POST"],
+            name=name,
+            middlewares=middlewares,
+            **kwargs,
+        )
 
     def delete(
         self,
         path: Annotated[
             str,
-            Doc("The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax.")
+            Doc(
+                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
+            ),
         ],
-        name: Annotated[
-            Optional[str],
-            Doc("A unique name for the route.")
-        ] = None,
-        middlewares : Annotated[
+        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
+        middlewares: Annotated[
             List[Any],
-            Doc("Optional Middleware that should be executed before the route handler")
+            Doc("Optional Middleware that should be executed before the route handler"),
         ] = [],
-       
         **kwargs: Annotated[
-            Dict[str, Any],
-            Doc("Additional arguments to pass to the Routes class.")
-        ]
+            Dict[str, Any], Doc("Additional arguments to pass to the Routes class.")
+        ],
     ) -> Callable[..., Any]:
         """
         Registers a DELETE route.
 
-        This decorator allows defining an endpoint that handles HTTP DELETE requests, 
+        This decorator allows defining an endpoint that handles HTTP DELETE requests,
         typically for deleting resources.
 
         Args:
@@ -558,36 +553,35 @@ class NexiosApp(object):
                 return responsejson({"message": f"User {user_id} deleted"})
             ```
         """
-        return self.route(path=f"{path}", 
-                           methods=["DELETE"],                      
-                           name=name,
-                           middlewares = middlewares,
-                            **kwargs)
-
+        return self.route(
+            path=f"{path}",
+            methods=["DELETE"],
+            name=name,
+            middlewares=middlewares,
+            **kwargs,
+        )
 
     def put(
         self,
         path: Annotated[
             str,
-            Doc("The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax.")
+            Doc(
+                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
+            ),
         ],
-        name: Annotated[
-            Optional[str],
-            Doc("A unique name for the route.")
-        ] = None,
-        middlewares : Annotated[
+        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
+        middlewares: Annotated[
             List[Any],
-            Doc("Optional Middleware that should be executed before the route handler")
+            Doc("Optional Middleware that should be executed before the route handler"),
         ] = [],
         **kwargs: Annotated[
-            Dict[str, Any],
-            Doc("Additional arguments to pass to the Routes class.")
-        ]
+            Dict[str, Any], Doc("Additional arguments to pass to the Routes class.")
+        ],
     ) -> Callable[..., Any]:
         """
         Registers a PUT route.
 
-        This decorator defines an endpoint that handles HTTP PUT requests, 
+        This decorator defines an endpoint that handles HTTP PUT requests,
         typically for updating or replacing a resource.
 
         Args:
@@ -604,36 +598,35 @@ class NexiosApp(object):
                 user_id = request.path_params.user_id
                 return responsejson({"message": f"User {user_id} updated"})
         """
-        return self.route(path=f"{path}", 
-                           methods=["PUT"], 
-                           name=name,
-                           middlewares = middlewares,
-                            **kwargs)
+        return self.route(
+            path=f"{path}",
+            methods=["PUT"],
+            name=name,
+            middlewares=middlewares,
+            **kwargs,
+        )
 
     def patch(
         self,
         path: Annotated[
             str,
-            Doc("The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax.")
+            Doc(
+                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
+            ),
         ],
-        name: Annotated[
-            Optional[str],
-            Doc("A unique name for the route.")
-        ] = None,
-        middlewares : Annotated[
+        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
+        middlewares: Annotated[
             List[Any],
-            Doc("Optional Middleware that should be executed before the route handler")
+            Doc("Optional Middleware that should be executed before the route handler"),
         ] = [],
-       
         **kwargs: Annotated[
-            Dict[str, Any],
-            Doc("Additional arguments to pass to the Routes class.")
-        ]
+            Dict[str, Any], Doc("Additional arguments to pass to the Routes class.")
+        ],
     ) -> Callable[..., Any]:
         """
         Registers a PATCH route.
 
-        This decorator defines an endpoint that handles HTTP PATCH requests, 
+        This decorator defines an endpoint that handles HTTP PATCH requests,
         which are used to apply partial modifications to a resource.
 
         Args:
@@ -648,38 +641,38 @@ class NexiosApp(object):
             @app.patch("/users/{user_id}")
             def partial_update_user(request, response):
                 user_id = request.path_params.user_id
-            
+
                 return respoonse.json({"message": f"User {user_id} partially updated"})
             ```
         """
-        return self.route(path=f"{path}", 
-                           methods=["PATCH"], 
-                           name=name,
-                           middlewares = middlewares,
-                            **kwargs)
-
+        return self.route(
+            path=f"{path}",
+            methods=["PATCH"],
+            name=name,
+            middlewares=middlewares,
+            **kwargs,
+        )
 
     def options(
         self,
         path: Annotated[
             str,
-            Doc("The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax.")
+            Doc(
+                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
+            ),
         ],
-        name: Annotated[
-            Optional[str],
-            Doc("A unique name for the route.")
-        ] = None,
-        middlewares : Annotated[
+        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
+        middlewares: Annotated[
             List[Any],
-            Doc("Optional Middleware that should be executed before the route handler")
-        ] = []
+            Doc("Optional Middleware that should be executed before the route handler"),
+        ] = [],
     ) -> Callable[..., Any]:
         """
         Registers an OPTIONS route.
 
-        This decorator defines an endpoint that handles HTTP OPTIONS requests, 
-        which are used to describe the communication options for the target resource. 
-        OPTIONS requests are commonly used in CORS (Cross-Origin Resource Sharing) 
+        This decorator defines an endpoint that handles HTTP OPTIONS requests,
+        which are used to describe the communication options for the target resource.
+        OPTIONS requests are commonly used in CORS (Cross-Origin Resource Sharing)
         to check allowed methods, headers, and authentication rules.
 
         Args:
@@ -698,46 +691,37 @@ class NexiosApp(object):
                 })
             ```
         """
-        return self.route(path=f"{path}", 
-                           methods=["OPTIONS"], 
-                           name=name,
-                           middlewares=middlewares
-                            )
-
-
+        return self.route(
+            path=f"{path}", methods=["OPTIONS"], name=name, middlewares=middlewares
+        )
 
     def head(
         self,
         path: Annotated[
             str,
-            Doc("The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax.")
+            Doc(
+                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
+            ),
         ],
-
-        name: Annotated[
-            Optional[str],
-            Doc("A unique name for the route.")
-        ] = None,
-        middlewares : Annotated[
+        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
+        middlewares: Annotated[
             List[Any],
-            Doc("Optional Middleware that should be executed before the route handler")
+            Doc("Optional Middleware that should be executed before the route handler"),
         ] = [],
         **kwargs: Annotated[
-            Dict[str, Any],
-            Doc("Additional arguments to pass to the Routes class.")
-        ]
+            Dict[str, Any], Doc("Additional arguments to pass to the Routes class.")
+        ],
     ) -> Callable[..., Any]:
-        
-         return self.route(path=f"{path}", 
-                           methods=["HEAD"], 
-                           name=name,
-                           middlewares = [],
-                            **kwargs)
 
-    
+        return self.route(
+            path=f"{path}", methods=["HEAD"], name=name, middlewares=[], **kwargs
+        )
+
     def add_route(
-        self, 
-        route: Annotated[Routes, 
-                         Doc("An instance of the Routes class representing an HTTP route.")]
+        self,
+        route: Annotated[
+            Routes, Doc("An instance of the Routes class representing an HTTP route.")
+        ],
     ) -> None:
         """
         Adds an HTTP route to the application.
@@ -756,51 +740,42 @@ class NexiosApp(object):
             app.add_route(route)
             ```
         """
-        
+
         self.router.add_route(route)
-        
-        
-    
+
     def add_exception_handler(
         self,
         exc_class_or_status_code: Union[typing.Type[Exception], int],
         handler: HandlerType,
     ) -> None:
         self.exceptions_handler.add_exception_handler(exc_class_or_status_code, handler)
-        
-        
 
-    
     def url_for(self, _name: str, **path_params: Any) -> URLPath:
-        return self.router.url_for(_name,**path_params)
-    
-    
-   
-        
+        return self.router.url_for(_name, **path_params)
+
     def wrap_with_middleware(
         self,
         middleware_cls: Annotated[
-            Callable[[ASGIApp],Any],
+            Callable[[ASGIApp], Any],
             Doc(
                 "An ASGI middleware class or callable that takes an app as its first argument and returns an ASGI app"
             ),
-        ]
+        ],
     ) -> None:
         """
         Wraps the entire application with an ASGI middleware.
-        
+
         This method allows adding middleware at the ASGI level, which intercepts all requests
         (HTTP, WebSocket, and Lifespan) before they reach the application.
-        
+
         Args:
             middleware_cls: An ASGI middleware class or callable that follows the ASGI interface
             *args: Additional positional arguments to pass to the middleware
             **kwargs: Additional keyword arguments to pass to the middleware
-            
+
         Returns:
             NexiosApp: The application instance for method chaining
-            
-       
+
+
         """
         self.app = middleware_cls(self.app)
-            

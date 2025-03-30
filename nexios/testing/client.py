@@ -8,6 +8,7 @@ from .transport import NexiosAsyncTransport
 _RequestData = typing.Mapping[str, typing.Union[str, typing.Iterable[str], bytes]]
 from nexios.application import NexiosApp
 
+
 class Client(httpx.AsyncClient):
     def __init__(
         self,
@@ -33,7 +34,7 @@ class Client(httpx.AsyncClient):
             app_state=app_state,
             raise_exceptions=raise_server_exceptions,
             root_path=root_path,
-            client=client
+            client=client,
         )
         super().__init__(
             base_url=base_url,
@@ -92,7 +93,9 @@ class Client(httpx.AsyncClient):
                 last_exception = e
                 retries += 1
                 if self.log_requests:
-                    print(f"Retry {retries}/{self.max_retries} for {method} {url} due to {e}")
+                    print(
+                        f"Retry {retries}/{self.max_retries} for {method} {url} due to {e}"
+                    )
 
         raise last_exception or Exception("Max retries exceeded")
 
@@ -131,9 +134,15 @@ class Client(httpx.AsyncClient):
         params: Union[httpx._types.QueryParamTypes, None] = None,
         headers: Union[httpx._types.HeaderTypes, None] = None,
         cookies: Union[httpx._types.CookieTypes, None] = None,
-        auth: Union[httpx._types.AuthTypes, httpx._client.UseClientDefault] = httpx._client.USE_CLIENT_DEFAULT,
-        follow_redirects: Union[bool, httpx._client.UseClientDefault] = httpx._client.USE_CLIENT_DEFAULT,
-        timeout: Union[httpx._types.TimeoutTypes, httpx._client.UseClientDefault] = httpx._client.USE_CLIENT_DEFAULT,
+        auth: Union[
+            httpx._types.AuthTypes, httpx._client.UseClientDefault
+        ] = httpx._client.USE_CLIENT_DEFAULT,
+        follow_redirects: Union[
+            bool, httpx._client.UseClientDefault
+        ] = httpx._client.USE_CLIENT_DEFAULT,
+        timeout: Union[
+            httpx._types.TimeoutTypes, httpx._client.UseClientDefault
+        ] = httpx._client.USE_CLIENT_DEFAULT,
         extensions: Union[Dict[str, typing.Any], None] = None,
     ) -> httpx.Response:
         return await self.request_with_retries(

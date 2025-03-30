@@ -9,6 +9,7 @@ Message = typing.MutableMapping[str, typing.Any]
 Receive = typing.Callable[[], typing.Awaitable[Message]]
 Send = typing.Callable[[Message], typing.Awaitable[None]]
 
+
 class Address(typing.NamedTuple):
     host: str
     port: int
@@ -25,7 +26,7 @@ class URL:
     def __init__(
         self,
         url: str = "",
-        scope :typing.Optional[Scope] = None,
+        scope: typing.Optional[Scope] = None,
         **components: typing.Any,
     ) -> None:
         if scope is not None:
@@ -107,13 +108,15 @@ class URL:
     @property
     def is_secure(self) -> bool:
         return self.scheme in ("https", "wss")
+
     @property
     def params(self):
         return
 
     @params.setter
-    def params(self,value :str):
+    def params(self, value: str):
         return value
+
     def replace(self, **kwargs: typing.Any) -> "URL":
         if (
             "username" in kwargs
@@ -230,6 +233,7 @@ class Secret:
     def __bool__(self) -> bool:
         return bool(self._value)
 
+
 class ImmutableMultiDict(typing.Mapping[_KeyType, _CovariantValueType]):
     _dict: typing.Dict[_KeyType, _CovariantValueType]
 
@@ -320,7 +324,7 @@ class MultiDict(ImmutableMultiDict[typing.Any, typing.Any]):
         self._list = [(k, v) for k, v in self._list if k != key]
         return self._dict.pop(key, default)
 
-    def popitem(self) -> typing.Tuple[typing.Any,typing.Any]:
+    def popitem(self) -> typing.Tuple[typing.Any, typing.Any]:
         key, value = self._dict.popitem()
         self._list = [(k, v) for k, v in self._list if k != key]
         return key, value
@@ -357,7 +361,7 @@ class MultiDict(ImmutableMultiDict[typing.Any, typing.Any]):
         self,
         *args: typing.Union[
             "MultiDict",
-            typing.Mapping[str,typing.Any],
+            typing.Mapping[str, typing.Any],
             typing.List[typing.Tuple[typing.Any, typing.Any]],
         ],
         **kwargs: typing.Any,
@@ -377,7 +381,7 @@ class QueryParams(ImmutableMultiDict[str, str]):
         self,
         *args: typing.Union[
             "ImmutableMultiDict[str,typing.Any]",
-            typing.Mapping[str,typing.Any],
+            typing.Mapping[str, typing.Any],
             typing.List[typing.Tuple[typing.Any, typing.Any]],
             str,
             bytes,
@@ -407,13 +411,8 @@ class QueryParams(ImmutableMultiDict[str, str]):
         query_string = str(self)
         return f"{class_name}({query_string!r})"
 
-    def __call__(self, *args: Any, **kwds: Any) -> Dict[str,Any]:
+    def __call__(self, *args: Any, **kwds: Any) -> Dict[str, Any]:
         return self._dict
-
-
-
-
-
 
 
 class Headers(typing.Mapping[str, str]):
@@ -459,7 +458,6 @@ class Headers(typing.Mapping[str, str]):
             for key, value in self._list
         ]
 
-
     def getlist(self, key: str) -> typing.List[str]:
         get_header_key = key.lower().encode("latin-1")
         return [
@@ -471,7 +469,7 @@ class Headers(typing.Mapping[str, str]):
     def mutablecopy(self) -> "MutableHeaders":
         return MutableHeaders(raw=self._list[:])
 
-    def __getitem__(self, key: str): #type: ignore[override]
+    def __getitem__(self, key: str):  # type: ignore[override]
         get_header_key = key.lower().encode("latin-1")
         for header_key, header_value in self._list:
             if header_key == get_header_key:
@@ -502,7 +500,6 @@ class Headers(typing.Mapping[str, str]):
         if len(as_dict) == len(self):
             return f"{class_name}({as_dict!r})"
         return f"{class_name}(raw={self.raw!r})"
-
 
 
 class MutableHeaders(Headers):
@@ -543,13 +540,13 @@ class MutableHeaders(Headers):
             del self._list[idx]
 
     def __ior__(self, other: typing.Mapping[str, str]) -> "MutableHeaders":
-        if not isinstance(other, typing.Mapping): #type: ignore
+        if not isinstance(other, typing.Mapping):  # type: ignore
             raise TypeError(f"Expected a mapping but got {other.__class__.__name__}")
         self.update(other)
         return self
 
     def __or__(self, other: typing.Mapping[str, str]) -> "MutableHeaders":
-        if not isinstance(other, typing.Mapping): #type: ignore
+        if not isinstance(other, typing.Mapping):  # type: ignore
             raise TypeError(f"Expected a mapping but got {other.__class__.__name__}")
         new = self.mutablecopy()
         new.update(other)
@@ -613,20 +610,14 @@ class State:
         try:
             return self._state[key]
         except KeyError:
-           return None
+            return None
 
     def __delattr__(self, key: typing.Any) -> None:
         del self._state[key]
-        
-    
-
-
-
-
-
 
 
 from typing import Any, Dict, Iterator, ItemsView, KeysView, ValuesView
+
 
 class RouteParam:
     def __init__(self, data: Dict[str, Any]) -> None:
@@ -676,18 +667,17 @@ class RouteParam:
         """Return the number of items in the dictionary."""
         return len(self.data)
 
-    def __call__(self, *args: Any, **kwds: Any) ->  Dict[str, Any]:
+    def __call__(self, *args: Any, **kwds: Any) -> Dict[str, Any]:
         return self.data
-    
-    def get(self, key :str):
+
+    def get(self, key: str):
         return self.data.get(key)
-    
-    def __dict__(self) -> Dict[str, Any]: #type:ignore
+
+    def __dict__(self) -> Dict[str, Any]:  # type:ignore
         return self.data
 
 
 class UploadedFile:
-
     """
     An uploaded file included as part of the request data.
     """
@@ -754,8 +744,12 @@ class FormData(ImmutableMultiDict[str, typing.Union[UploadedFile, str]]):
 
     def __init__(
         self,
-        *args: typing.Union[FormData , typing.Mapping[str, typing.Union[str , UploadedFile]] , list[tuple[str, typing.Union[str , UploadedFile]]]],
-        **kwargs: typing.Union[str , UploadedFile],
+        *args: typing.Union[
+            FormData,
+            typing.Mapping[str, typing.Union[str, UploadedFile]],
+            list[tuple[str, typing.Union[str, UploadedFile]]],
+        ],
+        **kwargs: typing.Union[str, UploadedFile],
     ) -> None:
         super().__init__(*args, **kwargs)
 

@@ -1,4 +1,4 @@
-from datetime import  datetime,timezone
+from datetime import datetime, timezone
 from enum import Enum
 from dataclasses import dataclass
 import uuid
@@ -31,6 +31,6 @@ class PayloadTypeEnum(Enum):
 
 @dataclass
 class ChannelMessageDC:
-    payload: typing.Union[str,bytes]
+    payload: typing.Union[str, bytes]
     uuid: UUID = uuid.uuid4()
     created: datetime = datetime.now(tz=timezone.utc)

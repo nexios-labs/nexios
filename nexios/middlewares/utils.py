@@ -1,8 +1,10 @@
-from typing import Callable,Awaitable,Any
-from nexios.http import Request,Response
+from typing import Callable, Awaitable, Any
+from nexios.http import Request, Response
 from nexios.types import HandlerType
 import re
 from functools import wraps
+
+
 def use_for_route(route: str) -> None:
     if route.endswith("/*"):
         route = route[:-2]
@@ -16,9 +18,9 @@ def use_for_route(route: str) -> None:
             request: Request,
             response: Response,
             call_next: Callable[..., Awaitable[Response]],
-        )->Any:
+        ) -> Any:
             if re.match(route, request.url.path):
-                return await func(request, response, call_next) #type:ignore
+                return await func(request, response, call_next)  # type:ignore
             else:
                 return await call_next()
 
@@ -28,9 +30,9 @@ def use_for_route(route: str) -> None:
             request: Request,
             response: Response,
             call_next: Callable[..., Awaitable[Response]],
-        )->Any:
+        ) -> Any:
             if re.match(route, request.url.path):
-                return await func(self, request, response, call_next) #type:ignore
+                return await func(self, request, response, call_next)  # type:ignore
             else:
                 return await call_next()
 

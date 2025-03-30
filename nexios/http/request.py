@@ -4,23 +4,28 @@ import json
 import typing
 from http import cookies as http_cookies
 
-import anyio #type:ignore
+import anyio  # type:ignore
 
-from nexios._utils.async_helpers import AwaitableOrContextManager, AwaitableOrContextManagerWrapper
+from nexios._utils.async_helpers import (
+    AwaitableOrContextManager,
+    AwaitableOrContextManagerWrapper,
+)
 from nexios.structs import URL, Address, FormData, Headers, QueryParams, State
 from .formparsers import FormParser, MultiPartException, MultiPartParser
 
 try:
-    from multipart.multipart import parse_options_header  #type:ignore
+    from multipart.multipart import parse_options_header  # type:ignore
 
 except ImportError:
-    parse_options_header =  None
+    parse_options_header = None
 Scope = typing.MutableMapping[str, typing.Any]
 Message = typing.MutableMapping[str, typing.Any]
 
 Receive = typing.Callable[[], typing.Awaitable[Message]]
 Send = typing.Callable[[Message], typing.Awaitable[None]]
-JSONType = typing.Union[str, int, float, bool, None, typing.Dict[str, typing.Any], typing.List[typing.Any]]
+JSONType = typing.Union[
+    str, int, float, bool, None, typing.Dict[str, typing.Any], typing.List[typing.Any]
+]
 
 SERVER_PUSH_HEADERS_TO_COPY = {
     "accept",
@@ -54,7 +59,7 @@ def cookie_parser(cookie_string: str) -> dict[str, str]:
         key, val = key.strip(), val.strip()
         if key or val:
             # unquote using Python's algorithm.
-            cookie_dict[key] = http_cookies._unquote(val) #type:ignore
+            cookie_dict[key] = http_cookies._unquote(val)  # type:ignore
     return cookie_dict
 
 
@@ -68,7 +73,7 @@ class HTTPConnection(object):
     any functionality that is common to both `Request` and `WebSocket`.
     """
 
-    def __init__(self, scope :Scope, receive :Receive) -> None:
+    def __init__(self, scope: Scope, receive: Receive) -> None:
         assert scope["type"] in ("http", "websocket")
         self.scope = scope
 
@@ -80,7 +85,6 @@ class HTTPConnection(object):
 
     def __len__(self) -> int:
         return len(self.scope)
-
 
     __eq__ = object.__eq__
     __hash__ = object.__hash__
@@ -99,7 +103,9 @@ class HTTPConnection(object):
     def base_url(self) -> URL:
         if not hasattr(self, "_base_url"):
             base_url_scope = dict(self.scope)
-            app_root_path = base_url_scope.get("app_root_path", base_url_scope.get("root_path", ""))
+            app_root_path = base_url_scope.get(
+                "app_root_path", base_url_scope.get("root_path", "")
+            )
             path = app_root_path
             if not path.endswith("/"):
                 path += "/"
@@ -118,11 +124,13 @@ class HTTPConnection(object):
     @property
     def path(self) -> str:
         return self.url.path
+
     @property
     def query_params(self) -> QueryParams:
         if not hasattr(self, "_query_params"):  # pragma: no branch
             self._query_params = QueryParams(self.scope["query_string"])
         return self._query_params
+
     @property
     def path_params(self) -> dict[str, typing.Any]:
         return self.scope.get("route_params", {})
@@ -139,15 +147,11 @@ class HTTPConnection(object):
         return self._cookies
 
     @property
-    def client(self) -> typing.Union[Address,None ]:
+    def client(self) -> typing.Union[Address, None]:
         host_port = self.scope.get("client")
         if host_port is not None:
             return Address(*host_port)
         return None
-
-
-
-
 
     @property
     def state(self) -> State:
@@ -159,8 +163,6 @@ class HTTPConnection(object):
             self._state = State(self.scope["state"])
         return self._state
 
-
-
     @property
     def origin(self):
         return self.headers.get("origin")
@@ -170,7 +172,9 @@ class HTTPConnection(object):
         """Returns the User-Agent header if available."""
         return self.headers.get("user-agent", "")
 
-    def build_absolute_uri(self, path: str = "", query_params: typing.Optional[dict[str, str]]  = None) -> str:
+    def build_absolute_uri(
+        self, path: str = "", query_params: typing.Optional[dict[str, str]] = None
+    ) -> str:
         """
         Builds an absolute URI using the base URL and the provided path.
 
@@ -187,32 +191,34 @@ class HTTPConnection(object):
 
         if query_params:
             from urllib.parse import urlencode
+
             query_string = urlencode(query_params)
             uri = f"{uri}?{query_string}"
 
         return uri
 
 
-
 async def empty_receive() -> typing.NoReturn:
     raise RuntimeError("Receive channel has not been made available")
 
 
-async def empty_send(message :Message) -> typing.NoReturn:
+async def empty_send(message: Message) -> typing.NoReturn:
     raise RuntimeError("Send channel has not been made available")
 
 
 class Request(HTTPConnection):
-    _form: typing.Union[FormData , None , typing.Dict[str,typing.Any]] #type: ignore
+    _form: typing.Union[FormData, None, typing.Dict[str, typing.Any]]  # type: ignore
 
-    def __init__(self, scope :Scope, receive :Receive = empty_receive, send :Send = empty_send):
-        super().__init__(scope,receive)
+    def __init__(
+        self, scope: Scope, receive: Receive = empty_receive, send: Send = empty_send
+    ):
+        super().__init__(scope, receive)
         assert scope["type"] == "http"
         self._receive = receive
         self._send = send
         self._stream_consumed = False
         self._is_disconnected = False
-        self._form = None  #type: ignore
+        self._form = None  # type: ignore
 
     @property
     def method(self) -> str:
@@ -221,12 +227,14 @@ class Request(HTTPConnection):
     @property
     def receive(self):
         return self._receive
+
     @property
     def content_type(self) -> typing.Optional[str]:
         content_type_header = self.headers.get("Content-Type")
         content_type: str
-        content_type, _ = parse_options_header(content_type_header) #type:ignore
-        return content_type #type:ignore
+        content_type, _ = parse_options_header(content_type_header)  # type:ignore
+        return content_type  # type:ignore
+
     async def stream(self) -> typing.AsyncGenerator[bytes, None]:
         if hasattr(self, "_body"):
             yield self._body
@@ -256,7 +264,7 @@ class Request(HTTPConnection):
         return self._body
 
     @property
-    async def json(self) -> typing.Union[JSONType , dict[str,typing.Any]]:
+    async def json(self) -> typing.Union[JSONType, dict[str, typing.Any]]:
 
         if not hasattr(self, "_json"):
             _body = await self.body()
@@ -265,19 +273,24 @@ class Request(HTTPConnection):
             except UnicodeDecodeError:
                 return {}
             try:
-                self._json :JSONType = json.loads(body)
+                self._json: JSONType = json.loads(body)
             except json.JSONDecodeError:
                 self._json = {}
         return self._json
 
-    async def _get_form(self, *, max_files: typing.Union[int,float] = 1000, max_fields: typing.Union[int , float] = 1000) -> FormData:
+    async def _get_form(
+        self,
+        *,
+        max_files: typing.Union[int, float] = 1000,
+        max_fields: typing.Union[int, float] = 1000,
+    ) -> FormData:
         if self._form is None:
             assert (
                 parse_options_header is not None
             ), "The `python-multipart` library must be installed to use form parsing."
             content_type_header = self.headers.get("Content-Type")
             content_type: bytes
-            content_type, _ = parse_options_header(content_type_header) #type:ignore
+            content_type, _ = parse_options_header(content_type_header)  # type:ignore
             if content_type == b"multipart/form-data":
                 try:
                     multipart_parser = MultiPartParser(
@@ -288,31 +301,37 @@ class Request(HTTPConnection):
                     )
                     self._form = await multipart_parser.parse()
                 except MultiPartException as _:
-                    self._form = {}  #type: ignore
+                    self._form = {}  # type: ignore
             elif content_type == b"application/x-www-form-urlencoded":
                 form_parser = FormParser(self.headers, self.stream())
                 self._form = await form_parser.parse()
             else:
-                self._form :FormData = FormData()
-        return self._form #type:ignore
+                self._form: FormData = FormData()
+        return self._form  # type:ignore
+
     @property
     def form_data(
-        self, *, max_files: typing.Union[int , float] = 1000, max_fields: typing.Union[int , float] = 1000
+        self,
+        *,
+        max_files: typing.Union[int, float] = 1000,
+        max_fields: typing.Union[int, float] = 1000,
     ) -> AwaitableOrContextManager[FormData]:
-        return AwaitableOrContextManagerWrapper(self._get_form(max_files=max_files, max_fields=max_fields))
+        return AwaitableOrContextManagerWrapper(
+            self._get_form(max_files=max_files, max_fields=max_fields)
+        )
 
     async def close(self) -> None:
         if self._form is not None:  # pragma: no branch
-            await self._form.close() #type:ignore
+            await self._form.close()  # type:ignore
 
     async def is_disconnected(self) -> bool:
         if not self._is_disconnected:
-            message:typing.Dict[str,typing.Any] = {}
+            message: typing.Dict[str, typing.Any] = {}
 
             # If message isn't immediately available, move on
-            with anyio.CancelScope() as cs:  #type: ignore
-                cs.cancel()  #type: ignore
-                message = await self._receive() #type:ignore
+            with anyio.CancelScope() as cs:  # type: ignore
+                cs.cancel()  # type: ignore
+                message = await self._receive()  # type:ignore
 
             if message.get("type") == "http.disconnect":
                 self._is_disconnected = True
@@ -324,26 +343,28 @@ class Request(HTTPConnection):
             raw_headers: list[tuple[bytes, bytes]] = []
             for name in SERVER_PUSH_HEADERS_TO_COPY:
                 for value in self.headers.getlist(name):
-                    raw_headers.append((name.encode("latin-1"), value.encode("latin-1")))
-            await self._send({"type": "http.response.push", "path": path, "headers": raw_headers})
-
-
+                    raw_headers.append(
+                        (name.encode("latin-1"), value.encode("latin-1"))
+                    )
+            await self._send(
+                {"type": "http.response.push", "path": path, "headers": raw_headers}
+            )
 
     @property
     async def files(self) -> typing.Dict[str, typing.Any]:
         """
         This method returns a dictionary of files from the form_data.
         """
-        form_data :FormData = await self.form_data
+        form_data: FormData = await self.form_data
         files_dict = {}
         for key, value in form_data.items():
             if isinstance(value, (list, tuple)):
-                for item in value:  #type: ignore
-                    if hasattr(item, 'filename'):  #type: ignore
+                for item in value:  # type: ignore
+                    if hasattr(item, "filename"):  # type: ignore
                         files_dict[key] = item
-            elif hasattr(value, 'filename'):
+            elif hasattr(value, "filename"):
                 files_dict[key] = value
-        return files_dict  #type: ignore
+        return files_dict  # type: ignore
 
     @property
     async def text(self) -> str:
@@ -358,15 +379,24 @@ class Request(HTTPConnection):
         """
         Checks if the request is valid by ensuring the method and headers are properly set.
         """
-        return self.method in {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"} and bool(self.headers)
+        return self.method in {
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE",
+            "PATCH",
+            "HEAD",
+            "OPTIONS",
+        } and bool(self.headers)
 
     @property
     def session(self):
-        return self.scope['session']
+        return self.scope["session"]
 
     @property
     def user(self):
-        return self.scope.get("user",None)
+        return self.scope.get("user", None)
+
     @user.setter
-    def user(self, value :str):
-        self.scope['user'] = value
+    def user(self, value: str):
+        self.scope["user"] = value

@@ -12,6 +12,7 @@ import typing
 import uuid
 import re
 from nexios.types import Scope
+
 T = typing.TypeVar("T")
 
 
@@ -83,8 +84,10 @@ class UUIDConvertor(Convertor[uuid.UUID]):
     def to_string(self, value: uuid.UUID) -> str:
         return str(value)
 
+
 class SlugConvertor(Convertor[str]):
     """Converter for slugs (URL-friendly strings)."""
+
     regex = r"[a-z0-9]+(?:-[a-z0-9]+)*"
 
     def convert(self, value: str) -> str:
@@ -96,7 +99,7 @@ class SlugConvertor(Convertor[str]):
         if not re.fullmatch(self.regex, value):
             raise ValueError(f"Invalid slug format: {value}")
         return value
-  
+
 
 CONVERTOR_TYPES: dict[str, Convertor[typing.Any]] = {
     "str": StringConvertor(),
@@ -104,7 +107,7 @@ CONVERTOR_TYPES: dict[str, Convertor[typing.Any]] = {
     "int": IntegerConvertor(),
     "float": FloatConvertor(),
     "uuid": UUIDConvertor(),
-    "slug" :SlugConvertor(),
+    "slug": SlugConvertor(),
 }
 
 

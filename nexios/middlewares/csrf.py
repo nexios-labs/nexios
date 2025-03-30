@@ -1,13 +1,15 @@
-import secrets,re,typing
+import secrets, re, typing
 from nexios.config import get_config
-from itsdangerous import URLSafeSerializer, BadSignature #type:ignore
+from itsdangerous import URLSafeSerializer, BadSignature  # type:ignore
 from nexios.middlewares.base import BaseMiddleware
 from nexios.http import Request, Response
+
 
 class CSRFMiddleware(BaseMiddleware):
     """
     Middleware to protect against Cross-Site Request Forgery (CSRF) attacks for Nexios.
     """
+
     def __init__(self) -> None:
         app_config = get_config()
         self.use_csrf = app_config.csrf_enabled or False
@@ -15,20 +17,34 @@ class CSRFMiddleware(BaseMiddleware):
             assert app_config.secret_key != None
         if not self.use_csrf:
             return
-        self.serializer = URLSafeSerializer(app_config.secret_key, "csrftoken")   #type:ignore
-        self.required_urls :typing.List[str]= app_config.csrf_required_urls or []
+        self.serializer = URLSafeSerializer(
+            app_config.secret_key, "csrftoken"
+        )  # type:ignore
+        self.required_urls: typing.List[str] = app_config.csrf_required_urls or []
         self.exempt_urls = app_config.csrf_exempt_urls
         self.sensitive_cookies = app_config.csrf_sensitive_cookies
-        self.safe_methods = app_config.csrf_safe_methods or {"GET", "HEAD", "OPTIONS", "TRACE"}
+        self.safe_methods = app_config.csrf_safe_methods or {
+            "GET",
+            "HEAD",
+            "OPTIONS",
+            "TRACE",
+        }
         self.cookie_name = app_config.csrf_cookie_name or "csrftoken"
         self.cookie_path = app_config.csrf_cookie_path or "/"
         self.cookie_domain = app_config.csrf_cookie_domain
-        self.cookie_secure =   app_config.csrf_cookie_secure or False
+        self.cookie_secure = app_config.csrf_cookie_secure or False
         self.cookie_httponly = app_config.csrf_cookie_httponly or True
-        self.cookie_samesite :typing.Literal["lax","none","strict"]= app_config.csrf_cookie_samesite or "lax"
+        self.cookie_samesite: typing.Literal["lax", "none", "strict"] = (
+            app_config.csrf_cookie_samesite or "lax"
+        )
         self.header_name = app_config.csrf_header_name or "X-CSRFToken"
 
-    async def process_request(self, request: Request, response: Response, call_next : typing.Callable[..., typing.Awaitable[typing.Any]]):
+    async def process_request(
+        self,
+        request: Request,
+        response: Response,
+        call_next: typing.Callable[..., typing.Awaitable[typing.Any]],
+    ):
         """
         Process the incoming request to validate the CSRF token for unsafe HTTP methods.
         """
@@ -74,7 +90,7 @@ class CSRFMiddleware(BaseMiddleware):
             samesite=self.cookie_samesite,
         )
 
-    def _has_sensitive_cookies(self, cookies: typing.Dict[str,typing.Any]) -> bool:
+    def _has_sensitive_cookies(self, cookies: typing.Dict[str, typing.Any]) -> bool:
         """Check if the request contains sensitive cookies."""
         if not self.sensitive_cookies:
             return True
@@ -107,15 +123,15 @@ class CSRFMiddleware(BaseMiddleware):
                 return True
         return False
 
-    def _generate_csrf_token(self) -> str: #type:ignore
+    def _generate_csrf_token(self) -> str:  # type:ignore
         """Generate a secure CSRF token."""
-        return self.serializer.dumps(secrets.token_urlsafe(32))  #type:ignore
+        return self.serializer.dumps(secrets.token_urlsafe(32))  # type:ignore
 
     def _csrf_tokens_match(self, token1: str, token2: str) -> bool:
         """Compare two CSRF tokens securely."""
         try:
-            decoded1 = self.serializer.loads(token1) #type:ignore
-            decoded2 = self.serializer.loads(token2)  #type:ignore
-            return secrets.compare_digest(decoded1, decoded2) #type:ignore
+            decoded1 = self.serializer.loads(token1)  # type:ignore
+            decoded2 = self.serializer.loads(token2)  # type:ignore
+            return secrets.compare_digest(decoded1, decoded2)  # type:ignore
         except BadSignature:
             return False

@@ -3,11 +3,13 @@ import json
 import typing
 from typing import AsyncIterator, Iterable, Optional
 from nexios.http.request import HTTPConnection
+
 Scope = typing.MutableMapping[str, typing.Any]
 Message = typing.MutableMapping[str, typing.Any]
 
 Receive = typing.Callable[[], typing.Awaitable[Message]]
 Send = typing.Callable[[Message], typing.Awaitable[None]]
+
 
 class WebSocketState(enum.Enum):
     CONNECTING = 0
@@ -24,7 +26,7 @@ class WebSocketDisconnect(Exception):
 
 class WebSocket(HTTPConnection):
     def __init__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        super().__init__(scope,receive)
+        super().__init__(scope, receive)
         assert scope["type"] == "websocket"
         self._receive = receive
         self._send = send
@@ -39,7 +41,9 @@ class WebSocket(HTTPConnection):
             message = await self._receive()
             message_type = message["type"]
             if message_type != "websocket.connect":
-                raise RuntimeError(f'Expected ASGI message "websocket.connect", but got {message_type!r}')
+                raise RuntimeError(
+                    f'Expected ASGI message "websocket.connect", but got {message_type!r}'
+                )
             self.client_state = WebSocketState.CONNECTED
             return message
         elif self.client_state == WebSocketState.CONNECTED:
@@ -53,7 +57,9 @@ class WebSocket(HTTPConnection):
                 self.client_state = WebSocketState.DISCONNECTED
             return message
         else:
-            raise RuntimeError('Cannot call "receive" once a disconnect message has been received.')
+            raise RuntimeError(
+                'Cannot call "receive" once a disconnect message has been received.'
+            )
 
     async def send(self, message: Message) -> None:
         """
@@ -61,7 +67,11 @@ class WebSocket(HTTPConnection):
         """
         if self.application_state == WebSocketState.CONNECTING:
             message_type = message["type"]
-            if message_type not in {"websocket.accept", "websocket.close", "websocket.http.response.start"}:
+            if message_type not in {
+                "websocket.accept",
+                "websocket.close",
+                "websocket.http.response.start",
+            }:
                 raise RuntimeError(
                     'Expected ASGI message "websocket.accept", "websocket.close" or "websocket.http.response.start", '
                     f"but got {message_type!r}"
@@ -89,7 +99,9 @@ class WebSocket(HTTPConnection):
         elif self.application_state == WebSocketState.RESPONSE:
             message_type = message["type"]
             if message_type != "websocket.http.response.body":
-                raise RuntimeError(f'Expected ASGI message "websocket.http.response.body", but got {message_type!r}')
+                raise RuntimeError(
+                    f'Expected ASGI message "websocket.http.response.body", but got {message_type!r}'
+                )
             if not message.get("more_body", False):
                 self.application_state = WebSocketState.DISCONNECTED
             await self._send(message)
@@ -106,7 +118,9 @@ class WebSocket(HTTPConnection):
         if self.client_state == WebSocketState.CONNECTING:
             # If we haven't yet seen the 'connect' message, then wait for it first.
             await self.receive()
-        await self.send({"type": "websocket.accept", "subprotocol": subprotocol, "headers": headers})
+        await self.send(
+            {"type": "websocket.accept", "subprotocol": subprotocol, "headers": headers}
+        )
 
     def _raise_on_disconnect(self, message: Message) -> None:
         if message["type"] == "websocket.disconnect":
@@ -114,14 +128,18 @@ class WebSocket(HTTPConnection):
 
     async def receive_text(self) -> str:
         if self.application_state != WebSocketState.CONNECTED:
-            raise RuntimeError('WebSocket is not connected. Need to call "accept" first.')
+            raise RuntimeError(
+                'WebSocket is not connected. Need to call "accept" first.'
+            )
         message = await self.receive()
         self._raise_on_disconnect(message)
         return typing.cast(str, message["text"])
 
     async def receive_bytes(self) -> bytes:
         if self.application_state != WebSocketState.CONNECTED:
-            raise RuntimeError('WebSocket is not connected. Need to call "accept" first.')
+            raise RuntimeError(
+                'WebSocket is not connected. Need to call "accept" first.'
+            )
         message = await self.receive()
         self._raise_on_disconnect(message)
         return typing.cast(bytes, message["bytes"])
@@ -130,7 +148,9 @@ class WebSocket(HTTPConnection):
         if mode not in {"text", "binary"}:
             raise RuntimeError('The "mode" argument should be "text" or "binary".')
         if self.application_state != WebSocketState.CONNECTED:
-            raise RuntimeError('WebSocket is not connected. Need to call "accept" first.')
+            raise RuntimeError(
+                'WebSocket is not connected. Need to call "accept" first.'
+            )
         message = await self.receive()
         self._raise_on_disconnect(message)
 
@@ -138,7 +158,7 @@ class WebSocket(HTTPConnection):
             text = message["text"]
         else:
             text = message["bytes"].decode("utf-8")
-        
+
         return json.loads(text)
 
     async def iter_text(self) -> AsyncIterator[str]:
@@ -178,10 +198,12 @@ class WebSocket(HTTPConnection):
             await self.send({"type": "websocket.send", "bytes": text.encode("utf-8")})
 
     async def close(self, code: int = 1000, reason: Optional[str] = None) -> None:
-        await self.send({"type": "websocket.close", "code": code, "reason": reason or ""})
-        
-    def is_connected(self) -> bool:
-        return self.client_state == WebSocketState.CONNECTED and self.application_state == WebSocketState.CONNECTED
+        await self.send(
+            {"type": "websocket.close", "code": code, "reason": reason or ""}
+        )
 
-        
-    
+    def is_connected(self) -> bool:
+        return (
+            self.client_state == WebSocketState.CONNECTED
+            and self.application_state == WebSocketState.CONNECTED
+        )

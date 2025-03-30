@@ -48,7 +48,7 @@ class AuthenticationMiddleware(BaseMiddleware):
                 "The HTTP response object, which may be modified during authentication."
             ),
         ],
-        call_next :  typing.Callable[..., typing.Awaitable[typing.Any]]
+        call_next: typing.Callable[..., typing.Awaitable[typing.Any]],
     ) -> None:
         """
         Processes an incoming request by authenticating the user.
@@ -67,18 +67,22 @@ class AuthenticationMiddleware(BaseMiddleware):
 
         """
         if not inspect.iscoroutinefunction(self.backend.authenticate):
-            user: typing.Tuple[BaseUser,str] = self.backend.authenticate(request, response)  # type:ignore
+            user: typing.Tuple[BaseUser, str] = self.backend.authenticate(
+                request, response
+            )  # type:ignore
         else:
-            user: typing.Tuple[BaseUser,str] = await self.backend.authenticate(request, response)  # type:ignore
+            user: typing.Tuple[BaseUser, str] = await self.backend.authenticate(
+                request, response
+            )  # type:ignore
 
         if user is None:  # type:ignore
             request.scope["user"] = UnauthenticatedUser()
             request.scope["auth"] = "no-auth"
             await call_next()
-            
+
             return
 
         request.scope["user"] = user[0]
         request.scope["auth"] = user[-1]
-        
+
         await call_next()

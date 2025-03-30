@@ -14,6 +14,8 @@ import typing
 from nexios.websockets import WebSocket
 
 logging = nexios_logger.getLogger("nexios")
+
+
 class Channel:
     def __init__(
         self,
@@ -58,6 +60,7 @@ class Channel:
             logging.debug(error)
 
         self.created = time.time()
+
     async def _is_expired(self) -> bool:
         if not self.expires:
             return False
@@ -68,8 +71,10 @@ class Channel:
 
 
 class ChannelBox:
-    CHANNEL_GROUPS: typing.Dict[str,typing.Any] = {}  # groups of channels ~ key: group_name, val: dict of channels
-    CHANNEL_GROUPS_HISTORY: typing.Dict[str,typing.Any] = {}  # history messages
+    CHANNEL_GROUPS: typing.Dict[str, typing.Any] = (
+        {}
+    )  # groups of channels ~ key: group_name, val: dict of channels
+    CHANNEL_GROUPS_HISTORY: typing.Dict[str, typing.Any] = {}  # history messages
     HISTORY_SIZE: int = int(os.getenv("CHANNEL_BOX_HISTORY_SIZE", 1_048_576))
 
     @classmethod
@@ -108,7 +113,7 @@ class ChannelBox:
             channel (Channel): Instance of Channel class
             group_name (str): Group name
         """
-        channel_remove_status :typing.Any = None
+        channel_remove_status: typing.Any = None
         if channel in cls.CHANNEL_GROUPS.get(group_name, {}):
             try:
                 del cls.CHANNEL_GROUPS[group_name][channel]
@@ -130,7 +135,7 @@ class ChannelBox:
     async def group_send(
         cls,
         group_name: str = "default",
-        payload: typing.Union[typing.Dict[str,typing.Any] ,str,bytes] = {},
+        payload: typing.Union[typing.Dict[str, typing.Any], str, bytes] = {},
         save_history: bool = False,
     ) -> GroupSendStatusEnum:
         """Send payload to all channels connected to group.
@@ -147,7 +152,7 @@ class ChannelBox:
             cls.CHANNEL_GROUPS_HISTORY.setdefault(group_name, [])
             cls.CHANNEL_GROUPS_HISTORY[group_name].append(
                 ChannelMessageDC(
-                    payload=payload, #type:ignore
+                    payload=payload,  # type:ignore
                 )
             )
             if sys.getsizeof(cls.CHANNEL_GROUPS_HISTORY[group_name]) > cls.HISTORY_SIZE:
@@ -161,7 +166,7 @@ class ChannelBox:
         return group_send_status
 
     @classmethod
-    async def show_groups(cls) -> typing.Dict[str,typing.Any]:
+    async def show_groups(cls) -> typing.Dict[str, typing.Any]:
         return cls.CHANNEL_GROUPS
 
     @classmethod
@@ -172,7 +177,7 @@ class ChannelBox:
     async def show_history(
         cls,
         group_name: str = "",
-    ) -> typing.Dict[str,typing.Any]:
+    ) -> typing.Dict[str, typing.Any]:
         return (
             cls.CHANNEL_GROUPS_HISTORY.get(group_name, {})
             if group_name
@@ -199,18 +204,25 @@ class ChannelBox:
                     del cls.CHANNEL_GROUPS[group_name]
                 except KeyError:
                     logging.debug("No such group")
+
     @classmethod
     async def close_all_connections(cls) -> None:
         """
         Close all WebSocket connections in all groups.
         """
         for group_name, channels in cls.CHANNEL_GROUPS.items():
-            for channel in list(channels.keys()):  # Use list() to avoid RuntimeError due to dict size change
+            for channel in list(
+                channels.keys()
+            ):  # Use list() to avoid RuntimeError due to dict size change
                 try:
                     await channel.websocket.close()
-                    logging.debug(f"Closed connection for channel {channel.uuid} in group {group_name}")
+                    logging.debug(
+                        f"Closed connection for channel {channel.uuid} in group {group_name}"
+                    )
                 except Exception as e:
-                    logging.error(f"Failed to close connection for channel {channel.uuid}: {e}")
+                    logging.error(
+                        f"Failed to close connection for channel {channel.uuid}: {e}"
+                    )
 
         cls.CHANNEL_GROUPS = {}
         logging.debug("All connections closed and groups cleared.")

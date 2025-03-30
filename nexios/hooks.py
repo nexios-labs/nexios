@@ -1,4 +1,3 @@
-
 from functools import wraps, lru_cache
 import asyncio
 import time
@@ -77,8 +76,8 @@ def after_request(
                 return response
             if log_level:
                 logger.info(
-                    f"[{log_level}] After Request: {req.method} {req.url} - Status: {response._status_code}" #type:ignore
-                )  
+                    f"[{log_level}] After Request: {req.method} {req.url} - Status: {response._status_code}"  # type:ignore
+                )
             if func:
                 await func(req, response)
             return response
@@ -101,7 +100,7 @@ def analytics(func: HandlerType) -> HandlerType:
         response = await func(*args, **kwargs)
         elapsed_time = time.time() - start_time
         logger.info(
-            f"Analytics: {req.method} {req.url} - {response._status_code} in {elapsed_time:.2f}s" #type:ignore
+            f"Analytics: {req.method} {req.url} - {response._status_code} in {elapsed_time:.2f}s"  # type:ignore
         )  # type:ignore
         return response
 
@@ -118,7 +117,6 @@ def cache_response(max_size: int = 128):
         return cached_func
 
     return decorator
-
 
 
 def request_timeout(timeout: int):
@@ -140,5 +138,3 @@ def request_timeout(timeout: int):
         return wrapper
 
     return decorator
-
-

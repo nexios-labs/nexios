@@ -3,16 +3,21 @@ from nexios.http import Request, Response
 from nexios.routing import Routes as Route
 import logging
 from nexios.types import MiddlewareType
+
 logger = logging.getLogger(__name__)
+
 
 class APIView:
     """
     Enhanced class-based view that can be directly registered with the app or router.
     """
+
     middlewares: List[MiddlewareType] = []
 
-
-    error_handlers: Dict[Type[Exception], Callable[[Request, Response, Exception], Coroutine[Any, Any, Response]]] = {}
+    error_handlers: Dict[
+        Type[Exception],
+        Callable[[Request, Response, Exception], Coroutine[Any, Any, Response]],
+    ] = {}
 
     @classmethod
     def as_route(cls, path: str, methods: Optional[List[str]] = None) -> Route:
@@ -32,11 +37,11 @@ class APIView:
         """
         Dispatch the request to the appropriate handler method.
         """
-        
+
         self.request = req
         self.res = res
         try:
-            
+
             method = req.method.lower()
             handler = getattr(self, method, self.method_not_allowed)
             return await handler(req, res, **kwargs)
@@ -46,7 +51,9 @@ class APIView:
                     return await handler(req, res, e)
             raise e
 
-    async def method_not_allowed(self, req: Request, res: Response, **kwargs) -> Response:
+    async def method_not_allowed(
+        self, req: Request, res: Response, **kwargs
+    ) -> Response:
         """
         Handle requests with unsupported HTTP methods.
         """

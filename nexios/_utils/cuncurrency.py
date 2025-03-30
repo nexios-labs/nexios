@@ -1,5 +1,3 @@
-
-
 from __future__ import annotations
 
 import functools
@@ -9,9 +7,9 @@ import warnings
 
 import anyio.to_thread
 
-if sys.version_info >= (3, 10): 
+if sys.version_info >= (3, 10):
     from typing import ParamSpec
-else:  
+else:
     from typing_extensions import ParamSpec
 
 P = ParamSpec("P")
@@ -34,8 +32,10 @@ async def run_until_first_complete(*args: tuple[typing.Callable, dict]) -> None:
             task_group.start_soon(run, functools.partial(func, **kwargs))
 
 
-async def run_in_threadpool(func: typing.Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> T:
-    if kwargs: 
+async def run_in_threadpool(
+    func: typing.Callable[P, T], *args: P.args, **kwargs: P.kwargs
+) -> T:
+    if kwargs:
         func = functools.partial(func, **kwargs)
     return await anyio.to_thread.run_sync(func, *args)
 

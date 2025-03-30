@@ -1,12 +1,12 @@
 from __future__ import annotations
 from enum import Enum
-from typing import Callable,Type,Awaitable,Any
+from typing import Callable, Type, Awaitable, Any
 import typing
 from .http.request import Request
-from .http.response import NexiosResponse,Response
+from .http.response import NexiosResponse, Response
 from .websockets import WebSocket
 
-    
+
 AppType = typing.TypeVar("AppType")
 
 Scope = typing.MutableMapping[str, typing.Any]
@@ -16,12 +16,17 @@ Receive = typing.Callable[[], typing.Awaitable[Message]]
 Send = typing.Callable[[Message], typing.Awaitable[None]]
 RequestResponseEndpoint = typing.Callable[[Request], typing.Awaitable[Response]]
 
-MiddlewareType =  typing.Callable[[Request, Response,RequestResponseEndpoint], typing.Awaitable[Response]]
-WsMiddlewareType  = Callable[[Type[WebSocket],Type[Callable[...,Awaitable[Message]]]], Type[Send]]  
+MiddlewareType = typing.Callable[
+    [Request, Response, RequestResponseEndpoint], typing.Awaitable[Response]
+]
+WsMiddlewareType = Callable[
+    [Type[WebSocket], Type[Callable[..., Awaitable[Message]]]], Type[Send]
+]
 
-WsHandlerType =  typing.Callable[[WebSocket], typing.Awaitable[None]]
-HandlerType = Callable[[Request,NexiosResponse], Awaitable[Any]]
-ExceptionHandlerType = Callable[[Request,Response,Exception],typing.Coroutine[Any,Any,Any]]
+WsHandlerType = typing.Callable[[WebSocket], typing.Awaitable[None]]
+HandlerType = Callable[[Request, NexiosResponse], Awaitable[Any]]
+ExceptionHandlerType = Callable[
+    [Request, Response, Exception], typing.Coroutine[Any, Any, Any]
+]
 
 ASGIApp = typing.Callable[[Scope, Receive, Send], typing.Awaitable[None]]
-

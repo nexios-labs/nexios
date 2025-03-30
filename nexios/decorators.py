@@ -1,4 +1,4 @@
-from typing import List, Dict, Any,TypeVar
+from typing import List, Dict, Any, TypeVar
 from .http.request import Request
 from .http.response import NexiosResponse
 from .http.request import Request
@@ -7,6 +7,8 @@ from functools import wraps
 from .types import HandlerType
 
 F = TypeVar("F", bound=HandlerType)
+
+
 class RouteDecorator:
     """Base class for all route decorators"""
 
@@ -28,13 +30,16 @@ class allowed_methods(RouteDecorator):
         self.allowed_methods: List[str] = [method.upper() for method in methods]
 
     def __call__(self, handler: F) -> F:
-        if getattr(handler, "_is_wrapped", False):  
-            return handler 
+        if getattr(handler, "_is_wrapped", False):
+            return handler
+
         @wraps(handler)
         async def wrapper(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
             *_, request, response = args  # Ensure request and response are last
-            
-            if not isinstance(request, Request) or not isinstance(response, NexiosResponse):
+
+            if not isinstance(request, Request) or not isinstance(
+                response, NexiosResponse
+            ):
                 raise TypeError("Expected request and response as the last arguments")
 
             if request.method.upper() not in self.allowed_methods:
@@ -44,11 +49,10 @@ class allowed_methods(RouteDecorator):
                         "allowed_methods": self.allowed_methods,
                     },
                     status_code=405,
-                    headers={
-                        "Allow":", ".join(self.allowed_methods)
-                    }
+                    headers={"Allow": ", ".join(self.allowed_methods)},
                 )
 
-            return await handler(*args, **kwargs) #type:ignore
+            return await handler(*args, **kwargs)  # type:ignore
+
         wrapper._is_wrapped = True  # type: ignore
         return wrapper  # type: ignore

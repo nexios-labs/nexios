@@ -1,6 +1,7 @@
 import json
 from typing import Any, Callable, Dict, Optional
 
+
 class MakeConfig:
     """
     A dynamic configuration class that allows nested dictionary access as attributes,
@@ -17,11 +18,11 @@ class MakeConfig:
     """
 
     def __init__(
-        self, 
-        config: Dict[str, Any], 
-        defaults: Optional[Dict[str, Any]] = None, 
-        validate: Optional[Dict[str, Callable[[Any], bool]]] = None, 
-        immutable: bool = False
+        self,
+        config: Dict[str, Any],
+        defaults: Optional[Dict[str, Any]] = None,
+        validate: Optional[Dict[str, Callable[[Any], bool]]] = None,
+        immutable: bool = False,
     ):
         """
         Initialize the configuration object.
@@ -48,7 +49,7 @@ class MakeConfig:
             if not self._validate[key](value):
                 raise ValueError(f"Invalid value for '{key}': {value}")
         if isinstance(value, dict):
-            value = MakeConfig(value, immutable=self._immutable)  #type: ignore
+            value = MakeConfig(value, immutable=self._immutable)  # type: ignore
         self._config[key] = value
 
     def __setattr__(self, name: str, value: Any):
@@ -88,8 +89,9 @@ class MakeConfig:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert configuration to a standard dictionary."""
+
         def recurse(config: "MakeConfig") -> Dict[str, Any]:
-            if isinstance(config, MakeConfig): #type: ignore
+            if isinstance(config, MakeConfig):  # type: ignore
                 return {k: recurse(v) for k, v in config._config.items()}
             return config
 

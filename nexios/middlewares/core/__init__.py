@@ -4,12 +4,16 @@ import typing
 
 import anyio
 from nexios.http.request import ClientDisconnect, Request
-from nexios.http.response import  NexiosResponse as Response
+from nexios.http.response import NexiosResponse as Response
 from nexios.types import ASGIApp, Message, Receive, Scope, Send
 from nexios.websockets import WebSocket
-from nexios._utils.async_helpers  import collapse_excgroups
+from nexios._utils.async_helpers import collapse_excgroups
+
 RequestResponseEndpoint = typing.Callable[[Request], typing.Awaitable[Response]]
-DispatchFunction = typing.Callable[[Request, Response,typing.Coroutine[None,None,typing.Any]], typing.Awaitable[Response]]
+DispatchFunction = typing.Callable[
+    [Request, Response, typing.Coroutine[None, None, typing.Any]],
+    typing.Awaitable[Response],
+]
 T = typing.TypeVar("T")
 
 import sys
@@ -26,9 +30,10 @@ from nexios.types import ASGIApp
 P = ParamSpec("P")
 
 
-
 class _MiddlewareFactory(Protocol[P]):
-    def __call__(self, app: ASGIApp, /, *args: P.args, **kwargs: P.kwargs) -> ASGIApp: ...  # pragma: no cover
+    def __call__(
+        self, app: ASGIApp, /, *args: P.args, **kwargs: P.kwargs
+    ) -> ASGIApp: ...  # pragma: no cover
 
 
 class Middleware:
@@ -143,7 +148,7 @@ class BaseMiddleware:
 
         request = _CachedRequest(scope, receive)
         response = Response()
-        
+
         wrapped_receive = request.wrapped_receive
         response_sent = anyio.Event()
 
@@ -195,7 +200,7 @@ class BaseMiddleware:
             except anyio.EndOfStream:
                 if app_exc is not None:
                     raise app_exc
-                raise RuntimeError ("No response returned.")
+                raise RuntimeError("No response returned.")
 
             assert message["type"] == "http.response.start"
 
@@ -211,32 +216,32 @@ class BaseMiddleware:
                 if app_exc is not None:
                     raise app_exc
 
-            response_ = response.stream(iterator=body_stream(),status_code=message["status"]) #type: ignore
-            response_._response._headers = message["headers"] #type: ignore
+            response_ = response.stream(iterator=body_stream(), status_code=message["status"])  # type: ignore
+            response_._response._headers = message["headers"]  # type: ignore
             return response
-            
 
-        streams: anyio.create_memory_object_stream[Message] = anyio.create_memory_object_stream() #type: ignore
+        streams: anyio.create_memory_object_stream[Message] = anyio.create_memory_object_stream()  # type: ignore
         send_stream, recv_stream = streams
         with recv_stream, send_stream, collapse_excgroups():
             async with anyio.create_task_group() as task_group:
-                await self.dispatch_func(request, response, call_next) #type: ignore
+                await self.dispatch_func(request, response, call_next)  # type: ignore
                 await response.get_response()(scope, wrapped_receive, send)
                 response_sent.set()
                 recv_stream.close()
-                
+
 
 WebSocketDispatchFunction = typing.Callable[
-    ['WebSocket', typing.Coroutine[None, None, typing.Any]],
-    typing.Awaitable[None]
+    ["WebSocket", typing.Coroutine[None, None, typing.Any]], typing.Awaitable[None]
 ]
 
 
-MiddlewareType = typing.Callable[[Request,Response,typing.Coroutine[None,None,Any]], typing.Awaitable[typing.Any]]
-def wrap_middleware(middleware_function :MiddlewareType) -> Middleware:
-    return Middleware(BaseMiddleware, dispatch = middleware_function)
-__all__ = [
-    "BaseMiddleware"
+MiddlewareType = typing.Callable[
+    [Request, Response, typing.Coroutine[None, None, Any]], typing.Awaitable[typing.Any]
 ]
 
 
+def wrap_middleware(middleware_function: MiddlewareType) -> Middleware:
+    return Middleware(BaseMiddleware, dispatch=middleware_function)
+
+
+__all__ = ["BaseMiddleware"]

@@ -2,14 +2,15 @@ from .application import NexiosApp
 from .sessions.middleware import SessionMiddleware
 from .middlewares.csrf import CSRFMiddleware
 from .config.base import MakeConfig
-from .config import set_config, DEFAULT_CONFIG  
+from .config import set_config, DEFAULT_CONFIG
 from .routing import Router  # type:ignore
 from .middlewares.cors import CORSMiddleware
-from typing import Optional,Callable,AsyncIterator
-from .application import NexiosApp 
-from .types import  ExceptionHandlerType
-from typing_extensions import Doc, Annotated  
+from typing import Optional, Callable, AsyncIterator
+from .application import NexiosApp
+from .types import ExceptionHandlerType
+from typing_extensions import Doc, Annotated
 from nexios.middlewares.core import wrap_middleware
+
 
 def get_application(
     config: Annotated[
@@ -57,23 +58,19 @@ def get_application(
         - [Nexios Documentation](https://example.com/nexios-docs)
     """
 
-
     set_config(config)
     app = NexiosApp(
-    middlewares = [
-        wrap_middleware(CORSMiddleware()),
-        wrap_middleware(SessionMiddleware()),
-        wrap_middleware(CSRFMiddleware()),
-    ],
-    server_error_handler=server_error_handler, #type:ignore
-    config=config,
-    lifespan=lifespan
-)
+        middlewares=[
+            wrap_middleware(CORSMiddleware()),
+            wrap_middleware(SessionMiddleware()),
+            wrap_middleware(CSRFMiddleware()),
+        ],
+        server_error_handler=server_error_handler,  # type:ignore
+        config=config,
+        lifespan=lifespan,
+    )
 
     return app
 
 
-__all__ = [
-    "MakeConfig",
-    "Router"
-]
+__all__ = ["MakeConfig", "Router"]

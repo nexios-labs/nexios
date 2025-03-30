@@ -9,19 +9,24 @@ from urllib.parse import unquote_plus
 from nexios.structs import FormData, Headers, UploadedFile
 
 if typing.TYPE_CHECKING:
-    import multipart #type:ignore
-    from multipart.multipart import MultipartCallbacks, QuerystringCallbacks, parse_options_header #type:ignore
+    import multipart  # type:ignore
+    from multipart.multipart import (
+        MultipartCallbacks,
+        QuerystringCallbacks,
+        parse_options_header,
+    )  # type:ignore
 else:
     try:
         try:
             import python_multipart as multipart
             from python_multipart.multipart import parse_options_header
-        except ModuleNotFoundError:  
+        except ModuleNotFoundError:
             import multipart
             from multipart.multipart import parse_options_header
-    except ModuleNotFoundError:  
+    except ModuleNotFoundError:
         multipart = None
         parse_options_header = None
+
 
 class FormMessage(Enum):
     FIELD_START = 1
@@ -40,7 +45,7 @@ class MultipartPart:
     item_headers: list[tuple[bytes, bytes]] = field(default_factory=list)
 
 
-def _user_safe_decode(src: typing.Union[bytes , bytearray], codec: str) -> str:
+def _user_safe_decode(src: typing.Union[bytes, bytearray], codec: str) -> str:
     try:
         return src.decode(codec)
     except (UnicodeDecodeError, LookupError):
@@ -53,8 +58,12 @@ class MultiPartException(Exception):
 
 
 class FormParser:
-    def __init__(self, headers: Headers, stream: typing.AsyncGenerator[bytes, None]) -> None:
-        assert multipart is not None, "The `python-multipart` library must be installed to use form parsing."
+    def __init__(
+        self, headers: Headers, stream: typing.AsyncGenerator[bytes, None]
+    ) -> None:
+        assert (
+            multipart is not None
+        ), "The `python-multipart` library must be installed to use form parsing."
         self.headers = headers
         self.stream = stream
         self.messages: list[tuple[FormMessage, bytes]] = []
@@ -81,7 +90,7 @@ class FormParser:
 
     async def parse(self) -> FormData:
         # Callbacks dictionary.
-        callbacks: QuerystringCallbacks = { #type:ignore
+        callbacks: QuerystringCallbacks = {  # type:ignore
             "on_field_start": self.on_field_start,
             "on_field_name": self.on_field_name,
             "on_field_data": self.on_field_data,
@@ -90,18 +99,18 @@ class FormParser:
         }
 
         # Create the parser.
-        parser = multipart.QuerystringParser(callbacks) #type:ignore
+        parser = multipart.QuerystringParser(callbacks)  # type:ignore
         field_name = b""
         field_value = b""
 
-        items: list[tuple[str, typing.Union[str , UploadedFile]]] = []
+        items: list[tuple[str, typing.Union[str, UploadedFile]]] = []
 
         # Feed the parser with data from the request.
         async for chunk in self.stream:
             if chunk:
-                parser.write(chunk) #type:ignore
+                parser.write(chunk)  # type:ignore
             else:
-                parser.finalize() #type:ignore
+                parser.finalize()  # type:ignore
             messages = list(self.messages)
             self.messages.clear()
             for message_type, message_bytes in messages:
@@ -129,15 +138,17 @@ class MultiPartParser:
         headers: Headers,
         stream: typing.AsyncGenerator[bytes, None],
         *,
-        max_files: typing.Union[int , float] = 1000,
-        max_fields:  typing.Union[int , float] = 1000,
+        max_files: typing.Union[int, float] = 1000,
+        max_fields: typing.Union[int, float] = 1000,
     ) -> None:
-        assert multipart is not None, "The `python-multipart` library must be installed to use form parsing."
+        assert (
+            multipart is not None
+        ), "The `python-multipart` library must be installed to use form parsing."
         self.headers = headers
         self.stream = stream
         self.max_files = max_files
         self.max_fields = max_fields
-        self.items: list[tuple[str, typing.Union[str , UploadedFile]]] = []
+        self.items: list[tuple[str, typing.Union[str, UploadedFile]]] = []
         self._current_files = 0
         self._current_fields = 0
         self._current_partial_header_name: bytes = b""
@@ -155,7 +166,9 @@ class MultiPartParser:
         message_bytes = data[start:end]
         if self._current_part.file is None:
             if len(self._current_part.data) + len(message_bytes) > self.max_part_size:
-                raise MultiPartException(f"Part exceeded maximum size of {int(self.max_part_size / 1024)}KB.")
+                raise MultiPartException(
+                    f"Part exceeded maximum size of {int(self.max_part_size / 1024)}KB."
+                )
             self._current_part.data.extend(message_bytes)
         else:
             self._file_parts_to_write.append((self._current_part, message_bytes))
@@ -165,7 +178,9 @@ class MultiPartParser:
             self.items.append(
                 (
                     self._current_part.field_name,
-                    _user_safe_decode(self._current_part.data, self._charset), #type:ignore
+                    _user_safe_decode(
+                        self._current_part.data, self._charset
+                    ),  # type:ignore
                 )
             )
         else:
@@ -185,21 +200,33 @@ class MultiPartParser:
         field = self._current_partial_header_name.lower()
         if field == b"content-disposition":
             self._current_part.content_disposition = self._current_partial_header_value
-        self._current_part.item_headers.append((field, self._current_partial_header_value))
+        self._current_part.item_headers.append(
+            (field, self._current_partial_header_value)
+        )
         self._current_partial_header_name = b""
         self._current_partial_header_value = b""
 
     def on_headers_finished(self) -> None:
-        disposition, options = parse_options_header(self._current_part.content_disposition) #type:ignore
+        disposition, options = parse_options_header(
+            self._current_part.content_disposition
+        )  # type:ignore
         try:
-            self._current_part.field_name = _user_safe_decode(options[b"name"], self._charset) #type:ignore
+            self._current_part.field_name = _user_safe_decode(
+                options[b"name"], self._charset
+            )  # type:ignore
         except KeyError:
-            raise MultiPartException('The Content-Disposition header field "name" must be provided.')
+            raise MultiPartException(
+                'The Content-Disposition header field "name" must be provided.'
+            )
         if b"filename" in options:
             self._current_files += 1
             if self._current_files > self.max_files:
-                raise MultiPartException(f"Too many files. Maximum number of files is {self.max_files}.")
-            filename = _user_safe_decode(options[b"filename"], self._charset) #type:ignore
+                raise MultiPartException(
+                    f"Too many files. Maximum number of files is {self.max_files}."
+                )
+            filename = _user_safe_decode(
+                options[b"filename"], self._charset
+            )  # type:ignore
             tempfile = SpooledTemporaryFile(max_size=self.max_file_size)
             self._files_to_close_on_error.append(tempfile)
             self._current_part.file = UploadedFile(
@@ -207,12 +234,13 @@ class MultiPartParser:
                 size=0,
                 filename=filename,
                 headers=Headers(raw=self._current_part.item_headers),
-                
             )
         else:
             self._current_fields += 1
             if self._current_fields > self.max_fields:
-                raise MultiPartException(f"Too many fields. Maximum number of fields is {self.max_fields}.")
+                raise MultiPartException(
+                    f"Too many fields. Maximum number of fields is {self.max_fields}."
+                )
             self._current_part.file = None
 
     def on_end(self) -> None:
@@ -220,18 +248,18 @@ class MultiPartParser:
 
     async def parse(self) -> FormData:
         # Parse the Content-Type header to get the multipart boundary.
-        _, params = parse_options_header(self.headers["Content-Type"]) #type:ignore
-        charset = params.get(b"charset", "utf-8") #type:ignore
+        _, params = parse_options_header(self.headers["Content-Type"])  # type:ignore
+        charset = params.get(b"charset", "utf-8")  # type:ignore
         if isinstance(charset, bytes):
             charset = charset.decode("latin-1")
-        self._charset = charset #type:ignore
+        self._charset = charset  # type:ignore
         try:
-            boundary = params[b"boundary"] #type:ignore
+            boundary = params[b"boundary"]  # type:ignore
         except KeyError:
             raise MultiPartException("Missing boundary in multipart.")
 
         # Callbacks dictionary.
-        callbacks: MultipartCallbacks = { #type:ignore
+        callbacks: MultipartCallbacks = {  # type:ignore
             "on_part_begin": self.on_part_begin,
             "on_part_data": self.on_part_data,
             "on_part_end": self.on_part_end,
@@ -243,11 +271,11 @@ class MultiPartParser:
         }
 
         # Create the parser.
-        parser = multipart.MultipartParser(boundary, callbacks) #type:ignore
+        parser = multipart.MultipartParser(boundary, callbacks)  # type:ignore
         try:
             # Feed the parser with data from the request.
             async for chunk in self.stream:
-                parser.write(chunk) #type:ignore
+                parser.write(chunk)  # type:ignore
                 # Write file data, it needs to use await with the UploadedFile methods
                 # that call the corresponding file methods *in a threadpool*,
                 # otherwise, if they were called directly in the callback methods above
@@ -255,7 +283,7 @@ class MultiPartParser:
                 # the main thread.
                 for part, data in self._file_parts_to_write:
                     # assert part.file  # for type checkers
-                    await part.file.write(data) #type:ignore
+                    await part.file.write(data)  # type:ignore
                 for part in self._file_parts_to_finish:
                     assert part.file  # for type checkers
                     await part.file.seek(0)
@@ -267,5 +295,5 @@ class MultiPartParser:
                 file.close()
             raise exc
 
-        parser.finalize() #type:ignore
+        parser.finalize()  # type:ignore
         return FormData(self.items)

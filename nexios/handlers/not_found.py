@@ -1,7 +1,7 @@
 import traceback
 import typing
 import http
-from nexios.http import Request,Response
+from nexios.http import Request, Response
 from nexios.config import get_config
 from nexios.exceptions import NotFoundException
 
@@ -42,7 +42,6 @@ async def handle_404_error(
     request: Request,
     response: Response,
     exception: NotFoundException,
-  
 ) -> typing.Any:
     """
     Handles 404 errors dynamically, supporting JSON, HTML, and plain text responses.
@@ -57,21 +56,20 @@ async def handle_404_error(
         A response based on the settings.
     """
     settings = get_config()
-    
 
     debug = settings.debug or False
     not_found_config = settings.not_fouund
-    
+
     if not_found_config:
-        return_json = not_found_config.return_json 
-        custom_message = not_found_config.custom_message 
+        return_json = not_found_config.return_json
+        custom_message = not_found_config.custom_message
         show_traceback = not_found_config.show_traceback
-        use_html = not_found_config.use_html 
+        use_html = not_found_config.use_html
     else:
-        return_json =   True
-        custom_message =  "The page you are looking for does not exist."
+        return_json = True
+        custom_message = "The page you are looking for does not exist."
         show_traceback = False
-        use_html =  True
+        use_html = True
 
     error_message = exception.detail if debug else custom_message
 
@@ -81,7 +79,7 @@ async def handle_404_error(
         traceback_info = None
 
     if return_json:
-        error_details :typing.Dict[str, typing.Any] = {
+        error_details: typing.Dict[str, typing.Any] = {
             "status": 404,
             "error": http.HTTPStatus(404).phrase,
             "message": error_message,
@@ -89,11 +87,13 @@ async def handle_404_error(
         if traceback_info:
             error_details["traceback"] = traceback_info
 
-        return response.json(error_details,status_code=404)
+        return response.json(error_details, status_code=404)
 
     if use_html:
         html_content = generate_html_page("404 - Not Found", error_message)
-        return response.html(html_content,status_code=404)
+        return response.html(html_content, status_code=404)
 
     # Plain Text Fallback
-    return response.text(f"404 - Not Found\n{error_message}",)
+    return response.text(
+        f"404 - Not Found\n{error_message}",
+    )

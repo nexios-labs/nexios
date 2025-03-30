@@ -1,9 +1,10 @@
-from nexios.middlewares.base import BaseMiddleware 
-from nexios.http import Request,Response
+from nexios.middlewares.base import BaseMiddleware
+from nexios.http import Request, Response
 from nexios.config import get_config
-import traceback,html,sys,inspect,typing
-from nexios.logging import DEBUG,create_logger
-logger = create_logger(__name__,log_level=DEBUG)
+import traceback, html, sys, inspect, typing
+from nexios.logging import DEBUG, create_logger
+
+logger = create_logger(__name__, log_level=DEBUG)
 STYLES = """
 body {
     font-family: Arial, sans-serif;
@@ -149,43 +150,53 @@ CENTER_LINE = """
 """
 
 
-
 ServerErrHandlerType = typing.Callable[[Request, Response, Exception], typing.Any]
+
+
 class ServerErrorMiddleware(BaseMiddleware):
-    def __init__(self, handler :typing.Optional[ServerErrHandlerType]= None):
+    def __init__(self, handler: typing.Optional[ServerErrHandlerType] = None):
         self.handler = handler
-    async def __call__(self, request :Request, response :Response, next_middleware : typing.Coroutine[None,None,typing.Awaitable[None]]) -> typing.Any:
+
+    async def __call__(
+        self,
+        request: Request,
+        response: Response,
+        next_middleware: typing.Coroutine[None, None, typing.Awaitable[None]],
+    ) -> typing.Any:
         self.debug = get_config().debug or True
         try:
-            return await next_middleware() #type:ignore
-            
+            return await next_middleware()  # type:ignore
+
         except Exception as exc:
             if self.handler:
-                response =  await self.handler(request,response,exc)
+                response = await self.handler(request, response, exc)
             if self.debug:
-                response =  self.get_debug_response(request,response,exc)
-            
-            else :
+                response = self.get_debug_response(request, response, exc)
+
+            else:
                 response = self.error_response(response)
-            
+
             err = traceback.format_exc()
             logger.error(err)
             return response
-        
-            
-    def error_response(self,res :Response):
-        return res.text("Internal Server Error",status_code=500)
-    
-    
-    def get_debug_response(self, request :Request, response :Response, exc :Exception) -> Response:
+
+    def error_response(self, res: Response):
+        return res.text("Internal Server Error", status_code=500)
+
+    def get_debug_response(
+        self, request: Request, response: Response, exc: Exception
+    ) -> Response:
         accept = request.headers.get("accept", "")
         if "text/html" in accept:
-            content :str= self.generate_html(exc)
+            content: str = self.generate_html(exc)
             return response.html(content, status_code=500)
         content = self.generate_plain_text(exc)
         return response.text(content, status_code=500)
-    def format_line(self, index: int, line: str, frame_lineno: int, frame_index: int) -> str:
-        values:typing.Dict[str,typing.Any] = {
+
+    def format_line(
+        self, index: int, line: str, frame_lineno: int, frame_index: int
+    ) -> str:
+        values: typing.Dict[str, typing.Any] = {
             # HTML escape - line could contain < or >
             "line": html.escape(line).replace(" ", "&nbsp"),
             "lineno": (frame_lineno - frame_index) + index,
@@ -194,19 +205,19 @@ class ServerErrorMiddleware(BaseMiddleware):
         if index != frame_index:
             return LINE.format(**values)
         return CENTER_LINE.format(**values)
+
     def generate_frame_html(self, frame: inspect.FrameInfo, is_collapsed: bool) -> str:
-        code_context :str = "".join( #type:ignore
+        code_context: str = "".join(  # type:ignore
             self.format_line(
                 index,
                 line,
                 frame.lineno,
-                frame.index,  #type:ignore
+                frame.index,  # type:ignore
             )
-            for index, line in enumerate(frame.code_context or []) #type:ignore
+            for index, line in enumerate(frame.code_context or [])  # type:ignore
         )
 
-        values :typing.Dict[str,typing.Any] = {
-           
+        values: typing.Dict[str, typing.Any] = {
             "frame_filename": html.escape(frame.filename),
             "frame_lineno": frame.lineno,
             "frame_name": html.escape(frame.function),
@@ -215,11 +226,14 @@ class ServerErrorMiddleware(BaseMiddleware):
             "collapse_button": "+" if is_collapsed else "&#8210;",
         }
         return FRAME_TEMPLATE.format(**values)
+
     def generate_plain_text(self, exc: Exception) -> str:
         return "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-    
+
     def generate_html(self, exc: Exception, limit: int = 7) -> str:
-        traceback_obj = traceback.TracebackException.from_exception(exc, capture_locals=True)
+        traceback_obj = traceback.TracebackException.from_exception(
+            exc, capture_locals=True
+        )
 
         exc_html = ""
         is_collapsed = False
@@ -230,17 +244,11 @@ class ServerErrorMiddleware(BaseMiddleware):
                 exc_html += self.generate_frame_html(frame, is_collapsed)
                 is_collapsed = True
 
-        if sys.version_info >= (3, 13): 
+        if sys.version_info >= (3, 13):
             exc_type_str = traceback_obj.exc_type_str
-        else: 
+        else:
             exc_type_str = traceback_obj.exc_type.__name__
 
-       
         error = f"{html.escape(exc_type_str)}: {html.escape(str(traceback_obj))}"
 
         return TEMPLATE.format(styles=STYLES, js=JS, error=error, exc_html=exc_html)
-            
-            
-                
-            
-            
