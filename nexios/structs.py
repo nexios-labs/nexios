@@ -15,7 +15,6 @@ class Address(typing.NamedTuple):
 
 
 _KeyType = typing.TypeVar("_KeyType")
-# Mapping keys are invariant but their values are covariant since
 # you can only read them
 # that is, you can't do `Mapping[str, Animal]()["fido"] = Dog()`
 _CovariantValueType = typing.TypeVar("_CovariantValueType", covariant=True)
