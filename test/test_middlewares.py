@@ -55,7 +55,7 @@ async def test_middleware_order(async_client:Client):
     app.router.routes.clear()
     app.http_middlewares.clear()
 
-    async def first_middleware(equest: Request, response :Response,call_next):
+    async def first_middleware(request: Request, response :Response,call_next):
         await call_next()
         response.header("X-Order-1", "First")
         return response
