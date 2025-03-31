@@ -24,6 +24,7 @@
 - [ Application Lifecycle](application-lifecycle.md)
 - [Websockets](websockets.md)
 - [Class-Based Views](class-based-views.md)
+- [Nexios Events](events.md)
 
 ## Guides
 

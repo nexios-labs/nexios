@@ -1,213 +1,258 @@
-# Nexios Event System Integration Guide
+Nexios provides a comprehensive event system that enables communication between different parts of your application. The event system is designed to be:
 
-## Overview
+- **Flexible**: Supports synchronous and asynchronous operations
+- **Scalable**: Manages thousands of events efficiently
+- **Thread-safe**: Safe for use in multi-threaded environments
+- **Feature-rich**: Includes priorities, namespaces, weak references, and more
 
-The Nexios framework includes a powerful event system built around the `AsyncEventEmitter` class, which provides asynchronous event handling capabilities that integrate seamlessly with Nexios' async-first architecture.
+## Core Concepts
 
-## Core Event Components
+### Events
 
-### `AsyncEventEmitter`
+An `Event` represents a specific occurrence in your application that other parts can listen for and respond to. Each event has:
 
-The primary event emitter class that works with Nexios' asynchronous environment:
+- A unique name
+- A set of listeners (callbacks)
+- Configuration options (priority, max listeners, etc.)
+
+### EventEmitter
+
+The `EventEmitter` class serves as a central hub for creating and managing events. It provides methods to:
+
+- Register and remove listeners
+- Trigger events
+- Organize events hierarchically using namespaces
+
+### Event Priorities
+
+Listeners can be assigned one of five priority levels:
+
+1. `EventPriority.HIGHEST`
+2. `EventPriority.HIGH`
+3. `EventPriority.NORMAL` (default)
+4. `EventPriority.LOW`
+5. `EventPriority.LOWEST`
+
+Listeners are executed in priority order (highest first) when an event is triggered.
+
+### Event Phases
+
+Events propagate through three phases:
+
+1. **Capturing Phase**: From parent to child
+2. **Target Phase**: On the event target
+3. **Bubbling Phase**: From child to parent
+
+## Basic Usage
+
+### Creating and Triggering Events
 
 ```python
-from nexios.events import AsyncEventEmitter
+from nexios.events import EventEmitter
+
+emitter = EventEmitter()
+
+# Register a listener
+@emitter.on("user.created")
+def handle_user_created(user):
+    print(f"User created: {user['name']}")
+
+# Trigger the event
+emitter.emit("user.created", {"name": "Alice", "email": "alice@example.com"})
+```
+
+### One-time Listeners
+
+```python
+# This listener will only be called once
+@emitter.once("system.ready")
+def handle_system_ready():
+    print("System is ready!")
+```
+
+### Event Namespaces
+
+```python
+# Create a namespace
+user_events = emitter.namespace("user")
+
+# Events in this namespace will have names like "user:created"
+@user_events.on("created")
+def handle_user_created(user):
+    print(f"User created: {user['name']}")
+
+# Trigger the namespaced event
+user_events.emit("created", {"name": "Bob"})
+```
+
+## Advanced Features
+
+### Asynchronous Events
+
+```python
+from nexios import AsyncEventEmitter
 
 emitter = AsyncEventEmitter()
+
+@emitter.on("data.received")
+async def process_data(data):
+    # Async operations here
+    await save_to_database(data)
+
+# Async emit
+await emitter.emit_async("data.received", large_dataset)
 ```
 
-## Integration with Nexios Application
-
-### Initializing the Event System
+### Weak References
 
 ```python
-from nexios import get_application
-from nexios.events import AsyncEventEmitter
-
-app = get_application()
-emitter = AsyncEventEmitter()
+# Use weak_ref=True to prevent memory leaks
+@emitter.on("timer.tick", weak_ref=True)
+def handle_tick():
+    print("Tick")
 ```
 
-### Basic Event Usage
-
-#### Registering Event Listeners
+### Event Metrics
 
 ```python
-@emitter.on('user_created')
-async def handle_user_created(user_data):
-    print(f"New user created: {user_data['username']}")
+event = emitter.event("user.updated")
+stats = event.get_metrics()
+"""
+{
+    "trigger_count": 42,
+    "total_listeners_executed": 126,
+    "average_execution_time": 0.002
+}
+"""
 ```
 
-#### Triggering Events
+### Event History
 
 ```python
-@app.post("/users")
-async def create_user(req: Request, res: Response):
-    user_data = await req.json()
-    # Process user creation...
-    await emitter.emit('user_created', user_data)
-    return res.json({"status": "success"})
+history = event.get_history(limit=5)
+"""
+[
+    {
+        "timestamp": "2023-01-01T12:00:00",
+        "event_id": "abc123...",
+        "args": "(user1,)",
+        "kwargs": "{}",
+        "listeners_executed": 3,
+        "execution_time": 0.005,
+        "cancelled": False
+    },
+    ...
+]
+"""
 ```
 
-## Advanced Patterns
+## Error Handling
 
-### Request-Scoped Events
+The event system provides several specialized exceptions:
+
+- `EventError`: Base class for all event-related errors
+- `ListenerAlreadyRegisteredError`: Raised when adding a duplicate listener
+- `MaxListenersExceededError`: Raised when exceeding max listeners
+- `EventCancelledError`: Raised when event propagation is cancelled
 
 ```python
-async def request_logger_middleware(req, res, cnext):
-    start_time = time.time()
-    
-    @emitter.on(f"request:{req.id}")
-    async def log_request_complete():
-        duration = time.time() - start_time
-        print(f"Request {req.id} completed in {duration:.2f}s")
-    
-    await cnext()
-    await emitter.emit(f"request:{req.id}")
+try:
+    emitter.emit("critical.event")
+except EventCancelledError:
+    print("Event was cancelled")
+except EventError as e:
+    print(f"Event error: {e}")
 ```
 
-### Websocket Integration
+## Performance Considerations
+
+### Benchmarking
 
 ```python
-@app.ws_route("/chat")
-async def chat_handler(ws: WebSocket):
-    await ws.accept()
-    
-    @emitter.on('chat_message')
-    async def handle_chat_message(message):
-        await ws.send_text(message)
-    
-    try:
-        while True:
-            message = await ws.receive_text()
-            await emitter.emit('chat_message', message)
-    except WebSocketDisconnect:
-        emitter.remove_listener('chat_message', handle_chat_message)
+from nexios import EventBenchmark
+
+benchmark = EventBenchmark.benchmark(emitter, "test.event", iterations=10000)
+"""
+{
+    "iterations": 10000,
+    "total_time": 0.123,
+    "average_time": 0.0000123,
+    "events_per_second": 81300.81
+}
+"""
 ```
 
-### Error Handling Events
+### EventEmitter Methods
+
+- `event(name)`: Get or create an event
+- `namespace(name)`: Create a namespace
+- `on(event_name, func)`: Register a listener
+- `once(event_name, func)`: Register a one-time listener
+- `emit(event_name, *args, **kwargs)`: Trigger an event
+- `remove_listener(event_name, func)`: Remove a specific listener
+- `remove_all_listeners(event_name)`: Remove all listeners for an event
+
+### Event Methods
+
+- `listen(func)`: Register a listener
+- `once(func)`: Register a one-time listener
+- `trigger(*args, **kwargs)`: Fire the event
+- `remove_listener(func)`: Remove a specific listener
+- `remove_all_listeners()`: Remove all listeners
+- `get_metrics()`: Get performance metrics
+- `get_history()`: Get event trigger history
+- `cancel()`: Cancel event propagation
+- `prevent_default()`: Prevent default behavior
+
+### AsyncEventEmitter Methods
+
+- `emit_async()`: Asynchronous version of emit
+- `schedule_emit()`: Schedule an event to be triggered
+- `shutdown()`: Clean up resources
+
+## Examples
+
+### Complex Event Hierarchy
 
 ```python
-@emitter.on('error')
-async def log_errors(error):
-    print(f"Application error: {error}")
+# Create hierarchical events
+app_events = emitter.namespace("app")
+ui_events = app_events.namespace("ui")
 
-@app.get("/risky")
-async def risky_operation(req, res):
-    try:
-        # Risky operation
-    except Exception as e:
-        await emitter.emit('error', str(e))
-        return res.status(500).json({"error": str(e)})
+@ui_events.on("button.click")
+def handle_click(button_id):
+    print(f"Button {button_id} clicked")
+
+# This will trigger both listeners
+emitter.emit("app:ui:button.click", "submit")
 ```
 
-## Performance Optimization
-
-### Batch Event Processing
+### Event Cancellation
 
 ```python
-async def process_batch(batch_data):
-    await asyncio.gather(
-        emitter.emit('item_processed', batch_data[0]),
-        emitter.emit('item_processed', batch_data[1]),
-        emitter.emit('batch_progress', len(batch_data))
-    )
+@emitter.on("process.data", priority=EventPriority.HIGHEST)
+def validate_data(data):
+    if not data.is_valid():
+        raise EventCancelledError("Invalid data")
+
+try:
+    emitter.emit("process.data", raw_data)
+except EventCancelledError:
+    print("Processing cancelled due to invalid data")
 ```
 
-### Event Throttling
+### Mixed Sync/Async Listeners
 
 ```python
-from collections import deque
-from typing import Deque
+@emitter.on("order.placed")
+def log_order(order):
+    print(f"Order received: {order.id}")
 
-message_queue: Deque[str] = deque(maxlen=100)
+@emitter.on("order.placed")
+async def process_order(order):
+    await charge_customer(order)
+    await send_confirmation_email(order)
 
-@emitter.on('chat_message')
-async def throttle_chat(message):
-    message_queue.append(message)
-    if len(message_queue) >= 100:
-        await bulk_process_messages(list(message_queue))
-        message_queue.clear()
+# Both listeners will be called
+emitter.emit("order.placed", new_order)
 ```
-
-## Best Practices
-
-1. **Namespace Events**: Use clear naming conventions
-   ```python
-   # Instead of:
-   emitter.on('user_created')
-   
-   # Prefer:
-   emitter.on('users:created')
-   ```
-
-2. **Keep Listeners Focused**: Each listener should do one thing
-   ```python
-   @emitter.on('order:placed')
-   async def update_inventory(order):
-       pass
-   
-   @emitter.on('order:placed')
-   async def send_confirmation(order):
-       pass
-   ```
-
-3. **Error Handling**: Always handle errors in listeners
-   ```python
-   @emitter.on('payment:processed')
-   async def log_payment(payment):
-       try:
-           await database.log(payment)
-       except Exception as e:
-           await emitter.emit('error', f"Payment logging failed: {e}")
-   ```
-
-4. **Use Weak References** for listeners that might be garbage collected
-   ```python
-   @emitter.on('system:alert', weak_ref=True)
-   async def handle_alert(alert):
-       pass
-   ```
-
-## Complete Example
-
-```python
-from nexios import get_application, Request, Response
-from nexios.events import AsyncEventEmitter
-from pydantic import BaseModel
-
-app = get_application()
-emitter = AsyncEventEmitter()
-
-class UserCreate(BaseModel):
-    username: str
-    email: str
-
-# Event listeners
-@emitter.on('users:created')
-async def send_welcome_email(user):
-    print(f"Sending welcome email to {user['email']}")
-
-@emitter.on('users:created')
-async def create_user_profile(user):
-    print(f"Creating profile for {user['username']}")
-
-# API endpoint
-@app.post("/users")
-async def create_user(req: Request, res: Response):
-    try:
-        user_data = UserCreate(**await req.json())
-        # Save user to database...
-        await emitter.emit('users:created', user_data.dict())
-        return res.json({"status": "success"})
-    except Exception as e:
-        await emitter.emit('system:error', str(e))
-        return res.status(400).json({"error": str(e)})
-
-# Error handling
-@emitter.on('system:error')
-async def log_errors(error):
-    print(f"ERROR: {error}")
-```
-
-This integrated event system provides a powerful way to build decoupled, maintainable applications within the Nexios framework while leveraging its asynchronous capabilities.
