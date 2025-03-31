@@ -1,7 +1,9 @@
 import importlib
 import os
-from typing import TypedDict
+from typing import Callable, TypedDict
+
 from nexios.application import NexiosApp
+from nexios.http import Request, Response
 from nexios.logging import create_logger
 from nexios.routing import Routes
 from pathlib import Path
