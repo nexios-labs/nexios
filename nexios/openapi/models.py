@@ -1,4 +1,4 @@
-#type:ignore[overide]
+# type:ignore[overide]
 from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional, Union
@@ -172,7 +172,7 @@ class Header(ConcreteParameter):
 class Query(ConcreteParameter):
     in_: Annotated[Literal["query"], Field(alias="in")] = Field(
         default="query",  # Explicit default
-        alias="in"       # Explicit alias for OpenAPI compliance
+        alias="in",  # Explicit alias for OpenAPI compliance
     )
     style: QueryParamStyles = "form"
     explode: bool = True
@@ -180,13 +180,11 @@ class Query(ConcreteParameter):
 
 class Path(ConcreteParameter):
     in_: Annotated[Literal["path"], Field(alias="in")] = Field(
-        default="path",  # Explicit default
-        alias="in"  
+        default="path", alias="in"  # Explicit default
     )
     style: PathParamStyles = "simple"
     explode: bool = False
     required: Literal[True] = True
-
 
 
 class Cookie(ConcreteParameter):
@@ -291,10 +289,11 @@ class HTTPBase(SecurityBase):
     scheme: str
     type: Literal["http"] = "http"
 
+
 class HTTPBearer(HTTPBase):
-    scheme: Literal["bearer"] = "bearer"  
+    scheme: Literal["bearer"] = "bearer"
     bearerFormat: Optional[str] = None
-    type: Literal["http"] = "http"  
+    type: Literal["http"] = "http"
 
 
 class OAuthFlow(BaseModel):
