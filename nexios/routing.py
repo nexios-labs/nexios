@@ -1,13 +1,24 @@
 from __future__ import annotations
-from typing import Any, List, Optional, Pattern,Dict,TypeVar,Tuple,Callable,Union,Type
+from typing import (
+    Any,
+    List,
+    Optional,
+    Pattern,
+    Dict,
+    TypeVar,
+    Tuple,
+    Callable,
+    Union,
+    Type,
+)
 from dataclasses import dataclass
 import re
 import warnings, typing
 from enum import Enum
-from abc import abstractmethod,ABC
+from abc import abstractmethod, ABC
 
-from nexios.openapi.models import Parameter, Path,Schema
-from nexios.types import MiddlewareType,WsMiddlewareType,HandlerType,WsHandlerType
+from nexios.openapi.models import Parameter, Path, Schema
+from nexios.types import MiddlewareType, WsMiddlewareType, HandlerType, WsHandlerType
 from nexios.decorators import allowed_methods
 from typing_extensions import Doc, Annotated  # type: ignore
 from nexios.structs import URLPath, RouteParam
@@ -320,37 +331,46 @@ class Routes:
             """
             ),
         ] = None,
-        name :Annotated[Optional[str],
-                        Doc("""The unique identifier for the route. This name is used to generate 
+        name: Annotated[
+            Optional[str],
+            Doc(
+                """The unique identifier for the route. This name is used to generate 
             URLs dynamically with `url_for`. It should be a valid, unique string 
-            that represents the route within the application.""")] = None,
+            that represents the route within the application."""
+            ),
+        ] = None,
         summary: Annotated[
-            Optional[str], 
-            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+            Optional[str],
+            Doc(
+                "A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose."
+            ),
         ] = None,
-
         description: Annotated[
-            Optional[str], 
-            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+            Optional[str],
+            Doc(
+                "A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context."
+            ),
         ] = None,
-
         responses: Annotated[
-            Optional[Dict[int, Any]], 
-            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+            Optional[Dict[int, Any]],
+            Doc(
+                "A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format."
+            ),
         ] = None,
-
         request_model: Annotated[
-            Optional[Type[BaseModel]], 
-            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
-] = None,
-        response_model :Optional[Type[BaseModel] ]= None,
+            Optional[Type[BaseModel]],
+            Doc(
+                "A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data."
+            ),
+        ] = None,
+        response_model: Optional[Type[BaseModel]] = None,
         tags: Optional[List[str]] = None,
         security: Optional[List[Dict[str, List[str]]]] = None,
         operation_id: Optional[str] = None,
         deprecated: bool = False,
-        parameters :List[Parameter] = [],
-        middlewares :List[Any] = [],
-        **kwargs :Dict[str,Any]
+        parameters: List[Parameter] = [],
+        middlewares: List[Any] = [],
+        **kwargs: Dict[str, Any],
     ):
         """
         Initialize a route configuration with endpoint details.
@@ -372,8 +392,9 @@ class Routes:
         """
         assert callable(handler), "Route handler must be callable"
         from nexios.openapi._builder import APIDocumentation
+
         self.docs = APIDocumentation.get_instance()
-        
+
         self.raw_path = path
         self.handler = handler
         self.methods = methods or allowed_methods_default
@@ -383,36 +404,38 @@ class Routes:
         self.pattern: Pattern[str] = self.route_info.pattern
         self.param_names = self.route_info.param_names
         self.route_type = self.route_info.route_type
-        self.middlewares :typing.List[MiddlewareType] = list(middlewares)
+        self.middlewares: typing.List[MiddlewareType] = list(middlewares)
         self.summary = summary
         self.description = description
         self.responses = responses
         self.request_model = request_model
         self.kwargs = kwargs
-        self.tags = tags,
-        self.security= security
+        self.tags = (tags,)
+        self.security = security
         self.operation_id = operation_id
         self.deprecated = deprecated
         self.parameters = parameters
         for method in self.methods:
-            
-            parameters = [Path(name = x,schema = Schema(type="string")) for x in self.param_names] #type:ignore
+
+            parameters = [
+                Path(name=x, schema=Schema(type="string")) for x in self.param_names
+            ]  # type:ignore
             if self.parameters.__len__() > 0:
                 parameters.extend(parameters)
-            self.docs.document_endpoint( #type:ignore
-                path = self.raw_path,
+            self.docs.document_endpoint(  # type:ignore
+                path=self.raw_path,
                 method=method,
                 tags=tags,
                 security=security,
                 summary=self.summary or "",
                 description=description,
-                request_body = request_model,
+                request_body=request_model,
                 parameters=parameters,
                 deprecated=self.deprecated,
-                operation_id=self.operation_id
-                
+                operation_id=self.operation_id,
             )(handler)
-    def match(self, path: str, method:str) -> typing.Tuple[Any,Any,Any]:
+
+    def match(self, path: str, method: str) -> typing.Tuple[Any, Any, Any]:
         """
         Match a path against this route's pattern and return captured parameters.
 
@@ -529,7 +552,7 @@ class Router(BaseRouter):
         if self.prefix and not self.prefix.startswith("/"):
             warnings.warn("Router prefix should start with '/'")
             self.prefix = f"/{self.prefix}"
-            
+
     def build_middleware_stack(self, app: ASGIApp) -> ASGIApp:
         """
         Builds the middleware stack by applying all registered middlewares to the app.
@@ -595,6 +618,7 @@ class Router(BaseRouter):
         """
         Registers a GET route with all available parameters.
         """
+
         def decorator(handler: HandlerType) -> HandlerType:
             route = self.route_class(
                 path=path,
@@ -614,7 +638,7 @@ class Router(BaseRouter):
             )
             self.add_route(route)
             return handler
-        
+
         if handler is None:
             return decorator
         return decorator(handler)
@@ -634,11 +658,12 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
-        **kwargs: Dict[str, Any]
+        **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
         Registers a POST route with all available parameters.
         """
+
         def decorator(handler: HandlerType) -> HandlerType:
             route = self.route_class(
                 path=path,
@@ -658,7 +683,7 @@ class Router(BaseRouter):
             )
             self.add_route(route)
             return handler
-        
+
         if handler is None:
             return decorator
         return decorator(handler)
@@ -678,11 +703,12 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
-        **kwargs: Dict[str, Any]
+        **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
         Registers a DELETE route with all available parameters.
         """
+
         def decorator(handler: HandlerType) -> HandlerType:
             route = self.route_class(
                 path=path,
@@ -702,7 +728,7 @@ class Router(BaseRouter):
             )
             self.add_route(route)
             return handler
-        
+
         if handler is None:
             return decorator
         return decorator(handler)
@@ -722,11 +748,12 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
-        **kwargs: Dict[str, Any]
+        **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
         Registers a PUT route with all available parameters.
         """
+
         def decorator(handler: HandlerType) -> HandlerType:
             route = self.route_class(
                 path=path,
@@ -746,7 +773,7 @@ class Router(BaseRouter):
             )
             self.add_route(route)
             return handler
-        
+
         if handler is None:
             return decorator
         return decorator(handler)
@@ -766,11 +793,12 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
-        **kwargs: Dict[str, Any]
+        **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
         Registers a PATCH route with all available parameters.
         """
+
         def decorator(handler: HandlerType) -> HandlerType:
             route = self.route_class(
                 path=path,
@@ -790,7 +818,7 @@ class Router(BaseRouter):
             )
             self.add_route(route)
             return handler
-        
+
         if handler is None:
             return decorator
         return decorator(handler)
@@ -810,11 +838,12 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
-        **kwargs: Dict[str, Any]
+        **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
         Registers an OPTIONS route with all available parameters.
         """
+
         def decorator(handler: HandlerType) -> HandlerType:
             route = self.route_class(
                 path=path,
@@ -834,7 +863,7 @@ class Router(BaseRouter):
             )
             self.add_route(route)
             return handler
-        
+
         if handler is None:
             return decorator
         return decorator(handler)
@@ -854,11 +883,12 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
-        **kwargs: Dict[str, Any]
+        **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
         Registers a HEAD route with all available parameters.
         """
+
         def decorator(handler: HandlerType) -> HandlerType:
             route = self.route_class(
                 path=path,
@@ -878,7 +908,7 @@ class Router(BaseRouter):
             )
             self.add_route(route)
             return handler
-        
+
         if handler is None:
             return decorator
         return decorator(handler)
@@ -899,11 +929,12 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
-        **kwargs: Dict[str, Any]
+        **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
         Registers a route with all available parameters and customizable HTTP methods.
         """
+
         def decorator(handler: HandlerType) -> HandlerType:
             route = self.route_class(
                 path=path,
@@ -923,12 +954,11 @@ class Router(BaseRouter):
             )
             self.add_route(route)
             return handler
-        
+
         if handler is None:
             return decorator
         return decorator(handler)
-    
-    
+
     def url_for(self, _name: str, **path_params: Any) -> URLPath:
         """
         Generate a URL path for the route with the given name and parameters.

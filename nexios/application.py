@@ -1,6 +1,6 @@
-from typing import Any, Callable, List, Type, Union,Type
-from .routing import Router, WSRouter, WebsocketRoutes,Routes
-import  typing
+from typing import Any, Callable, List, Type, Union, Type
+from .routing import Router, WSRouter, WebsocketRoutes, Routes
+import typing
 from .exception_handler import ExceptionMiddleware
 from typing_extensions import Doc, Annotated  # type:ignore
 from nexios.config import MakeConfig
@@ -15,15 +15,7 @@ from nexios.middlewares.errors.server_error_handler import (
 from nexios.structs import URLPath
 from pydantic import BaseModel
 from nexios.openapi.models import Parameter
-from .types import (
-    MiddlewareType,
-    Scope,
-    Send,
-    Receive,
-    Message,
-    HandlerType,
-    ASGIApp
-)
+from .types import MiddlewareType, Scope, Send, Receive, Message, HandlerType, ASGIApp
 
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
 
@@ -65,7 +57,7 @@ class NexiosApp(object):
         ] = None,
         lifespan: Optional[Callable[["NexiosApp"], AsyncIterator[None]]] = None,
     ):
-        
+
         self.config = config
         self.server_error_handler = None
         super().__init__()
@@ -83,7 +75,9 @@ class NexiosApp(object):
         self.router = self.app
         self.route = self.router.route
         self._setup_openapi()
-        self.lifespan_context :Optional[Callable[["NexiosApp"], AsyncIterator[None]]] = lifespan
+        self.lifespan_context: Optional[
+            Callable[["NexiosApp"], AsyncIterator[None]]
+        ] = lifespan
         self.lifespan_context: Optional[
             Callable[["NexiosApp"], AsyncIterator[None]]
         ] = lifespan
@@ -240,36 +234,34 @@ class NexiosApp(object):
             else:
                 await send({"type": "lifespan.shutdown.failed", "message": str(e)})
 
-   
-
     def _setup_openapi(self):
         """Set up automatic OpenAPI documentation"""
         from nexios.openapi.config import OpenAPIConfig
-        from nexios.openapi.models import  HTTPBearer
+        from nexios.openapi.models import HTTPBearer
         from nexios.openapi._builder import APIDocumentation
-        openapi_config :Dict[str,Any]= self.config.to_dict().get("openapi",{}) #type:ignore
+
+        openapi_config: Dict[str, Any] = self.config.to_dict().get(
+            "openapi", {}
+        )  # type:ignore
         self.openapi_config = OpenAPIConfig(
-            title=openapi_config.get("title","Nexios API"),
-            version=openapi_config.get("version","1.0.0"),
-            description=openapi_config.get("description","Automatically generated API documentation"),
+            title=openapi_config.get("title", "Nexios API"),
+            version=openapi_config.get("version", "1.0.0"),
+            description=openapi_config.get(
+                "description", "Automatically generated API documentation"
+            ),
             license=openapi_config.get("license"),
-            contact=openapi_config.get("contact")
+            contact=openapi_config.get("contact"),
         )
-        
-        
+
         self.openapi_config.add_security_scheme(
-            "bearerAuth", 
-            HTTPBearer(
-                type="http",
-                scheme="bearer",
-                bearerFormat="JWT"
-            )
+            "bearerAuth", HTTPBearer(type="http", scheme="bearer", bearerFormat="JWT")
         )
-        
-        APIDocumentation(app = self,
-                         config=self.openapi_config,
-                         )
-    
+
+        APIDocumentation(
+            app=self,
+            config=self.openapi_config,
+        )
+
     def add_middleware(
         self,
         middleware: Annotated[
@@ -487,7 +479,7 @@ class NexiosApp(object):
         """
         Registers a GET route with all available parameters.
         """
-        
+
         return self.route(
             path=path,
             handler=handler,
@@ -505,7 +497,6 @@ class NexiosApp(object):
             parameters=parameters,
             **kwargs
         )
-           
 
     def post(
         self,
@@ -527,25 +518,24 @@ class NexiosApp(object):
         """
         Registers a POST route with all available parameters.
         """
-        
+
         return self.route(
-                path=path,
-                handler=handler,
-                methods=["POST"],
-                name=name,
-                summary=summary,
-                description=description,
-                responses=responses,
-                request_model=request_model,
-                middlewares=middlewares,
-                tags=tags,
-                security=security,
-                operation_id=operation_id,
-                deprecated=deprecated,
-                parameters=parameters,
-                **kwargs
-            )
-          
+            path=path,
+            handler=handler,
+            methods=["POST"],
+            name=name,
+            summary=summary,
+            description=description,
+            responses=responses,
+            request_model=request_model,
+            middlewares=middlewares,
+            tags=tags,
+            security=security,
+            operation_id=operation_id,
+            deprecated=deprecated,
+            parameters=parameters,
+            **kwargs
+        )
 
     def delete(
         self,
@@ -567,25 +557,24 @@ class NexiosApp(object):
         """
         Registers a DELETE route with all available parameters.
         """
-        
+
         return self.route(
-                path=path,
-                handler=handler,
-                methods=["DELETE"],
-                name=name,
-                summary=summary,
-                description=description,
-                responses=responses,
-                request_model=request_model,
-                middlewares=middlewares,
-                tags=tags,
-                security=security,
-                operation_id=operation_id,
-                deprecated=deprecated,
-                parameters=parameters,
-                **kwargs
-            )
-            
+            path=path,
+            handler=handler,
+            methods=["DELETE"],
+            name=name,
+            summary=summary,
+            description=description,
+            responses=responses,
+            request_model=request_model,
+            middlewares=middlewares,
+            tags=tags,
+            security=security,
+            operation_id=operation_id,
+            deprecated=deprecated,
+            parameters=parameters,
+            **kwargs
+        )
 
     def put(
         self,
@@ -607,25 +596,24 @@ class NexiosApp(object):
         """
         Registers a PUT route with all available parameters.
         """
-       
+
         return self.route(
-                path=path,
-                handler=handler,
-                methods=["PUT"],
-                name=name,
-                summary=summary,
-                description=description,
-                responses=responses,
-                request_model=request_model,
-                middlewares=middlewares,
-                tags=tags,
-                security=security,
-                operation_id=operation_id,
-                deprecated=deprecated,
-                parameters=parameters,
-                **kwargs
-            )
-            
+            path=path,
+            handler=handler,
+            methods=["PUT"],
+            name=name,
+            summary=summary,
+            description=description,
+            responses=responses,
+            request_model=request_model,
+            middlewares=middlewares,
+            tags=tags,
+            security=security,
+            operation_id=operation_id,
+            deprecated=deprecated,
+            parameters=parameters,
+            **kwargs
+        )
 
     def patch(
         self,
@@ -648,23 +636,22 @@ class NexiosApp(object):
         Registers a PATCH route with all available parameters.
         """
         return self.route(
-                path=path,
-                handler=handler,
-                methods=["PATCH"],
-                name=name,
-                summary=summary,
-                description=description,
-                responses=responses,
-                request_model=request_model,
-                middlewares=middlewares,
-                tags=tags,
-                security=security,
-                operation_id=operation_id,
-                deprecated=deprecated,
-                parameters=parameters,
-                **kwargs
-            )
-            
+            path=path,
+            handler=handler,
+            methods=["PATCH"],
+            name=name,
+            summary=summary,
+            description=description,
+            responses=responses,
+            request_model=request_model,
+            middlewares=middlewares,
+            tags=tags,
+            security=security,
+            operation_id=operation_id,
+            deprecated=deprecated,
+            parameters=parameters,
+            **kwargs
+        )
 
     def options(
         self,
@@ -687,23 +674,22 @@ class NexiosApp(object):
         Registers an OPTIONS route with all available parameters.
         """
         return self.route(
-                path=path,
-                handler=handler,
-                methods=["OPTIONS"],
-                name=name,
-                summary=summary,
-                description=description,
-                responses=responses,
-                request_model=request_model,
-                middlewares=middlewares,
-                tags=tags,
-                security=security,
-                operation_id=operation_id,
-                deprecated=deprecated,
-                parameters=parameters,
-                **kwargs
-            )
-            
+            path=path,
+            handler=handler,
+            methods=["OPTIONS"],
+            name=name,
+            summary=summary,
+            description=description,
+            responses=responses,
+            request_model=request_model,
+            middlewares=middlewares,
+            tags=tags,
+            security=security,
+            operation_id=operation_id,
+            deprecated=deprecated,
+            parameters=parameters,
+            **kwargs
+        )
 
     def head(
         self,
@@ -725,30 +711,25 @@ class NexiosApp(object):
         """
         Registers a HEAD route with all available parameters.
         """
-       
-        return self.route(
-                path=path,
-                handler=handler,
-                methods=["HEAD"],
-                name=name,
-                summary=summary,
-                description=description,
-                responses=responses,
-                request_model=request_model,
-                middlewares=middlewares,
-                tags=tags,
-                security=security,
-                operation_id=operation_id,
-                deprecated=deprecated,
-                parameters=parameters,
-                **kwargs
-            )
-            
 
-    
-    
-    
-    
+        return self.route(
+            path=path,
+            handler=handler,
+            methods=["HEAD"],
+            name=name,
+            summary=summary,
+            description=description,
+            responses=responses,
+            request_model=request_model,
+            middlewares=middlewares,
+            tags=tags,
+            security=security,
+            operation_id=operation_id,
+            deprecated=deprecated,
+            parameters=parameters,
+            **kwargs
+        )
+
     def add_route(
         self,
         route: Annotated[
