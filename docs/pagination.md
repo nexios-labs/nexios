@@ -1,10 +1,12 @@
+---
+icon: page4
+---
 
 # Pagination
 
-
 Nexios provides a flexible and customizable pagination system, making it easy to manage large datasets efficiently. It supports dynamic page sizes, custom query parameters, and seamless integration with APIs. Developers can easily modify pagination styles and behavior to fit their needs, ensuring a smooth user experience while maintaining optimal performance in data retrieval and display.
 
----
+***
 
 ## Quick Example: Paginating a List of Items
 
@@ -71,7 +73,7 @@ The output will be a structured response containing the paginated items and meta
 }
 ```
 
----
+***
 
 ## Core Classes Explained
 
@@ -81,8 +83,8 @@ The pagination system is built around a few key classes. Let’s break them down
 
 This is an abstract base class that defines the interface for fetching data. You must implement two methods:
 
-- `get_total_items()`: Returns the total number of items.
-- `get_items(offset, limit)`: Returns a subset of items based on the offset and limit.
+* `get_total_items()`: Returns the total number of items.
+* `get_items(offset, limit)`: Returns a subset of items based on the offset and limit.
 
 #### Example: `ListDataHandler`
 
@@ -104,9 +106,9 @@ class ListDataHandler(AsyncDataHandler):
 
 This is an abstract base class that defines how pagination works. You must implement three methods:
 
-- `parse_parameters(request_params)`: Parses the request parameters (e.g., page number, page size).
-- `calculate_offset_limit(*args)`: Calculates the offset and limit for fetching items.
-- `generate_metadata(total_items, items, base_url, request_params)`: Generates pagination metadata (e.g., links, total pages).
+* `parse_parameters(request_params)`: Parses the request parameters (e.g., page number, page size).
+* `calculate_offset_limit(*args)`: Calculates the offset and limit for fetching items.
+* `generate_metadata(total_items, items, base_url, request_params)`: Generates pagination metadata (e.g., links, total pages).
 
 #### Example: `PageNumberPagination`
 
@@ -193,7 +195,7 @@ class PaginatedResponse:
         }
 ```
 
----
+***
 
 ## Customization
 
@@ -247,5 +249,4 @@ class KeysetPagination(BasePaginationStrategy):
         }
 ```
 
----
-
+***

@@ -1,7 +1,8 @@
+# 😃 basic example
 
----
+***
 
-### **Example: Basic Nexios Application**  
+#### **Example: Basic Nexios Application**
 
 ```python
 from nexios import get_application  
@@ -23,14 +24,15 @@ if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=5000, reload=True)  
 ```
 
----
+***
 
-### **Explanation:**  
-- **Initializes** a Nexios app using `get_application()`.  
-- **Defines routes:**  
-  - `/` → Returns a **welcome message**.  
-  - `/hello/{name}` → Accepts a **dynamic parameter** and returns a **personalized message**.  
-- **Runs with Uvicorn**, enabling:  
-  - **ASGI support** for better performance.  
-  - **Auto-reload** for faster development (`reload=True`).  
-  - **Host set to 127.0.0.1**, listening on **port 5000**.  
+#### **Explanation:**
+
+* **Initializes** a Nexios app using `get_application()`.
+* **Defines routes:**
+  * `/` → Returns a **welcome message**.
+  * `/hello/{name}` → Accepts a **dynamic parameter** and returns a **personalized message**.
+* **Runs with Uvicorn**, enabling:
+  * **ASGI support** for better performance.
+  * **Auto-reload** for faster development (`reload=True`).
+  * **Host set to 127.0.0.1**, listening on **port 5000**.

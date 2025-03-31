@@ -1,7 +1,12 @@
+---
+icon: wifi-fair
+---
 
-## Basic WebSocket Setup
+# Websockets
 
-### 1. Creating a WebSocket Endpoint
+### Basic WebSocket Setup
+
+#### 1. Creating a WebSocket Endpoint
 
 ```python
 from nexios import get_application, WebSocket
@@ -27,29 +32,32 @@ async def basic_websocket(ws: WebSocket):
         print(f"Connection closed: {e}")
 ```
 
-### 2. Handling Different Message Types
+#### 2. Handling Different Message Types
 
 Nexios supports three main message formats:
 
-#### Text Messages
+**Text Messages**
+
 ```python
 text_data = await ws.receive_text()
 await ws.send_text("Response message")
 ```
 
-#### Binary Messages
+**Binary Messages**
+
 ```python
 binary_data = await ws.receive_bytes()
 await ws.send_bytes(b"Response bytes")
 ```
 
-#### JSON Messages
+**JSON Messages**
+
 ```python
 json_data = await ws.receive_json()
 await ws.send_json({"response": "data", "status": "success"})
 ```
 
-### 3. Connection Lifecycle
+#### 3. Connection Lifecycle
 
 ```python
 @ws_router.ws_route("/chat")
@@ -76,9 +84,9 @@ async def chat_websocket(ws: WebSocket):
         await ws.close()
 ```
 
-## Intermediate Features
+### Intermediate Features
 
-### Accessing Connection Details
+#### Accessing Connection Details
 
 ```python
 @ws_router.ws_route("/info")
@@ -106,7 +114,7 @@ async def info_websocket(ws: WebSocket):
     })
 ```
 
-### Error Handling
+#### Error Handling
 
 ```python
 from nexios.websockets import WebSocketDisconnect
@@ -132,17 +140,18 @@ async def safe_websocket(ws: WebSocket):
         await ws.close(code=1011)  # 1011 = Internal Error
 ```
 
-## Advanced Room Management
+### Advanced Room Management
 
-### Understanding the Channel System
+#### Understanding the Channel System
 
 Nexios provides built-in room management through:
-- `Channel`: Represents a single WebSocket connection
-- `ChannelBox`: Manages groups of channels (rooms)
 
-### Basic Room Operations
+* `Channel`: Represents a single WebSocket connection
+* `ChannelBox`: Manages groups of channels (rooms)
 
-#### Function-Based Approach
+#### Basic Room Operations
+
+**Function-Based Approach**
 
 ```python
 from nexios.websockets.channels import Channel, ChannelBox, PayloadTypeEnum
@@ -184,7 +193,7 @@ async def room_handler(ws: WebSocket, room_name: str):
         await ws.close()
 ```
 
-#### Class-Based Approach (Recommended)
+**Class-Based Approach (Recommended)**
 
 ```python
 from nexios.websockets.consumers import WebSocketEndpoint
@@ -222,9 +231,10 @@ class ChatEndpoint(WebSocketEndpoint):
         await self.leave_group(room_name)
 ```
 
-### Room Management Features
+#### Room Management Features
 
 1. **Listing Rooms and Channels**
+
 ```python
 # Get all active rooms
 rooms = await ChannelBox.show_groups()
@@ -234,6 +244,7 @@ channels = await ChannelBox.show_groups().get("room_name", {})
 ```
 
 2. **Message History**
+
 ```python
 # Save message (shown in broadcast examples above)
 # Retrieve history
@@ -244,6 +255,7 @@ await ChannelBox.flush_history()
 ```
 
 3. **Targeted Messaging**
+
 ```python
 # Send to specific channel
 channel_id = "uuid-of-channel"
@@ -251,6 +263,7 @@ await ChannelBox.send_to(channel_id, {"private": "message"})
 ```
 
 4. **Connection Management**
+
 ```python
 # Close all connections
 await ChannelBox.close_all_connections()
@@ -259,7 +272,7 @@ await ChannelBox.close_all_connections()
 await ChannelBox._clean_expired()
 ```
 
-### Complete Chat Room Example
+#### Complete Chat Room Example
 
 ```python
 from nexios.websockets.consumers import WebSocketEndpoint
@@ -317,7 +330,7 @@ class ChatRoom(WebSocketEndpoint):
         return len(channels)
 ```
 
-## Best Practices
+### Best Practices
 
 1. **Always handle disconnections** - Use try/finally blocks to clean up resources
 2. **Validate incoming data** - Especially for JSON messages

@@ -1,12 +1,16 @@
+---
+icon: server
+---
+
+# Session
+
 Session management is crucial for maintaining user state across requests in a web application. Nexios provides a flexible and scalable approach to session handling, supporting various backends such as in-memory storage, databases, and distributed caches.
 
-## Basic Configuration
+### Basic Configuration
 
-
-First sessions in nexios require `secret_key` key in the application configuration 
+First sessions in nexios require `secret_key` key in the application configuration
 
 **Example Impementation**
-
 
 ```py
 
@@ -31,8 +35,7 @@ async def set_session(req, res):
     return res.json({"sucess","session set"})
 ```
 
-
-## More Session configuration
+### More Session configuration
 
 ```py
 
@@ -46,24 +49,22 @@ app_config = MakeConfig({
 
 ```
 
-## Session Configuration Table
+### Session Configuration Table
 
-| Configuration                     | Description |
-|------------------------------------|-------------|
-| `session_cookie_name`             | The name of the session cookie. Defaults to `"session_id"` if not set. |
-| `session_cookie_domain`           | The domain for which the session cookie is valid. |
-| `session_cookie_path`             | The path for which the session cookie is valid. |
-| `session_cookie_httponly`         | Determines if the session cookie should be HTTPOnly, preventing JavaScript access. |
-| `session_cookie_secure`           | Specifies if the session cookie should be transmitted only over HTTPS. |
-| `session_cookie_samesite`         | Defines the SameSite policy (`None`, `Lax`, or `Strict`). Helps prevent CSRF attacks. |
-| `session_cookie_partitioned`      | Indicates if the cookie should be partitioned for improved security in cross-site contexts. |
-| `session_expiration_time`         | Determines how long the session lasts before expiration. Defaults to `86400` minutes (1 day). |
-| `session_permanent`               | If `True`, the session remains active across browser restarts. |
-| `session_refresh_each_request`    | If `True`, resets the session expiration time on every request. |
+| Configuration                  | Description                                                                                   |
+| ------------------------------ | --------------------------------------------------------------------------------------------- |
+| `session_cookie_name`          | The name of the session cookie. Defaults to `"session_id"` if not set.                        |
+| `session_cookie_domain`        | The domain for which the session cookie is valid.                                             |
+| `session_cookie_path`          | The path for which the session cookie is valid.                                               |
+| `session_cookie_httponly`      | Determines if the session cookie should be HTTPOnly, preventing JavaScript access.            |
+| `session_cookie_secure`        | Specifies if the session cookie should be transmitted only over HTTPS.                        |
+| `session_cookie_samesite`      | Defines the SameSite policy (`None`, `Lax`, or `Strict`). Helps prevent CSRF attacks.         |
+| `session_cookie_partitioned`   | Indicates if the cookie should be partitioned for improved security in cross-site contexts.   |
+| `session_expiration_time`      | Determines how long the session lasts before expiration. Defaults to `86400` minutes (1 day). |
+| `session_permanent`            | If `True`, the session remains active across browser restarts.                                |
+| `session_refresh_each_request` | If `True`, resets the session expiration time on every request.                               |
 
-
-
-## Full Example of Session Management in Nexios
+### Full Example of Session Management in Nexios
 
 ```python
 from nexios import get_application, MakeConfig
@@ -110,8 +111,10 @@ async def check_session(req, res):
     return res.json({"expired": expired})
 
 ```
----
-## Custom manager
+
+***
+
+### Custom manager
 
 By default, Nexios utilizes signed cookies for session storage, allowing lightweight and stateless management without requiring a database. However, for applications that need more robust session handling, Nexios provides additional backend options.
 
@@ -139,16 +142,12 @@ app = get_application(config=app_config)
 
 Nexios provides a flexible session management system that allows developers to extend and customize session storage. By default, it uses signed cookies, but developers can create a custom session manager by inheriting from BaseSessionInterface.
 
-#### **Steps to Implement:**
+**Steps to Implement:**
 
 * Inherit from BaseSessionInterface.
-
-* Use an in-memory dictionary (_session_store) to hold session data.
-
+* Use an in-memory dictionary (\_session\_store) to hold session data.
 * Implement expiration handling by storing timestamps.
-
 * Override load to retrieve sessions.
-
 * Override save to update session data.
 
 ```py
@@ -185,7 +184,7 @@ class MemorySessionManager(BaseSessionInterface):
 
 ```
 
-## Using the Custom Session Manager
+### Using the Custom Session Manager
 
 ```py
 from nexios import get_application, MakeConfig
