@@ -5,14 +5,16 @@ from .channels import Channel, ChannelBox, PayloadTypeEnum
 from nexios import logging
 import uuid
 
+
 Message = typing.MutableMapping[str, typing.Any]
 
 
 class WebSocketEndpoint:
 
     channel: typing.Optional[Channel] = None
-    middleware = []
+    middleware :typing.List[typing.Any] = []
 
+    encoding: typing.Optional[str] = None
     def __init__(
         self,
         logging_enabled: bool = True,
@@ -25,7 +27,7 @@ class WebSocketEndpoint:
         """
         self.logging_enabled = logging_enabled
         self.logger = logger if logger else logging.getLogger("nexios")
-        self.encoding: typing.Optional[str] = None
+        
 
     @classmethod
     def as_route(cls, path: str):

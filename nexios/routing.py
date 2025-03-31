@@ -1,11 +1,13 @@
 from __future__ import annotations
-from typing import Any, List, Optional, Pattern, Dict, TypeVar, Tuple, Callable, Union
+from typing import Any, List, Optional, Pattern,Dict,TypeVar,Tuple,Callable,Union,Type
 from dataclasses import dataclass
 import re
 import warnings, typing
 from enum import Enum
-from abc import abstractmethod, ABC
-from nexios.types import MiddlewareType, WsMiddlewareType, HandlerType, WsHandlerType
+from abc import abstractmethod,ABC
+
+from nexios.openapi.models import Parameter, Path,Schema
+from nexios.types import MiddlewareType,WsMiddlewareType,HandlerType,WsHandlerType
 from nexios.decorators import allowed_methods
 from typing_extensions import Doc, Annotated  # type: ignore
 from nexios.structs import URLPath, RouteParam
@@ -18,6 +20,8 @@ from nexios.middlewares.core import BaseMiddleware
 from nexios.middlewares.core import Middleware, wrap_middleware
 from nexios.exceptions import NotFoundException
 from nexios.websockets.errors import WebSocketErrorMiddleware
+from pydantic import BaseModel
+
 
 T = TypeVar("T")
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
@@ -310,15 +314,43 @@ class Routes:
             - POST: Create resources
             - PUT: Update resources
             - DELETE: Remove resources
-            - PATCH: Partial updates
+            - PATCH: Partial updatess
 
             Defaults to ['GET'] if not specified. Use uppercase method names.
             """
             ),
         ] = None,
-        name: Optional[str] = None,
-        middlewares: List[Any] = [],
-        **kwargs: Dict[str, Any],
+        name :Annotated[Optional[str],
+                        Doc("""The unique identifier for the route. This name is used to generate 
+            URLs dynamically with `url_for`. It should be a valid, unique string 
+            that represents the route within the application.""")] = None,
+        summary: Annotated[
+            Optional[str], 
+            Doc("A brief summary of the API endpoint. This should be a short, one-line description providing a high-level overview of its purpose.")
+        ] = None,
+
+        description: Annotated[
+            Optional[str], 
+            Doc("A detailed explanation of the API endpoint, including functionality, expected behavior, and additional context.")
+        ] = None,
+
+        responses: Annotated[
+            Optional[Dict[int, Any]], 
+            Doc("A dictionary mapping HTTP status codes to response schemas or descriptions. Keys are HTTP status codes (e.g., 200, 400), and values define the response format.")
+        ] = None,
+
+        request_model: Annotated[
+            Optional[Type[BaseModel]], 
+            Doc("A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data.")
+] = None,
+        response_model :Optional[Type[BaseModel] ]= None,
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters :List[Parameter] = [],
+        middlewares :List[Any] = [],
+        **kwargs :Dict[str,Any]
     ):
         """
         Initialize a route configuration with endpoint details.
@@ -339,7 +371,9 @@ class Routes:
             AssertionError: If handler is not callable.
         """
         assert callable(handler), "Route handler must be callable"
-
+        from nexios.openapi._builder import APIDocumentation
+        self.docs = APIDocumentation.get_instance()
+        
         self.raw_path = path
         self.handler = handler
         self.methods = methods or allowed_methods_default
@@ -349,10 +383,36 @@ class Routes:
         self.pattern: Pattern[str] = self.route_info.pattern
         self.param_names = self.route_info.param_names
         self.route_type = self.route_info.route_type
-        self.middlewares: typing.List[MiddlewareType] = list(middlewares)
+        self.middlewares :typing.List[MiddlewareType] = list(middlewares)
+        self.summary = summary
+        self.description = description
+        self.responses = responses
+        self.request_model = request_model
         self.kwargs = kwargs
-
-    def match(self, path: str, method: str) -> typing.Tuple[Any, Any, Any]:
+        self.tags = tags,
+        self.security= security
+        self.operation_id = operation_id
+        self.deprecated = deprecated
+        self.parameters = parameters
+        for method in self.methods:
+            
+            parameters = [Path(name = x,schema = Schema(type="string")) for x in self.param_names] #type:ignore
+            if self.parameters.__len__() > 0:
+                parameters.extend(parameters)
+            self.docs.document_endpoint( #type:ignore
+                path = self.raw_path,
+                method=method,
+                tags=tags,
+                security=security,
+                summary=self.summary or "",
+                description=description,
+                request_body = request_model,
+                parameters=parameters,
+                deprecated=self.deprecated,
+                operation_id=self.operation_id
+                
+            )(handler)
+    def match(self, path: str, method:str) -> typing.Tuple[Any,Any,Any]:
         """
         Match a path against this route's pattern and return captured parameters.
 
@@ -469,7 +529,7 @@ class Router(BaseRouter):
         if self.prefix and not self.prefix.startswith("/"):
             warnings.warn("Router prefix should start with '/'")
             self.prefix = f"/{self.prefix}"
-
+            
     def build_middleware_stack(self, app: ASGIApp) -> ASGIApp:
         """
         Builds the middleware stack by applying all registered middlewares to the app.
@@ -518,317 +578,357 @@ class Router(BaseRouter):
 
     def get(
         self,
-        path: Annotated[
-            str,
-            Doc(
-                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
-            ),
-        ],
-        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
-        middlewares: Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler"),
-        ] = [],
+        path: str,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
     ) -> Callable[..., Any]:
         """
-        Registers a GET route.
-
-        This decorator allows you to define an endpoint that handles HTTP GET requests.
-        GET requests are typically used for retrieving resources.
-
-        Args:
-            route (Routes): The route definition, including path and handler function.
-            validator (Callable, optional): A function to validate the request data before passing it to the handler.
-
-        Returns:
-            Callable: The decorated handler function.
-
-        Example:
-            ```python
-            @app.get("/users")
-            async def get_users(request,response):
-                return response.json({"users": ["Alice", "Bob"]})
-            ```
+        Registers a GET route with all available parameters.
         """
-        return self.route(
-            path=f"{path}", methods=["GET"], name=name, middlewares=middlewares
-        )
+        def decorator(handler: HandlerType) -> HandlerType:
+            route = self.route_class(
+                path=path,
+                handler=handler,
+                methods=["GET"],
+                name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
+                middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
+            )
+            self.add_route(route)
+            return handler
+        
+        if handler is None:
+            return decorator
+        return decorator(handler)
 
     def post(
         self,
-        path: Annotated[
-            str,
-            Doc(
-                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
-            ),
-        ],
-        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
-        middlewares: Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler"),
-        ] = [],
+        path: str,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
+        **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
-        Registers a POST route.
-
-        This decorator is used to define an endpoint that handles HTTP POST requests,
-        typically for creating resources.
-
-        Args:
-            route (Routes): The route definition, including path and handler function.
-            validator (Callable, optional): A function to validate the request data before passing it to the handler.
-
-        Returns:
-            Callable: The decorated handler function.
-
-        Example:
-            ```python
-            @app.post("/users")
-            async def create_user(request,response):
-                return response.json({"message": "User created"})
-            ```
+        Registers a POST route with all available parameters.
         """
-        return self.route(
-            path=f"{path}", methods=["POST"], name=name, middlewares=middlewares
-        )
+        def decorator(handler: HandlerType) -> HandlerType:
+            route = self.route_class(
+                path=path,
+                handler=handler,
+                methods=["POST"],
+                name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
+                middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
+            )
+            self.add_route(route)
+            return handler
+        
+        if handler is None:
+            return decorator
+        return decorator(handler)
 
     def delete(
         self,
-        path: Annotated[
-            str,
-            Doc(
-                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
-            ),
-        ],
-        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
-        middlewares: Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler"),
-        ] = [],
+        path: str,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
+        **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
-        Registers a DELETE route.
-
-        This decorator allows defining an endpoint that handles HTTP DELETE requests,
-        typically for deleting resources.
-
-        Args:
-            route (Routes): The route definition, including path and handler function.
-            validator (Callable, optional): A function to validate the request data before passing it to the handler.
-
-        Returns:
-            Callable: The decorated handler function.
-
-        Example:
-            ```python
-            @app.delete("/users/{user_id}")
-            def delete_user(request, response):
-                user_id = request.path_params.user_id
-                return responsejson({"message": f"User {user_id} deleted"})
-            ```
+        Registers a DELETE route with all available parameters.
         """
-        return self.route(
-            path=f"{path}", methods=["DELETE"], name=name, middlewares=middlewares
-        )
+        def decorator(handler: HandlerType) -> HandlerType:
+            route = self.route_class(
+                path=path,
+                handler=handler,
+                methods=["DELETE"],
+                name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
+                middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
+            )
+            self.add_route(route)
+            return handler
+        
+        if handler is None:
+            return decorator
+        return decorator(handler)
 
     def put(
         self,
-        path: Annotated[
-            str,
-            Doc(
-                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
-            ),
-        ],
-        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
-        middlewares: Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler"),
-        ] = [],
+        path: str,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
+        **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
-        Registers a PUT route.
-
-        This decorator defines an endpoint that handles HTTP PUT requests,
-        typically for updating or replacing a resource.
-
-        Args:
-            route (Routes): The route definition, including path and handler function.
-            validator (Callable, optional): A function to validate the request data before passing it to the handler.
-
-        Returns:
-            Callable: The decorated handler function.
-
-        Example:
-            ```python
-            @app.delete("/users/{user_id}")
-            def delete_user(request, response):
-                user_id = request.path_params.user_id
-                return responsejson({"message": f"User {user_id} updated"})
+        Registers a PUT route with all available parameters.
         """
-        return self.route(
-            path=f"{path}", methods=["PUT"], name=name, middlewares=middlewares
-        )
+        def decorator(handler: HandlerType) -> HandlerType:
+            route = self.route_class(
+                path=path,
+                handler=handler,
+                methods=["PUT"],
+                name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
+                middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
+            )
+            self.add_route(route)
+            return handler
+        
+        if handler is None:
+            return decorator
+        return decorator(handler)
 
     def patch(
         self,
-        path: Annotated[
-            str,
-            Doc(
-                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
-            ),
-        ],
-        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
-        middlewares: Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler"),
-        ] = [],
+        path: str,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
+        **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
-        Registers a PATCH route.
-
-        This decorator defines an endpoint that handles HTTP PATCH requests,
-        which are used to apply partial modifications to a resource.
-
-        Args:
-            route (Routes): The route definition, including path and handler function.
-            validator (Callable, optional): A function to validate the request data before passing it to the handler.
-
-        Returns:
-            Callable: The decorated handler function.
-
-        Example:
-            ```python
-            @app.patch("/users/{user_id}")
-            def partial_update_user(request, response):
-                user_id = request.path_params.user_id
-
-                return respoonse.json({"message": f"User {user_id} partially updated"})
-            ```
+        Registers a PATCH route with all available parameters.
         """
-        return self.route(
-            path=f"{path}",
-            methods=["PATCH"],
-            name=name,
-            middlewares=middlewares,
-        )
+        def decorator(handler: HandlerType) -> HandlerType:
+            route = self.route_class(
+                path=path,
+                handler=handler,
+                methods=["PATCH"],
+                name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
+                middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
+            )
+            self.add_route(route)
+            return handler
+        
+        if handler is None:
+            return decorator
+        return decorator(handler)
 
     def options(
         self,
-        path: Annotated[
-            str,
-            Doc(
-                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
-            ),
-        ],
-        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
-        middlewares: Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler"),
-        ] = [],
+        path: str,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
+        **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
-        Registers an OPTIONS route.
-
-        This decorator defines an endpoint that handles HTTP OPTIONS requests,
-        which are used to describe the communication options for the target resource.
-        OPTIONS requests are commonly used in CORS (Cross-Origin Resource Sharing)
-        to check allowed methods, headers, and authentication rules.
-
-        Args:
-            route (Routes): The route definition, including path and handler function.
-            validator (Callable, optional): A function to validate the request data before passing it to the handler.
-
-        Returns:
-            Callable: The decorated handler function.
-
-        Example:
-            ```python
-            @app.options("/users")
-            def options_users(request):
-                return response.json({
-                    "Allow": "GET, POST, DELETE, OPTIONS"
-                })
-            ```
+        Registers an OPTIONS route with all available parameters.
         """
-        return self.route(
-            path=f"{path}", methods=["OPTIONS"], name=name, middlewares=middlewares
-        )
+        def decorator(handler: HandlerType) -> HandlerType:
+            route = self.route_class(
+                path=path,
+                handler=handler,
+                methods=["OPTIONS"],
+                name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
+                middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
+            )
+            self.add_route(route)
+            return handler
+        
+        if handler is None:
+            return decorator
+        return decorator(handler)
 
     def head(
         self,
-        path: Annotated[
-            str,
-            Doc(
-                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
-            ),
-        ],
-        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
-        middlewares: Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler"),
-        ] = [],
+        path: str,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
+        **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
-
-        return self.route(
-            path=f"{path}", methods=["HEAD"], name=name, middlewares=middlewares
-        )
+        """
+        Registers a HEAD route with all available parameters.
+        """
+        def decorator(handler: HandlerType) -> HandlerType:
+            route = self.route_class(
+                path=path,
+                handler=handler,
+                methods=["HEAD"],
+                name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
+                middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
+            )
+            self.add_route(route)
+            return handler
+        
+        if handler is None:
+            return decorator
+        return decorator(handler)
 
     def route(
         self,
-        path: Annotated[
-            str,
-            Doc(
-                "The URL path pattern for the endpoint. Supports dynamic parameters using curly brace syntax."
-            ),
-        ],
-        methods: Annotated[
-            List[str],
-            Doc(
-                f"HTTP methods allowed for this endpoint. Defaults to {allowed_methods_default}."
-            ),
-        ] = allowed_methods_default,
-        name: Annotated[Optional[str], Doc("A unique name for the route.")] = None,
-        middlewares: Annotated[
-            List[Any],
-            Doc("Optional Middleware that should be executed before the route handler"),
-        ] = [],
+        path: str,
+        methods: List[str] = allowed_methods_default,
+        handler: Optional[HandlerType] = None,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        responses: Optional[Dict[int, Any]] = None,
+        request_model: Optional[Type[BaseModel]] = None,
+        middlewares: List[Any] = [],
+        tags: Optional[List[str]] = None,
+        security: Optional[List[Dict[str, List[str]]]] = None,
+        operation_id: Optional[str] = None,
+        deprecated: bool = False,
+        parameters: List[Parameter] = [],
+        **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
-        Registers a route with the specified HTTP methods and an optional validator.
-
-        This decorator allows developers to define HTTP routes for the application by specifying
-        the URL path, allowed methods, and an optional parameter validator. It ensures that the
-        handler only responds to the defined HTTP methods.
-
-
-
-        Example:
-            ```python
-
-            @app.route("/users", methods=["GET"])
-            async def get_users(request, response):
-                response.json({"users": ["Alice", "Bob"]})
-
-            @app.route("/users", methods=["POST"])
-            async def create_user(request, response):
-                response.json({"message": "User created"}, status_code=201)
-            ```
+        Registers a route with all available parameters and customizable HTTP methods.
         """
-
-        def decorator(handler: HandlerType) -> HandlerType:  # type: ignore
-            _handler: HandlerType = allowed_methods(methods)(handler)
+        def decorator(handler: HandlerType) -> HandlerType:
             route = self.route_class(
-                path=f"{path}",
-                handler=_handler,
+                path=path,
+                handler=handler,
                 methods=methods,
                 name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
                 middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
             )
             self.add_route(route)
-            return _handler
-
-        return decorator
-
+            return handler
+        
+        if handler is None:
+            return decorator
+        return decorator(handler)
+    
+    
     def url_for(self, _name: str, **path_params: Any) -> URLPath:
         """
         Generate a URL path for the route with the given name and parameters.

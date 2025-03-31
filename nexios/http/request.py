@@ -4,12 +4,8 @@ import json
 import typing
 from http import cookies as http_cookies
 
-import anyio  # type:ignore
-
-from nexios._utils.async_helpers import (
-    AwaitableOrContextManager,
-    AwaitableOrContextManagerWrapper,
-)
+import anyio 
+from nexios._utils.async_helpers import AwaitableOrContextManager, AwaitableOrContextManagerWrapper
 from nexios.structs import URL, Address, FormData, Headers, QueryParams, State
 from .formparsers import FormParser, MultiPartException, MultiPartParser
 
@@ -66,7 +62,7 @@ def cookie_parser(cookie_string: str) -> dict[str, str]:
 class ClientDisconnect(Exception):
     pass
 
-
+T = typing.TypeVar("T")
 class HTTPConnection(object):
     """
     A base class for incoming HTTP connections, that is used to provide
@@ -206,8 +202,8 @@ async def empty_send(message: Message) -> typing.NoReturn:
     raise RuntimeError("Send channel has not been made available")
 
 
-class Request(HTTPConnection):
-    _form: typing.Union[FormData, None, typing.Dict[str, typing.Any]]  # type: ignore
+class Request(HTTPConnection,typing.Generic[T]):
+    _form: typing.Union[FormData , None , typing.Dict[str,typing.Any]] #type: ignore
 
     def __init__(
         self, scope: Scope, receive: Receive = empty_receive, send: Send = empty_send
@@ -321,8 +317,8 @@ class Request(HTTPConnection):
         )
 
     async def close(self) -> None:
-        if self._form is not None:  # pragma: no branch
-            await self._form.close()  # type:ignore
+        if self._form is not None:  
+            await self._form.close() 
 
     async def is_disconnected(self) -> bool:
         if not self._is_disconnected:
@@ -359,12 +355,12 @@ class Request(HTTPConnection):
         files_dict = {}
         for key, value in form_data.items():
             if isinstance(value, (list, tuple)):
-                for item in value:  # type: ignore
-                    if hasattr(item, "filename"):  # type: ignore
+                for item in value:  
+                    if hasattr(item, 'filename'):  
                         files_dict[key] = item
             elif hasattr(value, "filename"):
                 files_dict[key] = value
-        return files_dict  # type: ignore
+        return files_dict
 
     @property
     async def text(self) -> str:
