@@ -5,6 +5,7 @@ from nexios.application import NexiosApp
 from nexios.logging import create_logger
 from nexios.routing import Routes
 from pathlib import Path
+
 logger = create_logger("nexios")
 
 
@@ -60,7 +61,9 @@ class FileRouterPlugin:
             .with_suffix("")  # Remove .py
             .as_posix()  # Convert Windows paths to Unix-style
             .replace("/", ".")  # Replace slashes with dots for module import
-        ).lstrip(".")  # Remove leading dot if present
+        ).lstrip(
+            "."
+        )  # Remove leading dot if present
 
         module = importlib.import_module(module_path)  # Import dynamically
 
@@ -69,7 +72,7 @@ class FileRouterPlugin:
                 logger.debug(f"Mapped {method.upper()} {path}")
                 handlers.append(
                     Routes(
-                       path.replace("\\", "/"),
+                        path.replace("\\", "/"),
                         getattr(module, method),
                         methods=[method.upper()],
                     )
