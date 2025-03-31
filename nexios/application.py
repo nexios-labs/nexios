@@ -262,8 +262,8 @@ class NexiosApp(object):
         """
 
         self.http_middlewares.insert(
-            0, Middleware(BaseMiddleware, dispatch=middleware)
-        )  # type:ignore
+            0, Middleware(BaseMiddleware, dispatch=middleware) # type:ignore
+        )  
 
     def add_ws_route(
         self,

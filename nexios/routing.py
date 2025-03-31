@@ -158,16 +158,16 @@ class RoutePattern:
 class RouteBuilder:
     @staticmethod
     def create_pattern(path: str) -> RoutePattern:
-        path_regex, path_format, param_convertors, param_names = compile_path(
-            path
-        )  # type:ignore #REVIEW
+        path_regex, path_format, param_convertors, param_names = compile_path( # type:ignore #REVIEW
+            path 
+        )  
         return RoutePattern(
             pattern=path_regex,
             raw_path=path,
             param_names=param_names,
-            route_type=path_format,
-            convertor=param_convertors,
-        )  # type:ignore
+            route_type=path_format, # type:ignore
+            convertor=param_convertors,# type:ignore
+        )  
 
 
 class BaseRouter(ABC):
@@ -365,7 +365,7 @@ class Routes:
         if match:
             matched_params = match.groupdict()
             for key, value in matched_params.items():
-                matched_params[key] = self.route_info.convertor[key].convert(
+                matched_params[key] = self.route_info.convertor[key].convert( # type:ignore
                     value
                 )  # type:ignore
             is_method_allowed = method.lower() in [m.lower() for m in self.methods]
@@ -891,7 +891,7 @@ class Router(BaseRouter):
 
         raise NotFoundException
 
-    def mount_router(
+    def mount_router( # type:ignore
         self, app: "Router", path: typing.Optional[str] = None
     ) -> None:  # type:ignore
         """
@@ -950,7 +950,7 @@ class WebsocketRoutes:
         if match:
             matched_params = match.groupdict()
             for key, value in matched_params.items():
-                matched_params[key] = self.route_info.convertor[key].convert(
+                matched_params[key] = self.route_info.convertor[key].convert( # type:ignore
                     value
                 )  # type:ignore
             return match, matched_params
@@ -1073,7 +1073,7 @@ class WSRouter(BaseRouter):
 
         return decorator
 
-    def build_middleware_stack(
+    def build_middleware_stack( # type:ignore
         self, scope: Scope, receive: Receive, send: Send
     ) -> ASGIApp:  # type:ignore
         app = self.app
@@ -1105,7 +1105,7 @@ class WSRouter(BaseRouter):
                 return
         await send({"type": "websocket.close", "code": 404})
 
-    def mount_router(
+    def mount_router( # type:ignore
         self, app: "WSRouter", path: typing.Optional[str] = None
     ) -> None:  # type:ignore
         """
