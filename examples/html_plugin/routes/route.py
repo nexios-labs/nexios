@@ -1,5 +1,5 @@
 from nexios.http import Request, Response
-from nexios.plugins.html import render
+from nexios.plugins.file_router.html import render
 
 
 @render()

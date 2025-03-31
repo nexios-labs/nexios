@@ -41,7 +41,7 @@ def render(template_path: str = "route.html"):
     stack = inspect.stack()
     caller_frame = stack[1]  # The caller's frame
     caller_module = inspect.getmodule(caller_frame[0])
-    caller_dir = os.path.dirname(os.path.abspath(caller_module.__file__))
+    caller_dir = os.path.dirname(os.path.abspath(caller_module.__file__)) #type:ignore
 
     def decorator(func):
         @functools.wraps(func)

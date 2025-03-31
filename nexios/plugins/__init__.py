@@ -1,2 +1,2 @@
 from .file_router import FileRouterConfig, FileRouterPlugin
-from .html import HTMLPlugin, HTMLPluginConfig
+from .file_router.html import HTMLPlugin, HTMLPluginConfig
