@@ -1,8 +1,9 @@
-
 from typing import Optional, Dict, List, Any, Type
 
 from nexios.openapi.models import Parameter
 from pydantic import BaseModel
+
+
 def mark_as_route(
     path: str,
     methods: List[str] = ["get", "post", "patch", "put", "delete"],

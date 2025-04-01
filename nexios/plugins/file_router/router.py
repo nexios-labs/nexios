@@ -39,7 +39,9 @@ class FileRouterPlugin:
         self._setup()
 
     def _setup(self):
-        exempt_paths = set(os.path.abspath(path) for path in self.config.get("exempt_paths", []))  # type:ignore
+        exempt_paths = set(
+            os.path.abspath(path) for path in self.config.get("exempt_paths", [])
+        )  # type:ignore
         for root, _, files in os.walk(self.config["root"]):
             if os.path.abspath(root) in exempt_paths:
                 continue  # Skip the exempted paths
@@ -103,5 +105,3 @@ class FileRouterPlugin:
                 )
 
         return handlers
-
-
