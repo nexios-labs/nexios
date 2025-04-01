@@ -170,7 +170,7 @@ class Header(ConcreteParameter):
 
 
 class Query(ConcreteParameter):
-    in_: Annotated[Literal["query"], Field(alias="in")] = Field(
+    in_: Literal["query"] = Field(
         default="query",  # Explicit default
         alias="in",  # Explicit alias for OpenAPI compliance
     )
@@ -179,7 +179,7 @@ class Query(ConcreteParameter):
 
 
 class Path(ConcreteParameter):
-    in_: Annotated[Literal["path"], Field(alias="in")] = Field(
+    in_: Literal["path"] = Field(
         default="path", alias="in"  # Explicit default
     )
     style: PathParamStyles = "simple"
@@ -188,7 +188,7 @@ class Path(ConcreteParameter):
 
 
 class Cookie(ConcreteParameter):
-    in_: Annotated[Literal["cookie"], Field(alias="in")] = "cookie"
+    in_:Literal["cookie"] = "cookie"
     style: CookieParamStyles = "form"
     explode: bool = True
 
