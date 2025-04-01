@@ -179,16 +179,14 @@ class Query(ConcreteParameter):
 
 
 class Path(ConcreteParameter):
-    in_: Literal["path"] = Field(
-        default="path", alias="in"  # Explicit default
-    )
+    in_: Literal["path"] = Field(default="path", alias="in")  # Explicit default
     style: PathParamStyles = "simple"
     explode: bool = False
     required: Literal[True] = True
 
 
 class Cookie(ConcreteParameter):
-    in_:Literal["cookie"] = "cookie"
+    in_: Literal["cookie"] = "cookie"
     style: CookieParamStyles = "form"
     explode: bool = True
 
