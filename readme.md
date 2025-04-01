@@ -1,5 +1,3 @@
-
-
 # Nexios – The Future of Python Frameworks!  
 
 <p align="center">
