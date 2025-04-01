@@ -1,6 +1,6 @@
 import importlib
 import os
-from typing import Callable, TypedDict,Optional,Dict,List,Any,Type
+from typing import Callable, TypedDict, Optional, Dict, List, Any, Type
 from httpx import get
 from nexios.application import NexiosApp
 from nexios.logging import create_logger
@@ -8,6 +8,7 @@ from nexios.routing import Routes
 from pathlib import Path
 from nexios.openapi.models import Parameter
 from pydantic import BaseModel
+
 logger = create_logger("nexios")
 
 
@@ -29,14 +30,18 @@ class FileRouterPlugin:
     app: NexiosApp
     config: FileRouterConfig
 
-    def __init__(self, app, config: FileRouterConfig = {"root": "./routes", "exempt_paths" : []}):
+    def __init__(
+        self, app, config: FileRouterConfig = {"root": "./routes", "exempt_paths": []}
+    ):
         self.app = app
         self.config = config
 
         self._setup()
 
     def _setup(self):
-        exempt_paths = set(os.path.abspath(path) for path in self.config.get("exempt_paths", [])) # type:ignore
+        exempt_paths = set(
+            os.path.abspath(path) for path in self.config.get("exempt_paths", [])
+        )  # type:ignore
         for root, _, files in os.walk(self.config["root"]):
             if os.path.abspath(root) in exempt_paths:
                 continue  # Skip the exempted paths
@@ -63,46 +68,44 @@ class FileRouterPlugin:
 
         # Convert file path to a valid module import path
         module_path = (
-            Path(route_file_path)
-            .with_suffix("")  
-            .as_posix()  
-            .replace("/", ".") 
+            Path(route_file_path).with_suffix("").as_posix().replace("/", ".")
         ).lstrip(
             "."
         )  # Remove leading dot if present
 
         module = importlib.import_module(module_path)  # Import dynamically
 
-      
         for attr_name in dir(module):
             methods = ["get", "post", "patch", "put", "delete"]
-            is_route = attr_name in  methods or hasattr(getattr(module,attr_name),"_is_route")
+            is_route = attr_name in methods or hasattr(
+                getattr(module, attr_name), "_is_route"
+            )
             if is_route:
                 logger.debug(f"Mapped {attr_name} {path}")
                 handler_function = getattr(module, attr_name)
                 handlers.append(
-                Routes(
-                    path=getattr(handler_function, "_path", path.replace("\\", "/")),
-                    handler=handler_function, #type:ignore
-                    methods=getattr(handler_function, "_allowed_methods", methods),
-                    name=getattr(handler_function, "_name",""),
-                    summary=getattr(handler_function, "_summary", ""),
-                    description=getattr(handler_function, "_description", ""),
-                    responses=getattr(handler_function, "_responses", {}),
-                    request_model=getattr(handler_function, "_request_model", None),
-                    middlewares=getattr(handler_function, "_middlewares", []),
-                    tags=getattr(handler_function, "_tags", []),
-                    security=getattr(handler_function, "_security", []),
-                    operation_id=getattr(handler_function, "_operation_id", ""),
-                    deprecated=getattr(handler_function, "_deprecated", False),
-                    parameters=getattr(handler_function, "_parameters", []),
+                    Routes(
+                        path=getattr(
+                            handler_function, "_path", path.replace("\\", "/")
+                        ),
+                        handler=handler_function,  # type:ignore
+                        methods=getattr(handler_function, "_allowed_methods", methods),
+                        name=getattr(handler_function, "_name", ""),
+                        summary=getattr(handler_function, "_summary", ""),
+                        description=getattr(handler_function, "_description", ""),
+                        responses=getattr(handler_function, "_responses", {}),
+                        request_model=getattr(handler_function, "_request_model", None),
+                        middlewares=getattr(handler_function, "_middlewares", []),
+                        tags=getattr(handler_function, "_tags", []),
+                        security=getattr(handler_function, "_security", []),
+                        operation_id=getattr(handler_function, "_operation_id", ""),
+                        deprecated=getattr(handler_function, "_deprecated", False),
+                        parameters=getattr(handler_function, "_parameters", []),
+                    )
                 )
-            )
-            
-            
 
         return handlers
-    
+
 
 def mark_as_route(
     path: str,

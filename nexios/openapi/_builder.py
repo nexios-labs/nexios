@@ -164,9 +164,9 @@ class APIDocumentation:
                 request_body_spec = RequestBody(
                     content={
                         "application/json": MediaType(  # type:ignore
-                            schema=Schema( # type:ignore
+                            schema=Schema(  # type:ignore
                                 **request_body.model_json_schema()
-                            )  
+                            )
                         )
                     }
                 )
@@ -180,9 +180,9 @@ class APIDocumentation:
                         description="Successful Response",
                         content={
                             "application/json": MediaType(  # type:ignore
-                                schema=Schema( # type:ignore
+                                schema=Schema(  # type:ignore
                                     **responses.model_json_schema()
-                                )  
+                                )
                             )
                         },
                     )
@@ -193,9 +193,9 @@ class APIDocumentation:
                             description=f"Response for status code {status_code}",
                             content={
                                 "application/json": MediaType(  # type:ignore
-                                    schema=Schema(  #type:ignore
+                                    schema=Schema(  # type:ignore
                                         **model.model_json_schema()
-                                    ) 
+                                    )
                                 )
                             },
                         )
