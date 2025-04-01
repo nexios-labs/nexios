@@ -1,29 +1,35 @@
+---
+icon: calendar-star
+---
+
+# Nexios Events
+
 Nexios provides a comprehensive event system that enables communication between different parts of your application. The event system is designed to be:
 
-- **Flexible**: Supports synchronous and asynchronous operations
-- **Scalable**: Manages thousands of events efficiently
-- **Thread-safe**: Safe for use in multi-threaded environments
-- **Feature-rich**: Includes priorities, namespaces, weak references, and more
+* **Flexible**: Supports synchronous and asynchronous operations
+* **Scalable**: Manages thousands of events efficiently
+* **Thread-safe**: Safe for use in multi-threaded environments
+* **Feature-rich**: Includes priorities, namespaces, weak references, and more
 
-## Core Concepts
+### Core Concepts
 
-### Events
+#### Events
 
 An `Event` represents a specific occurrence in your application that other parts can listen for and respond to. Each event has:
 
-- A unique name
-- A set of listeners (callbacks)
-- Configuration options (priority, max listeners, etc.)
+* A unique name
+* A set of listeners (callbacks)
+* Configuration options (priority, max listeners, etc.)
 
-### EventEmitter
+#### EventEmitter
 
 The `EventEmitter` class serves as a central hub for creating and managing events. It provides methods to:
 
-- Register and remove listeners
-- Trigger events
-- Organize events hierarchically using namespaces
+* Register and remove listeners
+* Trigger events
+* Organize events hierarchically using namespaces
 
-### Event Priorities
+#### Event Priorities
 
 Listeners can be assigned one of five priority levels:
 
@@ -35,7 +41,7 @@ Listeners can be assigned one of five priority levels:
 
 Listeners are executed in priority order (highest first) when an event is triggered.
 
-### Event Phases
+#### Event Phases
 
 Events propagate through three phases:
 
@@ -43,9 +49,9 @@ Events propagate through three phases:
 2. **Target Phase**: On the event target
 3. **Bubbling Phase**: From child to parent
 
-## Basic Usage
+### Basic Usage
 
-### Creating and Triggering Events
+#### Creating and Triggering Events
 
 ```python
 from nexios.events import EventEmitter
@@ -61,7 +67,7 @@ def handle_user_created(user):
 emitter.emit("user.created", {"name": "Alice", "email": "alice@example.com"})
 ```
 
-### One-time Listeners
+#### One-time Listeners
 
 ```python
 # This listener will only be called once
@@ -70,7 +76,7 @@ def handle_system_ready():
     print("System is ready!")
 ```
 
-### Event Namespaces
+#### Event Namespaces
 
 ```python
 # Create a namespace
@@ -85,9 +91,9 @@ def handle_user_created(user):
 user_events.emit("created", {"name": "Bob"})
 ```
 
-## Advanced Features
+### Advanced Features
 
-### Asynchronous Events
+#### Asynchronous Events
 
 ```python
 from nexios import AsyncEventEmitter
@@ -103,7 +109,7 @@ async def process_data(data):
 await emitter.emit_async("data.received", large_dataset)
 ```
 
-### Weak References
+#### Weak References
 
 ```python
 # Use weak_ref=True to prevent memory leaks
@@ -112,7 +118,7 @@ def handle_tick():
     print("Tick")
 ```
 
-### Event Metrics
+#### Event Metrics
 
 ```python
 event = emitter.event("user.updated")
@@ -126,7 +132,7 @@ stats = event.get_metrics()
 """
 ```
 
-### Event History
+#### Event History
 
 ```python
 history = event.get_history(limit=5)
@@ -146,14 +152,14 @@ history = event.get_history(limit=5)
 """
 ```
 
-## Error Handling
+### Error Handling
 
 The event system provides several specialized exceptions:
 
-- `EventError`: Base class for all event-related errors
-- `ListenerAlreadyRegisteredError`: Raised when adding a duplicate listener
-- `MaxListenersExceededError`: Raised when exceeding max listeners
-- `EventCancelledError`: Raised when event propagation is cancelled
+* `EventError`: Base class for all event-related errors
+* `ListenerAlreadyRegisteredError`: Raised when adding a duplicate listener
+* `MaxListenersExceededError`: Raised when exceeding max listeners
+* `EventCancelledError`: Raised when event propagation is cancelled
 
 ```python
 try:
@@ -164,9 +170,9 @@ except EventError as e:
     print(f"Event error: {e}")
 ```
 
-## Performance Considerations
+### Performance Considerations
 
-### Benchmarking
+#### Benchmarking
 
 ```python
 from nexios import EventBenchmark
@@ -182,37 +188,37 @@ benchmark = EventBenchmark.benchmark(emitter, "test.event", iterations=10000)
 """
 ```
 
-### EventEmitter Methods
+#### EventEmitter Methods
 
-- `event(name)`: Get or create an event
-- `namespace(name)`: Create a namespace
-- `on(event_name, func)`: Register a listener
-- `once(event_name, func)`: Register a one-time listener
-- `emit(event_name, *args, **kwargs)`: Trigger an event
-- `remove_listener(event_name, func)`: Remove a specific listener
-- `remove_all_listeners(event_name)`: Remove all listeners for an event
+* `event(name)`: Get or create an event
+* `namespace(name)`: Create a namespace
+* `on(event_name, func)`: Register a listener
+* `once(event_name, func)`: Register a one-time listener
+* `emit(event_name, *args, **kwargs)`: Trigger an event
+* `remove_listener(event_name, func)`: Remove a specific listener
+* `remove_all_listeners(event_name)`: Remove all listeners for an event
 
-### Event Methods
+#### Event Methods
 
-- `listen(func)`: Register a listener
-- `once(func)`: Register a one-time listener
-- `trigger(*args, **kwargs)`: Fire the event
-- `remove_listener(func)`: Remove a specific listener
-- `remove_all_listeners()`: Remove all listeners
-- `get_metrics()`: Get performance metrics
-- `get_history()`: Get event trigger history
-- `cancel()`: Cancel event propagation
-- `prevent_default()`: Prevent default behavior
+* `listen(func)`: Register a listener
+* `once(func)`: Register a one-time listener
+* `trigger(*args, **kwargs)`: Fire the event
+* `remove_listener(func)`: Remove a specific listener
+* `remove_all_listeners()`: Remove all listeners
+* `get_metrics()`: Get performance metrics
+* `get_history()`: Get event trigger history
+* `cancel()`: Cancel event propagation
+* `prevent_default()`: Prevent default behavior
 
-### AsyncEventEmitter Methods
+#### AsyncEventEmitter Methods
 
-- `emit_async()`: Asynchronous version of emit
-- `schedule_emit()`: Schedule an event to be triggered
-- `shutdown()`: Clean up resources
+* `emit_async()`: Asynchronous version of emit
+* `schedule_emit()`: Schedule an event to be triggered
+* `shutdown()`: Clean up resources
 
-## Examples
+### Examples
 
-### Complex Event Hierarchy
+#### Complex Event Hierarchy
 
 ```python
 # Create hierarchical events
@@ -227,7 +233,7 @@ def handle_click(button_id):
 emitter.emit("app:ui:button.click", "submit")
 ```
 
-### Event Cancellation
+#### Event Cancellation
 
 ```python
 @emitter.on("process.data", priority=EventPriority.HIGHEST)
@@ -241,7 +247,7 @@ except EventCancelledError:
     print("Processing cancelled due to invalid data")
 ```
 
-### Mixed Sync/Async Listeners
+#### Mixed Sync/Async Listeners
 
 ```python
 @emitter.on("order.placed")
