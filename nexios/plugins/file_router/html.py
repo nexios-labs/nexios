@@ -52,7 +52,7 @@ def render(template_path: str = "route.html"):
                 raise ValueError("The decorated function must return a dictionary.")
 
             # Setup Jinja2 environment
-            env = Environment(loader=Loader(caller_dir), autoescape=select_autoescape())
+            env = Environment(loader=Loader(caller_dir), autoescape=select_autoescape(),auto_reload=True)
 
             # Render the template
             return res.html(env.get_template(template_path).render(**ctx))

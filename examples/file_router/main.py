@@ -9,4 +9,4 @@ from nexios.plugins import FileRouterPlugin
 
 app = get_application()
 
-FileRouterPlugin(app, config={"root": "routes"})
+FileRouterPlugin(app, config={"root": "./routes","exempt_paths":["./routes/posts"]})

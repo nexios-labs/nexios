@@ -1,18 +1,19 @@
 import importlib
 import os
-from typing import Callable, TypedDict
-
+from typing import Callable, TypedDict,Optional,Dict,List,Any,Type
+from httpx import get
 from nexios.application import NexiosApp
-from nexios.http import Request, Response
 from nexios.logging import create_logger
 from nexios.routing import Routes
 from pathlib import Path
-
+from nexios.openapi.models import Parameter
+from pydantic import BaseModel
 logger = create_logger("nexios")
 
 
 class FileRouterConfig(TypedDict):
     root: str
+    exempt_paths: Optional[List[str]]
 
 
 class FileRouterPlugin:
@@ -28,14 +29,17 @@ class FileRouterPlugin:
     app: NexiosApp
     config: FileRouterConfig
 
-    def __init__(self, app, config: FileRouterConfig = {"root": "./routes"}):
+    def __init__(self, app, config: FileRouterConfig = {"root": "./routes", "exempt_paths" : []}):
         self.app = app
         self.config = config
 
         self._setup()
 
     def _setup(self):
+        exempt_paths = set(os.path.abspath(path) for path in self.config.get("exempt_paths", [])) # type:ignore
         for root, _, files in os.walk(self.config["root"]):
+            if os.path.abspath(root) in exempt_paths:
+                continue  # Skip the exempted paths
             for file in files:
                 file_path = os.path.join(root, file)
                 if not file_path.endswith("route.py"):
@@ -60,24 +64,78 @@ class FileRouterPlugin:
         # Convert file path to a valid module import path
         module_path = (
             Path(route_file_path)
-            .with_suffix("")  # Remove .py
-            .as_posix()  # Convert Windows paths to Unix-style
-            .replace("/", ".")  # Replace slashes with dots for module import
+            .with_suffix("")  
+            .as_posix()  
+            .replace("/", ".") 
         ).lstrip(
             "."
         )  # Remove leading dot if present
 
         module = importlib.import_module(module_path)  # Import dynamically
 
-        for method in ["get", "post", "patch", "put", "delete"]:
-            if hasattr(module, method):
-                logger.debug(f"Mapped {method.upper()} {path}")
+      
+        for attr_name in dir(module):
+            methods = ["get", "post", "patch", "put", "delete"]
+            is_route = attr_name in  methods or hasattr(getattr(module,attr_name),"_is_route")
+            if is_route:
+                logger.debug(f"Mapped {attr_name} {path}")
+                handler_function = getattr(module, attr_name)
                 handlers.append(
-                    Routes(
-                        path.replace("\\", "/"),
-                        getattr(module, method),
-                        methods=[method.upper()],
-                    )
+                Routes(
+                    path=getattr(handler_function, "_path", path.replace("\\", "/")),
+                    handler=handler_function, #type:ignore
+                    methods=getattr(handler_function, "_allowed_methods", methods),
+                    name=getattr(handler_function, "_name",""),
+                    summary=getattr(handler_function, "_summary", ""),
+                    description=getattr(handler_function, "_description", ""),
+                    responses=getattr(handler_function, "_responses", {}),
+                    request_model=getattr(handler_function, "_request_model", None),
+                    middlewares=getattr(handler_function, "_middlewares", []),
+                    tags=getattr(handler_function, "_tags", []),
+                    security=getattr(handler_function, "_security", []),
+                    operation_id=getattr(handler_function, "_operation_id", ""),
+                    deprecated=getattr(handler_function, "_deprecated", False),
+                    parameters=getattr(handler_function, "_parameters", []),
                 )
+            )
+            
+            
 
         return handlers
+    
+
+def mark_as_route(
+    path: str,
+    methods: List[str] = ["get", "post", "patch", "put", "delete"],
+    name: Optional[str] = None,
+    summary: Optional[str] = None,
+    description: Optional[str] = None,
+    responses: Optional[Dict[int, Any]] = None,
+    request_model: Optional[Type[BaseModel]] = None,
+    middlewares: List[Any] = [],
+    tags: Optional[List[str]] = None,
+    security: Optional[List[Dict[str, List[str]]]] = None,
+    operation_id: Optional[str] = None,
+    deprecated: bool = False,
+    parameters: List[Parameter] = [],
+):
+    def decorator(func):
+        # Use setattr to set attributes dynamically
+        setattr(func, "_is_route", True)
+        setattr(func, "_path", path)
+        setattr(func, "_allowed_methods", [method.lower() for method in methods])
+        setattr(func, "_name", name or func.__name__)
+        setattr(func, "_summary", summary or "")
+        setattr(func, "_description", description or "")
+        setattr(func, "_responses", responses or {})
+        setattr(func, "_request_model", request_model)
+        setattr(func, "_middlewares", middlewares)
+        setattr(func, "_tags", tags or [])
+        setattr(func, "_security", security or [])
+        setattr(func, "_operation_id", operation_id or func.__name__)
+        setattr(func, "_deprecated", deprecated)
+        setattr(func, "_parameters", parameters)
+
+        return func
+
+    return decorator
