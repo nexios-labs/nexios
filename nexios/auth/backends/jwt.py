@@ -2,6 +2,7 @@ try:
     import jwt
 except ImportError:
     raise ImportError("Install PyJWT to use JWT authentication backend")
+from tkinter import N
 from typing import Optional, Dict, Any, List
 from nexios.auth.base import AuthenticationBackend
 from nexios.http import Request, Response
@@ -25,7 +26,7 @@ def create_jwt(
     return jwt.encode(payload, secret, algorithm=algorithm)  # type:ignore
 
 
-def decode_jwt(token: str, secret: str, algorithms: List[str]) -> Dict[str, Any]:
+def decode_jwt(token: str, secret: Optional[str] = None, algorithms: List[str] = ["HS256"]) -> Dict[str, Any]:
     """
     Decode a JWT token.
     Args:
@@ -35,6 +36,7 @@ def decode_jwt(token: str, secret: str, algorithms: List[str]) -> Dict[str, Any]
     Returns:
         dict: Decoded token payload.
     """
+    secret = secret or get_config().secret_key 
     try:
         return jwt.decode(token, secret, algorithms=algorithms)  # type:ignore
     except jwt.ExpiredSignatureError:  # type:ignore
