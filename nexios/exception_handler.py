@@ -41,13 +41,13 @@ async def wrap_http_exceptions(
         return await call_next()
     except Exception as exc:
         handler: typing.Any[ExceptionHandlerType, None] = None  # type: ignore
-       
+
         if isinstance(exc, HTTPException):
             handler: ExceptionHandlerType = status_handlers.get(exc.status_code)  # type: ignore
 
             if handler:
-                return await handler(request, response, exc) # type: ignore
-                
+                return await handler(request, response, exc)  # type: ignore
+
         if handler is None:  # type: ignore
             handler = _lookup_exception_handler(exception_handlers, exc)
             if not handler:
@@ -55,9 +55,6 @@ async def wrap_http_exceptions(
                 logger.error(error)
                 raise exc
             return await handler(request, response, exc)
-        
-
-        
 
 
 class ExceptionMiddleware:
@@ -89,7 +86,7 @@ class ExceptionMiddleware:
         response: Response,
         call_next: typing.Callable[..., typing.Awaitable[None]],
     ) -> Response:
-        
+
         return await wrap_http_exceptions(
             request=request,
             response=response,
