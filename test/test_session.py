@@ -11,155 +11,171 @@ from nexios.testing import Client
 from nexios.config import MakeConfig
 from typing import Tuple, Dict, Any
 
+
 # Fixtures for different session configurations
 @pytest.fixture
 async def file_session_client(tmp_path) -> Tuple[Client, NexiosApp]:
     """Client with file-based session configuration"""
-    app = get_application(MakeConfig({
-        "secret_key": "file_session_secret",
-        "session": {
-            "session_cookie_name": "file_session",
-            "session_permanent": True,
-            "session_expiration_time": 30,
-            "manager": FileSessionManager,
-        },
-        "session_file_name": str(tmp_path / "sessions"),
-        "SESSION_FILE_STORAGE_PATH": str(tmp_path / "sessions")
-    }))
+    app = get_application(
+        MakeConfig(
+            {
+                "secret_key": "file_session_secret",
+                "session": {
+                    "session_cookie_name": "file_session",
+                    "session_permanent": True,
+                    "session_expiration_time": 30,
+                    "manager": FileSessionManager,
+                },
+                "session_file_name": str(tmp_path / "sessions"),
+                "SESSION_FILE_STORAGE_PATH": str(tmp_path / "sessions"),
+            }
+        )
+    )
     async with Client(app) as client:
         yield client, app
+
 
 @pytest.fixture
 async def signed_session_client() -> Tuple[Client, NexiosApp]:
     """Client with signed cookie session configuration"""
-    app = get_application(MakeConfig({
-        "secret_key": "signed_session_secret",
-        "session": {
-            "session_cookie_name": "signed_session",
-            "session_permanent": True,
-            "session_expiration_time": 30,
-            "manager":SignedSessionManager
-        }
-    }))
+    app = get_application(
+        MakeConfig(
+            {
+                "secret_key": "signed_session_secret",
+                "session": {
+                    "session_cookie_name": "signed_session",
+                    "session_permanent": True,
+                    "session_expiration_time": 30,
+                    "manager": SignedSessionManager,
+                },
+            }
+        )
+    )
     async with Client(app) as client:
         yield client, app
 
+
 # # Test session middleware
-async def test_session_middleware_initialization(file_session_client: Tuple[Client, NexiosApp]):
+async def test_session_middleware_initialization(
+    file_session_client: Tuple[Client, NexiosApp],
+):
     client, app = file_session_client
-    
+
     @app.get("/test-session")
     async def test_session(req: Request, res: Response):
-       
-        req.session['key'] = 'value'
+
+        req.session["key"] = "value"
         return res.text("OK")
-    
+
     response = await client.get("/test-session")
     assert response.status_code == 200
     assert response.text == "OK"
-   
+
 
 async def test_session_middleware_no_secret_key():
     app = get_application(MakeConfig({"secret_key": None}))
-    
+
     @app.get("/test-session")
     async def test_session(req: Request, res: Response):
         try:
-            req.session['key'] = "value"
+            req.session["key"] = "value"
         except AssertionError:
-            return res.text("No session",status_code=512)
+            return res.text("No session", status_code=512)
         return res.text("OK")
-    
+
     async with Client(app) as client:
         response = await client.get("/test-session")
         assert response.status_code == 512
         assert response.text == "No session"
 
+
 # # Test file session manager
-async def test_file_session_operations(file_session_client: Tuple[Client, NexiosApp], tmp_path):
+async def test_file_session_operations(
+    file_session_client: Tuple[Client, NexiosApp], tmp_path
+):
     client, app = file_session_client
-    
+
     @app.get("/set-session")
     async def set_session(req: Request, res: Response):
         req.session["test_key"] = "test_value"
         req.session["user"] = {"id": 1, "name": "Test"}
         return res.text("Session set")
-    
+
     @app.get("/get-session")
     async def get_session(req: Request, res: Response):
-        return res.json({
-            "test_key": req.session.get("test_key"),
-            "user": req.session.get("user")
-        })
-    
+        return res.json(
+            {"test_key": req.session.get("test_key"), "user": req.session.get("user")}
+        )
+
     @app.get("/delete-session")
     async def delete_session(req: Request, res: Response):
         del req.session["test_key"]
         return res.text("Session deleted")
-    
+
     @app.get("/clear-session")
     async def clear_session(req: Request, res: Response):
         req.session.clear()
         return res.text("Session cleared")
-    
-#     # Set session
+
+    #     # Set session
     response = await client.get("/set-session")
     assert response.status_code == 200
-    
+
     # Verify cookie was set
     assert "file_session" in response.cookies
-   
+
     session_id = response.cookies["file_session"]
-    
+
     # Verify session file was created
     session_file = tmp_path / "sessions" / f"{session_id}.json"
     assert session_file.exists()
-    
+
     response = await client.get("/get-session")
     assert response.status_code == 200
     assert response.json() == {
         "test_key": "test_value",
-        "user": {"id": 1, "name": "Test"}
+        "user": {"id": 1, "name": "Test"},
     }
-    
+
     # Delete item from session
     response = await client.get("/delete-session")
     assert response.status_code == 200
-    
+
     # Verify deletion
     response = await client.get("/get-session")
     assert response.json()["test_key"] is None
-    
+
     # Clear session
     response = await client.get("/clear-session")
     assert response.status_code == 200
     assert not session_file.exists()
 
+
 # # Test signed cookie session manager
 # async def test_signed_session_operations(signed_session_client: Tuple[Client, NexiosApp]):
 #     client, app = signed_session_client
-    
+
 #     @app.get("/set-session")
 #     async def set_session(req: Request, res: Response):
 #         req.session["test_key"] = "test_value"
 #         req.session["user"] = {"id": 1, "name": "Test"}
 #         return res.text("Session set")
-    
+
 #     @app.get("/get-session")
 #     async def get_session(req: Request, res: Response):
 #         return res.json({
 #             "test_key": req.session.get("test_key"),
 #             "user": req.session.get("user")
 #         })
-    
+
 #     # Set session
 #     response = await client.get("/set-session")
 #     assert response.status_code == 200
-    
+
 #     # Verify cookie was set
 #     assert "signed_session" in response.cookies
 #     session_cookie = response.cookies["signed_session"]
-    
+
 #     # Get session
 #     response = await client.get("/get-session")
 #     assert response.status_code == 200
@@ -167,7 +183,7 @@ async def test_file_session_operations(file_session_client: Tuple[Client, Nexios
 #         "test_key": "test_value",
 #         "user": {"id": 1, "name": "Test"}
 #     }
-    
+
 #     # Test with invalid cookie
 #     client.cookies["signed_session"] = "invalid.token"
 #     response = await client.get("/get-session")
@@ -180,7 +196,7 @@ async def test_file_session_operations(file_session_client: Tuple[Client, Nexios
 # # Test session expiration
 # async def test_session_expiration(file_session_client: Tuple[Client, NexiosApp]):
 #     client, app = file_session_client
-    
+
 #     @app.get("/set-expiring-session")
 #     async def set_expiring_session(req: Request, res: Response):
 #         req.session["temp"] = "data"
@@ -189,24 +205,24 @@ async def test_file_session_operations(file_session_client: Tuple[Client, Nexios
 #             datetime.now(timezone.utc) + timedelta(seconds=1)
 #         ).isoformat()
 #         return res.text("Session set")
-    
+
 #     @app.get("/check-expired")
 #     async def check_expired(req: Request, res: Response):
 #         return res.json({"expired": req.session.has_expired()})
-    
+
 #     # Set session
 #     response = await client.get("/set-expiring-session")
 #     assert response.status_code == 200
-    
+
 #     # Check immediately - should not be expired
 #     response = await client.get("/check-expired")
 #     assert response.status_code == 200
 #     assert response.json()["expired"] is False
-    
+
 #     # Wait for expiration
 #     import time
 #     time.sleep(2)
-    
+
 #     # Check again - should be expired
 #     response = await client.get("/check-expired")
 #     assert response.status_code == 200
@@ -215,22 +231,22 @@ async def test_file_session_operations(file_session_client: Tuple[Client, Nexios
 # # Test session cookie settings
 # async def test_session_cookie_settings(file_session_client: Tuple[Client, NexiosApp]):
 #     client, app = file_session_client
-    
+
 #     # Update cookie settings
 #     app.config.session.session_cookie_httponly = True
 #     app.config.session.session_cookie_secure = True
 #     app.config.session.session_cookie_samesite = "lax"
 #     app.config.session.session_cookie_path = "/test"
 #     app.config.session.session_cookie_domain = "example.com"
-    
+
 #     @app.get("/set-cookie-settings")
 #     async def set_cookie_settings(req: Request, res: Response):
 #         req.session["test"] = "value"
 #         return res.text("OK")
-    
+
 #     response = await client.get("/set-cookie-settings")
 #     assert response.status_code == 200
-    
+
 #     cookie = response.cookies["file_session"]
 #     assert cookie["httponly"] is True
 #     assert cookie["secure"] is True
@@ -243,30 +259,30 @@ async def test_file_session_operations(file_session_client: Tuple[Client, Nexios
 #     # Define a simple in-memory session manager for testing
 #     class MemorySessionManager:
 #         _store: Dict[str, Dict[str, Any]] = {}
-        
+
 #         def __init__(self, session_key: str):
 #             self.session_key = session_key
 #             self._session_cache = {}
 #             self.modified = False
-            
+
 #         async def load(self):
 #             self._session_cache = self._store.get(self.session_key, {})
-            
+
 #         async def save(self):
 #             self._store[self.session_key] = self._session_cache
-            
+
 #         def __getitem__(self, key: str):
 #             return self._session_cache.get(key)
-            
+
 #         def __setitem__(self, key: str, value: Any):
 #             self.modified = True
 #             self._session_cache[key] = value
-            
+
 #         def clear(self):
 #             self._session_cache.clear()
 #             if self.session_key in self._store:
 #                 del self._store[self.session_key]
-    
+
 #     app = get_application(MakeConfig({
 #         "secret_key": "custom_session_secret",
 #         "session": {
@@ -274,7 +290,7 @@ async def test_file_session_operations(file_session_client: Tuple[Client, Nexios
 #             "session_cookie_name": "custom_session"
 #         }
 #     }))
-    
+
 #     @app.get("/test-custom-manager")
 #     async def test_custom_manager(req: Request, res: Response):
 #         if "count" not in req.session:
@@ -282,18 +298,18 @@ async def test_file_session_operations(file_session_client: Tuple[Client, Nexios
 #         else:
 #             req.session["count"] += 1
 #         return res.json({"count": req.session["count"]})
-    
+
 #     async with Client(app) as client:
 #         # First request
 #         response = await client.get("/test-custom-manager")
 #         assert response.status_code == 200
 #         assert response.json()["count"] == 1
-        
+
 #         # Second request
 #         response = await client.get("/test-custom-manager")
 #         assert response.status_code == 200
 #         assert response.json()["count"] == 2
-        
+
 #         # New client should start fresh
 #         async with Client(app) as new_client:
 #             response = await new_client.get("/test-custom-manager")

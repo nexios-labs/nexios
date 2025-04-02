@@ -159,9 +159,9 @@ class BaseSessionInterface:
         if self.session_key:
             return self.session_key
         return secrets.token_hex(32)
-    
+
     def clear(self):
         self._session_cache = {}
 
-    def get(self, key :str):
+    def get(self, key: str):
         return self._session_cache.get(key)
