@@ -23,6 +23,7 @@ class BaseSessionInterface:
             return
         self.config = config
         self.session_config = config.session
+
     def __getitem__(self, key: str) -> Any:
         self.accessed = True
         return self._session_cache[key]
@@ -48,6 +49,7 @@ class BaseSessionInterface:
     def __contains__(self, key: str) -> bool:
         self.accessed = True
         return key in self._session_cache
+
     def set_session(self, key: str, value: str):
 
         self.modified = True

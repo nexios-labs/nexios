@@ -394,7 +394,7 @@ class Request(HTTPConnection, typing.Generic[T]):
 
     @property
     def session(self) -> BaseSessionInterface:
-        assert "session" in self.scope.keys(),"No Session Middleware Installed"
+        assert "session" in self.scope.keys(), "No Session Middleware Installed"
         return self.scope["session"]
 
     @property
