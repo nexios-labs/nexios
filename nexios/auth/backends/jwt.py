@@ -26,7 +26,9 @@ def create_jwt(
     return jwt.encode(payload, secret, algorithm=algorithm)  # type:ignore
 
 
-def decode_jwt(token: str, secret: Optional[str] = None, algorithms: List[str] = ["HS256"]) -> Dict[str, Any]:
+def decode_jwt(
+    token: str, secret: Optional[str] = None, algorithms: List[str] = ["HS256"]
+) -> Dict[str, Any]:
     """
     Decode a JWT token.
     Args:
@@ -36,7 +38,7 @@ def decode_jwt(token: str, secret: Optional[str] = None, algorithms: List[str] =
     Returns:
         dict: Decoded token payload.
     """
-    secret = secret or get_config().secret_key 
+    secret = secret or get_config().secret_key
     try:
         return jwt.decode(token, secret, algorithms=algorithms)  # type:ignore
     except jwt.ExpiredSignatureError:  # type:ignore

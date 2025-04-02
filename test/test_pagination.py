@@ -11,8 +11,9 @@ from nexios.pagination import (
     PaginationError,
     InvalidPageError,
     InvalidPageSizeError,
-    InvalidCursorError
+    InvalidCursorError,
 )
+
 
 @pytest.fixture
 async def test_client():
@@ -20,8 +21,10 @@ async def test_client():
     async with Client(app) as client:
         yield client, app
 
+
 # Sample test data
 TEST_DATA = [{"id": i, "name": f"Item {i}"} for i in range(1, 101)]
+
 
 async def test_page_number_pagination_in_app(test_client):
     client, app = test_client
@@ -31,13 +34,10 @@ async def test_page_number_pagination_in_app(test_client):
         handler = ListDataHandler(TEST_DATA)
         pagination = PageNumberPagination()
         base_url = str(req.url)
-        
+
         try:
             paginator = AsyncPaginator(
-                handler,
-                pagination,
-                base_url,
-                dict(req.query_params)
+                handler, pagination, base_url, dict(req.query_params)
             )
             result = await paginator.paginate()
             return res.json(result)
@@ -65,6 +65,7 @@ async def test_page_number_pagination_in_app(test_client):
     data = response.json()
     assert data["pagination"]["page_size"] == 100  # Max page size enforced
 
+
 async def test_limit_offset_pagination_in_app(test_client):
     client, app = test_client
 
@@ -73,13 +74,10 @@ async def test_limit_offset_pagination_in_app(test_client):
         handler = ListDataHandler(TEST_DATA)
         pagination = LimitOffsetPagination()
         base_url = str(req.url)
-        
+
         try:
             paginator = AsyncPaginator(
-                handler,
-                pagination,
-                base_url,
-                dict(req.query_params)
+                handler, pagination, base_url, dict(req.query_params)
             )
             result = await paginator.paginate()
             return res.json(result)
@@ -102,6 +100,7 @@ async def test_limit_offset_pagination_in_app(test_client):
     assert response.status_code == 400
     assert "Offset cannot be negative" in response.json()["error"]
 
+
 async def test_cursor_pagination_in_app(test_client):
     client, app = test_client
 
@@ -110,13 +109,11 @@ async def test_cursor_pagination_in_app(test_client):
         handler = ListDataHandler(TEST_DATA)
         pagination = CursorPagination()
         base_url = str(req.url)
-        
+
         try:
             paginator = AsyncPaginator(
-                handler,
-                pagination,
-                base_url,
-                dict(req.query_params))
+                handler, pagination, base_url, dict(req.query_params)
+            )
             result = await paginator.paginate()
             return res.json(result)
         except PaginationError as e:
@@ -143,7 +140,8 @@ async def test_cursor_pagination_in_app(test_client):
     # Test invalid cursor
     response = await client.get("/items-cursor?cursor=invalid")
     # assert response.status_code == 400
-    # assert "Invalid cursor format" in response.json()["error"] 
+    # assert "Invalid cursor format" in response.json()["error"]
+
 
 async def test_pagination_with_filters(test_client):
     client, app = test_client
@@ -162,13 +160,10 @@ async def test_pagination_with_filters(test_client):
         handler = FilteredDataHandler(TEST_DATA)
         pagination = PageNumberPagination()
         base_url = str(req.url)
-        
+
         try:
             paginator = AsyncPaginator(
-                handler,
-                pagination,
-                base_url,
-                dict(req.query_params)
+                handler, pagination, base_url, dict(req.query_params)
             )
             result = await paginator.paginate()
             return res.json(result)
@@ -182,6 +177,7 @@ async def test_pagination_with_filters(test_client):
     assert all(item["id"] % 2 == 0 for item in data["items"])
     assert data["pagination"]["total_items"] == 50  # Only even IDs
 
+
 async def test_pagination_error_handling(test_client):
     client, app = test_client
 
@@ -190,14 +186,14 @@ async def test_pagination_error_handling(test_client):
         handler = ListDataHandler([])
         pagination = PageNumberPagination()
         base_url = str(req.url)
-        
+
         try:
             paginator = AsyncPaginator(
                 handler,
                 pagination,
                 base_url,
                 dict(req.query_params),
-                validate_total_items=False
+                validate_total_items=False,
             )
             result = await paginator.paginate()
             return res.json(result)
@@ -219,12 +215,15 @@ async def test_pagination_error_handling(test_client):
     assert response.status_code == 400
     assert "Page size must be at least 1" in response.json()["error"]
 
+
 async def test_pagination_with_custom_metadata(test_client):
     client, app = test_client
 
     class CustomPagination(PageNumberPagination):
         def generate_metadata(self, total_items, items, base_url, request_params):
-            metadata = super().generate_metadata(total_items, items, base_url, request_params)
+            metadata = super().generate_metadata(
+                total_items, items, base_url, request_params
+            )
             metadata["custom_field"] = "custom_value"
             return metadata
 
@@ -233,12 +232,9 @@ async def test_pagination_with_custom_metadata(test_client):
         handler = ListDataHandler(TEST_DATA)
         pagination = CustomPagination()
         base_url = str(req.url)
-        
+
         paginator = AsyncPaginator(
-            handler,
-            pagination,
-            base_url,
-            dict(req.query_params)
+            handler, pagination, base_url, dict(req.query_params)
         )
         result = await paginator.paginate()
         return res.json(result)
