@@ -6,23 +6,27 @@ import json
 from http import cookies
 import anyio
 
+
 @pytest.fixture
 async def test_client():
     app = get_application()
     async with Client(app) as client:
         yield client, app
 
+
 async def test_request_properties(test_client):
     client, app = test_client
 
     @app.get("/test-properties")
     async def handler(req: Request, res: Response):
-        return res.json({
-            "method": req.method,
-            "path": req.path,
-            "client_host": req.client.host if req.client else None,
-            "client_port": req.client.port if req.client else None
-        })
+        return res.json(
+            {
+                "method": req.method,
+                "path": req.path,
+                "client_host": req.client.host if req.client else None,
+                "client_port": req.client.port if req.client else None,
+            }
+        )
 
     response = await client.get("/test-properties")
     data = response.json()
@@ -31,69 +35,71 @@ async def test_request_properties(test_client):
     assert data["client_host"] is not None
     assert data["client_port"] is not None
 
+
 async def test_query_params(test_client):
     client, app = test_client
 
     @app.get("/test-query")
     async def handler(req: Request, res: Response):
-        return res.json({
-            "name": req.query_params.get("name"),
-            "age": req.query_params.get("age")
-        })
+        return res.json(
+            {"name": req.query_params.get("name"), "age": req.query_params.get("age")}
+        )
 
     response = await client.get("/test-query?name=test&age=25")
     data = response.json()
     assert data["name"] == "test"
     assert data["age"] == "25"
 
+
 async def test_path_params(test_client):
     client, app = test_client
 
     @app.get("/test-path/{user_id}")
     async def handler(req: Request, res: Response):
-        return res.json({
-            "user_id": req.path_params["user_id"]
-        })
+        return res.json({"user_id": req.path_params["user_id"]})
 
     response = await client.get("/test-path/123")
     data = response.json()
     assert data["user_id"] == "123"
+
 
 async def test_headers(test_client):
     client, app = test_client
 
     @app.get("/test-headers")
     async def handler(req: Request, res: Response):
-        return res.json({
-            "content_type": req.headers.get("content-type"),
-            "user_agent": req.headers.get("user-agent")
-        })
+        return res.json(
+            {
+                "content_type": req.headers.get("content-type"),
+                "user_agent": req.headers.get("user-agent"),
+            }
+        )
 
-    response = await client.get("/test-headers", headers={
-        "content-type": "application/json",
-        "user-agent": "test-agent"
-    })
+    response = await client.get(
+        "/test-headers",
+        headers={"content-type": "application/json", "user-agent": "test-agent"},
+    )
     data = response.json()
     assert data["content_type"] == "application/json"
     assert data["user_agent"] == "test-agent"
+
 
 async def test_cookies(test_client):
     client, app = test_client
 
     @app.get("/test-cookies")
     async def handler(req: Request, res: Response):
-        return res.json({
-            "session": req.cookies.get("session"),
-            "user": req.cookies.get("user")
-        })
+        return res.json(
+            {"session": req.cookies.get("session"), "user": req.cookies.get("user")}
+        )
 
-    response = await client.get("/test-cookies", cookies={
-        "session": "abc123",
-        "user": "test"
-    })
+    response = await client.get(
+        "/test-cookies", cookies={"session": "abc123", "user": "test"}
+    )
     data = response.json()
     assert data["session"] == "abc123"
     assert data["user"] == "test"
+
 
 async def test_state(test_client):
     client, app = test_client
@@ -105,6 +111,7 @@ async def test_state(test_client):
 
     response = await client.get("/test-state")
     assert response.text == "state_value"
+
 
 async def test_json_body(test_client):
     client, app = test_client
@@ -118,6 +125,7 @@ async def test_json_body(test_client):
     response = await client.post("/test-json-body", json=test_data)
     assert response.json() == test_data
 
+
 async def test_text_body(test_client):
     client, app = test_client
 
@@ -130,22 +138,23 @@ async def test_text_body(test_client):
     response = await client.post("/test-text-body", content=test_text)
     assert response.text == test_text
 
+
 async def test_form_data(test_client):
     client, app = test_client
 
     @app.post("/test-form-data")
     async def handler(req: Request, res: Response):
         form_data = await req.form_data
-        return res.json({
-            "field1": form_data.get("field1"),
-            "field2": form_data.get("field2")
-        })
+        return res.json(
+            {"field1": form_data.get("field1"), "field2": form_data.get("field2")}
+        )
 
     form_data = {"field1": "value1", "field2": "value2"}
     response = await client.post("/test-form-data", data=form_data)
     data = response.json()
     assert data["field1"] == "value1"
     assert data["field2"] == "value2"
+
 
 async def test_user_property(test_client):
     client, app = test_client
@@ -157,6 +166,7 @@ async def test_user_property(test_client):
 
     response = await client.get("/test-user")
     assert response.text == "testuser"
+
 
 async def test_valid_method(test_client):
     client, app = test_client
