@@ -130,10 +130,10 @@ class BaseSessionInterface:
     def get_expiration_time(self) -> typing.Optional[datetime]:
         """Returns the expiration time for the session. Uses `self.session_config.session_expiration_time`."""
         if not self.session_config:
-            return datetime.now(timezone.utc) + timedelta(minutes=86400)  # type: ignore
+            return datetime.now(timezone.utc) + timedelta(days=7)  # type: ignore
         if self.session_config.session_permanent:
             return datetime.now(timezone.utc) + timedelta(minutes=self.session_config.session_expiration_time or 86400)  # type: ignore
-        return datetime.now(timezone.utc) + timedelta(minutes=86400)  # type: ignore
+        return datetime.now(timezone.utc) + timedelta(days=7)  # type: ignore
 
     @property
     def should_set_cookie(self) -> bool:
@@ -159,3 +159,9 @@ class BaseSessionInterface:
         if self.session_key:
             return self.session_key
         return secrets.token_hex(32)
+    
+    def clear(self):
+        self._session_cache = {}
+
+    def get(self, key :str):
+        return self._session_cache.get(key)

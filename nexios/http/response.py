@@ -127,7 +127,7 @@ class BaseResponse:
             cookie[key]["max-age"] = max_age
         if expires is not None:
             if isinstance(expires, datetime):
-                expires = datetime.now(timezone.utc)
+                
                 cookie[key]["expires"] = format_datetime(expires, usegmt=True)
             else:
                 cookie[key]["expires"] = expires
