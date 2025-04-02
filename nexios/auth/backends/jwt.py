@@ -45,6 +45,7 @@ def decode_jwt(token: str, secret: Optional[str] = None, algorithms: List[str] =
         raise ValueError("Invalid token")
 
 
+
 class JWTAuthBackend(AuthenticationBackend):
     def __init__(self, authenticate_func):  # type:ignore
         self.authenticate_func = authenticate_func

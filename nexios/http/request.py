@@ -9,6 +9,7 @@ from nexios._utils.async_helpers import (
     AwaitableOrContextManager,
     AwaitableOrContextManagerWrapper,
 )
+from nexios.sessions.base import BaseSessionInterface
 from nexios.structs import URL, Address, FormData, Headers, QueryParams, State
 from .formparsers import FormParser, MultiPartException, MultiPartParser
 
@@ -392,7 +393,8 @@ class Request(HTTPConnection, typing.Generic[T]):
         } and bool(self.headers)
 
     @property
-    def session(self):
+    def session(self) -> BaseSessionInterface:
+        assert "session" in self.scope.keys(),"No Session Middleware Installed"
         return self.scope["session"]
 
     @property

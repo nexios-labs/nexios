@@ -1,4 +1,4 @@
-from typing import Dict, Any, Union
+from typing import Dict, Any, Iterable, Union
 from nexios.config import get_config, MakeConfig
 from datetime import datetime, timedelta, timezone
 import secrets
@@ -23,7 +23,31 @@ class BaseSessionInterface:
             return
         self.config = config
         self.session_config = config.session
+    def __getitem__(self, key: str) -> Any:
+        self.accessed = True
+        return self._session_cache[key]
 
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.modified = True
+        self.accessed = True
+        self._session_cache[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        self.modified = True
+        self.deleted = True
+        del self._session_cache[key]
+
+    def __iter__(self) -> Iterable[str]:
+        self.accessed = True
+        return iter(self._session_cache)
+
+    def __len__(self) -> int:
+        self.accessed = True
+        return len(self._session_cache)
+
+    def __contains__(self, key: str) -> bool:
+        self.accessed = True
+        return key in self._session_cache
     def set_session(self, key: str, value: str):
 
         self.modified = True
