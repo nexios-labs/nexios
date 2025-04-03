@@ -184,4 +184,4 @@ class BaseSessionInterface:
         self._expiration_time = expiration
 
     def __str__(self) -> str:
-        return self._session_cache
+        return f"<Sesion { self._session_cache}"
