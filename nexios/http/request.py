@@ -168,7 +168,7 @@ class HTTPConnection(object):
 
     @property
     def origin(self):
-        return self.headers.get("origin")
+        return self.headers.get("Origin")
 
     @property
     def user_agent(self) -> str:

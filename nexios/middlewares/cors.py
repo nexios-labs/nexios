@@ -130,9 +130,9 @@ class CORSMiddleware(BaseMiddleware):
                 logger.error(f"Request denied: Origin '{origin}' is blacklisted.")
 
             return False
-
+        
         if "*" in self.allow_origins:
-
+        
             return True
 
         if self.allow_origin_regex and self.allow_origin_regex.fullmatch(origin):
@@ -144,10 +144,9 @@ class CORSMiddleware(BaseMiddleware):
         return origin in self.allow_origins
 
     def is_allowed_method(self, method: Optional[str]) -> bool:
-
         if "*" in self.allow_methods:
             return True
-        if not (method or "").lower() in [x.lower() for x in self.allow_methods]:
+        if not (method or  str()).lower() in [x.lower() for x in self.allow_methods]:
 
             return False
         return True
@@ -160,6 +159,7 @@ class CORSMiddleware(BaseMiddleware):
         headers = self.preflight_headers.copy()
 
         if not self.is_allowed_origin(origin):
+          
 
             if self.debug:
                 logger.error(
@@ -177,7 +177,6 @@ class CORSMiddleware(BaseMiddleware):
                 logger.error(
                     f"Preflight request denied: Method '{requested_method}' is not allowed."
                 )
-
                 return response.json(
                     self.get_error_message("disallowed_method"),
                     status_code=self.custom_error_status,
@@ -192,7 +191,7 @@ class CORSMiddleware(BaseMiddleware):
             else:
                 for header in requested_header_list:
                     if (
-                        header not in self.allow_headers
+                        header not in [x.lower() for x in self.allow_headers]
                         or header in self.blacklist_headers
                     ):
                         if self.debug:
