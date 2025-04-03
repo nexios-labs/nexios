@@ -344,7 +344,7 @@ async def test_session_cookie_settings(file_session_client: Tuple[Client, Nexios
 
 #     @app.get("/test-custom-manager")
 #     async def test_custom_manager(req: Request, res: Response):
-       
+
 #         if "count" not in req.session:
 #             req.session["count"] = 1
 #         else:
