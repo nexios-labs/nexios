@@ -39,8 +39,8 @@ class SessionMiddleware(BaseMiddleware):
         request.scope['session'] = manager
         
         session: type[BaseSessionInterface] = manager(
-            session_key=request.cookies.get(session_cookie_name)
-        )  # type:ignore
+            session_key=request.cookies.get(session_cookie_name) # type:ignore
+        )  
         await session.load()  # type: ignore
         request.scope["session"] = session
         await call_next()
