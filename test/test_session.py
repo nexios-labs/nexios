@@ -248,73 +248,69 @@ async def test_file_session_operations(
 #     response = await client.get("/set-cookie-settings")
 #     assert response.status_code == 200
 
+
 #     cookie = response.cookies["file_session"]
 #     assert cookie["httponly"] is True
 #     assert cookie["secure"] is True
 #     assert cookie["samesite"] == "lax"
 #     assert cookie["path"] == "/test"
 #     assert cookie["domain"] == "example.com"
-async def test_signed_session_operations(signed_session_client: Tuple[Client, NexiosApp]):
+async def test_signed_session_operations(
+    signed_session_client: Tuple[Client, NexiosApp],
+):
     client, app = signed_session_client
-    
+
     @app.get("/set-session")
     async def set_session(req: Request, res: Response):
         req.session["test_key"] = "test_value"
         req.session["user"] = {"id": 1, "name": "Test"}
         return res.text("Session set")
-    
+
     @app.get("/get-session")
     async def get_session(req: Request, res: Response):
-        return res.json({
-            "test_key": req.session.get("test_key"),
-            "user": req.session.get("user")
-        })
-    
+        return res.json(
+            {"test_key": req.session.get("test_key"), "user": req.session.get("user")}
+        )
+
     # Set session
     response = await client.get("/set-session")
     assert response.status_code == 200
-    
+
     # Verify cookie was set
     assert "signed_session" in response.cookies
     session_cookie = response.cookies["signed_session"]
-    
+
     # Get session
     response = await client.get("/get-session")
     assert response.status_code == 200
     assert response.json() == {
         "test_key": "test_value",
-        "user": {"id": 1, "name": "Test"}
+        "user": {"id": 1, "name": "Test"},
     }
-    
+
     # Test with invalid cookie
     client.cookies["signed_session"] = "invalid.token"
     response = await client.get("/get-session")
     assert response.status_code == 200
-    assert response.json() == {
-        "test_key": None,
-        "user": None
-    }
+    assert response.json() == {"test_key": None, "user": None}
 
 
 # Test session cookie settings
 async def test_session_cookie_settings(file_session_client: Tuple[Client, NexiosApp]):
     client, app = file_session_client
-    
+
     # Update cookie settings
     app.config.session.session_cookie_httponly = True
     app.config.session.session_permanent = False
-    
-    
-    
+
     @app.get("/set-cookie-settings")
     async def set_cookie_settings(req: Request, res: Response):
         req.session["test"] = "value"
         return res.text("OK")
-    
+
     response = await client.get("/set-cookie-settings")
     assert response.status_code == 200
-    
-   
+
     cookie = response.cookies["file_session"]
     # assert cookie["httponly"] is True
     # assert cookie["secure"] is True
@@ -322,24 +318,19 @@ async def test_session_cookie_settings(file_session_client: Tuple[Client, Nexios
     # assert cookie["path"] == "/test"
     # assert cookie["domain"] == "example.com"
 
+
 # # Test session middleware with custom manager
 async def test_custom_session_manager(file_session_client: Tuple[Client, NexiosApp]):
     # Define a simple in-memory session manager for testing
     class MemorySessionManager(BaseSessionInterface):
         _store: Dict[str, Dict[str, Any]] = {}
-        
-        
-            
+
         async def load(self):
             self._session_cache = self._store.get(self.session_key, {})
-            
+
         async def save(self):
             self._store[self.session_key] = self._session_cache
-            
-        
-            
-        
-    
+
     # app = get_application(MakeConfig({
     #     "secret_key": "custom_session_secret",
     #     "session": {
@@ -347,32 +338,33 @@ async def test_custom_session_manager(file_session_client: Tuple[Client, NexiosA
     #         "session_cookie_name": "custom_session"
     #     }
     # }))
-    client,app = file_session_client
+    client, app = file_session_client
     app.config.session.manager = MemorySessionManager
     app.config.session.session_cookie_name = "custom"
+
     @app.get("/test-custom-manager")
     async def test_custom_manager(req: Request, res: Response):
-        print("**"*120)
+        print("**" * 120)
         print(req.cookies)
         print(req.session)
         if "count" not in req.session:
             req.session["count"] = 1
         else:
-            
+
             req.session["count"] += 1
         return res.json({"count": req.session["count"]})
-    
+
     async with Client(app) as client:
         # First request
         response = await client.get("/test-custom-manager")
         assert response.status_code == 200
         assert response.json()["count"] == 1
-        
+
         # Second request
         response = await client.get("/test-custom-manager")
         assert response.status_code == 200
         assert response.json()["count"] == 2
-        
+
         # New client should start fresh
     async with Client(app) as new_client:
         response = await new_client.get("/test-custom-manager")

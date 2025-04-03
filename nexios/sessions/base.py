@@ -131,17 +131,21 @@ class BaseSessionInterface:
         """Returns the expiration time for the session if one is set."""
         if not self.session_config:
             # No config - use default 7 day expiration
-            if not hasattr(self, '_expiration_time'):
+            if not hasattr(self, "_expiration_time"):
                 self._expiration_time = datetime.now(timezone.utc) + timedelta(days=7)
             return self._expiration_time
-        
+
         if not self.session_config.session_permanent:
             # Non-permanent session - calculate expiration if not set
-            if not hasattr(self, '_expiration_time'):
-                expiration_seconds = self.session_config.session_expiration_time or 86400
-                self._expiration_time = datetime.now(timezone.utc) + timedelta(seconds=expiration_seconds)
+            if not hasattr(self, "_expiration_time"):
+                expiration_seconds = (
+                    self.session_config.session_expiration_time or 86400
+                )
+                self._expiration_time = datetime.now(timezone.utc) + timedelta(
+                    seconds=expiration_seconds
+                )
             return self._expiration_time
-    
+
         return None
 
     @property
@@ -174,11 +178,10 @@ class BaseSessionInterface:
 
     def get(self, key: str):
         return self._session_cache.get(key)
-    
+
     def set_expiration_time(self, expiration: datetime) -> None:
         """Set the expiration time for the session."""
         self._expiration_time = expiration
-        
-        
+
     def __str__(self) -> str:
         return self._session_cache
