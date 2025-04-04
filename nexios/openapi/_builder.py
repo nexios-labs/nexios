@@ -38,14 +38,14 @@ class APIDocumentation:
     def _setup_doc_routes(self):
         """Set up routes for serving OpenAPI specification"""
 
-        @self.app.get("/openapi.json")  # type:ignore
+        @self.app.get("/openapi.json",exclude_from_schema=True)  # type:ignore
         async def serve_openapi(request: Request, response: Response):
             openapi_json = self.config.openapi_spec.model_dump(
                 by_alias=True, exclude_none=True
             )
             return response.json(openapi_json)
 
-        @self.app.get("/docs")  # type:ignore
+        @self.app.get("/docs",exclude_from_schema=True)  # type:ignore
         async def swagger_ui(request: Request, response: Response):
             return response.html(self._generate_swagger_ui())
 

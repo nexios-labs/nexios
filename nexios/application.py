@@ -263,6 +263,8 @@ class NexiosApp(object):
         )
 
         for route in self.get_all_routes():
+            if route.exlude_from_schema:
+                continue
             for method in route.methods:
 
                 parameters = [
@@ -496,6 +498,8 @@ class NexiosApp(object):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema: bool = False,
+        
         **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
@@ -517,6 +521,7 @@ class NexiosApp(object):
             operation_id=operation_id,
             deprecated=deprecated,
             parameters=parameters,
+            exclude_from_schema=exclude_from_schema,
             **kwargs
         )
 
@@ -535,6 +540,7 @@ class NexiosApp(object):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
@@ -556,6 +562,7 @@ class NexiosApp(object):
             operation_id=operation_id,
             deprecated=deprecated,
             parameters=parameters,
+            exclude_from_schema=exclude_from_schema,
             **kwargs
         )
 
@@ -574,6 +581,7 @@ class NexiosApp(object):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
@@ -595,6 +603,7 @@ class NexiosApp(object):
             operation_id=operation_id,
             deprecated=deprecated,
             parameters=parameters,
+            exclude_from_schema=exclude_from_schema,
             **kwargs
         )
 
@@ -613,6 +622,7 @@ class NexiosApp(object):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
@@ -634,6 +644,7 @@ class NexiosApp(object):
             operation_id=operation_id,
             deprecated=deprecated,
             parameters=parameters,
+            exclude_from_schema=exclude_from_schema,
             **kwargs
         )
 
@@ -652,6 +663,7 @@ class NexiosApp(object):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
@@ -672,6 +684,7 @@ class NexiosApp(object):
             operation_id=operation_id,
             deprecated=deprecated,
             parameters=parameters,
+            exclude_from_schema=exclude_from_schema,
             **kwargs
         )
 
@@ -690,6 +703,7 @@ class NexiosApp(object):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
@@ -710,6 +724,7 @@ class NexiosApp(object):
             operation_id=operation_id,
             deprecated=deprecated,
             parameters=parameters,
+            exclude_from_schema=exclude_from_schema,
             **kwargs
         )
 
@@ -728,6 +743,7 @@ class NexiosApp(object):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
@@ -749,6 +765,7 @@ class NexiosApp(object):
             operation_id=operation_id,
             deprecated=deprecated,
             parameters=parameters,
+            exclude_from_schema=exclude_from_schema,
             **kwargs
         )
 

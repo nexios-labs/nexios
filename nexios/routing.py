@@ -370,6 +370,7 @@ class Routes:
         deprecated: bool = False,
         parameters: List[Parameter] = [],
         middlewares: List[Any] = [],
+        exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any],
     ):
         """
@@ -415,6 +416,7 @@ class Routes:
         self.operation_id = operation_id
         self.deprecated = deprecated
         self.parameters = parameters
+        self.exlude_from_schema = exclude_from_schema
 
     def match(self, path: str, method: str) -> typing.Tuple[Any, Any, Any]:
         """
@@ -597,6 +599,7 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema: bool = False,
     ) -> Callable[..., Any]:
         """
         Registers a GET route with all available parameters.
@@ -618,6 +621,7 @@ class Router(BaseRouter):
                 operation_id=operation_id,
                 deprecated=deprecated,
                 parameters=parameters,
+                exclude_from_schema=exclude_from_schema,
             )
             self.add_route(route)
             return handler
@@ -641,6 +645,7 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
@@ -663,6 +668,7 @@ class Router(BaseRouter):
                 operation_id=operation_id,
                 deprecated=deprecated,
                 parameters=parameters,
+                exclude_from_schema=exclude_from_schema,
             )
             self.add_route(route)
             return handler
@@ -686,6 +692,7 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
@@ -708,6 +715,7 @@ class Router(BaseRouter):
                 operation_id=operation_id,
                 deprecated=deprecated,
                 parameters=parameters,
+                exclude_from_schema=exclude_from_schema,
             )
             self.add_route(route)
             return handler
@@ -731,6 +739,7 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
@@ -753,6 +762,7 @@ class Router(BaseRouter):
                 operation_id=operation_id,
                 deprecated=deprecated,
                 parameters=parameters,
+                exclude_from_schema=exclude_from_schema,
             )
             self.add_route(route)
             return handler
@@ -776,6 +786,7 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
@@ -798,6 +809,7 @@ class Router(BaseRouter):
                 operation_id=operation_id,
                 deprecated=deprecated,
                 parameters=parameters,
+                exclude_from_schema=exclude_from_schema,
             )
             self.add_route(route)
             return handler
@@ -821,6 +833,7 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
@@ -843,6 +856,7 @@ class Router(BaseRouter):
                 operation_id=operation_id,
                 deprecated=deprecated,
                 parameters=parameters,
+                exclude_from_schema=exclude_from_schema,
             )
             self.add_route(route)
             return handler
@@ -866,6 +880,7 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
@@ -888,6 +903,7 @@ class Router(BaseRouter):
                 operation_id=operation_id,
                 deprecated=deprecated,
                 parameters=parameters,
+                exclude_from_schema=exclude_from_schema,
             )
             self.add_route(route)
             return handler
@@ -912,6 +928,7 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
+        exclude_from_schema = False,
         **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
@@ -934,6 +951,7 @@ class Router(BaseRouter):
                 operation_id=operation_id,
                 deprecated=deprecated,
                 parameters=parameters,
+                exclude_from_schema=exclude_from_schema,
             )
             self.add_route(route)
             return handler

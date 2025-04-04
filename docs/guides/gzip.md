@@ -6,7 +6,7 @@ icon: file-zipper
 
 Gzip is a widely used compression format that reduces the size of HTTP responses, improving performance by reducing bandwidth usage and load times. The `GzipMiddleware` in Nexios automatically compresses responses for clients that support gzip encoding.
 
-***
+---
 
 ### **How It Works**
 
@@ -15,7 +15,7 @@ Gzip is a widely used compression format that reduces the size of HTTP responses
 3. If the response meets the compression criteria (size and content type), it compresses the response body using gzip.
 4. The middleware updates response headers to indicate gzip encoding.
 
-***
+---
 
 ### **Configuration Options**
 
@@ -27,21 +27,21 @@ The middleware retrieves configuration settings from `get_config().gzip`, allowi
 | `content_types`     | HTML, CSS, JSON, etc.    | Specifies which content types should be compressed.                    |
 | `compression_level` | 6 (moderate compression) | Controls gzip compression level (1-9, where 9 is maximum compression). |
 
-***
+---
 
 ### **Middleware Flow**
 
 1. **Checks for Gzip Support**
-   * Reads the `Accept-Encoding` header.
-   * If gzip is not supported, the request continues normally.
+   - Reads the `Accept-Encoding` header.
+   - If gzip is not supported, the request continues normally.
 2. **Processes Response**
-   * Calls the next middleware or request handler.
-   * Checks if the response should be compressed based on size and content type.
+   - Calls the next middleware or request handler.
+   - Checks if the response should be compressed based on size and content type.
 3. **Compresses Response**
-   * Uses `gzip.GzipFile` to compress the response body.
-   * Updates headers (`Content-Encoding`, `Content-Length`, `Vary`).
+   - Uses `gzip.GzipFile` to compress the response body.
+   - Updates headers (`Content-Encoding`, `Content-Length`, `Vary`).
 
-***
+---
 
 ### **Example Usage**
 
@@ -53,11 +53,11 @@ To enable gzip compression, add it to your middleware stack:
 from nexios.middlewares.gzip import GzipMiddleware
 from nexios.application import NexiosApp
 
-app = NexiosApp()
+app = get_application()
 app.add_middleware(GzipMiddleware())
 ```
 
-***
+---
 
 #### **2. Testing Gzip Compression**
 
@@ -74,7 +74,7 @@ Content-Encoding: gzip
 Vary: Accept-Encoding
 ```
 
-***
+---
 
 ### **Benefits of Using Gzip Compression**
 

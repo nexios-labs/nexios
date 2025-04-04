@@ -1,7 +1,6 @@
-
-
 ## **Setting Up the Logger**
-First, create and configure a logger for your application:  
+
+First, create and configure a logger for your application:
 
 ```python
 from nexios.logging import create_logger
@@ -19,6 +18,7 @@ logger = create_logger(
 ---
 
 ## **Logging Messages**
+
 Once the logger is set up, use it to log different types of messages:
 
 ```python
@@ -32,13 +32,14 @@ logger.critical("Critical system failure - shutting down")
 ---
 
 ## **Using Logging in a Nexios Application**
+
 If you're using Nexios in a web or API application, integrate logging into your app:
 
 ```python
 from nexios.application import NexiosApp
 from nexios.logging import create_logger
 
-app = NexiosApp()
+app = get_application()
 logger = create_logger("nexios_server", log_level="DEBUG")
 
 @app.route("/")
@@ -57,6 +58,7 @@ def handle_internal_error(req, res,error):
 ---
 
 ## **Logging with Exception Handling**
+
 To log exceptions, use `exc_info=True`:
 
 ```python
@@ -71,6 +73,7 @@ This will log the full traceback of the exception.
 ---
 
 ## **Structured Logging for JSON Output**
+
 If you prefer structured logs for better debugging:
 
 ```python
@@ -90,6 +93,6 @@ logger.info("This log will now be in JSON format")
 
 ---
 
-- Nexios provides an optimized logging system that supports queue-based asynchronous logging.  
-- You can log to both **console** and **files**, with automatic rotation.  
-- Logging helps in debugging, monitoring application health, and handling errors efficiently.  
+- Nexios provides an optimized logging system that supports queue-based asynchronous logging.
+- You can log to both **console** and **files**, with automatic rotation.
+- Logging helps in debugging, monitoring application health, and handling errors efficiently.
