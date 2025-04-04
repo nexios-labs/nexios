@@ -6,7 +6,7 @@ include = ["nexios/py.typed"]
 
 [tool.poetry]
 name = "nexios"
-version = "2.2.6"
+version = "2.3.1rc1"
 description = "Nexios is a modern, high-performance ASGI web framework for Python."
 authors = ["Chidebele Dunamis <techwithdunamix@example.com>"]
 license = "MIT"
