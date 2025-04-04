@@ -471,7 +471,9 @@ class Routes:
         path = self.raw_path
         for param_name, param_value in path_params.items():
             param_value = str(param_value)
-            path = path.replace(f"{{{param_name}}}", param_value)
+           
+            path = re.sub(rf'\{{{param_name}(:[^}}]+)?}}', param_value, path)
+
 
         return URLPath(path=path, protocol="http")
 
