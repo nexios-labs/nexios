@@ -571,7 +571,7 @@ class Router(BaseRouter):
             app.add_route(route)
             ```
         """
-        
+
         self.routes.append(route)
 
     def add_middleware(self, middleware: MiddlewareType) -> None:
