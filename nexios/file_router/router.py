@@ -83,11 +83,13 @@ class FileRouter:
             if is_route:
                 logger.debug(f"Mapped {attr_name} {path}")
                 handler_function = getattr(module, attr_name)
-                
+
                 handlers.append(
                     Routes(
                         path=getattr(
-                            handler_function, "_path", path.replace("\\", "/").rstrip("/")
+                            handler_function,
+                            "_path",
+                            path.replace("\\", "/").rstrip("/"),
                         ),
                         handler=handler_function,  # type:ignore
                         methods=getattr(handler_function, "_allowed_methods", methods),
