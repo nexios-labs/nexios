@@ -40,7 +40,7 @@ class FileRouter:
 
     def _setup(self):
         exempt_paths = set(
-            os.path.abspath(path) for path in self.config.get("exempt_paths", [])
+            os.path.abspath(path) for path in self.config.get("exempt_paths", []) # type:ignore
         )  # type:ignore
         for root, _, files in os.walk(self.config["root"]):
             if os.path.abspath(root) in exempt_paths:
@@ -62,6 +62,8 @@ class FileRouter:
 
         return "/".join(segments)
 
+    def restrict_slash(self, s :str) -> bool:
+        return s.strip() != "/"
     def _build_route(self, route_file_path: str) -> list[Routes]:
         handlers: list[Routes] = []
         path = self._get_path(route_file_path.replace(self.config["root"], ""))
@@ -83,12 +85,10 @@ class FileRouter:
             if is_route:
                 logger.debug(f"Mapped {attr_name} {path}")
                 handler_function = getattr(module, attr_name)
-                
+                path=getattr(handler_function, "_path", path.replace("\\", "/"))
                 handlers.append(
                     Routes(
-                        path=getattr(
-                            handler_function, "_path", path.replace("\\", "/").rstrip("/")
-                        ),
+                       path=path.rstrip("/") if self.restrict_slash(path) else path,
                         handler=handler_function,  # type:ignore
                         methods=getattr(handler_function, "_allowed_methods", methods),
                         name=getattr(handler_function, "_name", ""),
