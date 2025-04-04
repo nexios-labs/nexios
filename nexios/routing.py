@@ -927,7 +927,7 @@ class Router(BaseRouter):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
-        exclude_from_schema = False,
+        exclude_from_schema=False,
         **kwargs: Dict[str, Any],
     ) -> Callable[..., Any]:
         """
