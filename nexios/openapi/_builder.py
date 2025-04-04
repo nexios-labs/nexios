@@ -82,8 +82,6 @@ class APIDocumentation:
         </html>
         """
 
-    
-
     def document_endpoint(
         self,
         path: str,

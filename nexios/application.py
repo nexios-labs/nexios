@@ -260,12 +260,13 @@ class NexiosApp(object):
             app=self,
             config=self.openapi_config,
         )
-        
+
         for route in self.get_all_routes():
             for method in route.methods:
 
                 parameters = [
-                    Path(name=x, schema=Schema(type="string")) for x in route.param_names
+                    Path(name=x, schema=Schema(type="string"))
+                    for x in route.param_names
                 ]  # type:ignore
                 if route.parameters.__len__() > 0:
                     parameters.extend(parameters)

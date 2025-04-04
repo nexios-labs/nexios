@@ -415,7 +415,6 @@ class Routes:
         self.operation_id = operation_id
         self.deprecated = deprecated
         self.parameters = parameters
-        
 
     def match(self, path: str, method: str) -> typing.Tuple[Any, Any, Any]:
         """
@@ -1040,19 +1039,20 @@ class Router(BaseRouter):
         """
         all_routes: List[Routes] = []
         routers_to_process = [self]  # Start with the current router
-        
+
         while routers_to_process:
             current_router = routers_to_process.pop(0)
-            
+
             # Add all routes from the current router
             all_routes.extend(current_router.routes)
-            
+
             # Add all sub-routers to be processed
             for sub_router in current_router.sub_routers.values():
                 if isinstance(sub_router, Router):
                     routers_to_process.append(sub_router)
-        
+
         return all_routes
+
 
 class WebsocketRoutes:
     def __init__(
@@ -1265,8 +1265,6 @@ class WSRouter(BaseRouter):
             path = f"/{path}"
 
         self.sub_routers[path] = app
-
-   
 
     def __repr__(self) -> str:
         return f"<WSRouter prefix='{self.prefix}' routes={len(self.routes)}>"
