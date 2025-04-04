@@ -170,6 +170,7 @@ class NexiosApp(object):
 
     async def _startup(self) -> None:
         """Execute all startup handlers sequentially"""
+        self._setup_openapi()
         for handler in self.startup_handlers:
             try:
                 await handler()
