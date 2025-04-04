@@ -17,14 +17,14 @@ class FileRouterConfig(TypedDict):
     exempt_paths: Optional[List[str]]
 
 
-class FileRouterPlugin:
+class FileRouter:
     """
     from nexios import get_application
     from nexios.plugins import FileRouterPlugin
 
     app = get_application()
 
-    FileRouterPlugin(app, config={"root": "./routes"}).setup()
+    FileRouter(app, config={"root": "./routes"})
     """
 
     app: NexiosApp
@@ -83,10 +83,11 @@ class FileRouterPlugin:
             if is_route:
                 logger.debug(f"Mapped {attr_name} {path}")
                 handler_function = getattr(module, attr_name)
+                
                 handlers.append(
                     Routes(
                         path=getattr(
-                            handler_function, "_path", path.replace("\\", "/")
+                            handler_function, "_path", path.replace("\\", "/").rstrip("/")
                         ),
                         handler=handler_function,  # type:ignore
                         methods=getattr(handler_function, "_allowed_methods", methods),
