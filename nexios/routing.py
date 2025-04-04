@@ -410,30 +410,12 @@ class Routes:
         self.responses = responses
         self.request_model = request_model
         self.kwargs = kwargs
-        self.tags = (tags,)
+        self.tags = tags
         self.security = security
         self.operation_id = operation_id
         self.deprecated = deprecated
         self.parameters = parameters
-        for method in self.methods:
-
-            parameters = [
-                Path(name=x, schema=Schema(type="string")) for x in self.param_names
-            ]  # type:ignore
-            if self.parameters.__len__() > 0:
-                parameters.extend(parameters)
-            self.docs.document_endpoint(  # type:ignore
-                path=self.raw_path,
-                method=method,
-                tags=tags,
-                security=security,
-                summary=self.summary or "",
-                description=description,
-                request_body=request_model,
-                parameters=parameters,
-                deprecated=self.deprecated,
-                operation_id=self.operation_id,
-            )(handler)
+        
 
     def match(self, path: str, method: str) -> typing.Tuple[Any, Any, Any]:
         """
@@ -1051,6 +1033,26 @@ class Router(BaseRouter):
 
         self.sub_routers[path] = app
 
+    def get_all_routes(self) -> List[Routes]:
+        """
+        Returns a flat list of all HTTP routes in this router and all nested sub-routers.
+        Uses an iterative approach (BFS) to avoid recursion.
+        """
+        all_routes: List[Routes] = []
+        routers_to_process = [self]  # Start with the current router
+        
+        while routers_to_process:
+            current_router = routers_to_process.pop(0)
+            
+            # Add all routes from the current router
+            all_routes.extend(current_router.routes)
+            
+            # Add all sub-routers to be processed
+            for sub_router in current_router.sub_routers.values():
+                if isinstance(sub_router, Router):
+                    routers_to_process.append(sub_router)
+        
+        return all_routes
 
 class WebsocketRoutes:
     def __init__(
@@ -1263,6 +1265,8 @@ class WSRouter(BaseRouter):
             path = f"/{path}"
 
         self.sub_routers[path] = app
+
+   
 
     def __repr__(self) -> str:
         return f"<WSRouter prefix='{self.prefix}' routes={len(self.routes)}>"

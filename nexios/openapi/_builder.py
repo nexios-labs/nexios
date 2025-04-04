@@ -82,48 +82,7 @@ class APIDocumentation:
         </html>
         """
 
-    def auto_document(self, path: str, methods: List[str]):
-        """Decorator to automatically document endpoints based on type hints."""
-
-        def decorator(func):
-            sig = signature(func)
-            type_hints = get_type_hints(func)
-            docstring = getdoc(func) or ""
-
-            request_model = None
-            response_model = None
-
-            if "request" in type_hints and "response" in type_hints:
-                request_type = type_hints["request"]
-                response_type = type_hints["response"]
-
-                if get_origin(response_type) is Awaitable:
-                    response_type = get_args(response_type)[0]
-
-                if (
-                    hasattr(response_type, "__origin__")
-                    and response_type.__origin__ is Response
-                ):
-                    if hasattr(response_type, "__args__") and response_type.__args__:
-                        response_model = response_type.__args__[0]
-
-            doc_lines = docstring.split("\n")
-            summary = doc_lines[0] if doc_lines else ""
-            description = "\n".join(doc_lines[1:]).strip() if len(doc_lines) > 1 else ""
-
-            for method in methods:
-                self.document_endpoint(
-                    path=path,
-                    method=method,
-                    summary=summary,
-                    description=description,
-                    request_body=request_model,
-                    responses={200: response_model} if response_model else None,
-                )
-
-            return func
-
-        return decorator
+    
 
     def document_endpoint(
         self,

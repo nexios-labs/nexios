@@ -14,7 +14,7 @@ from nexios.middlewares.errors.server_error_handler import (
 )
 from nexios.structs import URLPath
 from pydantic import BaseModel
-from nexios.openapi.models import Parameter
+from nexios.openapi.models import Parameter, Path, Schema
 from .types import MiddlewareType, Scope, Send, Receive, Message, HandlerType, ASGIApp
 
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
@@ -74,7 +74,6 @@ class NexiosApp(object):
         self.app = Router()
         self.router = self.app
         self.route = self.router.route
-        self._setup_openapi()
         self.lifespan_context: Optional[
             Callable[["NexiosApp"], AsyncIterator[None]]
         ] = lifespan
@@ -257,10 +256,31 @@ class NexiosApp(object):
             "bearerAuth", HTTPBearer(type="http", scheme="bearer", bearerFormat="JWT")
         )
 
-        APIDocumentation(
+        docs = APIDocumentation(
             app=self,
             config=self.openapi_config,
         )
+        
+        for route in self.get_all_routes():
+            for method in route.methods:
+
+                parameters = [
+                    Path(name=x, schema=Schema(type="string")) for x in route.param_names
+                ]  # type:ignore
+                if route.parameters.__len__() > 0:
+                    parameters.extend(parameters)
+                docs.document_endpoint(  # type:ignore
+                    path=route.raw_path,
+                    method=method,
+                    tags=route.tags,
+                    security=route.security,
+                    summary=route.summary or "",
+                    description=route.description,
+                    request_body=route.request_model,
+                    parameters=parameters,
+                    deprecated=route.deprecated,
+                    operation_id=route.operation_id,
+                )(route.handler)
 
     def add_middleware(
         self,
@@ -792,3 +812,21 @@ class NexiosApp(object):
 
         """
         self.app = middleware_cls(self.app)
+
+    def get_all_routes(self) -> List[Routes]:
+        """
+        Returns all routes registered in the application.
+
+        This method retrieves a list of all HTTP and WebSocket routes defined in the application.
+
+        Returns:
+            List[Routes]: A list of all registered routes.
+
+        Example:
+            ```python
+            routes = app.get_all_routes()
+            for route in routes:
+                print(route.path, route.methods)
+            ```
+        """
+        return self.router.get_all_routes()
