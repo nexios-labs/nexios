@@ -499,7 +499,6 @@ class NexiosApp(object):
         deprecated: bool = False,
         parameters: List[Parameter] = [],
         exclude_from_schema: bool = False,
-        
         **kwargs: Dict[str, Any]
     ) -> Callable[..., Any]:
         """
