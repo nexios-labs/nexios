@@ -1,13 +1,19 @@
+---
+icon: file-doc
+---
+
+# OpenApi
+
 The OpenAPI documentation is automatically set up when you create a Nexios app. The documentation is available at:
 
-- `/openapi.json` - The OpenAPI specification in JSON format
-- `/docs` - Interactive Swagger UI documentation
+* `/openapi.json` - The OpenAPI specification in JSON format
+* `/docs` - Interactive Swagger UI documentation
 
-## Documenting Routes
+### Documenting Routes
 
 When you define routes using the standard decorators (`@app.get`, `@app.post`, etc.), the OpenAPI documentation is automatically generated based on the route parameters you provide.
 
-### Example Route with Documentation
+#### Example Route with Documentation
 
 ```python
 from pydantic import BaseModel
@@ -42,22 +48,22 @@ async def create_user(request: Request, response: Response):
     return response.json({"id": 1, "username": user_data["username"], "email": user_data["email"]})
 ```
 
-### Route Documentation Parameters
+#### Route Documentation Parameters
 
 All route decorators (`get`, `post`, `put`, etc.) accept the following documentation parameters:
 
-- `summary`: Short summary of the endpoint
-- `description`: Detailed description of the endpoint
-- `request_model`: Pydantic model for the request body
-- `responses`: Dictionary mapping status codes to response models or descriptions
-- `tags`: List of tags for grouping endpoints
-- `security`: Security requirements for the endpoint
-- `operation_id`: Unique identifier for the operation
-- `deprecated`: Mark endpoint as deprecated (True/False)
-- `parameters`: List of `Parameter` objects for path/query parameters
-- `exclude_from_schema`: Exclude endpoint from OpenAPI docs (True/False)
+* `summary`: Short summary of the endpoint
+* `description`: Detailed description of the endpoint
+* `request_model`: Pydantic model for the request body
+* `responses`: Dictionary mapping status codes to response models or descriptions
+* `tags`: List of tags for grouping endpoints
+* `security`: Security requirements for the endpoint
+* `operation_id`: Unique identifier for the operation
+* `deprecated`: Mark endpoint as deprecated (True/False)
+* `parameters`: List of `Parameter` objects for path/query parameters
+* `exclude_from_schema`: Exclude endpoint from OpenAPI docs (True/False)
 
-## Path Parameters
+### Path Parameters
 
 Path parameters are automatically detected from your route path and documented. For example:
 
@@ -72,7 +78,7 @@ async def get_user(request: Request, response: Response, user_id: int):
     # Your route logic here
 ```
 
-## Query Parameters
+### Query Parameters
 
 For query parameters, you can define them using the `parameters` argument:
 
@@ -92,7 +98,7 @@ async def list_users(request: Request, response: Response):
     # Your route logic here
 ```
 
-## Security Schemes
+### Security Schemes
 
 The default configuration includes a bearer token security scheme. You can add additional security schemes using:
 
@@ -118,7 +124,7 @@ async def get_secure_data(request: Request, response: Response):
     # Your route logic here
 ```
 
-## Customizing OpenAPI Config
+### Customizing OpenAPI Config
 
 You can customize the OpenAPI configuration when creating your app:
 
@@ -138,7 +144,7 @@ config = MakeConfig(
 app = NexiosApp(config=config)
 ```
 
-## Excluding Routes from Documentation
+### Excluding Routes from Documentation
 
 To exclude a route from the OpenAPI documentation:
 
@@ -148,7 +154,7 @@ async def get_metrics(request: Request, response: Response):
     # Internal route not shown in docs
 ```
 
-## Viewing Documentation
+### Viewing Documentation
 
 After setting up your routes, you can view the documentation at:
 
