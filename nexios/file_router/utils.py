@@ -18,6 +18,7 @@ def mark_as_route(
     operation_id: Optional[str] = None,
     deprecated: bool = False,
     parameters: List[Parameter] = [],
+    exclude_from_schema: bool = False,
 ):
     def decorator(func):
         # Use setattr to set attributes dynamically
@@ -35,6 +36,7 @@ def mark_as_route(
         setattr(func, "_operation_id", operation_id or func.__name__)
         setattr(func, "_deprecated", deprecated)
         setattr(func, "_parameters", parameters)
+        setattr(func, "_exclude_from_schema", exclude_from_schema)
 
         return func
 

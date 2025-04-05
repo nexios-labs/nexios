@@ -1,4 +1,5 @@
 from __future__ import annotations
+from token import OP
 from typing import (
     Any,
     List,
@@ -13,6 +14,7 @@ from typing import (
 )
 from dataclasses import dataclass
 import re
+import copy
 import warnings, typing
 from enum import Enum
 from abc import abstractmethod, ABC
@@ -393,7 +395,7 @@ class Routes:
         """
         assert callable(handler), "Route handler must be callable"
         from nexios.openapi._builder import APIDocumentation
-
+        self.prefix = None
         self.docs = APIDocumentation.get_instance()
 
         self.raw_path = path
@@ -524,7 +526,7 @@ class Routes:
 
 class Router(BaseRouter):
     def __init__(
-        self, prefix: Optional[str] = None, routes: Optional[List[Routes]] = None
+        self, prefix: Optional[str] = None, routes: Optional[List[Routes]] = None,tags :Optional[List[str]] = None,exclude_from_schema: bool = False
     ):
         self.prefix = prefix or ""
         self.prefix.rstrip("/")
@@ -532,6 +534,8 @@ class Router(BaseRouter):
         self.middlewares: typing.List[Middleware] = []
         self.sub_routers: Dict[str, ASGIApp] = {}
         self.route_class = Routes
+        self.tags = tags or []
+        self.exclude_from_schema = exclude_from_schema
 
         if self.prefix and not self.prefix.startswith("/"):
             warnings.warn("Router prefix should start with '/'")
@@ -574,7 +578,9 @@ class Router(BaseRouter):
             app.add_route(route)
             ```
         """
-
+        route.tags = self.tags + route.tags if route.tags else self.tags
+        if self.exclude_from_schema:
+            route.exlude_from_schema = True
         self.routes.append(route)
 
     def add_middleware(self, middleware: MiddlewareType) -> None:
@@ -1049,26 +1055,30 @@ class Router(BaseRouter):
         if path in self.sub_routers.keys():
             raise ValueError("Router with prefix exists !")
 
+        
         self.sub_routers[path] = app
 
     def get_all_routes(self) -> List[Routes]:
-        """
-        Returns a flat list of all HTTP routes in this router and all nested sub-routers.
-        Uses an iterative approach (BFS) to avoid recursion.
-        """
+        """Returns a flat list of all HTTP routes in this router and all nested sub-routers"""
         all_routes: List[Routes] = []
-        routers_to_process = [self]  # Start with the current router
+        routers_to_process = [(self, "")]  # (router, current_prefix)
 
         while routers_to_process:
-            current_router = routers_to_process.pop(0)
-
-            # Add all routes from the current router
-            all_routes.extend(current_router.routes)
-
-            # Add all sub-routers to be processed
-            for sub_router in current_router.sub_routers.values():
+            current_router, current_prefix = routers_to_process.pop(0)
+            
+            # Add all routes from current router with prefix
+            for route in current_router.routes:
+                # Create a copy of the route with updated path
+                new_route = copy.copy(route)
+                new_route.raw_path = current_prefix + route.raw_path
+                new_route.prefix = current_prefix
+                all_routes.append(new_route)
+            
+            # Add all sub-routers to be processed with updated prefix
+            for mount_path, sub_router in current_router.sub_routers.items():
                 if isinstance(sub_router, Router):
-                    routers_to_process.append(sub_router)
+                    new_prefix = current_prefix + mount_path
+                    routers_to_process.append((sub_router, new_prefix))
 
         return all_routes
 

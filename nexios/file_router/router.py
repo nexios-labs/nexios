@@ -15,6 +15,7 @@ logger = create_logger("nexios")
 class FileRouterConfig(TypedDict):
     root: str
     exempt_paths: Optional[List[str]]
+    exclude_from_schema: Optional[bool]
 
 
 class FileRouter:
@@ -31,7 +32,7 @@ class FileRouter:
     config: FileRouterConfig
 
     def __init__(
-        self, app, config: FileRouterConfig = {"root": "./routes", "exempt_paths": []}
+        self, app, config: FileRouterConfig = {"root": "./routes", "exempt_paths": [],"exclude_from_schema": False}
     ):
         self.app = app
         self.config = config
@@ -104,6 +105,9 @@ class FileRouter:
                         operation_id=getattr(handler_function, "_operation_id", ""),
                         deprecated=getattr(handler_function, "_deprecated", False),
                         parameters=getattr(handler_function, "_parameters", []),
+                        exclude_from_schema=getattr(
+                            handler_function, "_exclude_from_schema", False
+                        ),
                     )
                 )
 
