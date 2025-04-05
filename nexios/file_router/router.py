@@ -32,7 +32,13 @@ class FileRouter:
     config: FileRouterConfig
 
     def __init__(
-        self, app, config: FileRouterConfig = {"root": "./routes", "exempt_paths": [],"exclude_from_schema": False}
+        self,
+        app,
+        config: FileRouterConfig = {
+            "root": "./routes",
+            "exempt_paths": [],
+            "exclude_from_schema": False,
+        },
     ):
         self.app = app
         self.config = config

@@ -395,6 +395,7 @@ class Routes:
         """
         assert callable(handler), "Route handler must be callable"
         from nexios.openapi._builder import APIDocumentation
+
         self.prefix = None
         self.docs = APIDocumentation.get_instance()
 
@@ -526,7 +527,11 @@ class Routes:
 
 class Router(BaseRouter):
     def __init__(
-        self, prefix: Optional[str] = None, routes: Optional[List[Routes]] = None,tags :Optional[List[str]] = None,exclude_from_schema: bool = False
+        self,
+        prefix: Optional[str] = None,
+        routes: Optional[List[Routes]] = None,
+        tags: Optional[List[str]] = None,
+        exclude_from_schema: bool = False,
     ):
         self.prefix = prefix or ""
         self.prefix.rstrip("/")
@@ -1055,7 +1060,6 @@ class Router(BaseRouter):
         if path in self.sub_routers.keys():
             raise ValueError("Router with prefix exists !")
 
-        
         self.sub_routers[path] = app
 
     def get_all_routes(self) -> List[Routes]:
@@ -1065,7 +1069,7 @@ class Router(BaseRouter):
 
         while routers_to_process:
             current_router, current_prefix = routers_to_process.pop(0)
-            
+
             # Add all routes from current router with prefix
             for route in current_router.routes:
                 # Create a copy of the route with updated path
@@ -1073,7 +1077,7 @@ class Router(BaseRouter):
                 new_route.raw_path = current_prefix + route.raw_path
                 new_route.prefix = current_prefix
                 all_routes.append(new_route)
-            
+
             # Add all sub-routers to be processed with updated prefix
             for mount_path, sub_router in current_router.sub_routers.items():
                 if isinstance(sub_router, Router):
