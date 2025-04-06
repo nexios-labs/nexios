@@ -71,7 +71,7 @@ def render(template_path: str = "route.html"):
             ctx = await func(req, res, *args, **kwargs)
             if not ctx:
                 return ctx
-                
+
             if not isinstance(ctx, dict):
                 raise ValueError("The decorated function must return a dictionary.")
 
