@@ -91,7 +91,6 @@ class FileRouter:
             is_route = attr_name in methods or hasattr(
                 getattr(module, attr_name), "_is_route"
             )
-            
 
             path = getattr(handler_function, "_path", path.replace("\\", "/"))
             if is_route:
