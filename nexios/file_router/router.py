@@ -91,7 +91,6 @@ class FileRouter:
             is_route = attr_name in methods or hasattr(
                 getattr(module, attr_name), "_is_route"
             )
-            
 
             if is_route:
                 handler_function = getattr(module, attr_name)
