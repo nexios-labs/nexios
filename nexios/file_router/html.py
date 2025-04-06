@@ -2,7 +2,6 @@ import functools
 import inspect
 import os
 from os.path import exists, getmtime, join
-from tkinter import N
 from typing import Optional, Dict, Any
 from jinja2 import BaseLoader, Environment, TemplateNotFound, select_autoescape
 from nexios.http import Request, Response
@@ -70,7 +69,9 @@ def render(template_path: str = "route.html"):
         @functools.wraps(func)
         async def wrapper(req: Request, res: Response, *args, **kwargs):
             ctx = await func(req, res, *args, **kwargs)
-
+            if not ctx:
+                return ctx
+                
             if not isinstance(ctx, dict):
                 raise ValueError("The decorated function must return a dictionary.")
 
