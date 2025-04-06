@@ -91,15 +91,16 @@ class FileRouter:
             is_route = attr_name in methods or hasattr(
                 getattr(module, attr_name), "_is_route"
             )
-            if attr_name in ["get", "post", "patch", "put", "delete"]:
-                methods = [attr_name.upper()]
-            else:
-                methods = getattr(handler_function, "_allowed_methods", ["GET"])
+            
 
             path = getattr(handler_function, "_path", path.replace("\\", "/"))
             if is_route:
                 logger.debug(f"Mapped {attr_name} {path}")
                 handler_function = getattr(module, attr_name)
+                if attr_name in ["get", "post", "patch", "put", "delete"]:
+                    methods = [attr_name.upper()]
+                else:
+                    methods = getattr(handler_function, "_allowed_methods", ["GET"])
                 handlers.append(
                     Routes(
                         path=path.rstrip("/") if self.restrict_slash(path) else path,
