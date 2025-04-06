@@ -91,15 +91,20 @@ class FileRouter:
             is_route = attr_name in methods or hasattr(
                 getattr(module, attr_name), "_is_route"
             )
+            if attr_name in ["get", "post", "patch", "put", "delete"]:
+                methods = [attr_name.upper()]
+            else:
+                methods = getattr(handler_function, "_allowed_methods", ["GET"])
+
+            path = getattr(handler_function, "_path", path.replace("\\", "/"))
             if is_route:
                 logger.debug(f"Mapped {attr_name} {path}")
                 handler_function = getattr(module, attr_name)
-                path = getattr(handler_function, "_path", path.replace("\\", "/"))
                 handlers.append(
                     Routes(
                         path=path.rstrip("/") if self.restrict_slash(path) else path,
                         handler=handler_function,  # type:ignore
-                        methods=getattr(handler_function, "_allowed_methods", methods),
+                        methods=methods,
                         name=getattr(handler_function, "_name", ""),
                         summary=getattr(handler_function, "_summary", ""),
                         description=getattr(handler_function, "_description", ""),
@@ -112,7 +117,8 @@ class FileRouter:
                         deprecated=getattr(handler_function, "_deprecated", False),
                         parameters=getattr(handler_function, "_parameters", []),
                         exclude_from_schema=getattr(
-                            handler_function, "_exclude_from_schema", False
+                            handler_function, "_exclude_from_schema", 
+                            self.config.get("exclude_from_schema",False)
                         ),
                     )
                 )
