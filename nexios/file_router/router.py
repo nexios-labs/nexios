@@ -93,10 +93,10 @@ class FileRouter:
             )
             
 
-            path = getattr(handler_function, "_path", path.replace("\\", "/"))
             if is_route:
-                logger.debug(f"Mapped {attr_name} {path}")
                 handler_function = getattr(module, attr_name)
+                logger.debug(f"Mapped {attr_name} {path}")
+                path = getattr(handler_function, "_path", path.replace("\\", "/"))
                 if attr_name in ["get", "post", "patch", "put", "delete"]:
                     methods = [attr_name.upper()]
                 else:
