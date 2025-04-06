@@ -117,8 +117,9 @@ class FileRouter:
                         deprecated=getattr(handler_function, "_deprecated", False),
                         parameters=getattr(handler_function, "_parameters", []),
                         exclude_from_schema=getattr(
-                            handler_function, "_exclude_from_schema", 
-                            self.config.get("exclude_from_schema",False)
+                            handler_function,
+                            "_exclude_from_schema",
+                            self.config.get("exclude_from_schema", False),
                         ),
                     )
                 )
