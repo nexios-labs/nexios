@@ -69,7 +69,6 @@ class Client(httpx.AsyncClient):
         retries = 0
         last_exception = None
 
-       
         response = await super().request(
             method,
             url,
@@ -86,7 +85,6 @@ class Client(httpx.AsyncClient):
             extensions=extensions,
         )
         return response
-                
 
     async def get(
         self,

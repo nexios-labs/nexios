@@ -20,7 +20,9 @@ class WebSocketDisconnect(Exception):
     def __init__(self, code: int = 1000, reason: Optional[str] = None):
         self.code = code
         self.reason = reason
-        super().__init__(f"WebSocket disconnected with code {code}: {reason or 'No reason provided'}")
+        super().__init__(
+            f"WebSocket disconnected with code {code}: {reason or 'No reason provided'}"
+        )
 
 
 class WebSocketConnection:
@@ -29,38 +31,38 @@ class WebSocketConnection:
         app: Any,
         scope: ASGIScope,
         raise_app_exceptions: bool = True,
-        timeout: float = 5.0
+        timeout: float = 5.0,
     ):
         self.app = app
         self.scope = scope
         self.raise_app_exceptions = raise_app_exceptions
         self.timeout = timeout
-        
+
         # Connection state
         self.state = WebSocketState.CONNECTING
         self.close_code: Optional[int] = None
         self.close_reason: Optional[str] = None
         self.subprotocol: Optional[str] = None
-        
+
         # Communication channels
-        self.receive_channel, self.send_channel = anyio.create_memory_object_stream(max_buffer_size=float('inf'))
-        self.app_channel, self.client_channel = anyio.create_memory_object_stream(max_buffer_size=float('inf'))
-        
+        self.receive_channel, self.send_channel = anyio.create_memory_object_stream(
+            max_buffer_size=float("inf")
+        )
+        self.app_channel, self.client_channel = anyio.create_memory_object_stream(
+            max_buffer_size=float("inf")
+        )
+
         # Control events
         self.connection_event = anyio.Event()
         self.disconnection_event = anyio.Event()
-        
+
         # Background task
         self.app_task: Optional[anyio.Task] = None
 
     async def run_app(self) -> None:
         """Run the ASGI application to handle the WebSocket connection."""
         try:
-            await self.app(
-                self.scope,
-                self._asgi_receive,
-                self._asgi_send
-            )
+            await self.app(self.scope, self._asgi_receive, self._asgi_send)
         except Exception as exc:
             if self.raise_app_exceptions:
                 raise
@@ -72,10 +74,10 @@ class WebSocketConnection:
         if self.state == WebSocketState.CONNECTING:
             self.state = WebSocketState.CONNECTED
             return {"type": "websocket.connect"}
-        
+
         if self.state == WebSocketState.DISCONNECTED:
             return {"type": "websocket.disconnect", "code": self.close_code}
-        
+
         try:
             async with anyio.fail_after(self.timeout):
                 async with self.app_channel as receiver:
@@ -87,44 +89,41 @@ class WebSocketConnection:
     async def _asgi_send(self, message: Message) -> None:
         """ASGI send function for the application."""
         message_type = message["type"]
-        
+
         if message_type == "websocket.accept":
             self.subprotocol = message.get("subprotocol")
             async with self.client_channel as sender:
                 await sender.send({"type": "accept"})
             self.connection_event.set()
-            
+
         elif message_type == "websocket.send":
             async with self.client_channel as sender:
-                await sender.send({
-                    "type": "message",
-                    "data": message.get("text") or message.get("bytes"),
-                    "is_text": "text" in message
-                })
-                
+                await sender.send(
+                    {
+                        "type": "message",
+                        "data": message.get("text") or message.get("bytes"),
+                        "is_text": "text" in message,
+                    }
+                )
+
         elif message_type == "websocket.close":
             await self._handle_disconnect(
-                message.get("code", 1000),
-                message.get("reason")
+                message.get("code", 1000), message.get("reason")
             )
 
     async def _handle_disconnect(self, code: int, reason: Optional[str] = None) -> None:
         """Handle WebSocket disconnection."""
         if self.state == WebSocketState.DISCONNECTED:
             return
-            
+
         self.state = WebSocketState.DISCONNECTED
         self.close_code = code
         self.close_reason = reason
-        
+
         # Notify client
         async with self.client_channel as sender:
-            await sender.send({
-                "type": "close",
-                "code": code,
-                "reason": reason
-            })
-        
+            await sender.send({"type": "close", "code": code, "reason": reason})
+
         # Clean up
         self.disconnection_event.set()
         if self.app_task:
@@ -134,9 +133,9 @@ class WebSocketConnection:
         """Establish the WebSocket connection."""
         if self.state != WebSocketState.CONNECTING:
             raise RuntimeError("WebSocket is already connected or disconnected")
-        
+
         self.app_task = anyio.create_task(self.run_app)
-        
+
         try:
             async with anyio.fail_after(self.timeout):
                 await self.connection_event.wait()
@@ -149,15 +148,15 @@ class WebSocketConnection:
         if self.state != WebSocketState.CONNECTED:
             raise WebSocketDisconnect(
                 self.close_code or 1006,
-                self.close_reason or "Cannot send on closed connection"
+                self.close_reason or "Cannot send on closed connection",
             )
-        
+
         message = {
             "type": "websocket.receive",
             "text": data if isinstance(data, str) else None,
-            "bytes": data if isinstance(data, bytes) else None
+            "bytes": data if isinstance(data, bytes) else None,
         }
-        
+
         try:
             async with anyio.fail_after(self.timeout):
                 async with self.receive_channel as sender:
@@ -170,22 +169,20 @@ class WebSocketConnection:
         """Receive data from the WebSocket."""
         if self.state == WebSocketState.DISCONNECTED:
             raise WebSocketDisconnect(
-                self.close_code or 1006,
-                self.close_reason or "Connection closed"
+                self.close_code or 1006, self.close_reason or "Connection closed"
             )
-        
+
         try:
             async with anyio.fail_after(self.timeout):
                 async with self.client_channel as receiver:
                     while True:
                         message = await receiver.receive()
-                        
+
                         if message["type"] == "message":
                             return message["data"]
                         elif message["type"] == "close":
                             raise WebSocketDisconnect(
-                                message["code"],
-                                message["reason"]
+                                message["code"], message["reason"]
                             )
         except TimeoutError:
             await self._handle_disconnect(1002, "Protocol error")
@@ -195,7 +192,7 @@ class WebSocketConnection:
         """Close the WebSocket connection gracefully."""
         if self.state == WebSocketState.DISCONNECTED:
             return
-            
+
         await self._handle_disconnect(code, reason)
         await self.disconnection_event.wait()
 
@@ -217,7 +214,7 @@ class NexiosAsyncTransport(httpx.AsyncBaseTransport):
         root_path: str = "",
         client: Tuple[str, int] = ("testclient", 5000),
         app_state: Optional[Dict[str, Any]] = None,
-        websocket_timeout: float = 5.0
+        websocket_timeout: float = 5.0,
     ):
         self.app = app
         self.raise_app_exceptions = raise_app_exceptions
@@ -233,8 +230,12 @@ class NexiosAsyncTransport(httpx.AsyncBaseTransport):
         headers = self._prepare_headers(request, host, port)
 
         if scheme in {"ws", "wss"}:
-            return await self._handle_websocket(request, scheme, path, raw_path, query, headers, host, port)
-        return await self._handle_http(request, scheme, path, raw_path, query, headers, host, port)
+            return await self._handle_websocket(
+                request, scheme, path, raw_path, query, headers, host, port
+            )
+        return await self._handle_http(
+            request, scheme, path, raw_path, query, headers, host, port
+        )
 
     async def _handle_websocket(
         self,
@@ -245,29 +246,31 @@ class NexiosAsyncTransport(httpx.AsyncBaseTransport):
         query: str,
         headers: HeaderList,
         host: str,
-        port: int
+        port: int,
     ) -> httpx.Response:
         """Handle WebSocket requests."""
-        scope = self._build_websocket_scope(request, scheme, path, raw_path, query, headers, host, port)
-        
+        scope = self._build_websocket_scope(
+            request, scheme, path, raw_path, query, headers, host, port
+        )
+
         # Create WebSocket connection handler
         websocket = WebSocketConnection(
             app=self.app,
             scope=scope,
             raise_app_exceptions=self.raise_app_exceptions,
-            timeout=self.websocket_timeout
+            timeout=self.websocket_timeout,
         )
-        
+
         # Return a 101 Switching Protocols response with the WebSocket handler
         return httpx.Response(
             101,
             headers={
                 "Upgrade": "websocket",
                 "Connection": "Upgrade",
-                "Sec-WebSocket-Accept": "dummy"  # This would be properly calculated in a real implementation
+                "Sec-WebSocket-Accept": "dummy",  # This would be properly calculated in a real implementation
             },
             request=request,
-            extensions={"websocket": websocket}
+            extensions={"websocket": websocket},
         )
 
     async def _handle_http(
@@ -279,13 +282,17 @@ class NexiosAsyncTransport(httpx.AsyncBaseTransport):
         query: str,
         headers: HeaderList,
         host: str,
-        port: int
+        port: int,
     ) -> httpx.Response:
         """Handle HTTP requests."""
-        scope = self._build_http_scope(request, scheme, path, raw_path, query, headers, host, port)
+        scope = self._build_http_scope(
+            request, scheme, path, raw_path, query, headers, host, port
+        )
         return await self._send_http_request(scope, request)
 
-    async def _send_http_request(self, scope: ASGIScope, request: httpx.Request) -> httpx.Response:
+    async def _send_http_request(
+        self, scope: ASGIScope, request: httpx.Request
+    ) -> httpx.Response:
         """Send HTTP request to ASGI app and return response."""
         request_complete = False
         response_started = False
@@ -354,7 +361,9 @@ class NexiosAsyncTransport(httpx.AsyncBaseTransport):
             return host, int(port)
         return netloc, default_ports.get(scheme, 80)
 
-    def _prepare_headers(self, request: httpx.Request, host: str, port: int) -> HeaderList:
+    def _prepare_headers(
+        self, request: httpx.Request, host: str, port: int
+    ) -> HeaderList:
         headers = (
             [(b"host", f"{host}:{port}".encode())]
             if "host" not in request.headers
@@ -408,8 +417,7 @@ class NexiosAsyncTransport(httpx.AsyncBaseTransport):
         subprotocols = []
         if "sec-websocket-protocol" in request.headers:
             subprotocols = [
-                p.strip() 
-                for p in request.headers["sec-websocket-protocol"].split(",")
+                p.strip() for p in request.headers["sec-websocket-protocol"].split(",")
             ]
 
         return {
