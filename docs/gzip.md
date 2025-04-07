@@ -73,7 +73,7 @@ from nexios.middlewares.gzip import GzipMiddleware
 from nexios.application import NexiosApp
 
 app = get_application()
-app.add_middleware(GzipMiddleware())
+app.wrap_asgi(GzipMiddleware)
 ```
 
 ---
