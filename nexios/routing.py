@@ -1275,6 +1275,7 @@ class WSRouter(BaseRouter):
                 await route.handle(websocket)
                 return
         await send({"type": "websocket.close", "code": 404})
+
     def wrap_asgi(
         self,
         middleware_cls: Annotated[
@@ -1301,6 +1302,7 @@ class WSRouter(BaseRouter):
 
         """
         self.app = middleware_cls(self.app)
+
     def mount_router(  # type:ignore
         self, app: "WSRouter", path: typing.Optional[str] = None
     ) -> None:  # type:ignore

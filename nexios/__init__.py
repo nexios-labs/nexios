@@ -1,9 +1,8 @@
-
 """
 Implemented based on Starlette version 0.45.3.
 
-This module adapts selected components and logic from Starlette to ensure compatibility 
-with our internal architecture, while preserving the async-first design principles and 
+This module adapts selected components and logic from Starlette to ensure compatibility
+with our internal architecture, while preserving the async-first design principles and
 middleware patterns that Starlette is known for.
 
 Key inspirations from Starlette include:
@@ -11,10 +10,9 @@ Key inspirations from Starlette include:
 - Middleware handling pattern
 
 
-Note: Adjustments have been made for dependency injection, custom error handling, 
+Note: Adjustments have been made for dependency injection, custom error handling,
 and simplified routing mechanisms to better suit the Nexios framework architecture.
 """
-
 
 from .application import NexiosApp
 from .sessions.middleware import SessionMiddleware

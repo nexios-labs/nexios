@@ -812,7 +812,7 @@ class NexiosApp(object):
                 "An ASGI middleware class or callable that takes an app as its first argument and returns an ASGI app"
             ),
         ],
-        **kwargs :Dict[str,Any]
+        **kwargs: Dict[str, Any]
     ) -> None:
         """
         Wraps the entire application with an ASGI middleware.
@@ -830,7 +830,7 @@ class NexiosApp(object):
 
 
         """
-        self.app = middleware_cls(self.app,**kwargs)
+        self.app = middleware_cls(self.app, **kwargs)
 
     def get_all_routes(self) -> List[Routes]:
         """
