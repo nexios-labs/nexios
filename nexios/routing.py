@@ -1275,7 +1275,32 @@ class WSRouter(BaseRouter):
                 await route.handle(websocket)
                 return
         await send({"type": "websocket.close", "code": 404})
+    def wrap_asgi(
+        self,
+        middleware_cls: Annotated[
+            Callable[[ASGIApp], Any],
+            Doc(
+                "An ASGI middleware class or callable that takes an app as its first argument and returns an ASGI app"
+            ),
+        ],
+    ) -> None:
+        """
+        Wraps the entire application with an ASGI middleware.
 
+        This method allows adding middleware at the ASGI level, which intercepts all requests
+        (HTTP, WebSocket, and Lifespan) before they reach the application.
+
+        Args:
+            middleware_cls: An ASGI middleware class or callable that follows the ASGI interface
+            *args: Additional positional arguments to pass to the middleware
+            **kwargs: Additional keyword arguments to pass to the middleware
+
+        Returns:
+            NexiosApp: The application instance for method chaining
+
+
+        """
+        self.app = middleware_cls(self.app)
     def mount_router(  # type:ignore
         self, app: "WSRouter", path: typing.Optional[str] = None
     ) -> None:  # type:ignore

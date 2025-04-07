@@ -8,11 +8,11 @@ The FileRouter is a filesystem-based routing system for Nexios that automaticall
 
 ### Core Features
 
-* **Automatic Route Registration**: Scans directories for route files and maps them to URL paths
-* **HTTP Method Detection**: Recognizes standard HTTP methods (GET, POST, PUT, etc.) from handler function names
-* **Dynamic Path Parameters**: Supports parameterized routes using curly brace syntax
-* **Metadata Support**: Enables OpenAPI documentation through decorators
-* **Flexible Configuration**: Allows exclusion of specific directories from scanning
+- **Automatic Route Registration**: Scans directories for route files and maps them to URL paths
+- **HTTP Method Detection**: Recognizes standard HTTP methods (GET, POST, PUT, etc.) from handler function names
+- **Dynamic Path Parameters**: Supports parameterized routes using curly brace syntax
+- **Metadata Support**: Enables OpenAPI documentation through decorators
+- **Flexible Configuration**: Allows exclusion of specific directories from scanning
 
 ### Installation and Setup
 
@@ -32,15 +32,16 @@ FileRouter(app, config={"root": "./routes"})
 
 The FileRouter accepts a configuration dictionary with the following properties:
 
-* **root** (str): Required. The base directory to scan for route files
-* **exempt\_paths** (list\[str]): Optional. List of directory names to exclude from scanning
+- **root** (str): Required. The base directory to scan for route files
+- **exempt_paths** (list\[str]): Optional. List of directory names to exclude from scanning
 
 Example with custom configuration:
 
 ```python
 FileRouter(app, config={
     "root": "./api_endpoints",
-    "exempt_paths": ["tests", "templates"]
+    "exempt_paths": ["tests", "templates"],
+    "exclude_from_schema":True #or False
 })
 ```
 
@@ -101,7 +102,7 @@ def get(req, res):
 For more control over route behavior and documentation, use the `@mark_as_route` decorator:
 
 ```python
-from nexios.utils import mark_as_route
+from nexios.file_router.utils import mark_as_route
 from pydantic import BaseModel
 
 class UserModel(BaseModel):
@@ -123,20 +124,20 @@ async def create_user(req, res):
 
 #### Available Decorator Options
 
-| Parameter      | Description                                              |
-| -------------- | -------------------------------------------------------- |
-| path           | Custom URL path (overrides auto-detected path)           |
-| methods        | List of HTTP methods (defaults to function name)         |
-| summary        | Brief description for OpenAPI docs                       |
-| description    | Detailed route description                               |
-| request\_model | Pydantic model for request validation                    |
-| responses      | Dictionary mapping status codes to response descriptions |
-| tags           | OpenAPI tags for grouping related routes                 |
-| security       | Security requirements for the route                      |
-| middlewares    | Route-specific middleware functions                      |
-| operation\_id  | Unique identifier for the operation in OpenAPI docs      |
-| deprecated     | Marks the route as deprecated in documentation           |
-| parameters     | Additional OpenAPI parameter definitions                 |
+| Parameter     | Description                                              |
+| ------------- | -------------------------------------------------------- |
+| path          | Custom URL path (overrides auto-detected path)           |
+| methods       | List of HTTP methods (defaults to function name)         |
+| summary       | Brief description for OpenAPI docs                       |
+| description   | Detailed route description                               |
+| request_model | Pydantic model for request validation                    |
+| responses     | Dictionary mapping status codes to response descriptions |
+| tags          | OpenAPI tags for grouping related routes                 |
+| security      | Security requirements for the route                      |
+| middlewares   | Route-specific middleware functions                      |
+| operation_id  | Unique identifier for the operation in OpenAPI docs      |
+| deprecated    | Marks the route as deprecated in documentation           |
+| parameters    | Additional OpenAPI parameter definitions                 |
 
 ### Error Handling
 
@@ -179,13 +180,13 @@ The `html.py` module provides Jinja2 template rendering capabilities for Nexios 
 #### Core Components
 
 1. **Template Environment Configuration**
-   * Global Jinja2 environment management
-   * Custom loader implementation
-   * Auto-escaping and auto-reloading support
+   - Global Jinja2 environment management
+   - Custom loader implementation
+   - Auto-escaping and auto-reloading support
 2. **Rendering Decorator**
-   * `@render()` decorator for route handlers
-   * Automatic template discovery
-   * Context passing from handlers to templates
+   - `@render()` decorator for route handlers
+   - Automatic template discovery
+   - Context passing from handlers to templates
 
 ### Template Configuration
 
@@ -213,9 +214,9 @@ configure_templates(env=custom_env)
 
 #### Configuration Options
 
-* `template_dir`: Base directory for template files
-* `env`: Pre-configured Jinja2 environment (overrides template\_dir)
-* `**env_options`: Additional Jinja2 environment parameters
+- `template_dir`: Base directory for template files
+- `env`: Pre-configured Jinja2 environment (overrides template_dir)
+- `**env_options`: Additional Jinja2 environment parameters
 
 ### Template Rendering in Routes
 
@@ -281,18 +282,17 @@ project/
   </head>
   <body>
     <div data-gb-custom-block data-tag="block"></div>
-
   </body>
 </html>
 
 <!-- templates/users/profile.html -->
 
-<div data-gb-custom-block data-tag="extends" data-0='base.html'></div> <div data-gb-custom-block data-tag="block"></div>User Profile - {{ username }}{%
-endblock %} <div data-gb-custom-block data-tag="block">
-
-<h1>{{ username }}</h1>
-<p>Email: {{ email }}</p>
-
+<div data-gb-custom-block data-tag="extends" data-0="base.html"></div>
+<div data-gb-custom-block data-tag="block"></div>
+User Profile - {{ username }}{% endblock %}
+<div data-gb-custom-block data-tag="block">
+  <h1>{{ username }}</h1>
+  <p>Email: {{ email }}</p>
 </div>
 ```
 
@@ -300,9 +300,9 @@ endblock %} <div data-gb-custom-block data-tag="block">
 
 The included `Loader` class provides:
 
-* Template file discovery
-* Modification time checking
-* Automatic reloading in development
+- Template file discovery
+- Modification time checking
+- Automatic reloading in development
 
 #### Context Validation
 
@@ -329,9 +329,9 @@ def get(req, res):
 
 The rendering system provides clear error messages for:
 
-* Missing templates
-* Invalid context data
-* Template syntax errors
+- Missing templates
+- Invalid context data
+- Template syntax errors
 
 ### Performance Considerations
 

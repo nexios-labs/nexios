@@ -1,63 +1,113 @@
-# Experimental
+
+""" 
+implemented from starlette (0.45.3)
+"""
 
 import gzip
-from io import BytesIO
-from typing import Callable, Any
-from nexios.middlewares.base import BaseMiddleware
-from nexios.http import Request, Response
-from nexios.config import get_config
+import io
+import typing
+
+from nexios.structs import Headers, MutableHeaders
+from nexios.types import ASGIApp, Message, Receive, Scope, Send
 
 
-class GzipMiddleware(BaseMiddleware):
-    def __init__(self):
-        config = get_config().gzip if hasattr(get_config(), "gzip") else None
-        self.minimum_size = getattr(config, "minimum_size", 500)
-        self.content_types = getattr(
-            config,
-            "content_types",
-            [
-                "text/plain",
-                "text/html",
-                "text/css",
-                "application/javascript",
-                "application/json",
-                "application/xml",
-            ],
-        )
-        self.compression_level = getattr(config, "compression_level", 6)
+class GZipMiddleware:
+    def __init__(self, app: ASGIApp, minimum_size: int = 500, compresslevel: int = 9) -> None:
+        self.app = app
+        self.minimum_size = minimum_size
+        self.compresslevel = compresslevel
 
-    async def process_request(
-        self, request: Request, response: Response, call_next: Callable[..., Any]
-    ):
-        accept_encoding = request.headers.get("Accept-Encoding", "")
-        if "gzip" not in accept_encoding.lower():
-            await call_next()
-            return
-        await call_next()
-        if self.should_compress(response):
-            self.compress_response(response)
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":  # pragma: no branch
+            headers = Headers(scope=scope)
+            if "gzip" in headers.get("Accept-Encoding", ""):
+                responder = GZipResponder(self.app, self.minimum_size, compresslevel=self.compresslevel)
+                await responder(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
 
-    def should_compress(self, response: Response) -> bool:
-        content_length = int(
-            response.headers.get("Content-Length", "0") or 0
-        )  # dirty code, fix later
-        content_type = response.content_type  # type:ignore
 
-        return (
-            content_length >= self.minimum_size and content_type in self.content_types
-        )
+class GZipResponder:
+    def __init__(self, app: ASGIApp, minimum_size: int, compresslevel: int = 9) -> None:
+        self.app = app
+        self.minimum_size = minimum_size
+        self.send: Send = unattached_send
+        self.initial_message: Message = {}
+        self.started = False
+        self.content_encoding_set = False
+        self.gzip_buffer = io.BytesIO()
+        self.gzip_file = gzip.GzipFile(mode="wb", fileobj=self.gzip_buffer, compresslevel=compresslevel)
 
-    def compress_response(self, response: Response):
-        buffer = BytesIO()
-        with gzip.GzipFile(
-            mode="wb", fileobj=buffer, compresslevel=self.compression_level
-        ) as gzip_file:
-            gzip_file.write(response.body)
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        self.send = send
+        with self.gzip_buffer, self.gzip_file:
+            await self.app(scope, receive, self.send_with_gzip)
 
-        response.resp(buffer.getvalue())
-        response.header("Content-Encoding", "gzip")
-        response.header("Content-Length", str(len(response.body)), overide=True)
-        response.header("Vary", "Accept-Encoding")
+    async def send_with_gzip(self, message: Message) -> None:
+        message_type = message["type"]
+        if message_type == "http.response.start":
+            # Don't send the initial message until we've determined how to
+            # modify the outgoing headers correctly.
+            self.initial_message = message
+            headers = Headers(raw=self.initial_message["headers"])
+            self.content_encoding_set = "content-encoding" in headers
+        elif message_type == "http.response.body" and self.content_encoding_set:
+            if not self.started:
+                self.started = True
+                await self.send(self.initial_message)
+            await self.send(message)
+        elif message_type == "http.response.body" and not self.started:
+            self.started = True
+            body = message.get("body", b"")
+            more_body = message.get("more_body", False)
+            if len(body) < self.minimum_size and not more_body:
+                # Don't apply GZip to small outgoing responses.
+                await self.send(self.initial_message)
+                await self.send(message)
+            elif not more_body:
+                # Standard GZip response.
+                self.gzip_file.write(body)
+                self.gzip_file.close()
+                body = self.gzip_buffer.getvalue()
 
-    async def process_response(self, request: Request, response: Response):
-        pass
+                headers = MutableHeaders(raw=self.initial_message["headers"])
+                headers["Content-Encoding"] = "gzip"
+                headers["Content-Length"] = str(len(body))
+                headers.add_vary_header("Accept-Encoding")
+                message["body"] = body
+
+                await self.send(self.initial_message)
+                await self.send(message)
+            else:
+                # Initial body in streaming GZip response.
+                headers = MutableHeaders(raw=self.initial_message["headers"])
+                headers["Content-Encoding"] = "gzip"
+                headers.add_vary_header("Accept-Encoding")
+                del headers["Content-Length"]
+
+                self.gzip_file.write(body)
+                message["body"] = self.gzip_buffer.getvalue()
+                self.gzip_buffer.seek(0)
+                self.gzip_buffer.truncate()
+
+                await self.send(self.initial_message)
+                await self.send(message)
+
+        elif message_type == "http.response.body":  # pragma: no branch
+            # Remaining body in streaming GZip response.
+            body = message.get("body", b"")
+            more_body = message.get("more_body", False)
+
+            self.gzip_file.write(body)
+            if not more_body:
+                self.gzip_file.close()
+
+            message["body"] = self.gzip_buffer.getvalue()
+            self.gzip_buffer.seek(0)
+            self.gzip_buffer.truncate()
+
+            await self.send(message)
+
+
+async def unattached_send(message: Message) -> typing.NoReturn:
+    raise RuntimeError("send awaitable not set")  # pragma: no cover

@@ -6,8 +6,8 @@ icon: file-doc
 
 The OpenAPI documentation is automatically set up when you create a Nexios app. The documentation is available at:
 
-* `/openapi.json` - The OpenAPI specification in JSON format
-* `/docs` - Interactive Swagger UI documentation
+- `/openapi.json` - The OpenAPI specification in JSON format
+- `/docs` - Interactive Swagger UI documentation
 
 ### Documenting Routes
 
@@ -17,7 +17,7 @@ When you define routes using the standard decorators (`@app.get`, `@app.post`, e
 
 ```python
 from pydantic import BaseModel
-from nexios import NexiosApp
+from nexios import get_application
 
 app = get_application()
 
@@ -52,16 +52,16 @@ async def create_user(request: Request, response: Response):
 
 All route decorators (`get`, `post`, `put`, etc.) accept the following documentation parameters:
 
-* `summary`: Short summary of the endpoint
-* `description`: Detailed description of the endpoint
-* `request_model`: Pydantic model for the request body
-* `responses`: Dictionary mapping status codes to response models or descriptions
-* `tags`: List of tags for grouping endpoints
-* `security`: Security requirements for the endpoint
-* `operation_id`: Unique identifier for the operation
-* `deprecated`: Mark endpoint as deprecated (True/False)
-* `parameters`: List of `Parameter` objects for path/query parameters
-* `exclude_from_schema`: Exclude endpoint from OpenAPI docs (True/False)
+- `summary`: Short summary of the endpoint
+- `description`: Detailed description of the endpoint
+- `request_model`: Pydantic model for the request body
+- `responses`: Dictionary mapping status codes to response models or descriptions
+- `tags`: List of tags for grouping endpoints
+- `security`: Security requirements for the endpoint
+- `operation_id`: Unique identifier for the operation
+- `deprecated`: Mark endpoint as deprecated (True/False)
+- `parameters`: List of `Parameter` objects for path/query parameters
+- `exclude_from_schema`: Exclude endpoint from OpenAPI docs (True/False)
 
 ### Path Parameters
 
@@ -141,7 +141,7 @@ config = MakeConfig(
     }
 )
 
-app = NexiosApp(config=config)
+app = get_application(config=config)
 ```
 
 ### Excluding Routes from Documentation

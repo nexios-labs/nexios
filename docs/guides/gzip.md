@@ -51,7 +51,7 @@ To enable gzip compression, add it to your middleware stack:
 
 ```python
 from nexios.middlewares.gzip import GzipMiddleware
-from nexios.application import NexiosApp
+from nexios.application import get_application
 
 app = get_application()
 app.add_middleware(GzipMiddleware())

@@ -804,7 +804,7 @@ class NexiosApp(object):
     def url_for(self, _name: str, **path_params: Any) -> URLPath:
         return self.router.url_for(_name, **path_params)
 
-    def wrap_with_middleware(
+    def wrap_asgi(
         self,
         middleware_cls: Annotated[
             Callable[[ASGIApp], Any],
@@ -812,6 +812,7 @@ class NexiosApp(object):
                 "An ASGI middleware class or callable that takes an app as its first argument and returns an ASGI app"
             ),
         ],
+        **kwargs :Dict[str,Any]
     ) -> None:
         """
         Wraps the entire application with an ASGI middleware.
@@ -829,7 +830,7 @@ class NexiosApp(object):
 
 
         """
-        self.app = middleware_cls(self.app)
+        self.app = middleware_cls(self.app,**kwargs)
 
     def get_all_routes(self) -> List[Routes]:
         """

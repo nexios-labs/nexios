@@ -36,7 +36,7 @@ logger.critical("Critical system failure - shutting down")
 If you're using Nexios in a web or API application, integrate logging into your app:
 
 ```python
-from nexios.application import NexiosApp
+from nexios.application import get_application
 from nexios.logging import create_logger
 
 app = get_application()
