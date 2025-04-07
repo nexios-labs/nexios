@@ -32,7 +32,7 @@ class Client(httpx.AsyncClient):
         transport = NexiosAsyncTransport(
             app=app,
             app_state=app_state,
-            raise_exceptions=raise_server_exceptions,
+            raise_app_exceptions=raise_server_exceptions,
             root_path=root_path,
             client=client,
         )
@@ -49,7 +49,7 @@ class Client(httpx.AsyncClient):
         self.max_retries = max_retries
         self.log_requests = log_requests
 
-    async def request_with_retries(
+    async def handle_request(
         self,
         method: str,
         url: httpx._types.URLTypes,  # type: ignore
@@ -69,35 +69,24 @@ class Client(httpx.AsyncClient):
         retries = 0
         last_exception = None
 
-        while retries < self.max_retries:
-            try:
-                response = await super().request(
-                    method,
-                    url,
-                    content=content,
-                    data=data,
-                    files=files,
-                    json=json,
-                    params=params,
-                    headers=headers,
-                    cookies=cookies,
-                    auth=auth,
-                    follow_redirects=follow_redirects,
-                    timeout=timeout,
-                    extensions=extensions,
-                )
-                if self.log_requests:
-                    print(f"Request: {method} {url} - Status: {response.status_code}")
-                return response
-            except Exception as e:
-                last_exception = e
-                retries += 1
-                if self.log_requests:
-                    print(
-                        f"Retry {retries}/{self.max_retries} for {method} {url} due to {e}"
-                    )
-
-        raise last_exception or Exception("Max retries exceeded")
+       
+        response = await super().request(
+            method,
+            url,
+            content=content,
+            data=data,
+            files=files,
+            json=json,
+            params=params,
+            headers=headers,
+            cookies=cookies,
+            auth=auth,
+            follow_redirects=follow_redirects,
+            timeout=timeout,
+            extensions=extensions,
+        )
+        return response
+                
 
     async def get(
         self,
@@ -111,7 +100,7 @@ class Client(httpx.AsyncClient):
         timeout: Union[httpx._types.TimeoutTypes, httpx._client.UseClientDefault] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
         extensions: Union[Dict[str, typing.Any], None] = None,
     ) -> httpx.Response:
-        return await self.request_with_retries(
+        return await self.handle_request(
             "GET",
             url,
             params=params,
@@ -145,7 +134,7 @@ class Client(httpx.AsyncClient):
         ] = httpx._client.USE_CLIENT_DEFAULT,
         extensions: Union[Dict[str, typing.Any], None] = None,
     ) -> httpx.Response:
-        return await self.request_with_retries(
+        return await self.handle_request(
             "POST",
             url,
             content=content,
