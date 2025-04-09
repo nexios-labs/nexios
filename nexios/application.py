@@ -284,6 +284,7 @@ class NexiosApp(object):
                     parameters=parameters,
                     deprecated=route.deprecated,
                     operation_id=route.operation_id,
+                    responses=route.responses
                 )(route.handler)
 
     def add_middleware(
