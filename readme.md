@@ -24,7 +24,7 @@
 <a href="https://github.com/nexios-labs/Nexios/network/members"><img title="Fork" src="https://img.shields.io/github/forks/nexios-labs/Nexios?style=social"></a>
 <a href="https://github.com/nexios-labs/Nexios/watchers"><img title="Watching" src="https://img.shields.io/github/watchers/nexios-labs/Nexios?label=Watching&style=social"></a>
 
-<p align="center"><img src="https://profile-counter.glitch.me/{nexios-labs}/count.svg" alt="SALMAN AHMAD :: Visitor's Count" /></p>
+<p align="center"><img src="https://profile-counter.glitch.me/{nexios-labs}/count.svg" alt="Nexios Labs:: Visitor's Count" /></p>
 
 </br>
 
@@ -272,7 +272,7 @@ if __name__ == "__main__":
 <p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/nexios-labs/Nexios/90122b22fdd3a57fc1146f472087d483324df0e5/docs/_media/openapi.jpg" width="100" alt="Open APi"/>
+  <img src="./docs/_media/openapi.jpg"width="100" alt="Open APi"/>
 </p>
 
 ### Testimonies
