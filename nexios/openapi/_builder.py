@@ -162,8 +162,7 @@ class APIDocumentation:
                     description="Successful Response"
                 )
 
-            # for x in parameters:
-            #     setattr(x,"in",x.in_)
+           
             operation = Operation(
                 summary=summary,
                 description=description,
