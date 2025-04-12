@@ -127,12 +127,24 @@ class APIDocumentation:
                         )
                     }
                 )
+            else:
+                if method not in ["GET"]:
+                    request_body_spec = RequestBody(
+                        content={
+                            "application/json": MediaType(  # type:ignore
+                                schema=Schema(  # type:ignore
+                                    
+                                )
+                            )
+                        }
+                    )
+                
 
             # Prepare responses specification
             responses_spec = {}
             if responses:
                 # Single model case (default to 200 OK)
-                if isinstance(responses, BaseModel):
+                if isinstance(responses, type) and issubclass(responses, BaseModel):
                     responses_spec["200"] = OpenAPIResponse(
                         description="Successful Response",
                         content={
@@ -143,19 +155,51 @@ class APIDocumentation:
                             )
                         },
                     )
-                # Multiple responses case
-                elif isinstance(responses, dict):
-                    for status_code, model in responses.items():
-                        responses_spec[str(status_code)] = OpenAPIResponse(
-                            description=f"Response for status code {status_code}",
+                # Handle List[Model] case
+                elif hasattr(responses, "__origin__") and responses.__origin__ is list:
+                    item_model = responses.__args__[0]
+                    if issubclass(item_model, BaseModel):
+                        responses_spec["200"] = OpenAPIResponse(
+                            description="Successful Response",
                             content={
                                 "application/json": MediaType(  # type:ignore
                                     schema=Schema(  # type:ignore
-                                        **model.model_json_schema()
+                                        type="array",
+                                        items=Schema(**item_model.model_json_schema())
                                     )
                                 )
                             },
                         )
+                # Multiple responses case
+                elif isinstance(responses, dict):
+                    for status_code, model in responses.items():
+                        # Handle direct model
+                        if isinstance(model, type) and issubclass(model, BaseModel):
+                            responses_spec[str(status_code)] = OpenAPIResponse(
+                                description=f"Response for status code {status_code}",
+                                content={
+                                    "application/json": MediaType(  # type:ignore
+                                        schema=Schema(  # type:ignore
+                                            **model.model_json_schema()
+                                        )
+                                    )
+                                },
+                            )
+                        # Handle List[Model]
+                        elif hasattr(model, "__origin__") and model.__origin__ is list:
+                            item_model = model.__args__[0]
+                            if issubclass(item_model, BaseModel):
+                                responses_spec[str(status_code)] = OpenAPIResponse(
+                                    description=f"Response for status code {status_code}",
+                                    content={
+                                        "application/json": MediaType(  # type:ignore
+                                            schema=Schema(  # type:ignore
+                                                type="array",
+                                                items=Schema(**item_model.model_json_schema())
+                                            )
+                                        )
+                                    },
+                                )
             else:
                 # Default response if no responses specified
                 responses_spec["200"] = OpenAPIResponse(
