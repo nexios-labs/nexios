@@ -162,7 +162,6 @@ class APIDocumentation:
                     description="Successful Response"
                 )
 
-           
             operation = Operation(
                 summary=summary,
                 description=description,
