@@ -84,3 +84,7 @@ If you love **Nexios**, show some ❤️ by **starring** the repo!
 🔗 [**GitHub Repo**](https://github.com/nexios-labs/Nexios)
 
 ---
+
+### 4. **Buy Me a Coffee**
+
+- If you'd prefer a simple gesture, you can buy me a coffee through [BuyMeACoffee](https://www.buymeacoffee.com/techwithdul).
