@@ -267,12 +267,12 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=4000)
 ```
 
-**OutPut**
+Visit http://localhost:4000/docs to view the Swagger API documentation.
 
 <p>
 
 <p align="center">
-  <img src="./docs/_media/openapi.jpg"width="100" alt="Open APi"/>
+  <img src="./docs/_media/openapi.jpg"width="" height="" alt="Open APi"/>
 </p>
 
 ### Testimonies
