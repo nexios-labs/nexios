@@ -132,13 +132,10 @@ class APIDocumentation:
                     request_body_spec = RequestBody(
                         content={
                             "application/json": MediaType(  # type:ignore
-                                schema=Schema(  # type:ignore
-                                    
-                                )
+                                schema=Schema()  # type:ignore
                             )
                         }
                     )
-                
 
             # Prepare responses specification
             responses_spec = {}
@@ -165,7 +162,7 @@ class APIDocumentation:
                                 "application/json": MediaType(  # type:ignore
                                     schema=Schema(  # type:ignore
                                         type="array",
-                                        items=Schema(**item_model.model_json_schema())
+                                        items=Schema(**item_model.model_json_schema()),
                                     )
                                 )
                             },
@@ -195,7 +192,9 @@ class APIDocumentation:
                                         "application/json": MediaType(  # type:ignore
                                             schema=Schema(  # type:ignore
                                                 type="array",
-                                                items=Schema(**item_model.model_json_schema())
+                                                items=Schema(
+                                                    **item_model.model_json_schema()
+                                                ),
                                             )
                                         )
                                     },
