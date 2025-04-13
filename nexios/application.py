@@ -19,6 +19,7 @@ from .types import MiddlewareType, Scope, Send, Receive, Message, HandlerType, A
 from nexios.openapi.config import OpenAPIConfig
 from nexios.openapi.models import HTTPBearer
 from nexios.openapi._builder import APIDocumentation
+
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
 
 from typing import Dict, Any
@@ -82,7 +83,9 @@ class NexiosApp(object):
             Callable[["NexiosApp"], AsyncIterator[None]]
         ] = lifespan
 
-        openapi_config: Dict[str, Any] = self.config.to_dict().get("openapi", {})  # type:ignore
+        openapi_config: Dict[str, Any] = self.config.to_dict().get(
+            "openapi", {}
+        )  # type:ignore
         self.openapi_config = OpenAPIConfig(
             title=openapi_config.get("title", "Nexios API"),
             version=openapi_config.get("version", "1.0.0"),
@@ -96,7 +99,7 @@ class NexiosApp(object):
         self.openapi_config.add_security_scheme(
             "bearerAuth", HTTPBearer(type="http", scheme="bearer", bearerFormat="JWT")
         )
-        
+
         self.docs = APIDocumentation(
             app=self,
             config=self.openapi_config,
@@ -259,18 +262,18 @@ class NexiosApp(object):
         """Set up automatic OpenAPI documentation"""
         docs = self.docs
 
-        
-
-        
         for route in self.get_all_routes():
             if route.exlude_from_schema:
                 continue
             for method in route.methods:
 
-                parameters = [Path(name=x, schema=Schema(type="string"),schema_=None) for x in route.param_names] #type:ignore
+                parameters = [
+                    Path(name=x, schema=Schema(type="string"), schema_=None)
+                    for x in route.param_names
+                ]  # type:ignore
                 if route.parameters.__len__() > 0:
                     parameters.extend(parameters)
-                docs.document_endpoint(  
+                docs.document_endpoint(
                     path=route.raw_path,
                     method=method,
                     tags=route.tags,
@@ -278,7 +281,7 @@ class NexiosApp(object):
                     summary=route.summary or "",
                     description=route.description,
                     request_body=route.request_model,
-                    parameters=parameters, #type:ignore
+                    parameters=parameters,  # type:ignore
                     deprecated=route.deprecated,
                     operation_id=route.operation_id,
                     responses=route.responses,
