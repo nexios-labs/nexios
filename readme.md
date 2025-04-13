@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/Join%20WhatsApp%20Group-00C200?style=for-the-badge&logo=whatsapp&logoColor=white" alt="WhatsApp Group Chat" />
 </a>
 
-<p/>
+</p>
 <p align="center">
 <a href="https://github.com/nexios-labs/Nexios?tab=followers"><img title="Followers" src="https://img.shields.io/github/followers/nexios-labs?label=Followers&style=social"></a>
 <a href="https://github.com/nexios-labs/Nexios/stargazers/"><img title="Stars" src="https://img.shields.io/github/stars/nexios-labs/Nexios?&style=social"></a>

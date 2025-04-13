@@ -10,7 +10,12 @@ icon: web-awesome
 
 A modern, high-performance framework for building scalable applications
 
-&#x20;        [![Stars](https://img.shields.io/github/stars/nexios-labs/Nexios)](https://github.com/nexios-labs/Nexios/stargazers)        [![Forks](https://img.shields.io/github/forks/nexios-labs/Nexios)](https://github.com/nexios-labs/Nexios/network/members)          [![Issues](https://img.shields.io/github/issues/nexios-labs/Nexios)](https://github.com/nexios-labs/Nexios/issues)       [![License](https://img.shields.io/github/license/nexios-labs/Nexios)](../LICENSE)
+<p align="center">
+<a href="https://github.com/nexios-labs/Nexios?tab=followers"><img title="Followers" src="https://img.shields.io/github/followers/nexios-labs?label=Followers&style=social"></a>
+<a href="https://github.com/nexios-labs/Nexios/stargazers/"><img title="Stars" src="https://img.shields.io/github/stars/nexios-labs/Nexios?&style=social"></a>
+<a href="https://github.com/nexios-labs/Nexios/network/members"><img title="Fork" src="https://img.shields.io/github/forks/nexios-labs/Nexios?style=social"></a>
+<a href="https://github.com/nexios-labs/Nexios/watchers"><img title="Watching" src="https://img.shields.io/github/watchers/nexios-labs/Nexios?label=Watching&style=social"></a>
+</p>
 
 ### About Nexios
 
@@ -18,10 +23,9 @@ Nexios is a powerful, lightweight framework designed to help developers build ro
 
 ### Key Features
 
-* &#x20;**High Performance**: Optimized for speed and efficiency
-* &#x20;**Reactive**: Built-in reactivity system for dynamic UIs
-* &#x20;**Modular**: Composable architecture for better code organization
-* **Developer Friendly**: Intuitive APIs and comprehensive documentation
-* &#x20;**Lightweight**: Minimal footprint with no unnecessary dependencies
-* &#x20;**Extensible**: Robust plugin system for custom functionality
-
+- &#x20;**High Performance**: Optimized for speed and efficiency
+- &#x20;**Reactive**: Built-in reactivity system for dynamic UIs
+- &#x20;**Modular**: Composable architecture for better code organization
+- **Developer Friendly**: Intuitive APIs and comprehensive documentation
+- &#x20;**Lightweight**: Minimal footprint with no unnecessary dependencies
+- &#x20;**Extensible**: Robust plugin system for custom functionality
