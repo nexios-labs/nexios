@@ -2,7 +2,6 @@ try:
     import jwt
 except ImportError:
     raise ImportError("Install PyJWT to use JWT authentication backend")
-from tkinter import N
 from typing import Optional, Dict, Any, List
 from nexios.auth.base import AuthenticationBackend
 from nexios.http import Request, Response
