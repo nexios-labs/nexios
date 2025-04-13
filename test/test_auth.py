@@ -1,4 +1,3 @@
-from guardpost import AuthorizationStrategy
 import pytest
 from nexios import get_application
 from nexios.auth.backends.jwt import create_jwt, decode_jwt

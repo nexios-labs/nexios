@@ -56,6 +56,7 @@ pytest-asyncio = ">=0.25.3,<0.27.0"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_fixture_scope = "function"
 
 [tool.mypy]
 ignore_missing_imports = true
