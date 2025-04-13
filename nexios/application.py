@@ -3,7 +3,7 @@ from .routing import Router, WSRouter, WebsocketRoutes, Routes
 import typing
 from .exception_handler import ExceptionMiddleware
 from typing_extensions import Doc, Annotated  # type:ignore
-from nexios.config import MakeConfig
+from nexios.config import DEFAULT_CONFIG, MakeConfig
 from typing import Awaitable, Optional, AsyncIterator
 from nexios.logging import create_logger
 from nexios.middlewares.core import BaseMiddleware
@@ -19,7 +19,6 @@ from .types import MiddlewareType, Scope, Send, Receive, Message, HandlerType, A
 from nexios.openapi.config import OpenAPIConfig
 from nexios.openapi.models import HTTPBearer
 from nexios.openapi._builder import APIDocumentation
-
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
 
 from typing import Dict, Any
@@ -44,7 +43,7 @@ class NexiosApp(object):
                     Additionally, this design allows for merging and overriding configurations, making it adaptable for various use cases. Whether used for small projects or large-scale applications, this subclass ensures that configuration management remains efficient and scalable. By extending MakeConfig, it leverages existing functionality while adding new capabilities tailored to Nexios. This makes it an essential component for maintaining structured and well-organized application settings.
                     """
             ),
-        ] = None,
+        ] = DEFAULT_CONFIG,
         middlewares: Annotated[
             List[Middleware],
             Doc(
@@ -83,9 +82,7 @@ class NexiosApp(object):
             Callable[["NexiosApp"], AsyncIterator[None]]
         ] = lifespan
 
-        openapi_config: Dict[str, Any] = self.config.to_dict().get(
-            "openapi", {}
-        )  # type:ignore
+        openapi_config: Dict[str, Any] = self.config.to_dict().get("openapi", {})  # type:ignore
         self.openapi_config = OpenAPIConfig(
             title=openapi_config.get("title", "Nexios API"),
             version=openapi_config.get("version", "1.0.0"),
@@ -99,7 +96,7 @@ class NexiosApp(object):
         self.openapi_config.add_security_scheme(
             "bearerAuth", HTTPBearer(type="http", scheme="bearer", bearerFormat="JWT")
         )
-
+        
         self.docs = APIDocumentation(
             app=self,
             config=self.openapi_config,
@@ -262,18 +259,18 @@ class NexiosApp(object):
         """Set up automatic OpenAPI documentation"""
         docs = self.docs
 
+        
+
+        
         for route in self.get_all_routes():
             if route.exlude_from_schema:
                 continue
             for method in route.methods:
 
-                parameters = [
-                    Path(name=x, schema=Schema(type="string"))
-                    for x in route.param_names
-                ]  # type:ignore
+                parameters = [Path(name=x, schema=Schema(type="string"),schema_=None) for x in route.param_names] #type:ignore
                 if route.parameters.__len__() > 0:
                     parameters.extend(parameters)
-                docs.document_endpoint(  # type:ignore
+                docs.document_endpoint(  
                     path=route.raw_path,
                     method=method,
                     tags=route.tags,
@@ -281,7 +278,7 @@ class NexiosApp(object):
                     summary=route.summary or "",
                     description=route.description,
                     request_body=route.request_model,
-                    parameters=parameters,
+                    parameters=parameters, #type:ignore
                     deprecated=route.deprecated,
                     operation_id=route.operation_id,
                     responses=route.responses,
