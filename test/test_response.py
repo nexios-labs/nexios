@@ -5,6 +5,7 @@ from nexios.testing import Client
 import datetime as dt
 import time
 from pathlib import Path
+
 app: NexiosApp = get_application()
 
 
@@ -53,7 +54,7 @@ async def send_header_response(req: Request, res: Response):
 
 @app.get("/response/files")
 async def send_file_response(req: Request, res: Response):
-    base_dir = Path(__file__).resolve().parent 
+    base_dir = Path(__file__).resolve().parent
     file_path = base_dir / "static" / "example.txt"
     res.file(
         file_path,
