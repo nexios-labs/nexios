@@ -16,7 +16,9 @@ from nexios.structs import URLPath
 from pydantic import BaseModel
 from nexios.openapi.models import Parameter, Path, Schema
 from .types import MiddlewareType, Scope, Send, Receive, Message, HandlerType, ASGIApp
-
+from nexios.openapi.config import OpenAPIConfig
+from nexios.openapi.models import HTTPBearer
+from nexios.openapi._builder import APIDocumentation
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
 
 from typing import Dict, Any
@@ -60,7 +62,6 @@ class NexiosApp(object):
 
         self.config = config
         self.server_error_handler = None
-        super().__init__()
         self.ws_router = WSRouter()
         self.ws_routes: List[WebsocketRoutes] = []
         self.http_middlewares: List[Middleware] = middlewares or []
@@ -80,6 +81,28 @@ class NexiosApp(object):
         self.lifespan_context: Optional[
             Callable[["NexiosApp"], AsyncIterator[None]]
         ] = lifespan
+
+        openapi_config: Dict[str, Any] = self.config.to_dict().get(
+            "openapi", {}
+        )  # type:ignore
+        self.openapi_config = OpenAPIConfig(
+            title=openapi_config.get("title", "Nexios API"),
+            version=openapi_config.get("version", "1.0.0"),
+            description=openapi_config.get(
+                "description", "Automatically generated API documentation"
+            ),
+            license=openapi_config.get("license"),
+            contact=openapi_config.get("contact"),
+        )
+
+        self.openapi_config.add_security_scheme(
+            "bearerAuth", HTTPBearer(type="http", scheme="bearer", bearerFormat="JWT")
+        )
+        
+        self.docs = APIDocumentation(
+            app=self,
+            config=self.openapi_config,
+        )
 
     def on_startup(self, handler: Callable[[], Awaitable[None]]) -> None:
         """
@@ -236,32 +259,11 @@ class NexiosApp(object):
 
     def _setup_openapi(self):
         """Set up automatic OpenAPI documentation"""
-        from nexios.openapi.config import OpenAPIConfig
-        from nexios.openapi.models import HTTPBearer
-        from nexios.openapi._builder import APIDocumentation
+        docs = self.docs
 
-        openapi_config: Dict[str, Any] = self.config.to_dict().get(
-            "openapi", {}
-        )  # type:ignore
-        self.openapi_config = OpenAPIConfig(
-            title=openapi_config.get("title", "Nexios API"),
-            version=openapi_config.get("version", "1.0.0"),
-            description=openapi_config.get(
-                "description", "Automatically generated API documentation"
-            ),
-            license=openapi_config.get("license"),
-            contact=openapi_config.get("contact"),
-        )
+        
 
-        self.openapi_config.add_security_scheme(
-            "bearerAuth", HTTPBearer(type="http", scheme="bearer", bearerFormat="JWT")
-        )
-
-        docs = APIDocumentation(
-            app=self,
-            config=self.openapi_config,
-        )
-
+        
         for route in self.get_all_routes():
             if route.exlude_from_schema:
                 continue

@@ -1,10 +1,7 @@
 from functools import wraps
-from typing import Optional, Dict, List, Type, Union, Awaitable
+from typing import Optional, Dict, List, Type, Union
 from uuid import uuid4
 from pydantic import BaseModel
-from inspect import signature, getdoc
-from typing import get_type_hints, get_origin, get_args
-from nexios.application import NexiosApp
 from nexios.http import Request, Response
 from .config import OpenAPIConfig
 from .models import (
@@ -28,7 +25,7 @@ class APIDocumentation:
         return cls._instance
 
     def __init__(
-        self, app: Optional[NexiosApp] = None, config: Optional[OpenAPIConfig] = None
+        self, app: Optional["NexiosApp"] = None, config: Optional[OpenAPIConfig] = None
     ):
         self.app = app
         self.config = config or OpenAPIConfig()
@@ -132,7 +129,7 @@ class APIDocumentation:
                     request_body_spec = RequestBody(
                         content={
                             "application/json": MediaType(  # type:ignore
-                                schema=Schema()  # type:ignore
+                                schema=Schema(example={})  # type:ignore
                             )
                         }
                     )
