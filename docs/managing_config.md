@@ -12,13 +12,14 @@ The Nexios framework provides a flexible and dynamic configuration system throug
 
 The main configuration class that provides:
 
-* Dictionary-like configuration with attribute access
-* Nested configuration support
-* Validation rules
-* Immutability option
-* Conversion to dict/JSON
+- Dictionary-like configuration with attribute access
+- Nested configuration support
+- Validation rules
+- Immutability option
+- Conversion to dict/JSON
 
 ```python
+from nexios.config import MakeConfig
 class MakeConfig:
     def __init__(
         self,
@@ -38,23 +39,27 @@ class MakeConfig:
     config = MakeConfig({"db": {"host": "localhost"}})
     print(config.db.host)  # "localhost"
     ```
+
 2.  **Dictionary Access**:
 
     ```python
     print(config["db.host"])  # "localhost"
     ```
+
 3.  **Validation**:
 
     ```python
     validate_rules = {"port": lambda x: x > 0}
     config = MakeConfig({"port": 8080}, validate=validate_rules)
     ```
+
 4.  **Immutability**:
 
     ```python
     config = MakeConfig({"debug": True}, immutable=True)
     config.debug = False  # Raises AttributeError
     ```
+
 5.  **Conversion**:
 
     ```python
@@ -133,18 +138,21 @@ config = MakeConfig({
         "debug": lambda x: isinstance(x, bool)
     }
     ```
+
 2.  **Immutability**: Consider making configurations immutable in production
 
     ```python
     config = MakeConfig(production_config, immutable=True)
     ```
+
 3.  **Defaults**: Use defaults for optional configuration values
 
     ```python
     defaults = {"debug": False, "port": 8000}
     config = MakeConfig(user_config, defaults=defaults)
     ```
-4. **Environment Separation**: Maintain separate configurations for different environments (dev, staging, prod)
+
+4.  **Environment Separation**: Maintain separate configurations for different environments (dev, staging, prod)
 
 ### Accessing Configuration in Application
 
@@ -162,20 +170,22 @@ if config.debug:
 
 The system provides clear error messages:
 
-*   When accessing uninitialized configuration:
+- When accessing uninitialized configuration:
 
-    ```python
-    RuntimeError: Configuration has not been initialized.
-    ```
-*   When validation fails:
+  ```python
+  RuntimeError: Configuration has not been initialized.
+  ```
 
-    ```python
-    ValueError: Invalid value for 'port': -1
-    ```
-*   When modifying immutable config:
+- When validation fails:
 
-    ```python
-    AttributeError: Cannot modify immutable config: 'debug'
-    ```
+  ```python
+  ValueError: Invalid value for 'port': -1
+  ```
+
+- When modifying immutable config:
+
+  ```python
+  AttributeError: Cannot modify immutable config: 'debug'
+  ```
 
 This configuration system provides a robust way to manage application settings while maintaining flexibility and type safety.
