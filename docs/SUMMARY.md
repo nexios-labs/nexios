@@ -9,6 +9,7 @@
 
 - [Installation Guide](fundamentals/installation-guide.md)
 - [Routing](fundamentals/routing.md)
+- [Managing Config](managing_config.md)
 - [Middleware](fundamentals/middleware.md)
 - [Processing Inputs](fundamentals/processing-inputs.md)
 
@@ -27,6 +28,7 @@
 - [Nexios Events](events.md)
 - [File Router](file-router.md)
 - [OpenApi](openapi.md)
+- [Misc](misc.md)
 
 ## Guides
 
