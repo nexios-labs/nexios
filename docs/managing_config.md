@@ -1,16 +1,22 @@
+---
+icon: gear-code
+---
+
+# Managing Config
+
 The Nexios framework provides a flexible and dynamic configuration system through its `MakeConfig` class. This system allows for structured configuration management with support for nested attributes, validation, and immutability.
 
-## Core Configuration Components
+### Core Configuration Components
 
-### `MakeConfig` Class
+#### `MakeConfig` Class
 
 The main configuration class that provides:
 
-- Dictionary-like configuration with attribute access
-- Nested configuration support
-- Validation rules
-- Immutability option
-- Conversion to dict/JSON
+* Dictionary-like configuration with attribute access
+* Nested configuration support
+* Validation rules
+* Immutability option
+* Conversion to dict/JSON
 
 ```python
 class MakeConfig:
@@ -24,42 +30,39 @@ class MakeConfig:
         ...
 ```
 
-### Key Features
+#### Key Features
 
-1. **Attribute Access**:
+1.  **Attribute Access**:
 
-   ```python
-   config = MakeConfig({"db": {"host": "localhost"}})
-   print(config.db.host)  # "localhost"
-   ```
+    ```python
+    config = MakeConfig({"db": {"host": "localhost"}})
+    print(config.db.host)  # "localhost"
+    ```
+2.  **Dictionary Access**:
 
-2. **Dictionary Access**:
+    ```python
+    print(config["db.host"])  # "localhost"
+    ```
+3.  **Validation**:
 
-   ```python
-   print(config["db.host"])  # "localhost"
-   ```
+    ```python
+    validate_rules = {"port": lambda x: x > 0}
+    config = MakeConfig({"port": 8080}, validate=validate_rules)
+    ```
+4.  **Immutability**:
 
-3. **Validation**:
+    ```python
+    config = MakeConfig({"debug": True}, immutable=True)
+    config.debug = False  # Raises AttributeError
+    ```
+5.  **Conversion**:
 
-   ```python
-   validate_rules = {"port": lambda x: x > 0}
-   config = MakeConfig({"port": 8080}, validate=validate_rules)
-   ```
+    ```python
+    config.to_dict()  # Convert to regular dictionary
+    config.to_json()  # Convert to JSON string
+    ```
 
-4. **Immutability**:
-
-   ```python
-   config = MakeConfig({"debug": True}, immutable=True)
-   config.debug = False  # Raises AttributeError
-   ```
-
-5. **Conversion**:
-   ```python
-   config.to_dict()  # Convert to regular dictionary
-   config.to_json()  # Convert to JSON string
-   ```
-
-## Global Configuration Management
+### Global Configuration Management
 
 The framework provides global configuration management through:
 
@@ -74,7 +77,7 @@ set_config(config)
 current_config = get_config()
 ```
 
-### Default Configuration
+#### Default Configuration
 
 A default configuration is provided:
 
@@ -82,7 +85,7 @@ A default configuration is provided:
 DEFAULT_CONFIG = MakeConfig({"debug": True})
 ```
 
-## Application Configuration
+### Application Configuration
 
 When creating a Nexios application, you can pass your configuration:
 
@@ -100,7 +103,7 @@ config = MakeConfig({
 app = get_application(config=config)
 ```
 
-## Configuration Structure
+### Configuration Structure
 
 The configuration system supports nested structures:
 
@@ -120,33 +123,30 @@ config = MakeConfig({
 })
 ```
 
-## Best Practices
+### Best Practices
 
-1. **Validation**: Define validation rules for critical configuration values
+1.  **Validation**: Define validation rules for critical configuration values
 
-   ```python
-   validate_rules = {
-       "port": lambda x: isinstance(x, int) and 1024 <= x <= 65535,
-       "debug": lambda x: isinstance(x, bool)
-   }
-   ```
+    ```python
+    validate_rules = {
+        "port": lambda x: isinstance(x, int) and 1024 <= x <= 65535,
+        "debug": lambda x: isinstance(x, bool)
+    }
+    ```
+2.  **Immutability**: Consider making configurations immutable in production
 
-2. **Immutability**: Consider making configurations immutable in production
+    ```python
+    config = MakeConfig(production_config, immutable=True)
+    ```
+3.  **Defaults**: Use defaults for optional configuration values
 
-   ```python
-   config = MakeConfig(production_config, immutable=True)
-   ```
-
-3. **Defaults**: Use defaults for optional configuration values
-
-   ```python
-   defaults = {"debug": False, "port": 8000}
-   config = MakeConfig(user_config, defaults=defaults)
-   ```
-
+    ```python
+    defaults = {"debug": False, "port": 8000}
+    config = MakeConfig(user_config, defaults=defaults)
+    ```
 4. **Environment Separation**: Maintain separate configurations for different environments (dev, staging, prod)
 
-## Accessing Configuration in Application
+### Accessing Configuration in Application
 
 Once set, the configuration can be accessed anywhere in your application:
 
@@ -158,21 +158,24 @@ if config.debug:
     print("Debug mode is enabled")
 ```
 
-## Error Handling
+### Error Handling
 
 The system provides clear error messages:
 
-- When accessing uninitialized configuration:
-  ```python
-  RuntimeError: Configuration has not been initialized.
-  ```
-- When validation fails:
-  ```python
-  ValueError: Invalid value for 'port': -1
-  ```
-- When modifying immutable config:
-  ```python
-  AttributeError: Cannot modify immutable config: 'debug'
-  ```
+*   When accessing uninitialized configuration:
+
+    ```python
+    RuntimeError: Configuration has not been initialized.
+    ```
+*   When validation fails:
+
+    ```python
+    ValueError: Invalid value for 'port': -1
+    ```
+*   When modifying immutable config:
+
+    ```python
+    AttributeError: Cannot modify immutable config: 'debug'
+    ```
 
 This configuration system provides a robust way to manage application settings while maintaining flexibility and type safety.
