@@ -19,6 +19,7 @@ from .types import MiddlewareType, Scope, Send, Receive, Message, HandlerType, A
 from nexios.openapi.config import OpenAPIConfig
 from nexios.openapi.models import HTTPBearer
 from nexios.openapi._builder import APIDocumentation
+
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
 
 from typing import Dict, Any
@@ -98,7 +99,7 @@ class NexiosApp(object):
         self.openapi_config.add_security_scheme(
             "bearerAuth", HTTPBearer(type="http", scheme="bearer", bearerFormat="JWT")
         )
-        
+
         self.docs = APIDocumentation(
             app=self,
             config=self.openapi_config,
@@ -261,9 +262,6 @@ class NexiosApp(object):
         """Set up automatic OpenAPI documentation"""
         docs = self.docs
 
-        
-
-        
         for route in self.get_all_routes():
             if route.exlude_from_schema:
                 continue
