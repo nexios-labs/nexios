@@ -7,7 +7,7 @@
   <a href="">
     <img alt=Support height="300" src="https://raw.githubusercontent.com/nexios-labs/Nexios/90122b22fdd3a57fc1146f472087d483324df0e5/docs/_media/icon.svg"> 
     </p>
-    <h1 align="center">Nexios 2.3.0rc3<br></h1>
+    <h1 align="center">Nexios 2.3.1<br></h1>
     
    </a>
 </p>

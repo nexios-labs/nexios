@@ -80,9 +80,7 @@ def render(template_path: str = "route.html"):
                 template_env = DEFAULT_TEMPLATE_ENV
             else:
                 # Determine template directory
-                print("No Env")
                 template_directory = DEFAULT_TEMPLATE_DIR
-                print("no templates")
 
                 if template_directory is None:
                     stack = inspect.stack()
@@ -92,7 +90,6 @@ def render(template_path: str = "route.html"):
                     template_directory = os.path.dirname(
                         os.path.abspath(caller_module.__file__)
                     )  # type:ignore
-                    print("temp is ", template_directory)
 
                 template_env = Environment(
                     loader=Loader(template_directory),
