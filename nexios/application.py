@@ -61,7 +61,7 @@ class NexiosApp(object):
         lifespan: Optional[Callable[["NexiosApp"], AsyncIterator[None]]] = None,
     ):
 
-        self.config = config
+        self.config = config or DEFAULT_CONFIG
         self.server_error_handler = None
         self.ws_router = WSRouter()
         self.ws_routes: List[WebsocketRoutes] = []
@@ -268,9 +268,9 @@ class NexiosApp(object):
             for method in route.methods:
 
                 parameters = [
-                    Path(name=x, schema=Schema(type="string"), schema_=None)
+                    Path(name=x, schema=Schema(type="string"), schema_=None) # type: ignore
                     for x in route.param_names
-                ]  # type:ignore
+                ]  
                 if route.parameters.__len__() > 0:
                     parameters.extend(parameters)
                 docs.document_endpoint(

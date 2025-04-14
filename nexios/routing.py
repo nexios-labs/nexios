@@ -175,8 +175,8 @@ class RoutePattern:
 class RouteBuilder:
     @staticmethod
     def create_pattern(path: str) -> RoutePattern:
-        path_regex, path_format, param_convertors, param_names = (
-            compile_path(  # type:ignore #REVIEW
+        path_regex, path_format, param_convertors, param_names = ( # type: ignore
+            compile_path(  
                 path
             )
         )
@@ -396,7 +396,7 @@ class Routes:
         assert callable(handler), "Route handler must be callable"
         from nexios.openapi._builder import APIDocumentation
 
-        self.prefix = None
+        self.prefix :Optional[str] = None
         self.docs = APIDocumentation.get_instance()
 
         self.raw_path = path
@@ -436,11 +436,11 @@ class Routes:
         if match:
             matched_params = match.groupdict()
             for key, value in matched_params.items():
-                matched_params[key] = self.route_info.convertor[
+                matched_params[key] = self.route_info.convertor[ # type: ignore
                     key
-                ].convert(  # type:ignore
+                ].convert(  
                     value
-                )  # type:ignore
+                )  
             is_method_allowed = method.lower() in [m.lower() for m in self.methods]
             return match, matched_params, is_method_allowed
         return None, None, False
@@ -1065,12 +1065,11 @@ class Router(BaseRouter):
     def get_all_routes(self) -> List[Routes]:
         """Returns a flat list of all HTTP routes in this router and all nested sub-routers"""
         all_routes: List[Routes] = []
-        routers_to_process = [(self, "")]  # (router, current_prefix)
+        routers_to_process :List[Any]= [(self, "")]  # (router, current_prefix)
 
         while routers_to_process:
             current_router, current_prefix = routers_to_process.pop(0)
 
-            # Add all routes from current router with prefix
             for route in current_router.routes:
                 # Create a copy of the route with updated path
                 new_route = copy.copy(route)
@@ -1078,7 +1077,6 @@ class Router(BaseRouter):
                 new_route.prefix = current_prefix
                 all_routes.append(new_route)
 
-            # Add all sub-routers to be processed with updated prefix
             for mount_path, sub_router in current_router.sub_routers.items():
                 if isinstance(sub_router, Router):
                     new_prefix = current_prefix + mount_path
@@ -1119,11 +1117,11 @@ class WebsocketRoutes:
         if match:
             matched_params = match.groupdict()
             for key, value in matched_params.items():
-                matched_params[key] = self.route_info.convertor[
+                matched_params[key] = self.route_info.convertor[  # type:ignore
                     key
-                ].convert(  # type:ignore
+                ].convert( 
                     value
-                )  # type:ignore
+                )  
             return match, matched_params
         return None, None
 

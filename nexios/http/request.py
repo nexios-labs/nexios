@@ -209,7 +209,7 @@ async def empty_send(message: Message) -> typing.NoReturn:
     raise RuntimeError("Send channel has not been made available")
 
 
-class Request(HTTPConnection, typing.Generic[T]):
+class Request(HTTPConnection):
     _form: typing.Union[FormData, None, typing.Dict[str, typing.Any]]  # type: ignore
 
     def __init__(

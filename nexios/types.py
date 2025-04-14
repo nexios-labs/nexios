@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Callable, Type, Awaitable, Any
 import typing
 from .http.request import Request
-from .http.response import NexiosResponse, Response
+from .http.response import NexiosResponse as  Response
 from .websockets import WebSocket
 
 
@@ -24,7 +24,7 @@ WsMiddlewareType = Callable[
 ]
 
 WsHandlerType = typing.Callable[[WebSocket], typing.Awaitable[None]]
-HandlerType = Callable[[Request, NexiosResponse], Awaitable[Any]]
+HandlerType = Callable[[Request, Response], Awaitable[Any]]
 ExceptionHandlerType = Callable[
     [Request, Response, Exception], typing.Coroutine[Any, Any, Any]
 ]

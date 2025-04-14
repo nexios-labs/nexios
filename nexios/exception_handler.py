@@ -63,11 +63,11 @@ class ExceptionMiddleware:
             get_config().debug or False
         )  # TODO: We ought to handle 404 cases if debug is set.
         self._status_handlers: typing.Dict[int, ExceptionHandlerType] = {}
-        self._exception_handlers: dict[type[Exception], ExceptionHandlerType] = {
-            HTTPException: self.http_exception,  # type:ignore[dict-item]
-            AuthenticationFailed: AuthErrorHandler,  # type:ignore[dict-item]
+        self._exception_handlers: dict[typing.Type[Exception], typing.Callable] = {
+            HTTPException: self.http_exception,  
+            AuthenticationFailed: AuthErrorHandler,  
             NotFoundException: handle_404_error,
-        }  # type:ignore[dict-item]
+        }  
 
     def add_exception_handler(
         self,
