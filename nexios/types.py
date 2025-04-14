@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Callable, Type, Awaitable, Any
 import typing
 from .http.request import Request
-from .http.response import NexiosResponse as  Response
+from .http.response import NexiosResponse as Response
 from .websockets import WebSocket
 
 

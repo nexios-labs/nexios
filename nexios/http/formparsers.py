@@ -9,12 +9,12 @@ from urllib.parse import unquote_plus
 from nexios.structs import FormData, Headers, UploadedFile
 
 if typing.TYPE_CHECKING:
-    import multipart  
-    from multipart.multipart import ( # type:ignore
+    import multipart
+    from multipart.multipart import (  # type:ignore
         MultipartCallbacks,
         QuerystringCallbacks,
         parse_options_header,
-    )  
+    )
 else:
     try:
         try:
@@ -179,8 +179,8 @@ class MultiPartParser:
                 (
                     self._current_part.field_name,
                     _user_safe_decode(
-                        self._current_part.data, self._charset # type: ignore
-                    ), 
+                        self._current_part.data, self._charset  # type: ignore
+                    ),
                 )
             )
         else:
@@ -209,11 +209,11 @@ class MultiPartParser:
     def on_headers_finished(self) -> None:
         disposition, options = parse_options_header(
             self._current_part.content_disposition
-        )  
+        )
         try:
             self._current_part.field_name = _user_safe_decode(
-                options[b"name"], self._charset # type: ignore
-            )  
+                options[b"name"], self._charset  # type: ignore
+            )
         except KeyError:
             raise MultiPartException(
                 'The Content-Disposition header field "name" must be provided.'
@@ -225,7 +225,7 @@ class MultiPartParser:
                     f"Too many files. Maximum number of files is {self.max_files}."
                 )
             filename = _user_safe_decode(
-                options[b"filename"], self._charset # type: ignore
+                options[b"filename"], self._charset  # type: ignore
             )  # type:ignore
             tempfile = SpooledTemporaryFile(max_size=self.max_file_size)
             self._files_to_close_on_error.append(tempfile)
