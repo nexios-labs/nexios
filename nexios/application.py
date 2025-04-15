@@ -211,7 +211,7 @@ class NexiosApp(object):
     async def handle_lifespan(self, receive: Receive, send: Send) -> None:
         """Handle ASGI lifespan protocol events."""
         self._setup_openapi()
-        
+
         try:
             while True:
                 message: Message = await receive()
