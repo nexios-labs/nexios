@@ -175,10 +175,8 @@ class RoutePattern:
 class RouteBuilder:
     @staticmethod
     def create_pattern(path: str) -> RoutePattern:
-        path_regex, path_format, param_convertors, param_names = ( # type: ignore
-            compile_path(  
-                path
-            )
+        path_regex, path_format, param_convertors, param_names = (  # type: ignore
+            compile_path(path)
         )
         return RoutePattern(
             pattern=path_regex,
@@ -396,7 +394,7 @@ class Routes:
         assert callable(handler), "Route handler must be callable"
         from nexios.openapi._builder import APIDocumentation
 
-        self.prefix :Optional[str] = None
+        self.prefix: Optional[str] = None
         self.docs = APIDocumentation.get_instance()
 
         self.raw_path = path
@@ -436,11 +434,9 @@ class Routes:
         if match:
             matched_params = match.groupdict()
             for key, value in matched_params.items():
-                matched_params[key] = self.route_info.convertor[ # type: ignore
+                matched_params[key] = self.route_info.convertor[  # type: ignore
                     key
-                ].convert(  
-                    value
-                )  
+                ].convert(value)
             is_method_allowed = method.lower() in [m.lower() for m in self.methods]
             return match, matched_params, is_method_allowed
         return None, None, False
@@ -1065,7 +1061,7 @@ class Router(BaseRouter):
     def get_all_routes(self) -> List[Routes]:
         """Returns a flat list of all HTTP routes in this router and all nested sub-routers"""
         all_routes: List[Routes] = []
-        routers_to_process :List[Any]= [(self, "")]  # (router, current_prefix)
+        routers_to_process: List[Any] = [(self, "")]  # (router, current_prefix)
 
         while routers_to_process:
             current_router, current_prefix = routers_to_process.pop(0)
@@ -1119,9 +1115,7 @@ class WebsocketRoutes:
             for key, value in matched_params.items():
                 matched_params[key] = self.route_info.convertor[  # type:ignore
                     key
-                ].convert( 
-                    value
-                )  
+                ].convert(value)
             return match, matched_params
         return None, None
 
