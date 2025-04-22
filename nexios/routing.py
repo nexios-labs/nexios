@@ -52,7 +52,9 @@ def request_response(
         request = Request(scope, receive, send)
         response_manager = Response()
 
-        await func(request, response_manager)
+        func_result = await func(request, response_manager)
+        if isinstance(func_result, (dict, list, str)):
+            response_manager.json(func_result)
         response = response_manager.get_response()
         return await response(scope, receive, send)
 
