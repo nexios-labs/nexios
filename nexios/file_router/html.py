@@ -3,7 +3,12 @@ import inspect
 import os
 from os.path import exists, getmtime, join
 from typing import Optional, Dict, Any
-from jinja2 import BaseLoader, Environment, TemplateNotFound, select_autoescape
+try:
+    from jinja2 import BaseLoader, Environment, TemplateNotFound, select_autoescape
+except ImportError:
+    raise ImportError(
+        "Jinja2 is not installed. Please install it with 'pip install jinja2'."
+    )
 from nexios.http import Request, Response
 from nexios.logging import create_logger
 
