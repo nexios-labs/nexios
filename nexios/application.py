@@ -59,7 +59,6 @@ class NexiosApp(object):
             ),
         ] = None,
         lifespan: Optional[Callable[["NexiosApp"], AsyncIterator[None]]] = None,
-        
     ):
 
         self.config = config or DEFAULT_CONFIG

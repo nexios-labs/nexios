@@ -23,12 +23,15 @@ class CSRFMiddleware(BaseMiddleware):
         self.required_urls: typing.List[str] = app_config.csrf_required_urls or []
         self.exempt_urls = app_config.csrf_exempt_urls
         self.sensitive_cookies = app_config.csrf_sensitive_cookies
-        self.safe_methods = set(app_config.csrf_safe_methods or [
-            "GET",
-            "HEAD",
-            "OPTIONS",
-            "TRACE",
-        ])
+        self.safe_methods = set(
+            app_config.csrf_safe_methods
+            or [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+                "TRACE",
+            ]
+        )
         self.cookie_name = app_config.csrf_cookie_name or "csrftoken"
         self.cookie_path = app_config.csrf_cookie_path or "/"
         self.cookie_domain = app_config.csrf_cookie_domain
@@ -69,7 +72,7 @@ class CSRFMiddleware(BaseMiddleware):
 
             if not self._csrf_tokens_match(csrf_cookie, submitted_csrf_token):
                 return response.text("CSRF token incorrect", status_code=403)
-        response.delete_cookie(self.cookie_name, self.cookie_path,self.cookie_domain)
+        response.delete_cookie(self.cookie_name, self.cookie_path, self.cookie_domain)
         await call_next()
 
     async def process_response(self, request: Request, response: Response):
