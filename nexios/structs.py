@@ -669,8 +669,9 @@ class RouteParam:
     def __call__(self, *args: Any, **kwds: Any) -> Dict[str, Any]:
         return self.data
 
-    def get(self, key: str):
-        return self.data.get(key)
+    def get(self, key: str, default: Any = None) -> Any:
+        """Return the value for the given key, or a default value if the key does not exist."""
+        return self.data.get(key, default)
 
     def __dict__(self) -> Dict[str, Any]:  # type:ignore
         return self.data

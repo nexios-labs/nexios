@@ -1,45 +1,64 @@
 from pathlib import Path
-from pathlib import Path
 import os
-from typing import Union
+from typing import Union, List, Optional
 from nexios.http.request import Request
 from nexios.http.response import NexiosResponse
 
 
 class StaticFilesHandler:
+    def __init__(
+        self,
+        directory: Optional[Union[str, Path]] = None,
+        directories: Optional[List[Union[str, Path]]] = None,
+        url_prefix: str = "/static/"
+    ):
+        if directory is not None and directories is not None:
+            raise ValueError("Cannot specify both 'directory' and 'directories'")
+        if directory is None and directories is None:
+            raise ValueError("Must specify either 'directory' or 'directories'")
 
-    def __init__(self, directory: Union[str, Path], url_prefix: str = "/static/"):
+        if directory is not None:
+            self.directories = [self._ensure_directory(directory)]
+        else:
+            self.directories = [self._ensure_directory(d) for d in directories]
 
-        self.directory = Path(directory).resolve()
-        self.url_prefix = url_prefix.strip("/") + "/"
+        self.url_prefix = url_prefix.rstrip("/") + "/"
 
-        if not self.directory.exists():
-            os.makedirs(self.directory)
-
-        if not self.directory.is_dir():
+    def _ensure_directory(self, path: Union[str, Path]) -> Path:
+        """Ensure directory exists and return resolved Path"""
+        directory = Path(path).resolve()
+        if not directory.exists():
+            os.makedirs(directory, exist_ok=True)
+        if not directory.is_dir():
             raise ValueError(f"{directory} is not a directory")
+        return directory
 
     def _is_safe_path(self, path: Path) -> bool:
         """Check if the path is safe to serve"""
         try:
             full_path = path.resolve()
-            return str(full_path).startswith(str(self.directory))
+            return any(
+                str(full_path).startswith(str(directory))
+                for directory in self.directories
+            )
         except (ValueError, RuntimeError):
             return False
 
     async def __call__(self, request: Request, response: NexiosResponse):
-        path = request.url.path
-        if path.startswith("/"):
-            path = path[1:]
+        path = request.path_params.get("path", "")
+        
+        if not path:
+            return response.json("Invalid static file path", status_code=400)
 
-        if path.startswith(self.url_prefix.strip("/")):
-            path = path[len(self.url_prefix.strip("/")) :]
+        for directory in self.directories:
+            try:
+                file_path = (directory / path).resolve()
+                
+                print(f"Checking {file_path} (relative to {directory})")
+                
+                if self._is_safe_path(file_path) and file_path.is_file():
+                    return response.file(str(file_path), content_disposition_type="inline")
+            except (ValueError, RuntimeError) as e:
+                continue
 
-        file_path = f"{self.directory}{path}"
-        if not self._is_safe_path(Path(file_path)):
-            return response.status(403)
-
-        if not os.path.exists(file_path) or not os.path.isfile(file_path):
-            return response.json("Resource not found !", status_code=404)
-
-        response.file(file_path, content_disposition_type="inline")
+        return response.json("Resource not found", status_code=404)
