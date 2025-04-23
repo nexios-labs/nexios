@@ -397,9 +397,9 @@ class Routes:
 
         self.prefix: Optional[str] = None
         self.docs = APIDocumentation.get_instance()
-        if  path == "":
+        if path == "":
             path = "/"
-        self.raw_path = path 
+        self.raw_path = path
         self.handler = handler
         self.methods = methods or allowed_methods_default
         self.name = name
@@ -420,9 +420,6 @@ class Routes:
         self.deprecated = deprecated
         self.parameters = parameters
         self.exlude_from_schema = exclude_from_schema
-
-       
-        
 
     def match(self, path: str, method: str) -> typing.Tuple[Any, Any, Any]:
         """
