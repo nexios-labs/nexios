@@ -10,4 +10,10 @@ Receive = typing.Callable[[], typing.Awaitable[Message]]
 Send = typing.Callable[[Message], typing.Awaitable[None]]
 
 
-__all__ = ["WebSocket", "Channel", "ChannelBox", "WebSocketConsumer","WebSocketDisconnect"]
+__all__ = [
+    "WebSocket",
+    "Channel",
+    "ChannelBox",
+    "WebSocketConsumer",
+    "WebSocketDisconnect",
+]
