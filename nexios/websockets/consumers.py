@@ -9,7 +9,7 @@ import uuid
 Message = typing.MutableMapping[str, typing.Any]
 
 
-class WebSocketEndpoint:
+class WebSocketConsumer:
 
     channel: typing.Optional[Channel] = None
     middleware: typing.List[typing.Any] = []

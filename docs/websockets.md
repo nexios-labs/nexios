@@ -9,9 +9,9 @@ icon: wifi-fair
 #### 1. Creating a WebSocket Endpoint
 
 ```python
-from nexios import get_application, WebSocket
+from nexios import get_application
 from nexios.routing import WSRouter
-
+from nexios.websockets.base import WebSocket
 app = get_application()
 ws_router = WSRouter()
 app.mount_ws_router(ws_router)
@@ -196,9 +196,9 @@ async def room_handler(ws: WebSocket, room_name: str):
 **Class-Based Approach (Recommended)**
 
 ```python
-from nexios.websockets.consumers import WebSocketEndpoint
+from nexios.websockets.consumers import WebSocketConsumer
 
-class ChatEndpoint(WebSocketEndpoint):
+class ChatEndpoint(WebSocketConsumer):
     encoding = "json"  # Auto JSON serialization
     
     async def on_connect(self, ws: WebSocket):
