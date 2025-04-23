@@ -147,7 +147,6 @@ def compile_path(
         raise ValueError(f"Duplicated param name{ending} {names} at path {path}")
 
     if is_host:
-        # Align with `Host.matches()` behavior, which ignores port.
         hostname = path[idx:].split(":")[0]
         path_regex += re.escape(hostname) + "$"
     else:
@@ -365,7 +364,6 @@ class Routes:
                 "A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data."
             ),
         ] = None,
-        response_model: Optional[Type[BaseModel]] = None,
         tags: Optional[List[str]] = None,
         security: Optional[List[Dict[str, List[str]]]] = None,
         operation_id: Optional[str] = None,
@@ -398,8 +396,9 @@ class Routes:
 
         self.prefix: Optional[str] = None
         self.docs = APIDocumentation.get_instance()
-
-        self.raw_path = path
+        if  path == "":
+            path = "/"
+        self.raw_path = path 
         self.handler = handler
         self.methods = methods or allowed_methods_default
         self.name = name
@@ -420,6 +419,9 @@ class Routes:
         self.deprecated = deprecated
         self.parameters = parameters
         self.exlude_from_schema = exclude_from_schema
+
+       
+        
 
     def match(self, path: str, method: str) -> typing.Tuple[Any, Any, Any]:
         """

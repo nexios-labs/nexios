@@ -32,6 +32,11 @@ sandbox.py
 dev/
 sandbox/
 sessions/
+db.sqlite3
+migrations/
+db.sqlite3-journal
+db.sqlite3-wal
+db.sqlite3-shm
 # ==============================
 # 🔹 Documentation & Static Files
 # ==============================
