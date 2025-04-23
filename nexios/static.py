@@ -10,7 +10,7 @@ class StaticFilesHandler:
         self,
         directory: Optional[Union[str, Path]] = None,
         directories: Optional[List[Union[str, Path]]] = None,
-        url_prefix: str = "/static/"
+        url_prefix: str = "/static/",
     ):
         if directory is not None and directories is not None:
             raise ValueError("Cannot specify both 'directory' and 'directories'")
@@ -46,18 +46,20 @@ class StaticFilesHandler:
 
     async def __call__(self, request: Request, response: NexiosResponse):
         path = request.path_params.get("path", "")
-        
+
         if not path:
             return response.json("Invalid static file path", status_code=400)
 
         for directory in self.directories:
             try:
                 file_path = (directory / path).resolve()
-                
+
                 print(f"Checking {file_path} (relative to {directory})")
-                
+
                 if self._is_safe_path(file_path) and file_path.is_file():
-                    return response.file(str(file_path), content_disposition_type="inline")
+                    return response.file(
+                        str(file_path), content_disposition_type="inline"
+                    )
             except (ValueError, RuntimeError) as e:
                 continue
 
