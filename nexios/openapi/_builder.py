@@ -129,9 +129,11 @@ class APIDocumentation:
                     request_body_spec = RequestBody(
                         content={
                             "application/json": MediaType(  # type:ignore
-                                schema=Schema(example={
-                                    "example": "This is an example request body"
-                                })  # type:ignore
+                                schema=Schema(
+                                    example={
+                                        "example": "This is an example request body"
+                                    }
+                                )  # type:ignore
                             )
                         }
                     )
@@ -203,10 +205,12 @@ class APIDocumentation:
                     description="Successful Response",
                     content={
                         "application/json": MediaType(  # type:ignore
-                            schema=Schema(example={"example": "This is an example response"},type="object")  # type:ignore
+                            schema=Schema(
+                                example={"example": "This is an example response"},
+                                type="object",
+                            )  # type:ignore
                         )
                     },
-                    
                 )
 
             if not responses_spec:
@@ -214,7 +218,10 @@ class APIDocumentation:
                     description="Successful Response",
                     content={
                         "application/json": MediaType(  # type:ignore
-                            schema=Schema(example={"example": "This is an example response"},type="object")  # type:ignore
+                            schema=Schema(
+                                example={"example": "This is an example response"},
+                                type="object",
+                            )  # type:ignore
                         )
                     },
                 )
