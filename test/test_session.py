@@ -5,9 +5,9 @@ import pytest
 from datetime import datetime, timedelta, timezone
 from nexios import get_application, NexiosApp
 from nexios.http import Request, Response
-from nexios.sessions.base import BaseSessionInterface
-from nexios.sessions.file import FileSessionManager
-from nexios.sessions.signed_cookies import SignedSessionManager
+from nexios.session.base import BaseSessionInterface
+from nexios.session.file import FileSessionManager
+from nexios.session.signed_cookies import SignedSessionManager
 from nexios.testing import Client
 from nexios.config import MakeConfig, get_config, set_config
 from typing import Tuple, Dict, Any

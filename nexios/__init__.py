@@ -15,7 +15,7 @@ and simplified routing mechanisms to better suit the Nexios framework architectu
 """
 
 from .application import NexiosApp
-from .sessions.middleware import SessionMiddleware
+from .session.middleware import SessionMiddleware
 from .middlewares.csrf import CSRFMiddleware
 from .config.base import MakeConfig
 from .config import set_config, DEFAULT_CONFIG

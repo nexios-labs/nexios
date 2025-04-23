@@ -9,7 +9,7 @@ from nexios._utils.async_helpers import (
     AwaitableOrContextManager,
     AwaitableOrContextManagerWrapper,
 )
-from nexios.sessions.base import BaseSessionInterface
+from nexios.session.base import BaseSessionInterface
 from nexios.structs import URL, Address, FormData, Headers, QueryParams, State
 from .formparsers import FormParser, MultiPartException, MultiPartParser
 

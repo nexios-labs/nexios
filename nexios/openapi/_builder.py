@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from nexios.http import Request, Response
 from .config import OpenAPIConfig
 from .models import (
+    Components,
     Parameter,
     ExternalDocumentation,
     RequestBody,
@@ -114,6 +115,9 @@ class APIDocumentation:
         def decorator(func):
             # Prepare request body specification
             request_body_spec = None
+
+            if request_body:
+                self.add_schema(request_body)
             if request_body:
                 request_body_spec = RequestBody(
                     content={
@@ -135,7 +139,8 @@ class APIDocumentation:
                             )
                         }
                     )
-
+            
+            # self.config.openapi_spec.components.schemas[request_body.__name__] = request_body
             # Prepare responses specification
             responses_spec = {}
             if responses:
@@ -219,6 +224,22 @@ class APIDocumentation:
                     },
                 )
 
+            if responses:
+                if isinstance(responses, type) and issubclass(responses, BaseModel):
+                    self.add_schema(responses)
+                elif hasattr(responses, "__origin__") and responses.__origin__ is list:
+                    item_model = responses.__args__[0]
+                    if issubclass(item_model, BaseModel):
+                        self.add_schema(item_model)
+                elif isinstance(responses, dict):
+                    for model in responses.values():
+                        if isinstance(model, type) and issubclass(model, BaseModel):
+                            self.add_schema(model)
+                        elif hasattr(model, "__origin__") and model.__origin__ is list:
+                            item_model = model.__args__[0]
+                            if issubclass(item_model, BaseModel):
+                                self.add_schema(item_model)
+
             operation = Operation(
                 summary=summary,
                 description=description,
@@ -245,3 +266,19 @@ class APIDocumentation:
             return wrapper
 
         return decorator
+    
+    def add_schema(self, schema: Type[BaseModel]) -> None:
+        """Add a schema to the OpenAPI components section
+        
+        Args:
+            schema: A Pydantic model to be added to the components/schemas section
+        """
+        if not self.config.openapi_spec.components:
+            self.config.openapi_spec.components = Components()
+        
+        if not self.config.openapi_spec.components.schemas:
+            self.config.openapi_spec.components.schemas = {}
+        
+        self.config.openapi_spec.components.schemas[schema.__name__] = Schema(
+            **schema.model_json_schema()
+        )
