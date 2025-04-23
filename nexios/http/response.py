@@ -635,7 +635,6 @@ class NexiosResponse:
     def headers(self):
         return MutableHeaders(
             {k.decode("utf-8"): v.decode("utf-8") for k, v in self._response._headers},
-            
         )  # type:ignore
 
     @property
@@ -867,7 +866,8 @@ class NexiosResponse:
     def set_headers(self, headers: Dict[str, str], overide_all: bool = False):
         if overide_all:
             self._response._headers = [
-                (bytes(str(k), "utf-8"), bytes(str(v), "utf-8")) for k, v in self.headers.items()
+                (bytes(str(k), "utf-8"), bytes(str(v), "utf-8"))
+                for k, v in self.headers.items()
             ]  # type:ignore
             return
         """Set multiple headers at once."""
