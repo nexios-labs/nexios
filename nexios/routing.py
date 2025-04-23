@@ -58,7 +58,7 @@ def request_response(
         if isinstance(func_result, (dict, list, str)):
             response_manager.json(func_result)
 
-        elif isinstance(func_result, BaseResponse) :
+        elif isinstance(func_result, BaseResponse):
             response_manager.make_response(func_result)
         response = response_manager.get_response()
         return await response(scope, receive, send)
