@@ -60,11 +60,11 @@ class allowed_methods(RouteDecorator):
 
 class catch_exception(RouteDecorator):
     """Decorator to catch specific exceptions and handle them with a custom handler"""
-    
+
     def __init__(
-        self, 
-        exceptions: Union[Type[Exception], Tuple[Type[Exception], ...]], 
-        handler: Callable[[Exception, Request, NexiosResponse], Any]
+        self,
+        exceptions: Union[Type[Exception], Tuple[Type[Exception], ...]],
+        handler: Callable[[Exception, Request, NexiosResponse], Any],
     ) -> None:
         super().__init__()
         if not isinstance(exceptions, tuple):
@@ -81,13 +81,15 @@ class catch_exception(RouteDecorator):
             try:
                 return await handler(*args, **kwargs)  # type: ignore
             except self.exceptions as e:
-                *_, request, response = args  
-                
+                *_, request, response = args
+
                 if not isinstance(request, Request) or not isinstance(
                     response, NexiosResponse
                 ):
-                    raise TypeError("Expected request and response as the last arguments")
-                
+                    raise TypeError(
+                        "Expected request and response as the last arguments"
+                    )
+
                 return self.exception_handler(request, response, e)
 
         wrapper._is_wrapped = True  # type: ignore

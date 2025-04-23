@@ -48,6 +48,7 @@ def request_response(
     and returns an ASGI application.
     """
     assert asyncio.iscoroutinefunction(func), "Endpoints must be async"
+
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         request = Request(scope, receive, send)
         response_manager = Response()
@@ -1136,8 +1137,6 @@ class WebsocketRoutes:
 
     def __repr__(self) -> str:
         return f"<WSRoute {self.raw_path}>"
-
-   
 
 
 class WSRouter(BaseRouter):
