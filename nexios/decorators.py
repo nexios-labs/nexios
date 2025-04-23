@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, TypeVar
+from typing import List, Dict, Any, TypeVar, Union, Callable, Type, Tuple
 from .http.request import Request
 from .http.response import NexiosResponse
 from .http.request import Request
@@ -53,6 +53,42 @@ class allowed_methods(RouteDecorator):
                 )
 
             return await handler(*args, **kwargs)  # type:ignore
+
+        wrapper._is_wrapped = True  # type: ignore
+        return wrapper  # type: ignore
+
+
+class catch_exception(RouteDecorator):
+    """Decorator to catch specific exceptions and handle them with a custom handler"""
+    
+    def __init__(
+        self, 
+        exceptions: Union[Type[Exception], Tuple[Type[Exception], ...]], 
+        handler: Callable[[Exception, Request, NexiosResponse], Any]
+    ) -> None:
+        super().__init__()
+        if not isinstance(exceptions, tuple):
+            exceptions = (exceptions,)
+        self.exceptions = exceptions
+        self.exception_handler = handler
+
+    def __call__(self, handler: F) -> F:
+        if getattr(handler, "_is_wrapped", False):
+            return handler
+
+        @wraps(handler)
+        async def wrapper(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
+            try:
+                return await handler(*args, **kwargs)  # type: ignore
+            except self.exceptions as e:
+                *_, request, response = args  
+                
+                if not isinstance(request, Request) or not isinstance(
+                    response, NexiosResponse
+                ):
+                    raise TypeError("Expected request and response as the last arguments")
+                
+                return self.exception_handler(request, response, e)
 
         wrapper._is_wrapped = True  # type: ignore
         return wrapper  # type: ignore

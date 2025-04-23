@@ -3,7 +3,6 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 include = ["nexios/py.typed"]
 
-
 [tool.poetry]
 name = "nexios"
 version = "2.3.2"
@@ -38,10 +37,15 @@ uvicorn = ">=0.22.0"
 anyio = "4.3.0"
 itsdangerous = ">=2.1.2"
 python-multipart = ">=0.0.6"
-pyjwt = ">=2.7.0"
 typing-extensions = "4.12.2"
-jinja2 = "^3.1.6"
 pydantic = ">=2.0,<3.0"
+
+jinja2 = { version = "^3.1.6", optional = true }
+pyjwt = { version = ">=2.7.0", optional = true }
+
+[tool.poetry.extras]
+templating = ["jinja2"]
+jwt = ["pyjwt"]
 
 [tool.poetry.group.dev.dependencies]
 mypy = ">=0.910,<1.16"
@@ -51,8 +55,6 @@ coverage = ">=6.3,<8.0"
 httpx = ">=0.23.3,<0.29.0"
 typing-extensions = "4.12.2"
 pytest-asyncio = ">=0.25.3,<0.27.0"
-
-
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

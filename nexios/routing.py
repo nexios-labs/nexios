@@ -18,7 +18,7 @@ import copy
 import warnings, typing
 from enum import Enum
 from abc import abstractmethod, ABC
-
+import asyncio
 from nexios.openapi.models import Parameter, Path, Schema
 from nexios.types import MiddlewareType, WsMiddlewareType, HandlerType, WsHandlerType
 from nexios.decorators import allowed_methods
@@ -47,7 +47,7 @@ def request_response(
     Takes a function or coroutine `func(request) -> response`,
     and returns an ASGI application.
     """
-
+    assert asyncio.iscoroutinefunction(func), "Endpoints must be async"
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         request = Request(scope, receive, send)
         response_manager = Response()
@@ -67,7 +67,7 @@ def websocket_session(
     """
     Takes a coroutine `func(session)`, and returns an ASGI application.
     """
-    # assert asyncio.iscoroutinefunction(func), "WebSocket endpoints must be async"
+    assert asyncio.iscoroutinefunction(func), "WebSocket endpoints must be async"
 
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         session = WebSocket(scope, receive=receive, send=send)
@@ -1091,6 +1091,7 @@ class WebsocketRoutes:
         middlewares: typing.List[WsMiddlewareType] = [],
     ):
         assert callable(handler), "Route handler must be callable"
+        assert asyncio.iscoroutinefunction(handler), "Route handler must be async"
         self.raw_path = path
         self.handler: WsHandlerType = handler
         self.middlewares = middlewares
@@ -1134,28 +1135,7 @@ class WebsocketRoutes:
     def __repr__(self) -> str:
         return f"<WSRoute {self.raw_path}>"
 
-    async def execute_middleware_stack(
-        self, ws: "WebsocketRoutes", **kwargs: Dict[str, Any]
-    ) -> Union[WsMiddlewareType, None]:
-        """
-        Executes WebSocket middleware stack after route matching.
-        """
-        middleware_list: List[WsMiddlewareType] = getattr(self, "router_middleware") or []  # type: ignore
-
-        stack: List[WsMiddlewareType] = middleware_list.copy()
-        index = -1
-
-        async def next_middleware() -> WsMiddlewareType:
-            nonlocal index
-            index += 1
-            if index < len(stack):  # type: ignore
-                middleware: List[MiddlewareType] = stack[index]  # type: ignore
-                return await middleware(ws, next_middleware, **kwargs)  # type: ignore
-            else:
-                # No more middleware to process
-                return None  # type: ignore
-
-        return await next_middleware()
+   
 
 
 class WSRouter(BaseRouter):
