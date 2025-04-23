@@ -34,6 +34,7 @@ from nexios.middlewares.core import Middleware, wrap_middleware
 from nexios.exceptions import NotFoundException
 from nexios.websockets.errors import WebSocketErrorMiddleware
 from pydantic import BaseModel
+from nexios.http.response import BaseResponse
 
 
 T = TypeVar("T")
@@ -56,6 +57,9 @@ def request_response(
         func_result = await func(request, response_manager)
         if isinstance(func_result, (dict, list, str)):
             response_manager.json(func_result)
+
+        elif isinstance(func_result, BaseResponse) :
+            response_manager.make_response(func_result)
         response = response_manager.get_response()
         return await response(scope, receive, send)
 

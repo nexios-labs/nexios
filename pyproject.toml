@@ -31,6 +31,13 @@ keywords = [
     "websocket"
 ]
 
+Homepage = "https://github.com/nexios-labs/Nexios"
+Documentation = "https://github.com/nexios-labs/Nexios/wiki"
+Funding = "https://www.buymeacoffee.com/techwithdul"
+Source = "https://github.com/nexios-labs/Nexios"
+Tracker = "https://github.com/nexios-labs/Nexios/issues"
+
+
 [tool.poetry.dependencies]
 python = ">=3.9"
 uvicorn = ">=0.22.0"
