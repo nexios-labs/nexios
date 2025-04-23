@@ -100,7 +100,7 @@ class Schema(BaseModel):
     minProperties: Annotated[Optional[int], Field(ge=0)] = None
     required: Optional[List[str]] = None
     enum: Optional[List[Any]] = None
-    type: Optional[str] = None
+    type: Optional[str] = "object"
     allOf: Optional[List[Schema]] = None
     oneOf: Optional[List[Schema]] = None
     anyOf: Optional[List[Schema]] = None
@@ -366,6 +366,6 @@ class OpenAPI(BaseModel):
     externalDocs: Optional[ExternalDocumentation] = None
 
 
-Schema.update_forward_refs()
-Operation.update_forward_refs()
-Encoding.update_forward_refs()
+Schema.model_rebuild()
+Operation.model_rebuild()
+Encoding.model_rebuild()

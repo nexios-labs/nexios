@@ -262,7 +262,6 @@ class NexiosApp(object):
     def _setup_openapi(self):
         """Set up automatic OpenAPI documentation"""
         docs = self.docs
-
         for route in self.get_all_routes():
             if route.exlude_from_schema:
                 continue
@@ -272,6 +271,8 @@ class NexiosApp(object):
                     Path(name=x, schema=Schema(type="string"), schema_=None)  # type: ignore
                     for x in route.param_names
                 ]
+
+                
                 if route.parameters.__len__() > 0:
                     parameters.extend(parameters)
                 docs.document_endpoint(

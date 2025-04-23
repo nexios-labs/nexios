@@ -125,11 +125,13 @@ class APIDocumentation:
                     }
                 )
             else:
-                if method not in ["GET"]:
+                if method.upper() not in ["GET", "DELETE"]:
                     request_body_spec = RequestBody(
                         content={
                             "application/json": MediaType(  # type:ignore
-                                schema=Schema(example={})  # type:ignore
+                                schema=Schema(example={
+                                    "example": "This is an example request body"
+                                })  # type:ignore
                             )
                         }
                     )
@@ -137,14 +139,13 @@ class APIDocumentation:
             # Prepare responses specification
             responses_spec = {}
             if responses:
-                # Single model case (default to 200 OK)
                 if isinstance(responses, type) and issubclass(responses, BaseModel):
                     responses_spec["200"] = OpenAPIResponse(
                         description="Successful Response",
                         content={
                             "application/json": MediaType(  # type:ignore
                                 schema=Schema(  # type:ignore
-                                    **responses.model_json_schema()
+                                    **responses.model_json_schema(),
                                 )
                             )
                         },
@@ -199,7 +200,23 @@ class APIDocumentation:
             else:
                 # Default response if no responses specified
                 responses_spec["200"] = OpenAPIResponse(
-                    description="Successful Response"
+                    description="Successful Response",
+                    content={
+                        "application/json": MediaType(  # type:ignore
+                            schema=Schema(example={"example": "This is an example response"},type="object")  # type:ignore
+                        )
+                    },
+                    
+                )
+
+            if not responses_spec:
+                responses_spec["200"] = OpenAPIResponse(
+                    description="Successful Response",
+                    content={
+                        "application/json": MediaType(  # type:ignore
+                            schema=Schema(example={"example": "This is an example response"},type="object")  # type:ignore
+                        )
+                    },
                 )
 
             operation = Operation(
