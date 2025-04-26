@@ -1,4 +1,464 @@
 ---
+icon: folder-symlink
+---
+
+# File Router
+
+The File Router system in Nexios allows you to define your application's routes using the filesystem structure, providing a convention-over-configuration approach to routing that can make your API more organized and maintainable.
+
+## Introduction
+
+File routing is an intuitive approach to organizing web application endpoints. Instead of defining all routes explicitly in code, the file system itself becomes the router based on predefined conventions. This is similar to the file-based routing systems used in frameworks like Next.js and Nuxt.js, but adapted for backend API development.
+
+### Benefits of File Routing
+
+- **Visual Structure**: Your directory structure gives a clear visual map of your API endpoints
+- **Organization**: Keeps related route handlers together and organized by domain
+- **Discoverability**: Easier to find specific endpoint implementations
+- **Scalability**: Routes can grow naturally as your application expands
+- **Convention over Configuration**: Reduces boilerplate code needed for routing setup
+
+## Basic Setup
+
+To use the File Router in your Nexios application, set it up in your main application file:
+
+```python
+from nexios import get_application
+from nexios.file_router import FileRouter
+
+app = get_application()
+
+# Configure the File Router
+FileRouter(app, config={
+    "root": "./routes",
+    "exempt_paths": [],
+    "exclude_from_schema": False
+})
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+
+### Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `root` | The root directory where route files will be located | `"./routes"` |
+| `exempt_paths` | List of path patterns to exclude from file routing | `[]` |
+| `exclude_from_schema` | Whether to exclude file routes from OpenAPI documentation | `False` |
+
+## Directory Structure and Conventions
+
+File Router looks for files named `route.py` in your routes directory and its subdirectories. The path to each `route.py` file determines the URL endpoint it will handle.
+
+### Basic Structure Example
+
+```
+routes/
+├── route.py              # Handles "/"
+├── users/
+│   ├── route.py          # Handles "/users"
+│   ├── _id/              # Dynamic parameter 'id'
+│   │   └── route.py      # Handles "/users/{id}"
+│   └── settings/
+│       └── route.py      # Handles "/users/settings"
+└── products/
+    ├── route.py          # Handles "/products"
+    └── categories/
+        ├── route.py      # Handles "/products/categories"
+        └── _category_id/ # Dynamic parameter 'category_id'
+            └── route.py  # Handles "/products/categories/{category_id}"
+```
+
+### Creating Route Handlers
+
+Each `route.py` file contains handlers for different HTTP methods at that endpoint:
+
+```python
+# routes/users/route.py
+
+def get(req, res):
+    """Handle GET request to /users"""
+    return res.json({"message": "List all users"})
+
+def post(req, res):
+    """Handle POST request to /users"""
+    return res.json({"message": "Create new user"})
+
+def delete(req, res):
+    """Handle DELETE request to /users"""
+    return res.json({"message": "Bulk delete users"})
+```
+
+The file router automatically maps the functions named after HTTP methods (`get`, `post`, `put`, `delete`, `patch`, etc.) to the corresponding HTTP verbs for that route.
+
+## Dynamic Route Parameters
+
+Dynamic route segments are indicated by prefixing a directory name with an underscore (`_`). This tells the File Router that this segment of the path should be treated as a parameter.
+
+### Simple Parameters
+
+```
+routes/
+└── users/
+    └── _user_id/         # Creates parameter 'user_id'
+        └── route.py
+```
+
+The parameter becomes available in the `req.path_params` dictionary:
+
+```python
+# routes/users/_user_id/route.py
+
+def get(req, res):
+    user_id = req.path_params.user_id
+    return res.json({"message": f"Get user {user_id}"})
+```
+
+### Nested Parameters
+
+Parameters can be nested at multiple levels:
+
+```
+routes/
+└── users/
+    └── _user_id/
+        └── posts/
+            └── _post_id/
+                └── route.py  # Handles /users/{user_id}/posts/{post_id}
+```
+
+```python
+# routes/users/_user_id/posts/_post_id/route.py
+
+def get(req, res):
+    user_id = req.path_params.user_id
+    post_id = req.path_params.post_id
+    return res.json({"message": f"Get post {post_id} by user {user_id}"})
+```
+
+### Catch-all Parameters
+
+For catch-all route segments that can include multiple path parts, use multiple underscores:
+
+```
+routes/
+└── files/
+    └── __filepath/        # Creates catch-all parameter 'filepath'
+        └── route.py       # Handles /files/{filepath:path}
+```
+
+```python
+# routes/files/__filepath/route.py
+
+def get(req, res):
+    filepath = req.path_params.filepath
+    # filepath can contain slashes, e.g. "documents/reports/2023.pdf"
+    return res.text(f"Serving file: {filepath}")
+```
+
+## Advanced Route Configuration
+
+While the file-based routing system provides default behavior based on file names, you can enhance your routes with additional configuration using decorators.
+
+### Custom Route Decorators
+
+Nexios provides several decorators to configure route behavior:
+
+```python
+# routes/products/route.py
+from nexios.decorators import route, summary, description, tags
+
+@route("/products", methods=["GET"])
+@summary("List all products")
+@description("Returns a paginated list of all available products")
+@tags(["products"])
+def get(req, res):
+    return res.json({"products": [{"id": 1, "name": "Example Product"}]})
+```
+
+### Custom Path Override
+
+You can override the automatically determined path:
+
+```python
+# routes/special.py
+from nexios.decorators import route
+
+@route("/custom-path")
+def get(req, res):
+    # This will handle /custom-path, not /special
+    return res.json({"message": "Custom path"})
+```
+
+### Route Metadata for OpenAPI Documentation
+
+Add OpenAPI metadata to your routes:
+
+```python
+# routes/users/route.py
+from nexios.decorators import summary, description, responses, request_model
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: int
+    name: str
+    email: str
+
+class CreateUserRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+
+@summary("Create new user")
+@description("Register a new user in the system")
+@responses({201: User, 400: {"description": "Invalid input"}})
+@request_model(CreateUserRequest)
+def post(req, res):
+    user_data = await req.json
+    # Create user logic...
+    return res.json({"id": 1, "name": user_data["name"], "email": user_data["email"]}, status_code=201)
+```
+
+### Route-Specific Middleware
+
+Apply middleware to specific routes:
+
+```python
+# routes/admin/route.py
+from nexios.decorators import middleware
+from nexios.middlewares import AuthMiddleware, LoggingMiddleware
+
+@middleware([AuthMiddleware, LoggingMiddleware])
+def get(req, res):
+    return res.json({"message": "Admin dashboard"})
+```
+
+## Custom Route Handlers
+
+For more complex routes, you can use a custom function instead of the standard HTTP method handlers:
+
+```python
+# routes/complex/route.py
+from nexios.decorators import route
+
+@route("/complex", methods=["GET", "POST"])
+def handle_complex(req, res):
+    """Custom handler for multiple methods"""
+    if req.method == "GET":
+        return res.json({"message": "GET method"})
+    elif req.method == "POST":
+        return res.json({"message": "POST method"})
+```
+
+## Common Patterns and Best Practices
+
+### API Versioning
+
+Organize your API versions in the file structure:
+
+```
+routes/
+├── v1/
+│   ├── users/
+│   │   └── route.py      # Handles "/v1/users"
+│   └── products/
+│       └── route.py      # Handles "/v1/products"
+├── v2/
+│   ├── users/
+│   │   └── route.py      # Handles "/v2/users"
+│   └── products/
+│       └── route.py      # Handles "/v2/products"
+```
+
+### Resource-Based Organization
+
+Structure your routes around your resources:
+
+```
+routes/
+├── users/
+│   ├── route.py          # User collection endpoints
+│   ├── _id/
+│   │   ├── route.py      # Single user endpoints
+│   │   ├── posts/
+│   │   │   └── route.py  # User's posts collection 
+│   │   └── profile/
+│   │       └── route.py  # User's profile
+├── posts/
+│   ├── route.py          # Post collection endpoints
+│   └── _id/
+│       └── route.py      # Single post endpoints
+```
+
+### Index Routes vs. Route Files
+
+For clarity, you can use `index.py` instead of `route.py` to indicate the default route for a directory:
+
+```
+routes/
+├── index.py              # Handles "/"
+├── users/
+│   ├── index.py          # Handles "/users"
+│   └── _id/
+│       └── index.py      # Handles "/users/{id}"
+```
+
+The File Router will treat `index.py` the same as `route.py` if you configure it to recognize both patterns.
+
+## Complete Example
+
+Let's put it all together with a complete example of a blog API:
+
+### Directory Structure
+
+```
+routes/
+├── route.py              # API home
+├── auth/
+│   ├── route.py          # Authentication endpoints
+│   ├── login/
+│   │   └── route.py      # Login endpoint
+│   └── register/
+│       └── route.py      # Registration endpoint
+├── users/
+│   ├── route.py          # Users collection
+│   └── _user_id/
+│       ├── route.py      # Single user operations
+│       └── posts/
+│           └── route.py  # Posts by specific user
+└── posts/
+    ├── route.py          # Posts collection
+    ├── _post_id/
+    │   ├── route.py      # Single post operations
+    │   └── comments/
+    │       └── route.py  # Comments on specific post
+    └── categories/
+        ├── route.py      # Categories collection
+        └── _category/
+            └── route.py  # Posts by category
+```
+
+### Implementation Example
+
+```python
+# routes/route.py
+def get(req, res):
+    return res.json({
+        "name": "Blog API",
+        "version": "1.0.0",
+        "endpoints": [
+            "/auth", "/users", "/posts"
+        ]
+    })
+```
+
+```python
+# routes/posts/route.py
+from pydantic import BaseModel
+from typing import List, Optional
+from nexios.decorators import summary, description, tags, responses, request_model
+
+class PostPreview(BaseModel):
+    id: int
+    title: str
+    excerpt: str
+    author_name: str
+
+class PostCreate(BaseModel):
+    title: str
+    content: str
+    category_id: Optional[int] = None
+
+@summary("List all posts")
+@description("Get a paginated list of all blog posts")
+@tags(["posts"])
+@responses({200: List[PostPreview]})
+def get(req, res):
+    # Get query parameters
+    page = int(req.query_params.get("page", 1))
+    limit = int(req.query_params.get("limit", 10))
+    
+    # Simulated database query
+    posts = [
+        {"id": i, "title": f"Post {i}", "excerpt": f"Excerpt {i}", "author_name": "Author"}
+        for i in range((page-1)*limit + 1, page*limit + 1)
+    ]
+    
+    return res.json(posts)
+
+@summary("Create a new post")
+@description("Create a new blog post")
+@tags(["posts"])
+@request_model(PostCreate)
+@responses({201: PostPreview, 400: {"description": "Invalid data"}})
+async def post(req, res):
+    post_data = await req.json
+    # Simulated post creation
+    new_post = {
+        "id": 123,
+        "title": post_data["title"],
+        "excerpt": post_data["content"][:100] + "...",
+        "author_name": "Current User"
+    }
+    return res.json(new_post, status_code=201)
+```
+
+```python
+# routes/posts/_post_id/route.py
+def get(req, res):
+    post_id = req.path_params.post_id
+    # Simulated post retrieval
+    post = {
+        "id": post_id,
+        "title": f"Post {post_id}",
+        "content": f"This is the content of post {post_id}",
+        "author": {
+            "id": 1,
+            "name": "Author Name"
+        },
+        "created_at": "2023-01-01T12:00:00Z"
+    }
+    return res.json(post)
+
+def put(req, res):
+    post_id = req.path_params.post_id
+    return res.json({"message": f"Post {post_id} updated"})
+
+def delete(req, res):
+    post_id = req.path_params.post_id
+    return res.json({"message": f"Post {post_id} deleted"})
+```
+
+## Integration with Traditional Routing
+
+The File Router can coexist with traditional decorator-based routes in the same application:
+
+```python
+from nexios import get_application
+from nexios.file_router import FileRouter
+
+app = get_application()
+
+# Set up File Router
+FileRouter(app, config={"root": "./routes"})
+
+# Add traditional routes
+@app.get("/health")
+async def health_check(req, res):
+    return res.json({"status": "ok"})
+
+# The file routes and traditional routes will work together
+```
+
+This approach gives you the flexibility to use file-based routing for the majority of your application while still allowing for special cases to be handled with traditional routes.
+
+## Conclusion
+
+The File Router system in Nexios provides a powerful, organized approach to structuring your API endpoints. By leveraging the filesystem hierarchy, you can create intuitive, maintainable route structures that grow naturally with your application. Combined with the various decorators and configuration options, File Router offers both simplicity and flexibility for your web API development.
+
+---
 icon: swap
 ---
 

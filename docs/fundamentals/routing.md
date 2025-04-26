@@ -181,7 +181,7 @@ Route converters in Nexios allow you to enforce specific types or patterns on dy
 5.  **`string`** – Matches any string (default behavior).
 
     ```python
-    @app.post("/person/{username:string}")
+    @app.post("/person/{username:str}")
     async def get_person(req, res):
         username = req.path_params.username
         return res.text(f"Username: {username}")
@@ -290,3 +290,272 @@ With this setup, the following routes are available:
 ***
 
 Nexios provides a robust and flexible routing system that caters to both simple and complex application needs. From basic route definitions to advanced features like route converters, modular routers, and nested routing, Nexios ensures that your application remains scalable, maintainable, and easy to develop. By leveraging these features, you can build well-structured APIs that are both performant and easy to manage.
+
+## Advanced Routing Features
+
+### The `Routes` Class in Detail
+
+The `Routes` class is the core building block of Nexios routing. It encapsulates all routing information for an API endpoint, including path handling, validation, OpenAPI documentation, and request processing.
+
+```python
+from nexios.routing import Routes
+
+route = Routes(
+    path="/users/{user_id}",
+    handler=user_detail_handler,
+    methods=["GET", "PUT", "DELETE"],
+    name="user_detail",
+    summary="User Detail API",
+    description="Get, update or delete a user by ID",
+    responses={
+        200: UserResponse,
+        404: {"description": "User not found"}
+    },
+    request_model=UserUpdate,
+    middlewares=[auth_middleware, logging_middleware],
+    tags=["users"],
+    security=[{"bearerAuth": []}],
+    operation_id="getUserDetail",
+    deprecated=False,
+    parameters=[
+        Parameter(name="include_details", in_="query", required=False, schema=Schema(type="boolean"))
+    ]
+)
+
+app.add_route(route)
+```
+
+#### Parameters
+
+| Parameter | Description | Type | Default |
+|------------|-------------|------|---------|
+| `path` | URL path pattern with optional parameters | `str` | Required |
+| `handler` | Request processing function/method | `Callable` | Required |
+| `methods` | Allowed HTTP methods | `List[str]` | `["get", "post", "delete", "put", "patch", "options"]` |
+| `name` | Route name (for URL generation) | `Optional[str]` | `None` |
+| `summary` | Brief description for OpenAPI docs | `Optional[str]` | `None` |
+| `description` | Detailed description for OpenAPI docs | `Optional[str]` | `None` |
+| `responses` | Response schemas or descriptions | `Optional[Dict[int, Any]]` | `None` |
+| `request_model` | Pydantic model for request validation | `Optional[Type[BaseModel]]` | `None` |
+| `middlewares` | Route-specific middleware | `List[Any]` | `[]` |
+| `tags` | OpenAPI tags for grouping | `Optional[List[str]]` | `None` |
+| `security` | Security requirements | `Optional[List[Dict[str, List[str]]]]` | `None` |
+| `operation_id` | Unique identifier for OpenAPI | `Optional[str]` | `None` |
+| `deprecated` | Mark route as deprecated | `bool` | `False` |
+| `parameters` | Additional parameters for OpenAPI | `List[Parameter]` | `[]` |
+| `exclude_from_schema` | Hide from OpenAPI docs | `bool` | `False` |
+
+### Advanced Path Parameters
+
+Nexios supports advanced path parameter features beyond the basics:
+
+#### Custom Regex Patterns
+
+For more complex validation requirements, you can define custom regex patterns:
+
+```python
+@app.get("/products/{sku:[A-Z]{2}\d{6}}")
+async def get_product(req, res):
+    """Match only SKUs with format like 'AB123456'"""
+    sku = req.path_params.sku
+    return res.json({"sku": sku})
+```
+
+#### Multiple Parameters with Different Convertors
+
+You can combine multiple parameters with different type convertors:
+
+```python
+@app.get("/reports/{year:int}/{month:int}/{format:str}")
+async def get_report(req, res):
+    year = req.path_params.year     # int
+    month = req.path_params.month   # int
+    format = req.path_params.format # str
+    return res.json({"year": year, "month": month, "format": format})
+```
+
+#### Optional Segments
+
+You can make entire path segments optional by defining multiple routes:
+
+```python
+@app.get("/articles/{category}/{tag}")
+@app.get("/articles/{category}")
+@app.get("/articles")
+async def list_articles(req, res):
+    category = req.path_params.get("category")
+    tag = req.path_params.get("tag")
+    
+    filters = {}
+    if category:
+        filters["category"] = category
+    if tag:
+        filters["tag"] = tag
+        
+    return res.json({"articles": get_articles(**filters)})
+```
+
+### Router Middleware Handling
+
+Nexios provides flexibility in how middleware is applied at different levels of your routing system:
+
+#### Global Middleware
+
+Applied to all routes in the application:
+
+```python
+app = get_application()
+app.add_middleware(GlobalMiddleware())
+```
+
+#### Router-Level Middleware
+
+Applied to all routes within a specific router:
+
+```python
+admin_router = Router()
+admin_router.add_middleware(AdminAuthMiddleware())
+```
+
+#### Route-Specific Middleware
+
+Applied only to specific routes:
+
+```python
+@app.get("/sensitive-data", middlewares=[RequireAuthMiddleware])
+async def get_sensitive_data(req, res):
+    return res.json({"data": "Secret!"})
+```
+
+#### Middleware Execution Order
+
+Middleware is executed in the following order:
+
+1. Global middleware (outer → inner)
+2. Router-level middleware (outer → inner)
+3. Route-specific middleware (outer → inner)
+4. Route handler
+5. Route-specific middleware (inner → outer)
+6. Router-level middleware (inner → outer)
+7. Global middleware (inner → outer)
+
+Example demonstrating middleware layers:
+
+```python
+async def logging_middleware(request, response, call_next):
+    print(f"Request to {request.url}")
+    await call_next()
+    print(f"Response from {request.url}: {response.status_code}")
+
+class AuthMiddleware(BaseMiddleware):
+    async def process_request(self, request, response, call_next):
+        if not is_authenticated(request):
+            return response.text("Unauthorized", status_code=401)
+        await call_next()
+
+# Global middleware
+app.add_middleware(logging_middleware)
+
+# Router middleware
+api_router = Router()
+api_router.add_middleware(RateLimitMiddleware)
+
+# Route-specific middleware
+@api_router.post("/users", middlewares=[ValidationMiddleware])
+async def create_user(req, res):
+    # This handler is wrapped with all three layers of middleware
+    # Execution: logging -> rate limiting -> validation -> handler
+    return res.json({"success": True})
+```
+
+### Nested Routing and URL Generation
+
+#### Deep Nested Routers
+
+Nexios allows for deeply nested routers to create a hierarchical API structure:
+
+```python
+app = get_application()
+
+# First level
+api_v1 = Router()
+app.mount_router("/api/v1", api_v1)
+
+# Second level
+users_router = Router()
+api_v1.mount_router("/users", users_router)
+
+# Third level
+profiles_router = Router()
+users_router.mount_router("/profiles", profiles_router)
+
+# Routes will be available at: /api/v1/users/profiles/...
+@profiles_router.get("/{profile_id}")
+async def get_profile(req, res):
+    profile_id = req.path_params.profile_id
+    return res.json({"profile_id": profile_id})
+```
+
+#### URL Generation with Named Routes
+
+Nexios provides a powerful URL generation system that lets you create URLs dynamically based on route names:
+
+```python
+@app.get("/users/{user_id}/posts/{post_id}", name="user_post")
+async def get_user_post(req, res):
+    user_id = req.path_params.user_id
+    post_id = req.path_params.post_id
+    return res.json({"user_id": user_id, "post_id": post_id})
+
+# Generate URLs in other routes
+@app.get("/dashboard")
+async def dashboard(req, res):
+    # Generate URL with parameters
+    post_url = req.app.url_for("user_post", user_id=42, post_id=123)
+    
+    # Returns: '/users/42/posts/123'
+    return res.html(f'<a href="{post_url}">View Post</a>')
+```
+
+#### Applying Prefixes to Multiple Routes
+
+Creating a router with a prefix automatically applies that prefix to all its routes:
+
+```python
+# Create a router with a prefix
+admin_router = Router(prefix="/admin")
+
+# All routes are prefixed with '/admin'
+@admin_router.get("/dashboard")  # /admin/dashboard
+async def admin_dashboard(req, res):
+    return res.text("Admin Dashboard")
+
+@admin_router.get("/users")  # /admin/users
+async def admin_users(req, res):
+    return res.text("Admin Users")
+
+# Mount the router
+app.mount_router(admin_router)  # No need to specify prefix again
+```
+
+#### Router Tagging for OpenAPI
+
+You can apply tags to all routes in a router for better OpenAPI organization:
+
+```python
+# Create a router with tags
+user_router = Router(tags=["users"])
+
+# All routes inherit the "users" tag
+@user_router.get("/")
+async def list_users(req, res):
+    # This route has the "users" tag in OpenAPI docs
+    return res.json([{"id": 1, "name": "John"}])
+
+@user_router.get("/{user_id}", tags=["details"])
+async def get_user(req, res):
+    # This route has both "users" and "details" tags
+    return res.json({"id": req.path_params.user_id, "name": "John"})
+```
+
+This completes the overview of Nexios's robust and flexible routing system, providing you with the tools to build well-structured, scalable APIs.
