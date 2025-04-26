@@ -7,11 +7,11 @@ include = ["nexios/py.typed"]
 name = "nexios"
 version = "2.3.2"
 description = "Nexios is a modern, high-performance ASGI web framework for Python."
-authors = ["Chidebele Dunamis <techwithdunamix@example.com>"]
+authors = ["Chidebele Dunamis <techwithdunamix@gmail.com>"]
 license = "MIT"
 homepage = "https://github.com/nexios-labs/nexios"
 repository = "https://github.com/nexios-labs/nexios"
-documentation = "https://slowapi.readthedocs.io/en/latest/"
+documentation = "http://nexios-labs.gitbook.io/nexios"
 readme = "readme.md"
 keywords = [
     "ASGI",
