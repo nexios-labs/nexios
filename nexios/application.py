@@ -803,17 +803,22 @@ class NexiosApp(object):
     def add_exception_handler(
         self,
         exc_class_or_status_code: Union[typing.Type[Exception], int],
-        handler: HandlerType = None,):
+        handler: HandlerType = None,
+    ):
         if handler is None:
             # If handler is not given yet, return a decorator
             def decorator(func: HandlerType) -> HandlerType:
-                self.exceptions_handler.add_exception_handler(exc_class_or_status_code, func)
+                self.exceptions_handler.add_exception_handler(
+                    exc_class_or_status_code, func
+                )
                 return func
+
             return decorator
         else:
             # Normal direct handler registration
-            self.exceptions_handler.add_exception_handler(exc_class_or_status_code, handler)
-
+            self.exceptions_handler.add_exception_handler(
+                exc_class_or_status_code, handler
+            )
 
     def url_for(self, _name: str, **path_params: Any) -> URLPath:
         return self.router.url_for(_name, **path_params)
