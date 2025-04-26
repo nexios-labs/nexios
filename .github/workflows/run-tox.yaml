@@ -26,7 +26,7 @@ jobs:
         run: |
           # Assuming you're using poetry for project management
           pip install poetry
-          poetry install pyjwt
+          poetry add pyjwt
           poetry install
 
       - name: Install Tox
