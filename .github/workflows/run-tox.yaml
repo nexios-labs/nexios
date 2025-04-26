@@ -25,7 +25,8 @@ jobs:
       - name: Install dependencies from project.toml
         run: |
           pip install poetry
-          poetry install --all-groups
+          run: poetry install --with dev --extras jwt
+
 
       - name: Install Tox
         run: pip install tox
