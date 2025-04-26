@@ -24,7 +24,6 @@ jobs:
 
       - name: Install dependencies from project.toml
         run: |
-          # Assuming you're using poetry for project management
           pip install poetry
           poetry install -dev
 
