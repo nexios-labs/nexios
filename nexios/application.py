@@ -35,7 +35,6 @@ logger = create_logger("nexios")
 class NexiosApp(object):
     def __init__(
         self,
-
         config: Annotated[
             Optional[MakeConfig],
             Doc(
