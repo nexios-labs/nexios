@@ -1,15 +1,15 @@
 # Standard library imports
 from typing import (
-    Any, 
-    AsyncIterator, 
-    Awaitable, 
-    Callable, 
-    Dict, 
-    List, 
-    Optional, 
-    Type, 
-    TypeVar, 
-    Union
+    Any,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
 )
 
 # Third-party imports
@@ -31,15 +31,7 @@ from nexios.openapi.config import OpenAPIConfig
 from nexios.openapi.models import HTTPBearer, Parameter, Path, Schema
 from nexios.structs import URLPath
 from .routing import Router, Routes, WSRouter, WebsocketRoutes
-from .types import (
-    ASGIApp,
-    HandlerType,
-    Message,
-    MiddlewareType,
-    Receive,
-    Scope,
-    Send
-)
+from .types import ASGIApp, HandlerType, Message, MiddlewareType, Receive, Scope, Send
 
 # Constants
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
@@ -251,11 +243,11 @@ class NexiosApp(object):
                 await handler()
             except Exception as e:
                 raise e
-                
+
     async def handle_lifespan(self, receive: Receive, send: Send) -> None:
         """Handle ASGI lifespan protocol events."""
         self._setup_openapi()
-        
+
         try:
             while True:
                 message: Message = await receive()
@@ -263,7 +255,9 @@ class NexiosApp(object):
                     try:
                         if self.lifespan_context:
                             # If a lifespan context manager is provided, use it
-                            self.lifespan_manager: AsyncIterator[None] = self.lifespan_context(self)
+                            self.lifespan_manager: AsyncIterator[None] = (
+                                self.lifespan_context(self)
+                            )
                             await self.lifespan_manager.__aenter__()
                         else:
                             # Otherwise, fall back to the default startup handlers
@@ -392,13 +386,13 @@ class NexiosApp(object):
     def ws_route(self, route: str) -> Callable[[Callable], Callable]:
         """
         Decorator for registering a WebSocket route.
-        
+
         Args:
             route (str): The path pattern for the WebSocket route
-            
+
         Returns:
             Callable: A decorator function that registers the handler
-            
+
         Example:
             ```python
             @app.ws_route("/ws/chat/{room_id}")
@@ -544,15 +538,18 @@ class NexiosApp(object):
         self,
         path: Annotated[
             str,
-            Doc("""
+            Doc(
+                """
                 URL path pattern for the GET endpoint.
                 Supports path parameters using {param} syntax.
                 Example: '/users/{user_id}'
-            """)
+            """
+            ),
         ],
         handler: Annotated[
             Optional[HandlerType],
-            Doc("""
+            Doc(
+                """
                 Async handler function for GET requests.
                 Receives (request, response) and returns response or raw data.
                 
@@ -560,32 +557,40 @@ class NexiosApp(object):
                 async def get_user(request, response):
                     user = await get_user_from_db(request.path_params['user_id'])
                     return response.json(user)
-            """)
+            """
+            ),
         ] = None,
         name: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Unique route identifier for URL generation.
                 Example: 'get-user-by-id'
-            """)
+            """
+            ),
         ] = None,
         summary: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Brief summary for OpenAPI documentation.
                 Example: 'Retrieves a user by ID'
-            """)
+            """
+            ),
         ] = None,
         description: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Detailed description for OpenAPI documentation.
                 Example: 'Returns full user details including profile information'
-            """)
+            """
+            ),
         ] = None,
         responses: Annotated[
             Optional[Dict[int, Any]],
-            Doc("""
+            Doc(
+                """
                 Response models by status code.
                 Example: 
                 {
@@ -593,73 +598,92 @@ class NexiosApp(object):
                     404: {"description": "User not found"},
                     500: {"description": "Server error"}
                 }
-            """)
+            """
+            ),
         ] = None,
         request_model: Annotated[
             Optional[Type[BaseModel]],
-            Doc("""
+            Doc(
+                """
                 Pydantic model for request validation (query params).
                 Example:
                 class UserQuery(BaseModel):
                     active_only: bool = True
                     limit: int = 100
-            """)
+            """
+            ),
         ] = None,
         middlewares: Annotated[
             List[Any],
-            Doc("""
+            Doc(
+                """
                 List of route-specific middleware functions.
                 Example: [auth_required, rate_limit]
-            """)
+            """
+            ),
         ] = [],
         tags: Annotated[
             Optional[List[str]],
-            Doc("""
+            Doc(
+                """
                 OpenAPI tags for grouping related endpoints.
                 Example: ["Users", "Public"]
-            """)
+            """
+            ),
         ] = None,
         security: Annotated[
             Optional[List[Dict[str, List[str]]]],
-            Doc("""
+            Doc(
+                """
                 Security requirements for OpenAPI docs.
                 Example: [{"BearerAuth": []}]
-            """)
+            """
+            ),
         ] = None,
         operation_id: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Unique operation identifier for OpenAPI.
                 Example: 'users.get_by_id'
-            """)
+            """
+            ),
         ] = None,
         deprecated: Annotated[
             bool,
-            Doc("""
+            Doc(
+                """
                 Mark endpoint as deprecated in docs.
                 Example: True
-            """)
+            """
+            ),
         ] = False,
         parameters: Annotated[
             List[Parameter],
-            Doc("""
+            Doc(
+                """
                 Additional OpenAPI parameter definitions.
                 Example: [Parameter(name="fields", in_="query", description="Fields to include")]
-            """)
+            """
+            ),
         ] = [],
         exclude_from_schema: Annotated[
             bool,
-            Doc("""
+            Doc(
+                """
                 Exclude this route from OpenAPI docs.
                 Example: True for internal endpoints
-            """)
+            """
+            ),
         ] = False,
         **kwargs: Annotated[
             Dict[str, Any],
-            Doc("""
+            Doc(
+                """
                 Additional route metadata.
                 Example: {"x-internal": True}
-            """)
+            """
+            ),
         ]
     ) -> Callable[..., Any]:
         """
@@ -701,7 +725,7 @@ class NexiosApp(object):
                 )
                 return response.json(users)
         """
-       
+
         return self.route(
             path=path,
             handler=handler,
@@ -720,124 +744,154 @@ class NexiosApp(object):
             exclude_from_schema=exclude_from_schema,
             **kwargs
         )
-           
+
     def post(
         self,
         path: Annotated[
             str,
-            Doc("""
+            Doc(
+                """
                 URL path pattern for the POST endpoint.
                 Example: '/api/v1/users'
-            """)
+            """
+            ),
         ],
         handler: Annotated[
             Optional[HandlerType],
-            Doc("""
+            Doc(
+                """
                 Async handler function for POST requests.
                 Example:
                 async def create_user(request, response):
                     user_data = request.json()
                     return response.json(user_data, status=201)
-            """)
+            """
+            ),
         ] = None,
         name: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Unique route name for URL generation.
                 Example: 'api-v1-create-user'
-            """)
+            """
+            ),
         ] = None,
         summary: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Brief endpoint summary.
                 Example: 'Create new user'
-            """)
+            """
+            ),
         ] = None,
         description: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Detailed endpoint description.
                 Example: 'Creates new user with provided data'
-            """)
+            """
+            ),
         ] = None,
         responses: Annotated[
             Optional[Dict[int, Any]],
-            Doc("""
+            Doc(
+                """
                 Response schemas by status code.
                 Example: {
                     201: UserSchema,
                     400: {"description": "Invalid input"},
                     409: {"description": "User already exists"}
                 }
-            """)
+            """
+            ),
         ] = None,
         request_model: Annotated[
             Optional[Type[BaseModel]],
-            Doc("""
+            Doc(
+                """
                 Model for request body validation.
                 Example:
                 class UserCreate(BaseModel):
                     username: str
                     email: EmailStr
                     password: str
-            """)
+            """
+            ),
         ] = None,
         middlewares: Annotated[
             List[Any],
-            Doc("""
+            Doc(
+                """
                 Route-specific middleware.
                 Example: [rate_limit(10), validate_content_type('json')]
-            """)
+            """
+            ),
         ] = [],
         tags: Annotated[
             Optional[List[str]],
-            Doc("""
+            Doc(
+                """
                 OpenAPI tags for grouping.
                 Example: ["User Management"]
-            """)
+            """
+            ),
         ] = None,
         security: Annotated[
             Optional[List[Dict[str, List[str]]]],
-            Doc("""
+            Doc(
+                """
                 Security requirements.
                 Example: [{"BearerAuth": []}]
-            """)
+            """
+            ),
         ] = None,
         operation_id: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Unique operation ID.
                 Example: 'createUser'
-            """)
+            """
+            ),
         ] = None,
         deprecated: Annotated[
             bool,
-            Doc("""
+            Doc(
+                """
                 Mark as deprecated.
                 Example: False
-            """)
+            """
+            ),
         ] = False,
         parameters: Annotated[
             List[Parameter],
-            Doc("""
+            Doc(
+                """
                 Additional parameters.
                 Example: [Parameter(name="X-Request-ID", in_="header")]
-            """)
+            """
+            ),
         ] = [],
         exclude_from_schema: Annotated[
             bool,
-            Doc("""
+            Doc(
+                """
                 Hide from OpenAPI docs.
                 Example: False
-            """)
+            """
+            ),
         ] = False,
         **kwargs: Annotated[
             Dict[str, Any],
-            Doc("""
+            Doc(
+                """
                 Additional metadata.
                 Example: {"x-audit-log": True}
-            """)
+            """
+            ),
         ]
     ) -> Callable[..., Any]:
         """
@@ -895,117 +949,147 @@ class NexiosApp(object):
         self,
         path: Annotated[
             str,
-            Doc("""
+            Doc(
+                """
                 URL path pattern for the DELETE endpoint.
                 Example: '/api/v1/users/{id}'
-            """)
+            """
+            ),
         ],
         handler: Annotated[
             Optional[HandlerType],
-            Doc("""
+            Doc(
+                """
                 Async handler function for DELETE requests.
                 Example:
                 async def delete_user(request, response):
                     user_id = request.path_params['id']
                     return response.json({"deleted": user_id})
-            """)
+            """
+            ),
         ] = None,
         name: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Unique route name for URL generation.
                 Example: 'api-v1-delete-user'
-            """)
+            """
+            ),
         ] = None,
         summary: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Brief endpoint summary.
                 Example: 'Delete user account'
-            """)
+            """
+            ),
         ] = None,
         description: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Detailed endpoint description.
                 Example: 'Permanently deletes user account and all associated data'
-            """)
+            """
+            ),
         ] = None,
         responses: Annotated[
             Optional[Dict[int, Any]],
-            Doc("""
+            Doc(
+                """
                 Response schemas by status code.
                 Example: {
                     204: None,
                     404: {"description": "User not found"},
                     403: {"description": "Forbidden"}
                 }
-            """)
+            """
+            ),
         ] = None,
         request_model: Annotated[
             Optional[Type[BaseModel]],
-            Doc("""
+            Doc(
+                """
                 Model for request validation.
                 Example:
                 class DeleteConfirmation(BaseModel):
                     confirm: bool
-            """)
+            """
+            ),
         ] = None,
         middlewares: Annotated[
             List[Any],
-            Doc("""
+            Doc(
+                """
                 Route-specific middleware.
                 Example: [admin_required, confirm_action]
-            """)
+            """
+            ),
         ] = [],
         tags: Annotated[
             Optional[List[str]],
-            Doc("""
+            Doc(
+                """
                 OpenAPI tags for grouping.
                 Example: ["User Management"]
-            """)
+            """
+            ),
         ] = None,
         security: Annotated[
             Optional[List[Dict[str, List[str]]]],
-            Doc("""
+            Doc(
+                """
                 Security requirements.
                 Example: [{"BearerAuth": []}]
-            """)
+            """
+            ),
         ] = None,
         operation_id: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Unique operation ID.
                 Example: 'deleteUser'
-            """)
+            """
+            ),
         ] = None,
         deprecated: Annotated[
             bool,
-            Doc("""
+            Doc(
+                """
                 Mark as deprecated.
                 Example: False
-            """)
+            """
+            ),
         ] = False,
         parameters: Annotated[
             List[Parameter],
-            Doc("""
+            Doc(
+                """
                 Additional parameters.
                 Example: [Parameter(name="confirm", in_="query")]
-            """)
+            """
+            ),
         ] = [],
         exclude_from_schema: Annotated[
             bool,
-            Doc("""
+            Doc(
+                """
                 Hide from OpenAPI docs.
                 Example: False
-            """)
+            """
+            ),
         ] = False,
         **kwargs: Annotated[
             Dict[str, Any],
-            Doc("""
+            Doc(
+                """
                 Additional metadata.
                 Example: {"x-destructive": True}
-            """)
+            """
+            ),
         ]
     ) -> Callable[..., Any]:
         """
@@ -1061,118 +1145,148 @@ class NexiosApp(object):
         self,
         path: Annotated[
             str,
-            Doc("""
+            Doc(
+                """
                 URL path pattern for the PUT endpoint.
                 Example: '/api/v1/users/{id}'
-            """)
+            """
+            ),
         ],
         handler: Annotated[
             Optional[HandlerType],
-            Doc("""
+            Doc(
+                """
                 Async handler function for PUT requests.
                 Example:
                 async def update_user(request, response):
                     user_id = request.path_params['id']
                     return response.json({"updated": user_id})
-            """)
+            """
+            ),
         ] = None,
         name: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Unique route name for URL generation.
                 Example: 'api-v1-update-user'
-            """)
+            """
+            ),
         ] = None,
         summary: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Brief endpoint summary.
                 Example: 'Update user details'
-            """)
+            """
+            ),
         ] = None,
         description: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Detailed endpoint description.
                 Example: 'Full update of user resource'
-            """)
+            """
+            ),
         ] = None,
         responses: Annotated[
             Optional[Dict[int, Any]],
-            Doc("""
+            Doc(
+                """
                 Response schemas by status code.
                 Example: {
                     200: UserSchema,
                     400: {"description": "Invalid input"},
                     404: {"description": "User not found"}
                 }
-            """)
+            """
+            ),
         ] = None,
         request_model: Annotated[
             Optional[Type[BaseModel]],
-            Doc("""
+            Doc(
+                """
                 Model for request body validation.
                 Example:
                 class UserUpdate(BaseModel):
                     email: Optional[EmailStr]
                     password: Optional[str]
-            """)
+            """
+            ),
         ] = None,
         middlewares: Annotated[
             List[Any],
-            Doc("""
+            Doc(
+                """
                 Route-specific middleware.
                 Example: [owner_required, validate_etag]
-            """)
+            """
+            ),
         ] = [],
         tags: Annotated[
             Optional[List[str]],
-            Doc("""
+            Doc(
+                """
                 OpenAPI tags for grouping.
                 Example: ["User Management"]
-            """)
+            """
+            ),
         ] = None,
         security: Annotated[
             Optional[List[Dict[str, List[str]]]],
-            Doc("""
+            Doc(
+                """
                 Security requirements.
                 Example: [{"BearerAuth": []}]
-            """)
+            """
+            ),
         ] = None,
         operation_id: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Unique operation ID.
                 Example: 'updateUser'
-            """)
+            """
+            ),
         ] = None,
         deprecated: Annotated[
             bool,
-            Doc("""
+            Doc(
+                """
                 Mark as deprecated.
                 Example: False
-            """)
+            """
+            ),
         ] = False,
         parameters: Annotated[
             List[Parameter],
-            Doc("""
+            Doc(
+                """
                 Additional parameters.
                 Example: [Parameter(name="If-Match", in_="header")]
-            """)
+            """
+            ),
         ] = [],
         exclude_from_schema: Annotated[
             bool,
-            Doc("""
+            Doc(
+                """
                 Hide from OpenAPI docs.
                 Example: False
-            """)
+            """
+            ),
         ] = False,
         **kwargs: Annotated[
             Dict[str, Any],
-            Doc("""
+            Doc(
+                """
                 Additional metadata.
                 Example: {"x-idempotent": True}
-            """)
+            """
+            ),
         ]
     ) -> Callable[..., Any]:
         """
@@ -1230,121 +1344,151 @@ class NexiosApp(object):
         )
 
     def patch(
-    self,
+        self,
         path: Annotated[
             str,
-            Doc("""
+            Doc(
+                """
                 URL path pattern for the PATCH endpoint.
                 Example: '/api/v1/users/{id}'
-            """)
+            """
+            ),
         ],
         handler: Annotated[
             Optional[HandlerType],
-            Doc("""
+            Doc(
+                """
                 Async handler function for PATCH requests.
                 Example:
                 async def partial_update_user(request, response):
                     user_id = request.path_params['id']
                     return response.json({"updated": user_id})
-            """)
+            """
+            ),
         ] = None,
         name: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Unique route name for URL generation.
                 Example: 'api-v1-partial-update-user'
-            """)
+            """
+            ),
         ] = None,
         summary: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Brief endpoint summary.
                 Example: 'Partially update user details'
-            """)
+            """
+            ),
         ] = None,
         description: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Detailed endpoint description.
                 Example: 'Partial update of user resource'
-            """)
+            """
+            ),
         ] = None,
         responses: Annotated[
             Optional[Dict[int, Any]],
-            Doc("""
+            Doc(
+                """
                 Response schemas by status code.
                 Example: {
                     200: UserSchema,
                     400: {"description": "Invalid input"},
                     404: {"description": "User not found"}
                 }
-            """)
+            """
+            ),
         ] = None,
         request_model: Annotated[
             Optional[Type[BaseModel]],
-            Doc("""
+            Doc(
+                """
                 Model for request body validation.
                 Example:
                 class UserPatch(BaseModel):
                     email: Optional[EmailStr] = None
                     password: Optional[str] = None
-            """)
+            """
+            ),
         ] = None,
         middlewares: Annotated[
             List[Any],
-            Doc("""
+            Doc(
+                """
                 Route-specific middleware.
                 Example: [owner_required, validate_patch]
-            """)
+            """
+            ),
         ] = [],
         tags: Annotated[
             Optional[List[str]],
-            Doc("""
+            Doc(
+                """
                 OpenAPI tags for grouping.
                 Example: ["User Management"]
-            """)
+            """
+            ),
         ] = None,
         security: Annotated[
             Optional[List[Dict[str, List[str]]]],
-            Doc("""
+            Doc(
+                """
                 Security requirements.
                 Example: [{"BearerAuth": []}]
-            """)
+            """
+            ),
         ] = None,
         operation_id: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Unique operation ID.
                 Example: 'partialUpdateUser'
-            """)
+            """
+            ),
         ] = None,
         deprecated: Annotated[
             bool,
-            Doc("""
+            Doc(
+                """
                 Mark as deprecated.
                 Example: False
-            """)
+            """
+            ),
         ] = False,
         parameters: Annotated[
             List[Parameter],
-            Doc("""
+            Doc(
+                """
                 Additional parameters.
                 Example: [Parameter(name="fields", in_="query")]
-            """)
+            """
+            ),
         ] = [],
         exclude_from_schema: Annotated[
             bool,
-            Doc("""
+            Doc(
+                """
                 Hide from OpenAPI docs.
                 Example: False
-            """)
+            """
+            ),
         ] = False,
         **kwargs: Annotated[
             Dict[str, Any],
-            Doc("""
+            Doc(
+                """
                 Additional metadata.
                 Example: {"x-partial-update": True}
-            """)
+            """
+            ),
         ]
     ) -> Callable[..., Any]:
         """
@@ -1375,7 +1519,7 @@ class NexiosApp(object):
             @router.patch("/profile")
             async def update_profile(request, response):
                 allowed_fields = {'bio', 'avatar_url'}
-                updates = {k: v for k, v in request.json().items() 
+                updates = {k: v for k, v in request.json().items()
                         if k in allowed_fields}
                 await Profile.update(request.user.id, **updates)
                 return response.json(updates)
@@ -1403,116 +1547,146 @@ class NexiosApp(object):
         self,
         path: Annotated[
             str,
-            Doc("""
+            Doc(
+                """
                 URL path pattern for the OPTIONS endpoint.
                 Example: '/api/v1/users'
-            """)
+            """
+            ),
         ],
         handler: Annotated[
             Optional[HandlerType],
-            Doc("""
+            Doc(
+                """
                 Async handler function for OPTIONS requests.
                 Example:
                 async def user_options(request, response):
                     response.headers['Allow'] = 'GET, POST, OPTIONS'
                     return response
-            """)
+            """
+            ),
         ] = None,
         name: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Unique route name for URL generation.
                 Example: 'api-v1-user-options'
-            """)
+            """
+            ),
         ] = None,
         summary: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Brief endpoint summary.
                 Example: 'Get supported operations'
-            """)
+            """
+            ),
         ] = None,
         description: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Detailed endpoint description.
                 Example: 'Returns supported HTTP methods and CORS headers'
-            """)
+            """
+            ),
         ] = None,
         responses: Annotated[
             Optional[Dict[int, Any]],
-            Doc("""
+            Doc(
+                """
                 Response schemas by status code.
                 Example: {
                     200: None,
                     204: None
                 }
-            """)
+            """
+            ),
         ] = None,
         request_model: Annotated[
             Optional[Type[BaseModel]],
-            Doc("""
+            Doc(
+                """
                 Model for request validation.
                 Example:
                 class OptionsQuery(BaseModel):
                     detailed: bool = False
-            """)
+            """
+            ),
         ] = None,
         middlewares: Annotated[
             List[Any],
-            Doc("""
+            Doc(
+                """
                 Route-specific middleware.
                 Example: [cors_middleware]
-            """)
+            """
+            ),
         ] = [],
         tags: Annotated[
             Optional[List[str]],
-            Doc("""
+            Doc(
+                """
                 OpenAPI tags for grouping.
                 Example: ["CORS"]
-            """)
+            """
+            ),
         ] = None,
         security: Annotated[
             Optional[List[Dict[str, List[str]]]],
-            Doc("""
+            Doc(
+                """
                 Security requirements.
                 Example: []
-            """)
+            """
+            ),
         ] = None,
         operation_id: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Unique operation ID.
                 Example: 'userOptions'
-            """)
+            """
+            ),
         ] = None,
         deprecated: Annotated[
             bool,
-            Doc("""
+            Doc(
+                """
                 Mark as deprecated.
                 Example: False
-            """)
+            """
+            ),
         ] = False,
         parameters: Annotated[
             List[Parameter],
-            Doc("""
+            Doc(
+                """
                 Additional parameters.
                 Example: [Parameter(name="Origin", in_="header")]
-            """)
+            """
+            ),
         ] = [],
         exclude_from_schema: Annotated[
             bool,
-            Doc("""
+            Doc(
+                """
                 Hide from OpenAPI docs.
                 Example: True
-            """)
+            """
+            ),
         ] = False,
         **kwargs: Annotated[
             Dict[str, Any],
-            Doc("""
+            Doc(
+                """
                 Additional metadata.
                 Example: {"x-cors": True}
-            """)
+            """
+            ),
         ]
     ) -> Callable[..., Any]:
         """
@@ -1567,116 +1741,146 @@ class NexiosApp(object):
         self,
         path: Annotated[
             str,
-            Doc("""
+            Doc(
+                """
                 URL path pattern for the HEAD endpoint.
                 Example: '/api/v1/resources/{id}'
-            """)
+            """
+            ),
         ],
         handler: Annotated[
             Optional[HandlerType],
-            Doc("""
+            Doc(
+                """
                 Async handler function for HEAD requests.
                 Example:
                 async def check_resource(request, response):
                     exists = await Resource.exists(request.path_params['id'])
                     return response.status(200 if exists else 404)
-            """)
+            """
+            ),
         ] = None,
         name: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Unique route name for URL generation.
                 Example: 'api-v1-check-resource'
-            """)
+            """
+            ),
         ] = None,
         summary: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Brief endpoint summary.
                 Example: 'Check resource existence'
-            """)
+            """
+            ),
         ] = None,
         description: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Detailed endpoint description.
                 Example: 'Returns headers only to check if resource exists'
-            """)
+            """
+            ),
         ] = None,
         responses: Annotated[
             Optional[Dict[int, Any]],
-            Doc("""
+            Doc(
+                """
                 Response schemas by status code.
                 Example: {
                     200: None,
                     404: None
                 }
-            """)
+            """
+            ),
         ] = None,
         request_model: Annotated[
             Optional[Type[BaseModel]],
-            Doc("""
+            Doc(
+                """
                 Model for request validation.
                 Example:
                 class ResourceCheck(BaseModel):
                     check_children: bool = False
-            """)
+            """
+            ),
         ] = None,
         middlewares: Annotated[
             List[Any],
-            Doc("""
+            Doc(
+                """
                 Route-specific middleware.
                 Example: [cache_control('public')]
-            """)
+            """
+            ),
         ] = [],
         tags: Annotated[
             Optional[List[str]],
-            Doc("""
+            Doc(
+                """
                 OpenAPI tags for grouping.
                 Example: ["Resource Management"]
-            """)
+            """
+            ),
         ] = None,
         security: Annotated[
             Optional[List[Dict[str, List[str]]]],
-            Doc("""
+            Doc(
+                """
                 Security requirements.
                 Example: [{"ApiKeyAuth": []}]
-            """)
+            """
+            ),
         ] = None,
         operation_id: Annotated[
             Optional[str],
-            Doc("""
+            Doc(
+                """
                 Unique operation ID.
                 Example: 'checkResource'
-            """)
+            """
+            ),
         ] = None,
         deprecated: Annotated[
             bool,
-            Doc("""
+            Doc(
+                """
                 Mark as deprecated.
                 Example: False
-            """)
+            """
+            ),
         ] = False,
         parameters: Annotated[
             List[Parameter],
-            Doc("""
+            Doc(
+                """
                 Additional parameters.
                 Example: [Parameter(name="X-Check-Type", in_="header")]
-            """)
+            """
+            ),
         ] = [],
         exclude_from_schema: Annotated[
             bool,
-            Doc("""
+            Doc(
+                """
                 Hide from OpenAPI docs.
                 Example: False
-            """)
+            """
+            ),
         ] = False,
         **kwargs: Annotated[
             Dict[str, Any],
-            Doc("""
+            Doc(
+                """
                 Additional metadata.
                 Example: {"x-head-only": True}
-            """)
+            """
+            ),
         ]
     ) -> Callable[..., Any]:
         """
