@@ -186,7 +186,6 @@ class BaseSessionInterface:
     def __str__(self) -> str:
         return f"<Sesion { self._session_cache} >"
 
-
     def __del__(self) -> None:
         self.clear()
         self.session_key = None
