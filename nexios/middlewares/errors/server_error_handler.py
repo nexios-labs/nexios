@@ -344,7 +344,7 @@ class ServerErrorMiddleware(BaseMiddleware):
         self.current_request = request
         # Get debug mode from config
         self.debug = get_config().debug or True
-        
+
         try:
             return await next_middleware()  # type: ignore
         except Exception as exc:
@@ -389,23 +389,23 @@ class ServerErrorMiddleware(BaseMiddleware):
         """Format local variables for display in the error template."""
         if not frame_locals:
             return ""
-            
+
         locals_html = "<div class='stack-locals'><h4>Local Variables:</h4>\n"
         for var_name, var_value in frame_locals.items():
             try:
                 # Skip internal variables
-                if var_name.startswith('__') and var_name.endswith('__'):
+                if var_name.startswith("__") and var_name.endswith("__"):
                     continue
-                    
+
                 # Format value safely
                 value_str = html.escape(repr(var_value))
                 if len(value_str) > 500:  # Truncate long values
                     value_str = value_str[:500] + "..."
-                    
+
                 locals_html += f"<div><span style='color: #f39c12;'>{html.escape(var_name)}</span> = {value_str}</div>\n"
             except Exception:
                 locals_html += f"<div><span style='color: #f39c12;'>{html.escape(var_name)}</span> = <error displaying value></div>\n"
-        
+
         locals_html += "</div>"
         return locals_html
 
@@ -419,9 +419,11 @@ class ServerErrorMiddleware(BaseMiddleware):
             )
             for index, line in enumerate(frame.code_context or [])  # type:ignore
         )
-        
+
         # Format local variables if available
-        locals_html = self._format_locals(frame.frame.f_locals) if hasattr(frame, 'frame') else ""
+        locals_html = (
+            self._format_locals(frame.frame.f_locals) if hasattr(frame, "frame") else ""
+        )
 
         values: typing.Dict[str, typing.Any] = {
             "frame_filename": html.escape(frame.filename),
@@ -430,17 +432,18 @@ class ServerErrorMiddleware(BaseMiddleware):
             "code_context": code_context,
             "collapsed": "collapsed" if is_collapsed else "",
             "collapse_button": "+" if is_collapsed else "&#8210;",
-            "locals_html": locals_html
+            "locals_html": locals_html,
         }
         return FRAME_TEMPLATE.format(**values)
 
     def generate_plain_text(self, exc: Exception) -> str:
         return "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+
     def _format_request_info(self, request: Request) -> str:
         """Format request information for display in the error template."""
         method = request.method
         url = request.url
-        
+
         # General request info
         html = f"""
         <div class="info-grid">
@@ -468,7 +471,7 @@ class ServerErrorMiddleware(BaseMiddleware):
                 <h3>Headers</h3>
                 <table class="key-value-table">
         """
-        
+
         # Add headers
         for name, value in request.headers.items():
             html += f"""
@@ -477,21 +480,21 @@ class ServerErrorMiddleware(BaseMiddleware):
                         <td>{html.escape(value)}</td>
                     </tr>
             """
-        
+
         html += """
                 </table>
             </div>
         </div>
         """
-        
+
         # Add query parameters if available
-        if hasattr(request, 'query_params') and request.query_params:
+        if hasattr(request, "query_params") and request.query_params:
             html += """
             <div class="info-block">
                 <h3>Query Parameters</h3>
                 <table class="key-value-table">
             """
-            
+
             for name, value in request.query_params.items():
                 html += f"""
                     <tr>
@@ -499,18 +502,18 @@ class ServerErrorMiddleware(BaseMiddleware):
                         <td>{html.escape(str(value))}</td>
                     </tr>
                 """
-            
+
             html += """
                 </table>
             </div>
             """
-        
+
         return html
-    
+
     def _format_system_info(self) -> str:
         """Format system information for display in the error template."""
         python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-        
+
         html = f"""
         <div class="info-grid">
             <div class="info-block">
@@ -576,9 +579,9 @@ class ServerErrorMiddleware(BaseMiddleware):
             </div>
         </div>
         """
-        
+
         return html
-    
+
     def _generate_error_json(self, exc: Exception, exc_type_str: str) -> str:
         """Generate a JSON representation of the error for debugging."""
         error_data = {
@@ -591,95 +594,120 @@ class ServerErrorMiddleware(BaseMiddleware):
                 "nexios_version": nexios_version,
                 "python_version": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
                 "platform": platform.platform(),
-                "debug_mode": self.debug
+                "debug_mode": self.debug,
             },
             "timestamp": datetime.datetime.now().isoformat(),
-            "error_id": str(uuid.uuid4())
+            "error_id": str(uuid.uuid4()),
         }
-        
+
         try:
             return json.dumps(error_data, indent=2)
         except:
             # If JSON serialization fails, provide a simplified version
-            return json.dumps({
-                "error": {
-                    "type": exc_type_str,
-                    "message": str(exc),
-                    "note": "Full error data could not be serialized to JSON"
-                }
-            }, indent=2)
-    
+            return json.dumps(
+                {
+                    "error": {
+                        "type": exc_type_str,
+                        "message": str(exc),
+                        "note": "Full error data could not be serialized to JSON",
+                    }
+                },
+                indent=2,
+            )
+
     def _generate_debugging_suggestions(self, exc: Exception, exc_type_str: str) -> str:
         """Generate debugging suggestions based on the error type."""
         suggestions = []
-        
+
         # Common error types and suggestions
         if "ImportError" in exc_type_str or "ModuleNotFoundError" in exc_type_str:
-            suggestions.append({
-                "title": "Missing Module",
-                "text": "This error typically occurs when Python cannot find a required module. Check that all dependencies are installed correctly. Try running 'pip install -r requirements.txt'."
-            })
-        
+            suggestions.append(
+                {
+                    "title": "Missing Module",
+                    "text": "This error typically occurs when Python cannot find a required module. Check that all dependencies are installed correctly. Try running 'pip install -r requirements.txt'.",
+                }
+            )
+
         elif "SyntaxError" in exc_type_str:
-            suggestions.append({
-                "title": "Syntax Error",
-                "text": "There's a syntax error in your code. Check the line indicated in the traceback for mismatched parentheses, missing colons, or incorrect indentation."
-            })
-        
+            suggestions.append(
+                {
+                    "title": "Syntax Error",
+                    "text": "There's a syntax error in your code. Check the line indicated in the traceback for mismatched parentheses, missing colons, or incorrect indentation.",
+                }
+            )
+
         elif "AttributeError" in exc_type_str:
-            suggestions.append({
-                "title": "Attribute Error",
-                "text": "You're trying to access an attribute or method that doesn't exist on the object. Check for typos or make sure the object is of the expected type before accessing its attributes."
-            })
-        
+            suggestions.append(
+                {
+                    "title": "Attribute Error",
+                    "text": "You're trying to access an attribute or method that doesn't exist on the object. Check for typos or make sure the object is of the expected type before accessing its attributes.",
+                }
+            )
+
         elif "KeyError" in exc_type_str:
-            suggestions.append({
-                "title": "Key Error",
-                "text": "You're trying to access a dictionary key that doesn't exist. Make sure the key exists before trying to access it, or use dictionary.get(key) method with a default value."
-            })
-        
+            suggestions.append(
+                {
+                    "title": "Key Error",
+                    "text": "You're trying to access a dictionary key that doesn't exist. Make sure the key exists before trying to access it, or use dictionary.get(key) method with a default value.",
+                }
+            )
+
         elif "NameError" in exc_type_str:
-            suggestions.append({
-                "title": "Name Error",
-                "text": "You're trying to use a variable that hasn't been defined. Check for typos or make sure to define the variable before using it."
-            })
-        
+            suggestions.append(
+                {
+                    "title": "Name Error",
+                    "text": "You're trying to use a variable that hasn't been defined. Check for typos or make sure to define the variable before using it.",
+                }
+            )
+
         elif "TypeError" in exc_type_str:
-            suggestions.append({
-                "title": "Type Error",
-                "text": "An operation is being performed on an object of an inappropriate type. Check the types of your variables and make sure they match what the operation expects."
-            })
-        
+            suggestions.append(
+                {
+                    "title": "Type Error",
+                    "text": "An operation is being performed on an object of an inappropriate type. Check the types of your variables and make sure they match what the operation expects.",
+                }
+            )
+
         elif "ValueError" in exc_type_str:
-            suggestions.append({
-                "title": "Value Error",
-                "text": "An operation is receiving an argument with the right type but an inappropriate value. Check the value of the arguments you're passing to functions."
-            })
-        
+            suggestions.append(
+                {
+                    "title": "Value Error",
+                    "text": "An operation is receiving an argument with the right type but an inappropriate value. Check the value of the arguments you're passing to functions.",
+                }
+            )
+
         elif "IndexError" in exc_type_str:
-            suggestions.append({
-                "title": "Index Error",
-                "text": "You're trying to access an index that's out of range. Make sure the index is valid before accessing it, or use a try/except block to handle the error."
-            })
-        
+            suggestions.append(
+                {
+                    "title": "Index Error",
+                    "text": "You're trying to access an index that's out of range. Make sure the index is valid before accessing it, or use a try/except block to handle the error.",
+                }
+            )
+
         elif "FileNotFoundError" in exc_type_str:
-            suggestions.append({
-                "title": "File Not Found",
-                "text": "The system cannot find the file specified. Check the file path and make sure the file exists."
-            })
-        
+            suggestions.append(
+                {
+                    "title": "File Not Found",
+                    "text": "The system cannot find the file specified. Check the file path and make sure the file exists.",
+                }
+            )
+
         elif "PermissionError" in exc_type_str:
-            suggestions.append({
-                "title": "Permission Error",
-                "text": "You don't have permission to access the specified file or directory. Check the file permissions or run the application with higher privileges."
-            })
-            
+            suggestions.append(
+                {
+                    "title": "Permission Error",
+                    "text": "You don't have permission to access the specified file or directory. Check the file permissions or run the application with higher privileges.",
+                }
+            )
+
         # Add a general debugging strategy for all errors
-        suggestions.append({
-            "title": "General Debugging Steps",
-            "text": "1. Check the traceback to find where the error occurred.<br>2. Review the variables at that point using the local variables section.<br>3. Add logging statements around the error to track variable values.<br>4. Use a debugger to step through the code execution."
-        })
-        
+        suggestions.append(
+            {
+                "title": "General Debugging Steps",
+                "text": "1. Check the traceback to find where the error occurred.<br>2. Review the variables at that point using the local variables section.<br>3. Add logging statements around the error to track variable values.<br>4. Use a debugger to step through the code execution.",
+            }
+        )
+
         # Format the suggestions as HTML
         html = ""
         for suggestion in suggestions:
@@ -689,7 +717,7 @@ class ServerErrorMiddleware(BaseMiddleware):
                 <div>{suggestion["text"]}</div>
             </div>
             """
-            
+
         return html
 
     def generate_html(self, exc: Exception, limit: int = 7) -> str:
@@ -697,21 +725,21 @@ class ServerErrorMiddleware(BaseMiddleware):
         # Generate a unique error ID for tracking
         error_id = str(uuid.uuid4())
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
+
         # Get exception information
         traceback_obj = traceback.TracebackException.from_exception(
             exc, capture_locals=True
         )
-        
+
         # Get exception type name
         if sys.version_info >= (3, 13):
             exc_type_str = traceback_obj.exc_type_str
         else:
             exc_type_str = traceback_obj.exc_type.__name__
-            
+
         # Format the error message
         error = f"{html.escape(exc_type_str)}: {html.escape(str(traceback_obj))}"
-        
+
         # Generate traceback HTML
         exc_html = ""
         is_collapsed = False
@@ -721,31 +749,35 @@ class ServerErrorMiddleware(BaseMiddleware):
             for frame in reversed(frames):
                 exc_html += self.generate_frame_html(frame, is_collapsed)
                 is_collapsed = True
-        
+
         # Get request information if available
         try:
-            request_info = self._format_request_info(getattr(self, 'current_request', Request({})))
+            request_info = self._format_request_info(
+                getattr(self, "current_request", Request({}))
+            )
         except Exception as e:
             request_info = f"<div class='info-block'><h3>Error retrieving request information</h3><p>{html.escape(str(e))}</p></div>"
-        
+
         # Get system information
         try:
             system_info = self._format_system_info()
         except Exception as e:
             system_info = f"<div class='info-block'><h3>Error retrieving system information</h3><p>{html.escape(str(e))}</p></div>"
-        
+
         # Generate debugging suggestions
         try:
-            debugging_suggestions = self._generate_debugging_suggestions(exc, exc_type_str)
+            debugging_suggestions = self._generate_debugging_suggestions(
+                exc, exc_type_str
+            )
         except Exception as e:
             debugging_suggestions = f"<div class='info-block'><h3>Error generating debugging suggestions</h3><p>{html.escape(str(e))}</p></div>"
-        
+
         # Generate JSON representation of the error
         try:
             error_json = html.escape(self._generate_error_json(exc, exc_type_str))
         except Exception as e:
             error_json = html.escape(f"Error generating JSON data: {str(e)}")
-        
+
         # Put everything together in the template
         return TEMPLATE.format(
             styles=STYLES,
@@ -758,5 +790,5 @@ class ServerErrorMiddleware(BaseMiddleware):
             request_info=request_info,
             system_info=system_info,
             debugging_suggestions=debugging_suggestions,
-            error_json=error_json
+            error_json=error_json,
         )
