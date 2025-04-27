@@ -53,6 +53,34 @@ To install Nexios using `pip`, the most common Python package manager, run the f
 pip install nexios
 ```
 
+## CLI Usage
+
+Nexios includes a powerful CLI tool to help you bootstrap projects and run development servers.
+
+### Creating a New Project
+
+```bash
+nexios new my_project
+```
+
+Options:
+* `--output-dir, -o`: Directory where the project should be created (default: current directory)
+* `--title`: Display title for the project (defaults to project name)
+
+### Running the Development Server
+
+```bash
+nexios run
+```
+
+Options:
+* `--app, -a`: Application import path (default: main:app)
+* `--host`: Host to bind the server to (default: 127.0.0.1)
+* `--port, -p`: Port to bind the server to (default: 4000)
+* `--reload/--no-reload`: Enable/disable auto-reload (default: enabled)
+* `--log-level`: Log level for the server (default: info)
+* `--workers`: Number of worker processes (default: 1)
+
 ### 2. **Using `pipenv`** (Python Dependency Management)
 
 If you're managing your project's dependencies with `pipenv`, use the following command:

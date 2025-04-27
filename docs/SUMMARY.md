@@ -5,9 +5,13 @@
 - [Philosophy](philosophy.md)
 - [😃 basic example](basic-example.md)
 
-## Fundamentals
+## Getting Started
 
 - [Installation Guide](fundamentals/installation-guide.md)
+- [🛠️ CLI Tools](fundamentals/cli-tools.md)
+
+## Fundamentals
+
 - [Routing](fundamentals/routing.md)
 - [Managing Config](managing_config.md)
 - [Middleware](fundamentals/middleware.md)

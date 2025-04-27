@@ -14,18 +14,19 @@ Note: Adjustments have been made for dependency injection, custom error handling
 and simplified routing mechanisms to better suit the Nexios framework architecture.
 """
 
-from .application import NexiosApp
-from .session.middleware import SessionMiddleware
-from .middlewares.csrf import CSRFMiddleware
-from .config.base import MakeConfig
-from .config import set_config, DEFAULT_CONFIG
-from .routing import Router  # type:ignore
-from .middlewares.cors import CORSMiddleware
-from typing import Optional, Callable, AsyncIterator
-from .application import NexiosApp
-from .types import ExceptionHandlerType
+from typing import Optional, Callable, AsyncIterator, List
+
 from typing_extensions import Doc, Annotated
-from nexios.middlewares.core import wrap_middleware
+
+from .application import NexiosApp
+from .config import set_config, DEFAULT_CONFIG
+from .config.base import MakeConfig
+from .middlewares.core import wrap_middleware
+from .middlewares.cors import CORSMiddleware
+from .middlewares.csrf import CSRFMiddleware
+from .routing import Router  # type:ignore
+from .session.middleware import SessionMiddleware
+from .types import ExceptionHandlerType
 
 
 def get_application(
@@ -41,6 +42,30 @@ def get_application(
                     """
         ),
     ] = DEFAULT_CONFIG,
+    title: Annotated[
+        Optional[str],
+        Doc(
+            """
+                    The title of the API, used in the OpenAPI documentation.
+                    """
+        ),
+    ] = None,
+    version: Annotated[
+        Optional[str],
+        Doc(
+            """
+                    The version of the API, used in the OpenAPI documentation.
+                    """
+        ),
+    ] = None,
+    description: Annotated[
+        Optional[str],
+        Doc(
+            """
+                    A brief description of the API, used in the OpenAPI documentation.
+                    """
+        ),
+    ] = None,
     server_error_handler: Annotated[
         Optional[ExceptionHandlerType],
         Doc(
@@ -48,7 +73,7 @@ def get_application(
                         A function in Nexios responsible for handling server-side exceptions by logging errors, reporting issues, or initiating recovery mechanisms. It prevents crashes by intercepting unexpected failures, ensuring the application remains stable and operational. This function provides a structured approach to error management, allowing developers to define custom handling strategies such as retrying failed requests, sending alerts, or gracefully degrading functionality. By centralizing error processing, it improves maintainability and observability, making debugging and monitoring more efficient. Additionally, it ensures that critical failures do not disrupt the entire system, allowing services to continue running while appropriately managing faults and failures."""
         ),
     ] = None,
-    lifespan: Optional[Callable[["NexiosApp"], AsyncIterator[None]]] = None,
+    lifespan: Optional[Callable[[NexiosApp], AsyncIterator[None]]] = None,
 ) -> NexiosApp:
     """
     Initializes and returns a `Nexios` application instance, serving as the core entry point for building web applications.
@@ -81,8 +106,11 @@ def get_application(
             wrap_middleware(SessionMiddleware()),
             wrap_middleware(CSRFMiddleware()),
         ],
-        server_error_handler=server_error_handler,  # type:ignore
+        server_error_handler=server_error_handler,
         config=config,
+        title=title,
+        version=version,
+        description=description,
         lifespan=lifespan,
     )
 

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "{{project_name}}"
+version = "0.1.0"
+description = "A modern web application built with the Nexios framework"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+nexios = ">=2.3.2"
+uvicorn = ">=0.22.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+black = "^24.2.0"
+mypy = "^1.5.1"
+
+[tool.poetry.scripts]
+nexios = "nexios.cli:cli"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']

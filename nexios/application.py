@@ -35,6 +35,7 @@ logger = create_logger("nexios")
 class NexiosApp(object):
     def __init__(
         self,
+
         config: Annotated[
             Optional[MakeConfig],
             Doc(
@@ -47,6 +48,30 @@ class NexiosApp(object):
                     """
             ),
         ] = DEFAULT_CONFIG,
+        title: Annotated[
+            Optional[str],
+            Doc(
+                """
+                    The title of the API, used in the OpenAPI documentation.
+                    """
+            ),
+        ] = None,
+        version: Annotated[
+            Optional[str],
+            Doc(
+                """
+                    The version of the API, used in the OpenAPI documentation.
+                    """
+            ),
+        ] = None,
+        description: Annotated[
+            Optional[str],
+            Doc(
+                """
+                    A brief description of the API, used in the OpenAPI documentation.
+                    """
+            ),
+        ] = None,
         middlewares: Annotated[
             List[Middleware],
             Doc(
@@ -89,10 +114,10 @@ class NexiosApp(object):
             "openapi", {}
         )  # type:ignore
         self.openapi_config = OpenAPIConfig(
-            title=openapi_config.get("title", "Nexios API"),
-            version=openapi_config.get("version", "1.0.0"),
+            title=openapi_config.get("title", title or "Nexios API"),
+            version=openapi_config.get("version", version or "1.0.0"),
             description=openapi_config.get(
-                "description", "Automatically generated API documentation"
+                "description", description or "Nexios API Documentation"
             ),
             license=openapi_config.get("license"),
             contact=openapi_config.get("contact"),

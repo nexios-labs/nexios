@@ -29,3 +29,4 @@ Nexios is a powerful, lightweight framework designed to help developers build ro
 - **Developer Friendly**: Intuitive APIs and comprehensive documentation
 - &#x20;**Lightweight**: Minimal footprint with no unnecessary dependencies
 - &#x20;**Extensible**: Robust plugin system for custom functionality
+- &#x20;**CLI Tools**: Powerful [command-line interface](fundamentals/cli-tools.md) for project scaffolding and development
