@@ -2407,7 +2407,7 @@ class WSRouter(BaseRouter):
         ],
         handler: Annotated[
             Optional[WsHandlerType],
-            Doc("The WebSocket handler function. Must be an async function.")
+            Doc("The WebSocket handler function. Must be an async function."),
         ] = None,
         middlewares: Annotated[
             List[WsMiddlewareType],
@@ -2436,7 +2436,9 @@ class WSRouter(BaseRouter):
             ```
         """
         if handler:
-            return self.add_ws_route(WebsocketRoutes(path, handler, middlewares=middlewares))
+            return self.add_ws_route(
+                WebsocketRoutes(path, handler, middlewares=middlewares)
+            )
 
         def decorator(handler: WsHandlerType) -> WsHandlerType:
             self.add_ws_route(WebsocketRoutes(path, handler, middlewares=middlewares))

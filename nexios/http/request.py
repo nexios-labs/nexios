@@ -281,12 +281,12 @@ class Request(HTTPConnection):
             except json.JSONDecodeError:
                 self._json = {}
         return self._json
-    
+
     @property
     async def text(self) -> str:
         """
         Read and decode the body of the request as text.
-        
+
         Returns:
             str: The decoded text content of the request body.
         """
@@ -396,6 +396,7 @@ class Request(HTTPConnection):
             form_data = await self.form_data
             self._form = form_data
         return self._form
+
     def valid(self) -> bool:
         """
         Checks if the request is valid by ensuring the method and headers are properly set.
