@@ -429,18 +429,27 @@ class Headers(typing.Mapping[str, str]):
         if headers is not None:
             assert raw is None, 'Cannot set both "headers" and "raw".'
             assert scope is None, 'Cannot set both "headers" and "scope".'
-            self._list = [
-                (key.lower().encode("latin-1"), value.encode("latin-1"))
-                for key, value in headers.items()
-            ]
+            if isinstance(headers, typing.Mapping):
+                self._list = [
+                    (key.lower().encode("latin-1"), value.encode("latin-1"))
+                    for key, value in headers.items()
+                ]
+            else:
+                # Assume it's a list of (bytes, bytes) tuples or something convertible
+                self._list = [
+                    (
+                        k.lower() if isinstance(k, bytes) else k.lower().encode("latin-1"),
+                        v if isinstance(v, bytes) else v.encode("latin-1")
+                    )
+                    for k, v in headers
+                ]
         elif raw is not None:
             assert scope is None, 'Cannot set both "raw" and "scope".'
             self._list = raw
         elif scope is not None:
             # scope["headers"] isn't necessarily a list
             # it might be a tuple or other iterable
-            self._list = scope["headers"] = list(scope["headers"])
-
+            self._list = list(scope["headers"])
     @property
     def raw(self) -> typing.List[typing.Tuple[bytes, bytes]]:
         return list(self._list)
@@ -740,7 +749,7 @@ class UploadedFile:
         )
 
 
-class FormData(ImmutableMultiDict[str, typing.Union[UploadedFile, str]]):
+class FormData(MultiDict[str, typing.Union[UploadedFile, str]]):
 
     def __init__(
         self,
@@ -757,3 +766,19 @@ class FormData(ImmutableMultiDict[str, typing.Union[UploadedFile, str]]):
         for _, value in self.multi_items():
             if isinstance(value, UploadedFile):
                 await value.close()
+
+    def get(self, key: str, default: typing.Any = None) -> typing.Union[UploadedFile, str, None]:
+        """
+        Get a value from the form data by key.
+        
+        Args:
+            key: The key to look up
+            default: Value to return if key is not found
+            
+        Returns:
+            The value if found, or the default
+        """
+        try:
+            return self[key]
+        except KeyError:
+            return default

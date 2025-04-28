@@ -148,6 +148,7 @@ class NexiosApp(object):
         )
 
         self.events = AsyncEventEmitter()
+        self.title = title or "Nexios API"
 
     def on_startup(self, handler: Callable[[], Awaitable[None]]) -> None:
         """
@@ -531,6 +532,7 @@ class NexiosApp(object):
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """ASGI application callable"""
         scope["app"] = self
+        print("app scope", scope)
         if scope["type"] == "lifespan":
             await self.handle_lifespan(receive, send)
         elif scope["type"] == "http":
@@ -1821,3 +1823,46 @@ class NexiosApp(object):
             ```
         """
         return self.router.get_all_routes()
+
+
+    
+    def ws_route(
+        self,
+        path: Annotated[
+            str,
+            Doc("""
+                URL path pattern for the WebSocket route.
+                Example: '/ws/chat/{room_id}'
+            """)
+        ],
+        handler: Annotated[
+            Optional[HandlerType],
+            Doc("""
+                Async handler function for WebSocket connections.
+                Example:
+                async def chat_handler(websocket, path):
+                    await websocket.send("Welcome to the chat!")
+            """)
+        ] = None):
+        """
+        Register a WebSocket route with the application.
+
+        Args:
+            path (str): URL path pattern for the WebSocket route.
+            handler (Callable): Async handler function for WebSocket connections.
+                Example: async def chat_handler(websocket, path): pass
+
+        Returns:
+            Callable: A decorator to register the WebSocket route.
+        """
+        return self.ws_router.ws_route(
+            path=path,
+            handler=handler,
+        )
+    
+    def add_ws_route(self, route: Annotated[WebsocketRoutes, Doc("An instance of the WSRoutes class representing a WebSocket route.")]): 
+        return self.ws_router.add_route(route)
+    
+
+    def __str__(self) -> str:
+        return f"<NexiosApp: {self.title}>"

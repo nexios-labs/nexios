@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+import urllib.parse
 from dataclasses import dataclass, field
 from enum import Enum
 from tempfile import SpooledTemporaryFile
@@ -89,65 +90,75 @@ class FormParser:
         self.messages.append(message)
 
     async def parse(self) -> FormData:
-        # Callbacks dictionary.
-        callbacks: QuerystringCallbacks = {  # type:ignore
-            "on_field_start": self.on_field_start,
-            "on_field_name": self.on_field_name,
-            "on_field_data": self.on_field_data,
-            "on_field_end": self.on_field_end,
-            "on_end": self.on_end,
-        }
+        """
+        Parse the request stream as form data.
 
-        # Create the parser.
-        parser = multipart.QuerystringParser(callbacks)  # type:ignore
-        field_name = b""
-        field_value = b""
+        Returns:
+            FormData: The parsed form data.
+        """
+        content_type = self.headers.get("content-type", "")
+        if content_type.startswith("multipart/form-data"):
+            multipart_parser = MultiPartParser(self.headers, self.stream)
+            return await multipart_parser.parse()
 
-        items: list[tuple[str, typing.Union[str, UploadedFile]]] = []
-
-        # Feed the parser with data from the request.
+        # Default to application/x-www-form-urlencoded
+        form = FormData()
+        content = b""
+        
+        # Collect all chunks into a single content buffer
         async for chunk in self.stream:
             if chunk:
-                parser.write(chunk)  # type:ignore
-            else:
-                parser.finalize()  # type:ignore
-            messages = list(self.messages)
-            self.messages.clear()
-            for message_type, message_bytes in messages:
-                if message_type == FormMessage.FIELD_START:
-                    field_name = b""
-                    field_value = b""
-                elif message_type == FormMessage.FIELD_NAME:
-                    field_name += message_bytes
-                elif message_type == FormMessage.FIELD_DATA:
-                    field_value += message_bytes
-                elif message_type == FormMessage.FIELD_END:
-                    name = unquote_plus(field_name.decode("latin-1"))
-                    value = unquote_plus(field_value.decode("latin-1"))
-                    items.append((name, value))
+                content += chunk
+        
+        if content:
+            try:
+                # Use parse_qsl to get a list of key-value pairs
+                field_items = urllib.parse.parse_qsl(
+                    content.decode("utf-8"), keep_blank_values=True
+                )
+                
+                # Add each field to the form data
+                for key, value in field_items:
+                    # URL decode the value to handle special characters
+                    decoded_value = urllib.parse.unquote(value)
+                    form.append(key, decoded_value)
+            except (UnicodeDecodeError, ValueError) as e:
+                # If there's a decoding error, try with latin-1 encoding
+                try:
+                    field_items = urllib.parse.parse_qsl(
+                        content.decode("latin-1"), keep_blank_values=True
+                    )
+                    for key, value in field_items:
+                        decoded_value = urllib.parse.unquote(value)
+                        form.append(key, decoded_value)
+                except Exception:
+                    # If still can't parse, return empty form
+                    pass
 
-        return FormData(items)
+        return form
 
 
 class MultiPartParser:
     max_file_size = 1024 * 1024  # 1MB
     max_part_size = 1024 * 1024  # 1MB
+    max_fields = 1000
+    max_files = 1000
 
     def __init__(
         self,
         headers: Headers,
         stream: typing.AsyncGenerator[bytes, None],
         *,
-        max_files: typing.Union[int, float] = 1000,
-        max_fields: typing.Union[int, float] = 1000,
+        max_fields: typing.Optional[int] = None,
+        max_files: typing.Optional[int] = None,
     ) -> None:
         assert (
             multipart is not None
         ), "The `python-multipart` library must be installed to use form parsing."
         self.headers = headers
         self.stream = stream
-        self.max_files = max_files
-        self.max_fields = max_fields
+        self.max_files = max_files if max_files is not None else self.max_files
+        self.max_fields = max_fields if max_fields is not None else self.max_fields
         self.items: list[tuple[str, typing.Union[str, UploadedFile]]] = []
         self._current_files = 0
         self._current_fields = 0
@@ -171,6 +182,13 @@ class MultiPartParser:
                 )
             self._current_part.data.extend(message_bytes)
         else:
+            # Check file size limit when writing file parts
+            if self._current_part.file and self._current_part.file.size is not None:
+                new_size = self._current_part.file.size + len(message_bytes)
+                if new_size > self.max_file_size:
+                    raise MultiPartException(
+                        f"File too large. Maximum size is {self.max_file_size} bytes"
+                    )
             self._file_parts_to_write.append((self._current_part, message_bytes))
 
     def on_part_end(self) -> None:
@@ -247,19 +265,21 @@ class MultiPartParser:
         pass
 
     async def parse(self) -> FormData:
-        # Parse the Content-Type header to get the multipart boundary.
-        _, params = parse_options_header(self.headers["Content-Type"])  # type:ignore
-        charset = params.get(b"charset", "utf-8")  # type:ignore
-        if isinstance(charset, bytes):
-            charset = charset.decode("latin-1")
-        self._charset = charset  # type:ignore
-        try:
-            boundary = params[b"boundary"]  # type:ignore
-        except KeyError:
-            raise MultiPartException("Missing boundary in multipart.")
+        """Parse the form data from the request body."""
+        content_type = self.headers.get("content-type", "")
+        content_type, params = parse_options_header(content_type)
 
-        # Callbacks dictionary.
-        callbacks: MultipartCallbacks = {  # type:ignore
+        if content_type != b"multipart/form-data":
+            return FormData()
+
+        boundary = params.get(b"boundary")
+        if not boundary:
+            return FormData()
+
+        charset = params.get(b"charset")
+        self._charset = charset.decode("latin-1") if charset else "utf-8"
+
+        callbacks = {
             "on_part_begin": self.on_part_begin,
             "on_part_data": self.on_part_data,
             "on_part_end": self.on_part_end,
@@ -270,8 +290,7 @@ class MultiPartParser:
             "on_end": self.on_end,
         }
 
-        # Create the parser.
-        parser = multipart.MultipartParser(boundary, callbacks)  # type:ignore
+        parser = multipart.MultipartParser(boundary, callbacks)
         try:
             # Feed the parser with data from the request.
             async for chunk in self.stream:

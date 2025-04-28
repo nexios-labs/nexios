@@ -10,6 +10,7 @@ from nexios._utils.async_helpers import (
     AwaitableOrContextManagerWrapper,
 )
 from nexios.session.base import BaseSessionInterface
+from nexios.http.formparsers import FormParser, MultiPartParser
 from nexios.structs import URL, Address, FormData, Headers, QueryParams, State
 from .formparsers import FormParser, MultiPartException, MultiPartParser
 
@@ -280,6 +281,22 @@ class Request(HTTPConnection):
             except json.JSONDecodeError:
                 self._json = {}
         return self._json
+    
+    @property
+    async def text(self) -> str:
+        """
+        Read and decode the body of the request as text.
+        
+        Returns:
+            str: The decoded text content of the request body.
+        """
+        if not hasattr(self, "_text"):
+            body = await self.body()
+            try:
+                self._text = body.decode("utf-8")
+            except UnicodeDecodeError:
+                self._text = body.decode("latin-1")
+        return self._text
 
     async def _get_form(
         self,
@@ -369,15 +386,16 @@ class Request(HTTPConnection):
                 files_dict[key] = value
         return files_dict
 
-    @property
-    async def text(self) -> str:
+    async def form(self) -> FormData:
         """
-        Returns the body of the request as a string.
+        Parse and return form data from the request body.
+        Handles both URL-encoded and multipart form data.
+        Uses the existing form_data property which already handles all form types.
         """
-
-        body = await self.body()
-        return body.decode()
-
+        if not hasattr(self, "_form"):
+            form_data = await self.form_data
+            self._form = form_data
+        return self._form
     def valid(self) -> bool:
         """
         Checks if the request is valid by ensuring the method and headers are properly set.

@@ -2171,6 +2171,10 @@ class WSRouter(BaseRouter):
         path: Annotated[
             str, Doc("The WebSocket route path. Must be a valid URL pattern.")
         ],
+        handler: Annotated[
+            Optional[WsHandlerType],
+            Doc("The WebSocket handler function. Must be an async function.")
+        ] = None,
         middlewares: Annotated[
             List[WsMiddlewareType],
             Doc("List of middleware to be executes before the router handler"),
@@ -2197,6 +2201,8 @@ class WSRouter(BaseRouter):
                     await websocket.send_text(f"Echo: {message}")
             ```
         """
+        if handler:
+            return self.add_ws_route(WebsocketRoutes(path, handler, middlewares=middlewares))
 
         def decorator(handler: WsHandlerType) -> WsHandlerType:
             self.add_ws_route(WebsocketRoutes(path, handler, middlewares=middlewares))
