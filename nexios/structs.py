@@ -438,8 +438,12 @@ class Headers(typing.Mapping[str, str]):
                 # Assume it's a list of (bytes, bytes) tuples or something convertible
                 self._list = [
                     (
-                        k.lower() if isinstance(k, bytes) else k.lower().encode("latin-1"),
-                        v if isinstance(v, bytes) else v.encode("latin-1")
+                        (
+                            k.lower()
+                            if isinstance(k, bytes)
+                            else k.lower().encode("latin-1")
+                        ),
+                        v if isinstance(v, bytes) else v.encode("latin-1"),
                     )
                     for k, v in headers
                 ]
@@ -450,6 +454,7 @@ class Headers(typing.Mapping[str, str]):
             # scope["headers"] isn't necessarily a list
             # it might be a tuple or other iterable
             self._list = list(scope["headers"])
+
     @property
     def raw(self) -> typing.List[typing.Tuple[bytes, bytes]]:
         return list(self._list)
@@ -767,14 +772,16 @@ class FormData(MultiDict[str, typing.Union[UploadedFile, str]]):
             if isinstance(value, UploadedFile):
                 await value.close()
 
-    def get(self, key: str, default: typing.Any = None) -> typing.Union[UploadedFile, str, None]:
+    def get(
+        self, key: str, default: typing.Any = None
+    ) -> typing.Union[UploadedFile, str, None]:
         """
         Get a value from the form data by key.
-        
+
         Args:
             key: The key to look up
             default: Value to return if key is not found
-            
+
         Returns:
             The value if found, or the default
         """

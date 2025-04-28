@@ -686,7 +686,7 @@ class NexiosApp(object):
                 Example: {"x-internal": True}
             """
             ),
-        ]
+        ],
     ) -> Callable[..., Any]:
         """
         Register a GET endpoint with comprehensive OpenAPI support.
@@ -744,7 +744,7 @@ class NexiosApp(object):
             deprecated=deprecated,
             parameters=parameters,
             exclude_from_schema=exclude_from_schema,
-            **kwargs
+            **kwargs,
         )
 
     def post(
@@ -894,7 +894,7 @@ class NexiosApp(object):
                 Example: {"x-audit-log": True}
             """
             ),
-        ]
+        ],
     ) -> Callable[..., Any]:
         """
         Register a POST endpoint with the application.
@@ -944,7 +944,7 @@ class NexiosApp(object):
             deprecated=deprecated,
             parameters=parameters,
             exclude_from_schema=exclude_from_schema,
-            **kwargs
+            **kwargs,
         )
 
     def delete(
@@ -1092,7 +1092,7 @@ class NexiosApp(object):
                 Example: {"x-destructive": True}
             """
             ),
-        ]
+        ],
     ) -> Callable[..., Any]:
         """
         Register a DELETE endpoint with the application.
@@ -1140,7 +1140,7 @@ class NexiosApp(object):
             deprecated=deprecated,
             parameters=parameters,
             exclude_from_schema=exclude_from_schema,
-            **kwargs
+            **kwargs,
         )
 
     def put(
@@ -1289,7 +1289,7 @@ class NexiosApp(object):
                 Example: {"x-idempotent": True}
             """
             ),
-        ]
+        ],
     ) -> Callable[..., Any]:
         """
         Register a PUT endpoint with the application.
@@ -1342,7 +1342,7 @@ class NexiosApp(object):
             deprecated=deprecated,
             parameters=parameters,
             exclude_from_schema=exclude_from_schema,
-            **kwargs
+            **kwargs,
         )
 
     def patch(
@@ -1491,7 +1491,7 @@ class NexiosApp(object):
                 Example: {"x-partial-update": True}
             """
             ),
-        ]
+        ],
     ) -> Callable[..., Any]:
         """
         Register a PATCH endpoint with the application.
@@ -1542,7 +1542,7 @@ class NexiosApp(object):
             deprecated=deprecated,
             parameters=parameters,
             exclude_from_schema=exclude_from_schema,
-            **kwargs
+            **kwargs,
         )
 
     def options(
@@ -1689,7 +1689,7 @@ class NexiosApp(object):
                 Example: {"x-cors": True}
             """
             ),
-        ]
+        ],
     ) -> Callable[..., Any]:
         """
         Register an OPTIONS endpoint with the application.
@@ -1736,7 +1736,7 @@ class NexiosApp(object):
             deprecated=deprecated,
             parameters=parameters,
             exclude_from_schema=exclude_from_schema,
-            **kwargs
+            **kwargs,
         )
 
     def head(
@@ -1883,7 +1883,7 @@ class NexiosApp(object):
                 Example: {"x-head-only": True}
             """
             ),
-        ]
+        ],
     ) -> Callable[..., Any]:
         """
         Register a HEAD endpoint with the application.
@@ -1929,7 +1929,7 @@ class NexiosApp(object):
             deprecated=deprecated,
             parameters=parameters,
             exclude_from_schema=exclude_from_schema,
-            **kwargs
+            **kwargs,
         )
 
     def add_route(
@@ -1989,7 +1989,7 @@ class NexiosApp(object):
                 "An ASGI middleware class or callable that takes an app as its first argument and returns an ASGI app"
             ),
         ],
-        **kwargs: Dict[str, Any]
+        **kwargs: Dict[str, Any],
     ) -> None:
         """
         Wraps the entire application with an ASGI middleware.
@@ -2028,26 +2028,29 @@ class NexiosApp(object):
         """
         return self.router.get_all_routes()
 
-
-    
     def ws_route(
         self,
         path: Annotated[
             str,
-            Doc("""
+            Doc(
+                """
                 URL path pattern for the WebSocket route.
                 Example: '/ws/chat/{room_id}'
-            """)
+            """
+            ),
         ],
         handler: Annotated[
             Optional[HandlerType],
-            Doc("""
+            Doc(
+                """
                 Async handler function for WebSocket connections.
                 Example:
                 async def chat_handler(websocket, path):
                     await websocket.send("Welcome to the chat!")
-            """)
-        ] = None):
+            """
+            ),
+        ] = None,
+    ):
         """
         Register a WebSocket route with the application.
 
@@ -2063,10 +2066,15 @@ class NexiosApp(object):
             path=path,
             handler=handler,
         )
-    
-    def add_ws_route(self, route: Annotated[WebsocketRoutes, Doc("An instance of the WSRoutes class representing a WebSocket route.")]): 
+
+    def add_ws_route(
+        self,
+        route: Annotated[
+            WebsocketRoutes,
+            Doc("An instance of the WSRoutes class representing a WebSocket route."),
+        ],
+    ):
         return self.ws_router.add_route(route)
-    
 
     def __str__(self) -> str:
         return f"<NexiosApp: {self.title}>"

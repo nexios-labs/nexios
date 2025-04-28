@@ -104,19 +104,19 @@ class FormParser:
         # Default to application/x-www-form-urlencoded
         form = FormData()
         content = b""
-        
+
         # Collect all chunks into a single content buffer
         async for chunk in self.stream:
             if chunk:
                 content += chunk
-        
+
         if content:
             try:
                 # Use parse_qsl to get a list of key-value pairs
                 field_items = urllib.parse.parse_qsl(
                     content.decode("utf-8"), keep_blank_values=True
                 )
-                
+
                 # Add each field to the form data
                 for key, value in field_items:
                     # URL decode the value to handle special characters

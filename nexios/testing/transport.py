@@ -64,7 +64,7 @@ class WebSocketConnection:
         try:
             scope = self.scope
             app = self.app  # Store app reference
-            
+
             # Start the ASGI application
             try:
                 await app(scope, self._asgi_receive, self._asgi_send)
@@ -128,11 +128,11 @@ class WebSocketConnection:
             elif message_type == "websocket.close":
                 code = message.get("code", 1000)
                 reason = message.get("reason")
-                
+
                 # First notify the client
                 async with self.client_channel as sender:
                     await sender.send({"type": "close", "code": code, "reason": reason})
-                
+
                 # Then handle the disconnect
                 await self._handle_disconnect(code, reason)
         except Exception as e:
@@ -164,17 +164,17 @@ class WebSocketConnection:
         async with anyio.create_task_group() as tg:
             self.task_group = tg
             await tg.start(self.run_app)
-            
+
             timeout_error = False
             try:
                 async with anyio.move_on_after(self.timeout) as scope:
                     await self.connection_event.wait()
                     timeout_error = scope.cancel_called
-                
+
                 if timeout_error:
                     await self._handle_disconnect(1006, "Connection timeout")
                     raise RuntimeError("WebSocket connection timed out")
-                
+
             except Exception as e:
                 await self._handle_disconnect(1006, str(e))
                 raise
@@ -199,7 +199,7 @@ class WebSocketConnection:
                 async with self.receive_channel as sender:
                     await sender.send(message)
                 timeout_error = scope.cancel_called
-                
+
             if timeout_error:
                 await self._handle_disconnect(1002, "Protocol error")
                 raise WebSocketDisconnect(1002, "Send timeout")
@@ -217,23 +217,21 @@ class WebSocketConnection:
         try:
             timeout_error = False
             message = None
-            
+
             async with anyio.move_on_after(self.timeout) as scope:
                 async with self.client_channel as receiver:
                     message = await receiver.receive()
                 timeout_error = scope.cancel_called
-                
+
             if timeout_error or message is None:
                 await self._handle_disconnect(1002, "Protocol error")
                 raise WebSocketDisconnect(1002, "Receive timeout")
-                
+
             if message["type"] == "message":
                 return message["data"]
             elif message["type"] == "close":
-                raise WebSocketDisconnect(
-                    message["code"], message["reason"]
-                )
-                
+                raise WebSocketDisconnect(message["code"], message["reason"])
+
         except Exception:
             await self._handle_disconnect(1002, "Protocol error")
             raise WebSocketDisconnect(1002, "Receive error")
@@ -340,10 +338,12 @@ class NexiosAsyncTransport(httpx.AsyncBaseTransport):
             "Connection": "Upgrade",
             "Sec-WebSocket-Accept": ws_accept,
         }
-        
+
         # Add subprotocol if specified
         if "sec-websocket-protocol" in request.headers:
-            response_headers["Sec-WebSocket-Protocol"] = request.headers["sec-websocket-protocol"]
+            response_headers["Sec-WebSocket-Protocol"] = request.headers[
+                "sec-websocket-protocol"
+            ]
 
         return httpx.Response(
             101,

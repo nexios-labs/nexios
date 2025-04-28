@@ -4,7 +4,12 @@ import httpx
 import typing
 import uuid
 from typing import Any, Dict, AsyncIterable, Iterable, Union, Optional, List
-from .transport import NexiosAsyncTransport, WebSocketConnection, WebSocketState, WebSocketDisconnect
+from .transport import (
+    NexiosAsyncTransport,
+    WebSocketConnection,
+    WebSocketState,
+    WebSocketDisconnect,
+)
 
 _RequestData = typing.Mapping[str, typing.Union[str, typing.Iterable[str], bytes]]
 from nexios.application import NexiosApp
@@ -185,7 +190,7 @@ class WebSocketContextManager:
     """
     Async context manager for WebSocket connections.
     """
-    
+
     def __init__(
         self,
         client: "Client",
@@ -201,15 +206,15 @@ class WebSocketContextManager:
         self.headers = headers
         self.timeout = timeout
         self.websocket: Optional[WebSocket] = None
-    
+
     async def __aenter__(self) -> "WebSocket":
         """
         Connect to the WebSocket when used as a context manager with 'async with'.
         """
-        if not hasattr(self, 'websocket') or self.websocket is None:
+        if not hasattr(self, "websocket") or self.websocket is None:
             self.websocket = await self.__call__()
         return self.websocket
-        
+
     def __await__(self):
         """Make the WebSocketContextManager directly awaitable."""
         return self.__call__().__await__()
@@ -218,40 +223,44 @@ class WebSocketContextManager:
         """Connect to the WebSocket when directly awaited."""
         import base64
         import os
-        
+
         # Generate proper WebSocket key
         ws_key = base64.b64encode(os.urandom(16)).decode()
-        
+
         # Set up proper WebSocket handshake headers
         if self.headers is None:
             self.headers = {}
-        
-        self.headers.update({
-            "Upgrade": "websocket",
-            "Connection": "Upgrade",
-            "Sec-WebSocket-Version": "13",
-            "Sec-WebSocket-Key": ws_key,
-        })
+
+        self.headers.update(
+            {
+                "Upgrade": "websocket",
+                "Connection": "Upgrade",
+                "Sec-WebSocket-Version": "13",
+                "Sec-WebSocket-Key": ws_key,
+            }
+        )
 
         # Add subprotocols if specified
         if self.subprotocols:
             self.headers["Sec-WebSocket-Protocol"] = ", ".join(self.subprotocols)
 
         # Handle URL scheme
-        if not self.url.startswith(('ws://', 'wss://', 'http://', 'https://')):
+        if not self.url.startswith(("ws://", "wss://", "http://", "https://")):
             # If no scheme, use ws:// with the testserver host
             base = str(self.client.base_url)
-            if base.startswith('http://'):
-                base = base.replace('http://', 'ws://', 1)
-            elif base.startswith('https://'):
-                base = base.replace('https://', 'wss://', 1)
-            
+            if base.startswith("http://"):
+                base = base.replace("http://", "ws://", 1)
+            elif base.startswith("https://"):
+                base = base.replace("https://", "wss://", 1)
+
             # Handle absolute and relative paths
-           
+
             self.url = base + self.url
-        elif self.url.startswith(('http://', 'https://')):
+        elif self.url.startswith(("http://", "https://")):
             # Convert http(s) to ws(s)
-            self.url = self.url.replace('http://', 'ws://', 1).replace('https://', 'wss://', 1)
+            self.url = self.url.replace("http://", "ws://", 1).replace(
+                "https://", "wss://", 1
+            )
 
         try:
             # Make WebSocket connection request
@@ -286,17 +295,19 @@ class WebSocketContextManager:
             return websocket
 
         except httpx.HTTPStatusError as e:
-            raise RuntimeError(f"WebSocket upgrade failed with status code: {e.response.status_code}")
+            raise RuntimeError(
+                f"WebSocket upgrade failed with status code: {e.response.status_code}"
+            )
         except RuntimeError:
             # Re-raise RuntimeErrors that we generated ourselves
             raise
         except Exception as e:
             # Clean up on failure
-            if hasattr(self, 'websocket') and self.websocket is not None:
+            if hasattr(self, "websocket") and self.websocket is not None:
                 await self.websocket.close()
             # raise RuntimeError(f"WebSocket connection failed: {str(e)}") from e
             print("Exceptions ", e)
-    
+
     async def __aexit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
         if self.websocket is not None:
             await self.websocket.close()
@@ -306,41 +317,42 @@ class WebSocket:
     """
     A WebSocket client for use in testing.
     """
-    
+
     def __init__(self, connection: WebSocketConnection):
         self.connection = connection
-        
+
     @property
     def client_state(self) -> WebSocketState:
         """The current state of the client WebSocket connection."""
         return self.connection.state
-    
+
     @property
     def application_state(self) -> WebSocketState:
         """The current state of the application WebSocket handler."""
         return self.connection.state  # Using same state for simplicity in test client
-    
+
     def is_connected(self) -> bool:
         """Check if the WebSocket is currently connected."""
         return self.connection.state == WebSocketState.CONNECTED
-    
+
     async def send_text(self, data: str) -> None:
         """Send text data through the WebSocket."""
         await self.connection.send(data)
-    
+
     async def send_bytes(self, data: bytes) -> None:
         """Send binary data through the WebSocket."""
         await self.connection.send(data)
-    
+
     async def send_json(self, data: Any, mode: str = "text") -> None:
         """
         Send JSON data through the WebSocket.
-        
+
         Args:
             data: The data to send (will be JSON-encoded).
             mode: The mode to send in - either "text" or "binary".
         """
         import json
+
         encoded = json.dumps(data)
         if mode == "text":
             await self.send_text(encoded)
@@ -348,33 +360,34 @@ class WebSocket:
             await self.send_bytes(encoded.encode("utf-8"))
         else:
             raise ValueError(f"Invalid WebSocket send mode: {mode}")
-    
+
     async def receive_text(self) -> str:
         """Receive text data from the WebSocket."""
         data = await self.connection.receive()
         if isinstance(data, bytes):
             raise RuntimeError("Expected text data, but received bytes")
         return data
-    
+
     async def receive_bytes(self) -> bytes:
         """Receive binary data from the WebSocket."""
         data = await self.connection.receive()
         if isinstance(data, str):
             raise RuntimeError("Expected binary data, but received text")
         return data
-    
+
     async def receive_json(self) -> Any:
         """Receive JSON data from the WebSocket."""
         import json
+
         data = await self.connection.receive()
         if isinstance(data, bytes):
             data = data.decode("utf-8")
         return json.loads(data)
-    
+
     async def iter_text(self) -> AsyncIterable[str]:
         """
         Iterate over text messages from the WebSocket.
-        
+
         Yields:
             Text messages received from the WebSocket.
         """
@@ -383,11 +396,11 @@ class WebSocket:
                 yield await self.receive_text()
         except WebSocketDisconnect:
             pass
-    
+
     async def iter_bytes(self) -> AsyncIterable[bytes]:
         """
         Iterate over binary messages from the WebSocket.
-        
+
         Yields:
             Binary messages received from the WebSocket.
         """
@@ -396,11 +409,11 @@ class WebSocket:
                 yield await self.receive_bytes()
         except WebSocketDisconnect:
             pass
-    
+
     async def iter_json(self) -> AsyncIterable[Any]:
         """
         Iterate over JSON messages from the WebSocket.
-        
+
         Yields:
             JSON messages received from the WebSocket.
         """
@@ -409,14 +422,14 @@ class WebSocket:
                 yield await self.receive_json()
         except WebSocketDisconnect:
             pass
-    
+
     async def close(self, code: int = 1000, reason: Optional[str] = None) -> None:
         """Close the WebSocket connection with the given code and reason."""
         await self.connection.close(code, reason)
-    
+
     # These methods are still needed for direct await usage
     async def __aenter__(self) -> "WebSocket":
         return self
-    
+
     async def __aexit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
         await self.close()
