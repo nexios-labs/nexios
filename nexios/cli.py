@@ -206,16 +206,21 @@ def version():
     help="Template type to use for the project.",
     show_default=True,
 )
-def new(project_name: str, output_dir: str, title: Optional[str] = None, template: str = "basic"):
+def new(
+    project_name: str,
+    output_dir: str,
+    title: Optional[str] = None,
+    template: str = "basic",
+):
     """
     Create a new Nexios project.
 
     Creates a new Nexios project with the given name in the specified directory.
-    The project will be initialized with the selected template structure including 
+    The project will be initialized with the selected template structure including
     configuration files and a main application file.
 
     Available template types:
-    
+
     - basic: Minimal starter template with essential structure
     - standard: A complete template with commonly used features
     - beta: An advanced template with experimental features
@@ -246,15 +251,25 @@ def new(project_name: str, output_dir: str, title: Optional[str] = None, templat
 
         # Create the project directory
         project_path.mkdir(parents=True, exist_ok=True)
-        _echo_info(f"Creating new Nexios project: {project_name} using {template} template")
+        _echo_info(
+            f"Creating new Nexios project: {project_name} using {template} template"
+        )
 
         # Get the template directory
         template_dir = Path(__file__).parent / "templates" / template.lower()
 
         if not template_dir.exists():
-            _echo_error(f"Template directory for '{template}' not found: {template_dir}")
-            _echo_error("Please ensure you have the latest version of Nexios installed.")
-            available_templates = [p.name for p in (Path(__file__).parent / "templates").glob("*") if p.is_dir()]
+            _echo_error(
+                f"Template directory for '{template}' not found: {template_dir}"
+            )
+            _echo_error(
+                "Please ensure you have the latest version of Nexios installed."
+            )
+            available_templates = [
+                p.name
+                for p in (Path(__file__).parent / "templates").glob("*")
+                if p.is_dir()
+            ]
             if available_templates:
                 _echo_info(f"Available templates: {', '.join(available_templates)}")
             return
