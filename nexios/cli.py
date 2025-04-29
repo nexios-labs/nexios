@@ -198,13 +198,27 @@ def version():
     help="Display title for the project (defaults to project name if not provided).",
     callback=_validate_project_title,
 )
-def new(project_name: str, output_dir: str, title: Optional[str] = None):
+@click.option(
+    "--template",
+    "-t",
+    type=click.Choice(["basic", "standard", "beta"], case_sensitive=False),
+    default="basic",
+    help="Template type to use for the project.",
+    show_default=True,
+)
+def new(project_name: str, output_dir: str, title: Optional[str] = None, template: str = "basic"):
     """
     Create a new Nexios project.
 
     Creates a new Nexios project with the given name in the specified directory.
-    The project will be initialized with a basic structure including configuration
-    files and a main application file.
+    The project will be initialized with the selected template structure including 
+    configuration files and a main application file.
+
+    Available template types:
+    
+    - basic: Minimal starter template with essential structure
+    - standard: A complete template with commonly used features
+    - beta: An advanced template with experimental features
     """
     try:
         # Convert to Path objects for cross-platform compatibility
@@ -232,14 +246,17 @@ def new(project_name: str, output_dir: str, title: Optional[str] = None):
 
         # Create the project directory
         project_path.mkdir(parents=True, exist_ok=True)
-        _echo_info(f"Creating new Nexios project: {project_name}")
+        _echo_info(f"Creating new Nexios project: {project_name} using {template} template")
 
         # Get the template directory
-        template_dir = Path(__file__).parent / "templates" / "basic"
+        template_dir = Path(__file__).parent / "templates" / template.lower()
 
         if not template_dir.exists():
-            _echo_error(f"Template directory not found: {template_dir}")
-            _echo_error("This is likely an installation issue with Nexios.")
+            _echo_error(f"Template directory for '{template}' not found: {template_dir}")
+            _echo_error("Please ensure you have the latest version of Nexios installed.")
+            available_templates = [p.name for p in (Path(__file__).parent / "templates").glob("*") if p.is_dir()]
+            if available_templates:
+                _echo_info(f"Available templates: {', '.join(available_templates)}")
             return
 
         # Copy template files with pathlib for cross-platform compatibility

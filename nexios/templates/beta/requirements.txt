@@ -1,0 +1,9 @@
+nexios>={{version}}
+strawberry-graphql>=0.209.6
+websockets>=11.0.3
+redis>=5.0.1
+aiofiles>=23.2.1
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.5
+aiosqlite>=0.17.0
+
