@@ -526,7 +526,6 @@ class NexiosApp(object):
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """ASGI application callable"""
         scope["app"] = self
-        print("app scope", scope)
         if scope["type"] == "lifespan":
             await self.handle_lifespan(receive, send)
         elif scope["type"] == "http":
