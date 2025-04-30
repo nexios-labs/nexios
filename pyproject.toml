@@ -6,7 +6,7 @@ include = ["nexios/py.typed"]
 [tool.poetry]
 name = "nexios"
 version = "2.3.2"
-description = "Nexios is a modern, high-performance ASGI web framework for Python."
+description = "Nexios is a modern, high-performance ASGI web framework for Python powered by Granian."
 authors = ["Chidebele Dunamis <techwithdunamix@gmail.com>"]
 license = "MIT"
 homepage = "https://github.com/nexios-labs/nexios"
@@ -21,7 +21,7 @@ keywords = [
     "Python",
     "async",
     "asynchronous",
-    "fastapi",
+    "granian",
     "web server",
     "API",
     "scalable",
@@ -33,7 +33,7 @@ keywords = [
 
 [tool.poetry.dependencies]
 python = ">=3.9"
-uvicorn = ">=0.22.0"
+granian = ">=1.2.0"
 anyio = "4.3.0"
 itsdangerous = ">=2.1.2"
 python-multipart = ">=0.0.6"

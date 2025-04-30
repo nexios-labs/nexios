@@ -92,10 +92,10 @@ def _has_write_permission(path: Path) -> bool:
     return os.access(parent, os.W_OK)
 
 
-def _check_uvicorn_installed() -> bool:
-    """Check if uvicorn is installed."""
+def _check_granian_installed() -> bool:
+    """Check if granian is installed."""
     try:
-        pkg_resources.get_distribution("uvicorn")
+        pkg_resources.get_distribution("granian")
         return True
     except pkg_resources.DistributionNotFound:
         return False
@@ -397,24 +397,67 @@ def new(
     help="Number of worker processes.",
     callback=_validate_workers,
 )
-def run(app: str, host: str, port: int, reload: bool, log_level: str, workers: int):
+@click.option(
+    "--interface",
+    default="asgi",
+    type=click.Choice(["asgi", "wsgi", "asgi-http"], case_sensitive=False),
+    help="Server interface type.",
+)
+@click.option(
+    "--http-protocol",
+    default="auto",
+    type=click.Choice(["h11", "h2", "auto"], case_sensitive=False),
+    help="HTTP protocol to use.",
+)
+@click.option(
+    "--threading/--no-threading",
+    default=False,
+    help="Enable/disable threading.",
+)
+@click.option(
+    "--access-log/--no-access-log",
+    default=True,
+    help="Enable/disable access logging.",
+)
+def run(
+    app: str, 
+    host: str, 
+    port: int, 
+    reload: bool, 
+    log_level: str, 
+    workers: int,
+    interface: str,
+    http_protocol: str,
+    threading: bool,
+    access_log: bool
+):
     """
     Run the Nexios development server.
 
-    Launches a development server using uvicorn with the specified options.
+    Launches a development server using Granian with the specified options.
     The server will automatically reload on code changes by default.
+    Logs access requests and other information by default.
     """
     # Check Python version compatibility
     if not _check_python_version():
         _echo_error("Nexios requires Python 3.9 or higher.")
         sys.exit(1)
 
-    # Check if uvicorn is installed
-    if not _check_uvicorn_installed():
+    # Check if granian is installed
+    if not _check_granian_installed():
         _echo_error(
-            "Uvicorn is not installed. Please install it with: pip install uvicorn"
+            "Granian is not installed. Please install it with: pip install granian"
         )
         sys.exit(1)
+
+    # Try to load Nexios configuration if available
+    config = None
+    try:
+        from nexios.config import get_config
+        config = get_config()
+        _echo_info("Using Nexios configuration for server settings")
+    except (ImportError, RuntimeError):
+        _echo_info("No Nexios configuration found, using command line parameters")
 
     try:
         # Check if app file exists in current directory
@@ -429,7 +472,7 @@ def run(app: str, host: str, port: int, reload: bool, log_level: str, workers: i
                 "Make sure you're in the correct project directory or specify the correct app path."
             )
 
-        # Try to import the module to validate it exists
+        # Try to import the module to validate it exists and get config
         try:
             if Path(app_module + ".py").exists():
                 spec = importlib.util.spec_from_file_location(
@@ -445,9 +488,34 @@ def run(app: str, host: str, port: int, reload: bool, log_level: str, workers: i
                             f"App variable '{app_var}' not found in module '{app_module}'."
                         )
                         _echo_warning(f"Available variables: {', '.join(dir(module))}")
+                    
+                    # Try to get the config from the module if it exists
+                    if not config and hasattr(module, 'app_config'):
+                        config = module.app_config
+                        _echo_info("Found configuration in application module")
         except Exception as e:
             _echo_warning(f"Error importing module '{app_module}': {str(e)}")
             _echo_warning("This may cause issues when starting the server.")
+
+        # Override command line parameters with config values if available
+        if config:
+            try:
+                # Get server settings from config if they exist
+                if hasattr(config, 'server'):
+                    server_config = config.server
+                    host = server_config.get('host', host)
+                    port = server_config.get('port', port)
+                    workers = server_config.get('workers', workers)
+                    log_level = server_config.get('log_level', log_level)
+                    reload = server_config.get('reload', reload)
+                    interface = server_config.get('interface', interface)
+                    http_protocol = server_config.get('http_protocol', http_protocol)
+                    threading = server_config.get('threading', threading)
+                    access_log = server_config.get('access_log', access_log)
+                    _echo_info("Using server configuration from config")
+            except Exception as e:
+                _echo_warning(f"Error loading server config: {str(e)}")
+                _echo_warning("Using command line parameters instead")
 
         # Check if port is already in use
         if _is_port_in_use(host, port):
@@ -463,27 +531,34 @@ def run(app: str, host: str, port: int, reload: bool, log_level: str, workers: i
         if reload:
             _echo_info("Auto-reload is enabled. Press CTRL+C to stop.")
 
-        # Prepare uvicorn command
-        uvicorn_cmd = [
-            "uvicorn",
-            app,
-            "--host",
-            host,
-            "--port",
-            str(port),
-            "--log-level",
-            log_level,
+        # Prepare granian command
+        granian_cmd = [
+            "granian",
+            "--interface", interface,
+            "--host", host,
+            "--port", str(port),
+            "--log-level", log_level,
+            "--http", http_protocol,
         ]
 
         if reload:
-            uvicorn_cmd.append("--reload")
+            granian_cmd.append("--reload")
 
         if workers > 1:
-            uvicorn_cmd.extend(["--workers", str(workers)])
+            granian_cmd.extend(["--workers", str(workers)])
 
-        # Run the uvicorn process
+        if threading:
+            granian_cmd.append("--threading")
+
+        if access_log:
+            granian_cmd.append("--access-log")
+
+        # Add the application path at the end
+        granian_cmd.append(app)
+
+        # Run the granian process
         process = subprocess.Popen(
-            uvicorn_cmd,
+            granian_cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,

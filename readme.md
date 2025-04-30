@@ -31,7 +31,7 @@
 <h2 align="center"> Star the repo if u like it🌟
 </h2>
 
-Nexios is a lightweight, Python-based web framework designed for speed, flexibility, and simplicity. It supports RESTful APIs, authentication, and integrates easily with any ORM. Built for modern web development, Nexios allows developers to quickly spin up scalable, modular apps with minimal boilerplate—ideal for startups, rapid prototyping, and custom backend solutions. Think Django's speed, Flask's minimalism.
+Nexios is a high-performance, Python-based web framework powered by Granian, a blazing-fast Rust-based ASGI server. Designed for speed, flexibility, and simplicity, Nexios delivers exceptional performance through its native Rust engine while maintaining the simplicity and elegance of Python. It supports RESTful APIs, authentication, and integrates easily with any ORM. Built for modern web development, Nexios allows developers to quickly spin up scalable, modular apps with minimal boilerplate—ideal for startups, rapid prototyping, and custom backend solutions. Think Django's capability with Rust-powered speed.
 
 ---
 
@@ -80,6 +80,10 @@ Options:
 * `--reload/--no-reload`: Enable/disable auto-reload (default: enabled)
 * `--log-level`: Log level for the server (default: info)
 * `--workers`: Number of worker processes (default: 1)
+* `--interface`: Server interface type: asgi, wsgi, or asgi-http (default: asgi)
+* `--http-protocol`: HTTP protocol: h11, h2, or auto (default: auto)
+* `--threading/--no-threading`: Enable/disable threading (default: disabled)
+* `--access-log/--no-access-log`: Enable/disable access logging (default: enabled)
 
 ### 2. **Using `pipenv`** (Python Dependency Management)
 
@@ -115,6 +119,20 @@ pip install git+https://github.com/nexios-labs/nexios.git
 
 ---
 
+## Performance
+
+Nexios leverages Granian, a high-performance Rust-based ASGI server, providing significant performance advantages:
+
+* **Rust-Powered Core**: The underlying server is written in Rust, offering near-native performance while maintaining Python's flexibility
+* **Async by Default**: Built for high-concurrency workloads using Python's async capabilities
+* **Optimized Resource Usage**: Lower memory footprint and CPU utilization compared to pure Python servers
+* **HTTP/2 Support**: Native support for modern HTTP protocols
+* **WebSocket Optimization**: Efficient WebSocket handling for real-time applications
+
+Benchmark comparisons show that Nexios with Granian can handle significantly more requests per second compared to traditional Python ASGI servers, with lower latency and better resource utilization.
+
+---
+
 ## Features
 
 - [x] **Routing**
@@ -132,6 +150,9 @@ pip install git+https://github.com/nexios-labs/nexios.git
 - [x] **WebSocket Support**
 - [x] **Custom Error Handling**
 - [x] **Pagination**
+- [x] **Rust-Powered Granian Server Integration**
+- [x] **HTTP/2 Support**
+- [x] **High-Performance Async Processing**
 
 ### Upcoming Features
 
@@ -291,8 +312,12 @@ async def cleanup():
     print("Shutting down task manager...")
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=4000)
+    # Nexios uses Granian by default, but you can also run it directly:
+    import granian
+    granian.run(app, host="0.0.0.0", port=4000, interface="asgi", access_log=True)
+    
+    # Or simply use the Nexios CLI:
+    # nexios run
 ```
 
 Visit http://localhost:4000/docs to view the Swagger API documentation.
