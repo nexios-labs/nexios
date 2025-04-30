@@ -160,4 +160,3 @@ class Client(httpx.AsyncClient):
 
     async def __aexit__(self, *args: typing.Any) -> None:
         await super().__aexit__(*args)
-
