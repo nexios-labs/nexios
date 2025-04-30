@@ -2,8 +2,17 @@ import json
 import os
 import multiprocessing
 from typing import (
-    Any, Callable, Dict, List, Optional, Union, Literal, 
-    TypedDict, TypeVar, cast, get_type_hints
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Union,
+    Literal,
+    TypedDict,
+    TypeVar,
+    cast,
+    get_type_hints,
 )
 
 # Type definitions for server configuration
@@ -11,8 +20,10 @@ InterfaceType = Literal["asgi", "wsgi", "asgi-http"]
 HttpProtocolType = Literal["h11", "h2", "auto"]
 LogLevelType = Literal["critical", "error", "warning", "info", "debug", "trace"]
 
+
 class ServerConfigDict(TypedDict, total=False):
     """TypedDict for server configuration options."""
+
     host: str
     port: int
     workers: int
@@ -23,9 +34,12 @@ class ServerConfigDict(TypedDict, total=False):
     threading: bool
     access_log: bool
 
+
 # Type for configuration validation functions
-T = TypeVar('T')
+T = TypeVar("T")
 ValidationFunc = Callable[[T], bool]
+
+
 class MakeConfig:
     """
     A dynamic configuration class that allows nested dictionary access as attributes,
@@ -133,28 +147,21 @@ class MakeConfig:
 SERVER_VALIDATION: Dict[str, ValidationFunc[Any]] = {
     # Host validation: must be a string
     "host": lambda x: isinstance(x, str),
-    
     # Port validation: must be an integer between 1 and 65535
     "port": lambda x: isinstance(x, int) and 1 <= x <= 65535,
-    
     # Workers validation: must be a positive integer
     "workers": lambda x: isinstance(x, int) and x > 0,
-    
     # Interface validation: must be one of the supported interface types
     "interface": lambda x: isinstance(x, str) and x in ["asgi", "wsgi", "asgi-http"],
-    
     # HTTP protocol validation: must be one of the supported protocols
     "http_protocol": lambda x: isinstance(x, str) and x in ["h11", "h2", "auto"],
-    
     # Log level validation: must be one of the supported log levels
-    "log_level": lambda x: isinstance(x, str) and x in ["critical", "error", "warning", "info", "debug", "trace"],
-    
+    "log_level": lambda x: isinstance(x, str)
+    and x in ["critical", "error", "warning", "info", "debug", "trace"],
     # Reload validation: must be a boolean
     "reload": lambda x: isinstance(x, bool),
-    
     # Threading validation: must be a boolean
     "threading": lambda x: isinstance(x, bool),
-    
     # Access log validation: must be a boolean
     "access_log": lambda x: isinstance(x, bool),
 }
@@ -228,28 +235,20 @@ app_config = MakeConfig({
 DEFAULT_SERVER_CONFIG: ServerConfigDict = {
     # The host to bind the server to
     "host": os.environ.get("HOST", "127.0.0.1"),
-    
     # The port to bind the server to
     "port": _get_env_int("PORT", 4000),
-    
     # Number of worker processes to use
     "workers": _get_env_int("WORKERS", min(multiprocessing.cpu_count() + 1, 8)),
-    
     # The interface to use (asgi, wsgi, or asgi-http)
     "interface": cast(InterfaceType, os.environ.get("INTERFACE", "asgi")),
-    
     # The HTTP protocol to use (h11, h2, or auto)
     "http_protocol": cast(HttpProtocolType, os.environ.get("HTTP_PROTOCOL", "auto")),
-    
     # The log level to use
     "log_level": cast(LogLevelType, os.environ.get("LOG_LEVEL", "info")),
-    
     # Whether to enable auto-reloading when code changes
     "reload": _get_env_bool("RELOAD", True),
-    
     # Whether to enable threading
     "threading": _get_env_bool("THREADING", False),
-    
     # Whether to enable access logging
     "access_log": _get_env_bool("ACCESS_LOG", True),
 }

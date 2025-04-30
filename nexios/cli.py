@@ -420,16 +420,16 @@ def new(
     help="Enable/disable access logging.",
 )
 def run(
-    app: str, 
-    host: str, 
-    port: int, 
-    reload: bool, 
-    log_level: str, 
+    app: str,
+    host: str,
+    port: int,
+    reload: bool,
+    log_level: str,
     workers: int,
     interface: str,
     http_protocol: str,
     threading: bool,
-    access_log: bool
+    access_log: bool,
 ):
     """
     Run the Nexios development server.
@@ -454,6 +454,7 @@ def run(
     config = None
     try:
         from nexios.config import get_config
+
         config = get_config()
         _echo_info("Using Nexios configuration for server settings")
     except (ImportError, RuntimeError):
@@ -488,9 +489,9 @@ def run(
                             f"App variable '{app_var}' not found in module '{app_module}'."
                         )
                         _echo_warning(f"Available variables: {', '.join(dir(module))}")
-                    
+
                     # Try to get the config from the module if it exists
-                    if not config and hasattr(module, 'app_config'):
+                    if not config and hasattr(module, "app_config"):
                         config = module.app_config
                         _echo_info("Found configuration in application module")
         except Exception as e:
@@ -501,17 +502,17 @@ def run(
         if config:
             try:
                 # Get server settings from config if they exist
-                if hasattr(config, 'server'):
+                if hasattr(config, "server"):
                     server_config = config.server
-                    host = server_config.get('host', host)
-                    port = server_config.get('port', port)
-                    workers = server_config.get('workers', workers)
-                    log_level = server_config.get('log_level', log_level)
-                    reload = server_config.get('reload', reload)
-                    interface = server_config.get('interface', interface)
-                    http_protocol = server_config.get('http_protocol', http_protocol)
-                    threading = server_config.get('threading', threading)
-                    access_log = server_config.get('access_log', access_log)
+                    host = server_config.get("host", host)
+                    port = server_config.get("port", port)
+                    workers = server_config.get("workers", workers)
+                    log_level = server_config.get("log_level", log_level)
+                    reload = server_config.get("reload", reload)
+                    interface = server_config.get("interface", interface)
+                    http_protocol = server_config.get("http_protocol", http_protocol)
+                    threading = server_config.get("threading", threading)
+                    access_log = server_config.get("access_log", access_log)
                     _echo_info("Using server configuration from config")
             except Exception as e:
                 _echo_warning(f"Error loading server config: {str(e)}")
@@ -534,11 +535,16 @@ def run(
         # Prepare granian command
         granian_cmd = [
             "granian",
-            "--interface", interface,
-            "--host", host,
-            "--port", str(port),
-            "--log-level", log_level,
-            "--http", http_protocol,
+            "--interface",
+            interface,
+            "--host",
+            host,
+            "--port",
+            str(port),
+            "--log-level",
+            log_level,
+            "--http",
+            http_protocol,
         ]
 
         if reload:
