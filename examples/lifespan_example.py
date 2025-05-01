@@ -20,8 +20,7 @@ from nexios.http.response import Response
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("lifespan-example")
 
@@ -65,22 +64,22 @@ db = Database()
 async def lifespan_context(app):
     """
     Custom lifespan context manager that handles both startup and shutdown.
-    
+
     This demonstrates how to use a custom lifespan with proper cleanup handling.
     """
     logger.info("Application startup: Custom lifespan context manager")
-    
+
     # Startup phase
     try:
         # Initialize resources
         await db.connect()
-        
+
         # Store the database on the app for access in routes
         app.db = db
-        
+
         # Set application state
         app.state = {"initialized_at": asyncio.get_event_loop().time()}
-        
+
         logger.info("Application ready")
         yield
     except Exception as e:
@@ -101,11 +100,13 @@ async def lifespan_context(app):
 # 1. Application with regular startup/shutdown handlers
 regular_app = get_application(title="Regular Handlers Example")
 
+
 @regular_app.on_startup()
 async def startup_handler1():
     """First startup handler"""
     logger.info("Regular startup handler 1 running")
     await db.connect()
+
 
 @regular_app.on_startup()
 async def startup_handler2():
@@ -113,11 +114,13 @@ async def startup_handler2():
     logger.info("Regular startup handler 2 running")
     await db.set("startup_key", "initialized")
 
+
 @regular_app.on_shutdown()
 async def shutdown_handler1():
     """First shutdown handler"""
     logger.info("Regular shutdown handler 1 running")
     await db.set("shutdown_key", "cleaning_up")
+
 
 @regular_app.on_shutdown()
 async def shutdown_handler2():
@@ -127,20 +130,19 @@ async def shutdown_handler2():
 
 
 # 2. Application with custom lifespan context manager
-custom_app = get_application(
-    title="Custom Lifespan Example",
-    lifespan=lifespan_context
-)
+custom_app = get_application(title="Custom Lifespan Example", lifespan=lifespan_context)
 
 
 # 3. Application demonstrating error handling
 error_app = get_application(title="Error Handling Example")
+
 
 @error_app.on_startup()
 async def failing_startup():
     """Startup handler that intentionally raises an exception"""
     logger.info("Running startup handler that will fail")
     raise ValueError("Intentional startup error for demonstration")
+
 
 @error_app.on_shutdown()
 async def error_cleanup():
@@ -151,15 +153,14 @@ async def error_cleanup():
 
 
 # Main application that combines regular handlers and custom lifespan
-app = get_application(
-    title="Nexios Lifespan Demo",
-    lifespan=lifespan_context
-)
+app = get_application(title="Nexios Lifespan Demo", lifespan=lifespan_context)
+
 
 # Add some regular handlers too (these won't run when custom lifespan is used)
 @app.on_startup()
 async def additional_startup():
     logger.info("Additional startup handler (won't run with custom lifespan)")
+
 
 @app.on_shutdown()
 async def additional_shutdown():
@@ -170,18 +171,19 @@ async def additional_shutdown():
 @app.get("/")
 async def home(request: Request, response: Response):
     """Simple endpoint to verify the app is running"""
-    return response.json({
-        "status": "ok",
-        "message": "Nexios lifespan demo is running"
-    })
+    return response.json({"status": "ok", "message": "Nexios lifespan demo is running"})
+
 
 @app.get("/db-status")
 async def db_status(request: Request, response: Response):
     """Endpoint that uses the database connection"""
-    return response.json({
-        "database_connected": app.db.connected,
-        "startup_time": app.state.get("initialized_at", None)
-    })
+    return response.json(
+        {
+            "database_connected": app.db.connected,
+            "startup_time": app.state.get("initialized_at", None),
+        }
+    )
+
 
 @app.get("/error")
 async def trigger_error(request: Request, response: Response):
@@ -192,7 +194,8 @@ async def trigger_error(request: Request, response: Response):
 
 if __name__ == "__main__":
     # Instructions for running with different servers
-    print("""
+    print(
+        """
 Nexios Lifespan Demo Application
 --------------------------------
 
@@ -204,9 +207,10 @@ Run with Uvicorn:
 
 Run with Hypercorn:
     hypercorn lifespan_example:app
-    """)
-    
+    """
+    )
+
     # Default to uvicorn if run directly
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
 
+    uvicorn.run(app, host="127.0.0.1", port=8000)
