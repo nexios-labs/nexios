@@ -2182,6 +2182,7 @@ class Router(BaseRouter):
                 deprecated=deprecated,
                 parameters=parameters,
                 exclude_from_schema=exclude_from_schema,
+                **kwargs
             )
             self.add_route(route)
             return handler
