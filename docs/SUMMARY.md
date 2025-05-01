@@ -28,15 +28,16 @@
     - [Using Poetry](fundamentals/installation-guide.md#2-install-nexios-using-poetry)
     - [From GitHub Branch](fundamentals/installation-guide.md#3-install-nexios-from-a-specific-github-branch)
   - [🛠️ CLI Tools](fundamentals/cli-tools.md)
-  - [Middleware](fundamentals/middleware.md)
-  - [Routing](fundamentals/routing.md)
-  - [Processing Inputs](fundamentals/processing-inputs.md)
-
+ 
 ## Core Concepts
 
 - [Managing Config](managing_config.md)
 - [Request and Response](request-and-response.md)
 - [Error Handling](exceptions.md)
+- [Routing](fundamentals/routing.md)
+- [Middleware](fundamentals/middleware.md)
+- [Processing Inputs](fundamentals/processing-inputs.md)
+
 
 ## Features
 
