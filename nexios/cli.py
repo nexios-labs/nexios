@@ -462,11 +462,11 @@ def run(
     # Detect available servers
     uvicorn_available = _check_uvicorn_installed()
     granian_available = _check_granian_installed()
-    
+
     # Determine which server to use based on availability and user preference
     use_uvicorn = False
     use_granian = False
-    
+
     if server == "auto":
         # Auto mode: prefer Uvicorn, fall back to Granian
         if uvicorn_available:
@@ -567,11 +567,14 @@ def run(
                     http_protocol = server_config.get("http_protocol", http_protocol)
                     threading = server_config.get("threading", threading)
                     access_log = server_config.get("access_log", access_log)
-                    
+
                     # Check for server preference in config
                     if "server" in server_config:
                         server_pref = server_config.get("server", "auto").lower()
-                        if server_pref in ["uvicorn", "granian", "auto"] and server == "auto":
+                        if (
+                            server_pref in ["uvicorn", "granian", "auto"]
+                            and server == "auto"
+                        ):
                             server = server_pref
                             # Re-evaluate server selection based on config preference
                             if server == "uvicorn" and uvicorn_available:
@@ -582,7 +585,7 @@ def run(
                                 use_uvicorn = False
                                 use_granian = True
                                 _echo_info("Using Granian server (from config)")
-                    
+
                     _echo_info("Using server configuration from config")
             except Exception as e:
                 _echo_warning(f"Error loading server config: {str(e)}")
@@ -604,7 +607,7 @@ def run(
 
         # Prepare server command based on selected server
         server_cmd = []
-        
+
         if use_uvicorn:
             # Prepare uvicorn command
             server_cmd = [
@@ -623,12 +626,12 @@ def run(
 
             if workers > 1:
                 server_cmd.extend(["--workers", str(workers)])
-                
+
             if access_log:
                 server_cmd.append("--access-log")
             else:
                 server_cmd.append("--no-access-log")
-                
+
         elif use_granian:
             # Prepare granian command
             server_cmd = [
@@ -657,7 +660,7 @@ def run(
 
             if access_log:
                 server_cmd.append("--access-log")
-        
+
         # Log the command for debugging purposes
         _echo_info(f"Running command: {' '.join(server_cmd)}")
 
