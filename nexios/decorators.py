@@ -35,6 +35,9 @@ class allowed_methods(RouteDecorator):
 
         @wraps(handler)
         async def wrapper(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
+            print("Allowed methods decorator called")
+            print("kwargs:", kwargs)
+            print("args:", args)
             *_, request, response = args  # Ensure request and response are last
 
             if not isinstance(request, Request) or not isinstance(

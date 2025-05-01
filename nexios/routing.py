@@ -35,6 +35,7 @@ from nexios.exceptions import NotFoundException
 from nexios.websockets.errors import WebSocketErrorMiddleware
 from pydantic import BaseModel
 from nexios.http.response import BaseResponse
+from nexios.dependencies import DependencyProvider
 
 
 T = TypeVar("T")
@@ -397,10 +398,8 @@ class Routes:
             AssertionError: If handler is not callable.
         """
         assert callable(handler), "Route handler must be callable"
-        from nexios.openapi._builder import APIDocumentation
 
         self.prefix: Optional[str] = None
-        self.docs = APIDocumentation.get_instance()
         if path == "":
             path = "/"
         self.raw_path = path
