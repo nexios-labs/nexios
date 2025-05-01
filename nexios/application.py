@@ -269,7 +269,7 @@ class NexiosApp(object):
                             {"type": "lifespan.startup.failed", "message": str(e)}
                         )
                         return
-                
+
                 try:
                     if self.lifespan_context:
                         # If a lifespan context manager is provided, use it
@@ -280,9 +280,7 @@ class NexiosApp(object):
                     await send({"type": "lifespan.shutdown.complete"})
                     return
                 except Exception as e:
-                    await send(
-                        {"type": "lifespan.shutdown.failed", "message": str(e)}
-                    )
+                    await send({"type": "lifespan.shutdown.failed", "message": str(e)})
                     return
 
         except Exception as e:
@@ -290,9 +288,6 @@ class NexiosApp(object):
                 await send({"type": "lifespan.startup.failed", "message": str(e)})
             else:
                 await send({"type": "lifespan.shutdown.failed", "message": str(e)})
-
-      
-
 
     def _setup_openapi(self) -> None:
         """Set up automatic OpenAPI documentation"""
