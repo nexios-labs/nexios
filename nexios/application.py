@@ -269,25 +269,27 @@ class NexiosApp(object):
                             {"type": "lifespan.startup.failed", "message": str(e)}
                         )
                         return
-
-                try:
-                    if self.lifespan_context:
-                        # If a lifespan context manager is provided, use it
-                        await self.lifespan_manager.__aexit__(None, None, None)
-                    else:
-                        # Otherwise, fall back to the default shutdown handlers
-                        await self._shutdown()
-                    await send({"type": "lifespan.shutdown.complete"})
-                    return
-                except Exception as e:
-                    await send({"type": "lifespan.shutdown.failed", "message": str(e)})
-                    return
+                if message['type'] == "lifespan.shutdown":
+                    try:
+                        if self.lifespan_context:
+                            # If a lifespan context manager is provided, use it
+                            await self.lifespan_manager.__aexit__(None, None, None)
+                        else:
+                            # Otherwise, fall back to the default shutdown handlers
+                            await self._shutdown()
+                        await send({"type": "lifespan.shutdown.complete"})
+                        return
+                    except Exception as e:
+                        await send({"type": "lifespan.shutdown.failed", "message": str(e)})
+                        return
 
         except Exception as e:
             if message["type"].startswith("lifespan.startup"):
                 await send({"type": "lifespan.startup.failed", "message": str(e)})
             else:
                 await send({"type": "lifespan.shutdown.failed", "message": str(e)})
+
+        
 
     def _setup_openapi(self) -> None:
         """Set up automatic OpenAPI documentation"""
