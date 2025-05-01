@@ -101,6 +101,15 @@ def _check_granian_installed() -> bool:
         return False
 
 
+def _check_uvicorn_installed() -> bool:
+    """Check if uvicorn is installed."""
+    try:
+        pkg_resources.get_distribution("uvicorn")
+        return True
+    except pkg_resources.DistributionNotFound:
+        return False
+
+
 def _check_python_version() -> bool:
     """Check if Python version is compatible."""
     import sys
@@ -401,23 +410,29 @@ def new(
     "--interface",
     default="asgi",
     type=click.Choice(["asgi", "wsgi", "asgi-http"], case_sensitive=False),
-    help="Server interface type.",
+    help="Server interface type (Granian only).",
 )
 @click.option(
     "--http-protocol",
     default="auto",
     type=click.Choice(["h11", "h2", "auto"], case_sensitive=False),
-    help="HTTP protocol to use.",
+    help="HTTP protocol to use (Granian only).",
 )
 @click.option(
     "--threading/--no-threading",
     default=False,
-    help="Enable/disable threading.",
+    help="Enable/disable threading (Granian only).",
 )
 @click.option(
     "--access-log/--no-access-log",
     default=True,
     help="Enable/disable access logging.",
+)
+@click.option(
+    "--server",
+    type=click.Choice(["auto", "uvicorn", "granian"], case_sensitive=False),
+    default="auto",
+    help="Server to use for running the application. Auto will prefer Uvicorn.",
 )
 def run(
     app: str,
@@ -430,25 +445,64 @@ def run(
     http_protocol: str,
     threading: bool,
     access_log: bool,
+    server: str,
 ):
     """
     Run the Nexios development server.
 
-    Launches a development server using Granian with the specified options.
-    The server will automatically reload on code changes by default.
-    Logs access requests and other information by default.
+    Launches a development server using either Uvicorn (default) or Granian
+    with the specified options. The server will automatically reload on code
+    changes by default. Logs access requests and other information by default.
     """
     # Check Python version compatibility
     if not _check_python_version():
         _echo_error("Nexios requires Python 3.9 or higher.")
         sys.exit(1)
 
-    # Check if granian is installed
-    if not _check_granian_installed():
-        _echo_error(
-            "Granian is not installed. Please install it with: pip install granian"
-        )
-        sys.exit(1)
+    # Detect available servers
+    uvicorn_available = _check_uvicorn_installed()
+    granian_available = _check_granian_installed()
+    
+    # Determine which server to use based on availability and user preference
+    use_uvicorn = False
+    use_granian = False
+    
+    if server == "auto":
+        # Auto mode: prefer Uvicorn, fall back to Granian
+        if uvicorn_available:
+            use_uvicorn = True
+            _echo_info("Using Uvicorn server (default)")
+        elif granian_available:
+            use_granian = True
+            _echo_info("Using Granian server (Uvicorn not available)")
+        else:
+            _echo_error(
+                "Neither Uvicorn nor Granian is installed. Please install at least one with: "
+                "pip install uvicorn or pip install nexios[granian]"
+            )
+            sys.exit(1)
+    elif server == "uvicorn":
+        # Explicitly requested Uvicorn
+        if uvicorn_available:
+            use_uvicorn = True
+            _echo_info("Using Uvicorn server (as requested)")
+        else:
+            _echo_error(
+                "Uvicorn is not installed but was explicitly requested. "
+                "Please install it with: pip install uvicorn"
+            )
+            sys.exit(1)
+    elif server == "granian":
+        # Explicitly requested Granian
+        if granian_available:
+            use_granian = True
+            _echo_info("Using Granian server (as requested)")
+        else:
+            _echo_error(
+                "Granian is not installed but was explicitly requested. "
+                "Please install it with: pip install nexios[granian]"
+            )
+            sys.exit(1)
 
     # Try to load Nexios configuration if available
     config = None
@@ -513,6 +567,22 @@ def run(
                     http_protocol = server_config.get("http_protocol", http_protocol)
                     threading = server_config.get("threading", threading)
                     access_log = server_config.get("access_log", access_log)
+                    
+                    # Check for server preference in config
+                    if "server" in server_config:
+                        server_pref = server_config.get("server", "auto").lower()
+                        if server_pref in ["uvicorn", "granian", "auto"] and server == "auto":
+                            server = server_pref
+                            # Re-evaluate server selection based on config preference
+                            if server == "uvicorn" and uvicorn_available:
+                                use_uvicorn = True
+                                use_granian = False
+                                _echo_info("Using Uvicorn server (from config)")
+                            elif server == "granian" and granian_available:
+                                use_uvicorn = False
+                                use_granian = True
+                                _echo_info("Using Granian server (from config)")
+                    
                     _echo_info("Using server configuration from config")
             except Exception as e:
                 _echo_warning(f"Error loading server config: {str(e)}")
@@ -532,39 +602,68 @@ def run(
         if reload:
             _echo_info("Auto-reload is enabled. Press CTRL+C to stop.")
 
-        # Prepare granian command
-        granian_cmd = [
-            "granian",
-            "--interface",
-            interface,
-            "--host",
-            host,
-            "--port",
-            str(port),
-            "--log-level",
-            log_level,
-            "--http",
-            http_protocol,
-        ]
+        # Prepare server command based on selected server
+        server_cmd = []
+        
+        if use_uvicorn:
+            # Prepare uvicorn command
+            server_cmd = [
+                "uvicorn",
+                app,
+                "--host",
+                host,
+                "--port",
+                str(port),
+                "--log-level",
+                log_level,
+            ]
 
-        if reload:
-            granian_cmd.append("--reload")
+            if reload:
+                server_cmd.append("--reload")
 
-        if workers > 1:
-            granian_cmd.extend(["--workers", str(workers)])
+            if workers > 1:
+                server_cmd.extend(["--workers", str(workers)])
+                
+            if access_log:
+                server_cmd.append("--access-log")
+            else:
+                server_cmd.append("--no-access-log")
+                
+        elif use_granian:
+            # Prepare granian command
+            server_cmd = [
+                "granian",
+                "--interface",
+                interface,
+                "--host",
+                host,
+                "--port",
+                str(port),
+                "--log-level",
+                log_level,
+                "--http",
+                http_protocol,
+                app,
+            ]
 
-        if threading:
-            granian_cmd.append("--threading")
+            if reload:
+                server_cmd.append("--reload")
 
-        if access_log:
-            granian_cmd.append("--access-log")
+            if workers > 1:
+                server_cmd.extend(["--workers", str(workers)])
 
-        # Add the application path at the end
-        granian_cmd.append(app)
+            if threading:
+                server_cmd.append("--threading")
 
-        # Run the granian process
+            if access_log:
+                server_cmd.append("--access-log")
+        
+        # Log the command for debugging purposes
+        _echo_info(f"Running command: {' '.join(server_cmd)}")
+
+        # Run the server process
         process = subprocess.Popen(
-            granian_cmd,
+            server_cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,

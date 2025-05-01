@@ -1,13 +1,19 @@
 # CLI Tools
 
-Nexios comes with a powerful CLI tool that helps you bootstrap new projects and manage development servers.
+Nexios comes with a powerful CLI tool that helps you bootstrap new projects and manage development servers. It supports multiple server engines (Uvicorn by default, with optional Granian support) to run your ASGI applications.
 
 ## Installation
 
 The CLI tool is automatically installed when you install Nexios:
 
 ```bash
-pip install nexios
+pip install nexios  # Installs with Uvicorn by default
+```
+
+To install with Granian server support:
+
+```bash
+pip install "nexios[granian]"  # Install Nexios with optional Granian support
 ```
 
 ## Usage
@@ -51,6 +57,13 @@ Options:
 - `--reload/--no-reload`: Enable/disable auto-reload (default: enabled)
 - `--log-level`: Log level for the server (default: info)
 - `--workers`: Number of worker processes (default: 1)
+- `--server`: Server to use for running the application (choices: auto, uvicorn, granian, default: auto)
+- `--access-log/--no-access-log`: Enable/disable access logging (default: enabled)
+
+Granian-specific options:
+- `--interface`: Server interface type (choices: asgi, wsgi, asgi-http, default: asgi)
+- `--http-protocol`: HTTP protocol to use (choices: h11, h2, auto, default: auto)
+- `--threading/--no-threading`: Enable/disable threading (default: disabled)
 
 ### Display Version Information
 
@@ -147,4 +160,85 @@ For production deployments, you might want to disable auto-reload and increase t
 ```bash
 nexios run --no-reload --workers 4 --host 0.0.0.0
 ```
+
+## Server Selection
+
+Nexios now supports multiple server engines for running your applications:
+
+### Automatic Server Selection
+
+By default, Nexios will automatically use the best available server in this order:
+
+1. Uvicorn (default if installed)
+2. Granian (used if Uvicorn is not installed)
+
+```bash
+# Uses the best available server (Uvicorn by default)
+nexios run
+```
+
+### Explicit Server Selection
+
+You can explicitly choose which server to use:
+
+```bash
+# Use Uvicorn server
+nexios run --server uvicorn
+
+# Use Granian server
+nexios run --server granian
+```
+
+### Server-specific Configuration
+
+#### Uvicorn Example
+
+```bash
+nexios run --server uvicorn --workers 4 --log-level debug --host 0.0.0.0
+```
+
+#### Granian Example
+
+```bash
+nexios run --server granian --interface asgi --http-protocol h2 --threading
+```
+
+### Configuration in .env or Configuration Files
+
+You can also set the server preference in your application's configuration:
+
+```python
+# In your config file
+server_config = {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "server": "uvicorn",  # or "granian"
+    "workers": 2,
+    "log_level": "info"
+}
+```
+
+## For Existing Granian Users
+
+If you have existing applications built with earlier versions of Nexios that used Granian by default:
+
+1. **No action required**: Your applications will continue to work if Granian is installed.
+
+2. **Explicit server selection**: To ensure your application continues to use Granian:
+   ```bash
+   nexios run --server granian
+   ```
+
+3. **Configuration update**: Update your configuration to explicitly set Granian as the server:
+   ```python
+   server_config = {
+       # other options...
+       "server": "granian"
+   }
+   ```
+
+4. **Installation**: Make sure to install Nexios with Granian support:
+   ```bash
+   pip install "nexios[granian]"
+   ```
 

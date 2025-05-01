@@ -19,6 +19,7 @@ from typing import (
 InterfaceType = Literal["asgi", "wsgi", "asgi-http"]
 HttpProtocolType = Literal["h11", "h2", "auto"]
 LogLevelType = Literal["critical", "error", "warning", "info", "debug", "trace"]
+ServerType = Literal["auto", "uvicorn", "granian"]
 
 
 class ServerConfigDict(TypedDict, total=False):
@@ -33,6 +34,7 @@ class ServerConfigDict(TypedDict, total=False):
     reload: bool
     threading: bool
     access_log: bool
+    server: ServerType
 
 
 # Type for configuration validation functions
@@ -164,6 +166,8 @@ SERVER_VALIDATION: Dict[str, ValidationFunc[Any]] = {
     "threading": lambda x: isinstance(x, bool),
     # Access log validation: must be a boolean
     "access_log": lambda x: isinstance(x, bool),
+    # Server validation: must be one of the supported server types
+    "server": lambda x: isinstance(x, str) and x in ["auto", "uvicorn", "granian"],
 }
 
 
@@ -199,6 +203,7 @@ LOG_LEVEL:      Logging level (default: info)
 RELOAD:         Enable auto-reload on code changes (default: true)
 THREADING:      Enable threading (default: false)
 ACCESS_LOG:     Enable access logging (default: true)
+SERVER:         Server to use: auto, uvicorn, or granian (default: auto)
 
 Example usage in code:
 
@@ -251,4 +256,6 @@ DEFAULT_SERVER_CONFIG: ServerConfigDict = {
     "threading": _get_env_bool("THREADING", False),
     # Whether to enable access logging
     "access_log": _get_env_bool("ACCESS_LOG", True),
+    # The server to use (auto, uvicorn, or granian)
+    "server": cast(ServerType, os.environ.get("SERVER", "auto")),
 }
