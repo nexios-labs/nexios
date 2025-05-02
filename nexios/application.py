@@ -498,9 +498,7 @@ class NexiosApp(object):
                 )
             ]
             + self.http_middlewares
-            + [
-                Middleware(BaseMiddleware, dispatch=self.exceptions_handler)
-            ]  # type:ignore
+            + [Middleware(BaseMiddleware, dispatch=self.exceptions_handler)]  # type:ignore
         )
         for cls, args, kwargs in reversed(middleware):
             app = cls(app, *args, **kwargs)
