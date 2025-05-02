@@ -5,15 +5,13 @@ import urllib.parse
 from dataclasses import dataclass, field
 from enum import Enum
 from tempfile import SpooledTemporaryFile
-from urllib.parse import unquote_plus
+
 
 from nexios.structs import FormData, Headers, UploadedFile
 
 if typing.TYPE_CHECKING:
     import multipart  # type:ignore
-    from multipart.multipart import (
-        MultipartCallbacks,
-        QuerystringCallbacks,
+    from multipart.multipart import ( # type:ignore
         parse_options_header,
     )
 else:
@@ -225,7 +223,7 @@ class MultiPartParser:
         self._current_partial_header_value = b""
 
     def on_headers_finished(self) -> None:
-        disposition, options = parse_options_header(
+        _, options = parse_options_header(
             self._current_part.content_disposition
         )
         try:
@@ -279,7 +277,7 @@ class MultiPartParser:
         charset = params.get(b"charset")
         self._charset = charset.decode("latin-1") if charset else "utf-8"
 
-        callbacks = {
+        callbacks :typing.Dict[str, typing.Callable[...,typing.Any]]= {
             "on_part_begin": self.on_part_begin,
             "on_part_data": self.on_part_data,
             "on_part_end": self.on_part_end,
@@ -290,7 +288,7 @@ class MultiPartParser:
             "on_end": self.on_end,
         }
 
-        parser = multipart.MultipartParser(boundary, callbacks)
+        parser = multipart.MultipartParser(boundary, callbacks) #type:ignore
         try:
             # Feed the parser with data from the request.
             async for chunk in self.stream:

@@ -429,7 +429,7 @@ class Headers(typing.Mapping[str, str]):
         if headers is not None:
             assert raw is None, 'Cannot set both "headers" and "raw".'
             assert scope is None, 'Cannot set both "headers" and "scope".'
-            if isinstance(headers, typing.Mapping):
+            if isinstance(headers, typing.Mapping): # type: ignore
                 self._list = [
                     (key.lower().encode("latin-1"), value.encode("latin-1"))
                     for key, value in headers.items()
@@ -629,7 +629,7 @@ class State:
         del self._state[key]
 
 
-from typing import Any, Dict, Iterator, ItemsView, KeysView, ValuesView
+from typing import Any, Dict, Iterator, ItemsView, KeysView, Sequence, ValuesView
 
 
 class RouteParam:
@@ -754,7 +754,7 @@ class UploadedFile:
         )
 
 
-class FormData(MultiDict[str, typing.Union[UploadedFile, str]]):
+class FormData(MultiDict[str, typing.Union[UploadedFile, str, Sequence[Any]]]): # type:ignore
 
     def __init__(
         self,
@@ -765,6 +765,7 @@ class FormData(MultiDict[str, typing.Union[UploadedFile, str]]):
         ],
         **kwargs: typing.Union[str, UploadedFile],
     ) -> None:
+        
         super().__init__(*args, **kwargs)
 
     async def close(self) -> None:

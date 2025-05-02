@@ -1,4 +1,4 @@
-# type:ignore[attr-defined]
+#type:ignore
 import inspect
 import logging
 from typing import (
@@ -11,10 +11,11 @@ from typing import (
     TypeVar,
     Tuple,
     Type,
+    Protocol,
+    cast
 )
 from enum import Enum, auto
 from dataclasses import dataclass
-from functools import wraps
 import time
 import threading
 import asyncio
@@ -25,12 +26,12 @@ import uuid
 import json
 from datetime import datetime
 
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-T = TypeVar("T")
-
+_T = TypeVar("_T", bound="Event")
 
 class EventPriority(Enum):
     """Priority levels for event listeners"""
@@ -91,7 +92,19 @@ ListenerType = Union[
 ]
 
 
-class EventSerializationMixin:
+class EventProtocol(Protocol):
+    """Protocol for event listeners"""
+
+    name :...
+    listener_count: ...
+    max_listeners: ...
+    enabled: ...
+    get_metrics: ...
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        ...
+
+class EventSerializationMixin(EventProtocol):
     """
     Mixin for event serialization capabilities.
     """
@@ -109,8 +122,10 @@ class EventSerializationMixin:
         )
 
     @classmethod
-    def from_json(cls: Type["Event"], json_str: str) -> "Event":
+    def from_json(cls, json_str: str) -> _T: #type:ignore
         """Deserialize event configuration from JSON"""
+
+        cls = cast(Type[_T], cls)   
         data = json.loads(json_str)
         event = cls(data["name"])
         event.max_listeners = data["max_listeners"]
@@ -161,8 +176,8 @@ class Event(EventSerializationMixin):
         self._parent: Optional["Event"] = None
         self._children: List["Event"] = []
         self._enabled = True
-        self._history: List[Dict] = []
-        self._metrics = {
+        self._history: List[Dict[str, Any]] = []
+        self._metrics :Dict[str, Any] = {
             "trigger_count": 0,
             "total_listeners_executed": 0,
             "average_execution_time": 0.0,
@@ -217,7 +232,7 @@ class Event(EventSerializationMixin):
                 self._parent._children.remove(self)
             self._parent = value
             if value is not None:
-                value._children.append(weakref.proxy(self))
+                value._children.append(weakref.proxy(self)) #type:ignore
 
     @property
     def children(self) -> List["Event"]:
@@ -355,12 +370,11 @@ class Event(EventSerializationMixin):
                     if not self._listeners_equal(l, listener)
                 ]
 
-    def _listeners_equal(self, listener1: Any, listener2: Any) -> bool:
+    def _listeners_equal(self, listener1: Callable[..., Any], listener2: Callable[..., Any]) -> bool:
         """Check if two listeners are effectively the same"""
         if listener1 == listener2:
             return True
 
-        # Unwrap weak references
         l1 = listener1() if isinstance(listener1, (ref, WeakMethod)) else listener1
         l2 = listener2() if isinstance(listener2, (ref, WeakMethod)) else listener2
 
@@ -511,7 +525,7 @@ class Event(EventSerializationMixin):
                 self._once_listeners[priority].clear()
 
         # Execute listeners in priority order
-        for listener, priority, is_once in all_listeners:
+        for listener, priority, _ in all_listeners:
             if event_data.get("cancelled", False):
                 cancelled = True
                 break
@@ -520,9 +534,9 @@ class Event(EventSerializationMixin):
                 # Resolve weak references
                 actual_listener: Optional[Callable[..., Any]] = None
                 if isinstance(listener, (ref, WeakMethod)):
-                    actual_listener = listener()
+                    actual_listener = listener() #type:ignore
                     if actual_listener is None:
-                        continue  # Listener was garbage collected
+                        continue  
                 else:
                     actual_listener = listener
 
@@ -803,7 +817,7 @@ class EventNamespace:
         Returns:
             Event instance
         """
-        full_name = f"{self._namespace}{self._emitter._namespace_separator}{event_name}"
+        full_name = f"{self._namespace}{self._emitter._namespace_separator}{event_name}" #type:ignore
         return self._emitter.event(full_name)
 
     def namespace(self, sub_namespace: str) -> "EventNamespace":
@@ -818,7 +832,7 @@ class EventNamespace:
         """
         return EventNamespace(
             self._emitter,
-            f"{self._namespace}{self._emitter._namespace_separator}{sub_namespace}",
+            f"{self._namespace}{self._emitter._namespace_separator}{sub_namespace}", #type: ignore
         )
 
     def emit(self, event_name: str, *args: Any, **kwargs: Any) -> Dict[str, Any]:
@@ -922,9 +936,7 @@ class AsyncEventEmitter(EventEmitter):
             self._executor, lambda: self.emit(event_name, *args, **kwargs)
         )
 
-    def schedule_emit(
-        self, event_name: str, *args: Any, **kwargs: Any
-    ) -> asyncio.Future:
+    def schedule_emit(self, event_name: str, *args: Any, **kwargs: Any) -> asyncio.Future: #type: ignore
         """
         Schedule an event to be triggered asynchronously.
 
