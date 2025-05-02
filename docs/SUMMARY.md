@@ -138,5 +138,6 @@
 * [Contributing](contributing.md)
 * [Miscellaneous](misc.md)
 
+---
 
-[About Nexios](about.md)
+* [About Nexios](about.md)
