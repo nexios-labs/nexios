@@ -1,7 +1,5 @@
-# Standard library imports
 from typing import (
     Any,
-    AsyncIterator,
     Awaitable,
     Callable,
     Dict,
@@ -10,13 +8,12 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    AsyncContextManager,
 )
 
-# Third-party imports
 from pydantic import BaseModel
-from typing_extensions import Annotated, Doc  # type: ignore
+from typing_extensions import Annotated, Doc 
 
-# Local imports
 from nexios.config import DEFAULT_CONFIG, MakeConfig
 from nexios.events import AsyncEventEmitter
 from nexios.exception_handler import ExceptionMiddleware
@@ -41,7 +38,7 @@ AppType = TypeVar("AppType", bound="NexiosApp")
 
 # Module globals
 logger = create_logger("nexios")
-
+lifespan_manager =  Callable[["NexiosApp"], AsyncContextManager[bool]]
 
 class NexiosApp(object):
     def __init__(
@@ -95,7 +92,7 @@ class NexiosApp(object):
                         A function in Nexios responsible for handling server-side exceptions by logging errors, reporting issues, or initiating recovery mechanisms. It prevents crashes by intercepting unexpected failures, ensuring the application remains stable and operational. This function provides a structured approach to error management, allowing developers to define custom handling strategies such as retrying failed requests, sending alerts, or gracefully degrading functionality. By centralizing error processing, it improves maintainability and observability, making debugging and monitoring more efficient. Additionally, it ensures that critical failures do not disrupt the entire system, allowing services to continue running while appropriately managing faults and failures."""
             ),
         ] = None,
-        lifespan: Optional[Callable[["NexiosApp"], AsyncIterator[None]]] = None,
+        lifespan: Optional[lifespan_manager] = None,
     ):
 
         self.config = config or DEFAULT_CONFIG
@@ -106,15 +103,14 @@ class NexiosApp(object):
         self.ws_middlewares: List[ASGIApp] = []
         self.startup_handlers: List[Callable[[], Awaitable[None]]] = []
         self.shutdown_handlers: List[Callable[[], Awaitable[None]]] = []
-        self.exceptions_handler: Union[ExceptionMiddleware, None] = (
-            server_error_handler or ExceptionMiddleware()
-        )
+        self.exceptions_handler: Union[ExceptionMiddleware, None] = ExceptionMiddleware()
+        self.server_error_handler = server_error_handler
 
         self.app = Router()
         self.router = self.app
         self.route = self.router.route
         self.lifespan_context: Optional[
-            Callable[["NexiosApp"], AsyncIterator[None]]
+          lifespan_manager
         ] = lifespan
 
         openapi_config: Dict[str, Any] = self.config.to_dict().get(
@@ -248,49 +244,43 @@ class NexiosApp(object):
     async def handle_lifespan(self, receive: Receive, send: Send) -> None:
         """Handle ASGI lifespan protocol events."""
         self._setup_openapi()
+        message: Optional[Message] = None
 
         try:
             while True:
-                message: Message = await receive()
+                message = await receive()
                 if message["type"] == "lifespan.startup":
                     try:
                         if self.lifespan_context:
-                            # If a lifespan context manager is provided, use it
-                            self.lifespan_manager: AsyncIterator[None] = (
-                                self.lifespan_context(self)
-                            )
-                            await self.lifespan_manager.__aenter__()
+                            async with self.lifespan_context(self):
+                                await send({"type": "lifespan.startup.complete"})
+                                break  # wait for shutdown
                         else:
-                            # Otherwise, fall back to the default startup handlers
                             await self._startup()
-                        await send({"type": "lifespan.startup.complete"})
+                            await send({"type": "lifespan.startup.complete"})
                     except Exception as e:
-                        await send(
-                            {"type": "lifespan.startup.failed", "message": str(e)}
-                        )
+                        await send({"type": "lifespan.startup.failed", "message": str(e)})
                         return
-                if message["type"] == "lifespan.shutdown":
+
+                elif message["type"] == "lifespan.shutdown":
                     try:
                         if self.lifespan_context:
-                            # If a lifespan context manager is provided, use it
-                            await self.lifespan_manager.__aexit__(None, None, None)
+                            # already exited if we used `async with` above
+                            pass
                         else:
-                            # Otherwise, fall back to the default shutdown handlers
                             await self._shutdown()
                         await send({"type": "lifespan.shutdown.complete"})
                         return
                     except Exception as e:
-                        await send(
-                            {"type": "lifespan.shutdown.failed", "message": str(e)}
-                        )
+                        await send({"type": "lifespan.shutdown.failed", "message": str(e)})
                         return
 
         except Exception as e:
-            if message["type"].startswith("lifespan.startup"):
+            err_type = message["type"] if message else "lifespan.unknown"
+            if err_type.startswith("lifespan.startup"):
                 await send({"type": "lifespan.startup.failed", "message": str(e)})
             else:
                 await send({"type": "lifespan.shutdown.failed", "message": str(e)})
-
     def _setup_openapi(self) -> None:
         """Set up automatic OpenAPI documentation"""
         docs = self.docs
@@ -2065,14 +2055,7 @@ class NexiosApp(object):
             handler=handler,
         )
 
-    def add_ws_route(
-        self,
-        route: Annotated[
-            WebsocketRoutes,
-            Doc("An instance of the WSRoutes class representing a WebSocket route."),
-        ],
-    ):
-        return self.ws_router.add_route(route)
+   
 
     def __str__(self) -> str:
         return f"<NexiosApp: {self.title}>"

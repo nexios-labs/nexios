@@ -1,5 +1,4 @@
 from __future__ import annotations
-from token import OP
 from typing import (
     Any,
     List,
@@ -19,7 +18,7 @@ import warnings, typing
 from enum import Enum
 from abc import abstractmethod, ABC
 import asyncio
-from nexios.openapi.models import Parameter, Path, Schema
+from nexios.openapi.models import Parameter
 from nexios.types import MiddlewareType, WsMiddlewareType, HandlerType, WsHandlerType
 from nexios.decorators import allowed_methods
 from typing_extensions import Doc, Annotated  # type: ignore
@@ -107,7 +106,7 @@ PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
 
 def compile_path(
     path: str,
-) -> tuple[typing.Pattern[str], str, dict[str, Convertor[typing.Any]]]:
+) -> tuple[typing.Pattern[str], RouteType, dict[str, Convertor[typing.Any]], List[str]]:
     """
     Given a path string, like: "/{username:str}",
     or a host string, like: "{subdomain}.mydomain.org", return a three-tuple
@@ -176,7 +175,7 @@ class RoutePattern:
     raw_path: str
     param_names: List[str]
     route_type: RouteType
-    convertor: Convertor[Any]
+    convertor: Dict[str, Convertor[typing.Any]]
 
 
 class RouteBuilder:
@@ -189,8 +188,8 @@ class RouteBuilder:
             pattern=path_regex,
             raw_path=path,
             param_names=param_names,
-            route_type=path_format,  # type:ignore
-            convertor=param_convertors,  # type:ignore
+            route_type=path_format,  
+            convertor=param_convertors,  
         )
 
 
@@ -526,7 +525,7 @@ class Routes:
         return f"<Route {self.raw_path} methods={self.methods}>"
 
 
-class Router(BaseRouter):
+class Router:
     def __init__(
         self,
         prefix: Optional[str] = None,
@@ -2129,7 +2128,7 @@ class Router(BaseRouter):
             """
             ),
         ],
-    ) -> Callable[[HandlerType], HandlerType]:
+    ) -> Union[HandlerType, Callable[..., HandlerType]]:
         """
         Register a route with configurable HTTP methods and OpenAPI documentation.
 
@@ -2258,9 +2257,9 @@ class Router(BaseRouter):
 
         raise NotFoundException
 
-    def mount_router(  # type:ignore
+    def mount_router( 
         self, app: "Router", path: typing.Optional[str] = None
-    ) -> None:  # type:ignore
+    ) -> None:  
         """
         Mount an ASGI application (e.g., another Router) under a specific path prefix.
 
@@ -2360,7 +2359,7 @@ class WebsocketRoutes:
         return f"<WSRoute {self.raw_path}>"
 
 
-class WSRouter(BaseRouter):
+class WSRouter:
     def __init__(
         self, prefix: Optional[str] = None, middleware: Optional[List[Any]] = []
     ):
