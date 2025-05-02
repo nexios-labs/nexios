@@ -49,7 +49,7 @@ If Express.js and Python had a wild night of coding, the result would be Nexios�
 
 Think of it as Express.js but speaking fluent Python. It doesn't force you into strict rules, doesn't ask for long configurations, and definitely doesn't judge your coding habits. It just works—so you can focus on writing awesome code instead of wrestling with boilerplate.
 
-## 📦 Installation Options
+## Installation Options
 
 <div align="center">
 
@@ -63,7 +63,7 @@ Think of it as Express.js but speaking fluent Python. It doesn't force you into 
 
 </div>
 
-## 🚀 Getting Started with Nexios
+## Getting Started with Nexios
 
 ### Simple Hello World
 
@@ -172,7 +172,7 @@ async def cleanup_resources():
     # Close connections, free resources, etc.
 ```
 
-## 🔧 Building a Complete REST API
+## Building a Complete REST API
 
 Here's how to build a task manager API with Nexios:
 
@@ -322,7 +322,7 @@ if __name__ == "__main__":
     # nexios run
 ```
 
-## ⚡️ Powered by Granian: Rust-Powered ASGI Server
+##  Powered by Granian: Rust-Powered ASGI Server
 
 <div align="center">
 <p>
@@ -338,7 +338,7 @@ Nexios leverages Granian, a high-performance Rust-based ASGI server, providing s
 - **HTTP/2 Support**: Native support for modern HTTP protocols
 - **WebSocket Optimization**: Efficient WebSocket handling for real-time applications
 
-## 🎯 Feature Checklist
+## Feature Checklist
 
 <div align="center">
 <table>
@@ -411,7 +411,7 @@ Options:
 ## 💡 Pro Tips
 
 <div class="tip">
-<p>🔒 <strong>Security Tip</strong>: Avoid hardcoding secrets in Nexios; use environment variables for better security!</p>
+<p><strong>Security Tip</strong>: Avoid hardcoding secrets in Nexios; use environment variables for better security!</p>
 
 ```python
 from os import getenv
@@ -427,8 +427,8 @@ DATABASE_URL = getenv("DATABASE_URL")
 
 | Framework | Requests/sec | Latency (ms) | Memory Usage |
 |-----------|--------------|--------------|--------------|
-| **Nexios+Granian** | ~45,000 | ~2.2 | Low |
-| FastAPI+Uvicorn | ~35,000 | ~2.8 | Medium |
+| FastAPI+Uvicorn | ~45,000 | ~2.0 | Medium |
+| **Nexios+Granian** | ~42,000 | ~2.4 | Low |
 | Flask+Gunicorn | ~20,000 | ~5.0 | Medium |
 | Django+Gunicorn | ~15,000 | ~6.5 | High |
 
@@ -439,7 +439,7 @@ DATABASE_URL = getenv("DATABASE_URL")
 ## 📸 OpenAPI Documentation
 
 <p align="center">
-  <img src="./docs/_media/openapi.jpg" alt="OpenAPI Screenshot"/>
+  <img src="../docs/_media/openapi.jpg" alt="OpenAPI Screenshot"/>
 </p>
 
 After running your Nexios application, visit `http://localhost:4000/docs` to access the automatically generated Swagger documentation.
