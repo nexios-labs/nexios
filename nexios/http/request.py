@@ -304,7 +304,7 @@ class Request(HTTPConnection):
         max_files: typing.Optional[int] = 1000,
         max_fields: typing.Optional[int] = 1000,
     ) -> FormData:
-        if self._form is None: #type:ignore
+        if self._form is None:  # type:ignore
             assert (
                 parse_options_header is not None
             ), "The `python-multipart` library must be installed to use form parsing."
@@ -341,7 +341,7 @@ class Request(HTTPConnection):
         )
 
     async def close(self) -> None:
-        if self._form is not None: # type: ignore
+        if self._form is not None:  # type: ignore
             await self._form.close()
 
     async def is_disconnected(self) -> bool:
@@ -376,11 +376,11 @@ class Request(HTTPConnection):
         This method returns a dictionary of files from the form_data.
         """
         form_data: FormData = await self.form_data
-        files_dict : typing.Dict[str, typing.Any] = {}
+        files_dict: typing.Dict[str, typing.Any] = {}
         for key, value in form_data.items():
             if isinstance(value, (list, tuple)):
-                for item in value: # type: ignore
-                    if hasattr(item, "filename"): # type: ignore
+                for item in value:  # type: ignore
+                    if hasattr(item, "filename"):  # type: ignore
                         files_dict[key] = item
             elif hasattr(value, "filename"):
                 files_dict[key] = value

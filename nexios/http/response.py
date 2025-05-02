@@ -634,7 +634,9 @@ class NexiosResponse:
     @property
     def headers(self):
         return MutableHeaders(
-            {k.decode("utf-8"): v.decode("utf-8") for k, v in self._response._headers}, #type:ignore
+            {
+                k.decode("utf-8"): v.decode("utf-8") for k, v in self._response._headers
+            },  # type:ignore
         )  # type:ignore
 
     @property
@@ -643,9 +645,9 @@ class NexiosResponse:
 
     def remove_header(self, key: str) -> "NexiosResponse":
         """Remove a header from the response."""
-        self._response._headers = [ #type:ignore
+        self._response._headers = [  # type:ignore
             (k, v)
-            for k, v in self._response._headers #type:ignore
+            for k, v in self._response._headers  # type:ignore
             if k.decode("latin-1").lower() != key.lower()
         ]  # type:ignore
         return self
@@ -865,7 +867,7 @@ class NexiosResponse:
 
     def set_headers(self, headers: Dict[str, str], overide_all: bool = False):
         if overide_all:
-            self._response._headers = [ #type:ignore
+            self._response._headers = [  # type:ignore
                 (bytes(str(k), "utf-8"), bytes(str(v), "utf-8"))
                 for k, v in self.headers.items()
             ]  # type:ignore
