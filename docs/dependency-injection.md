@@ -13,6 +13,39 @@ Dependency Injection (DI) is a design pattern that helps manage dependencies bet
 * Write more testable and maintainable code
 * Manage shared resources efficiently
 
+### Why Use Dependency Injection?
+
+In traditional application development, components often create and manage their dependencies directly. This tight coupling makes code harder to test, maintain, and refactor. With dependency injection:
+
+1. **Separation of Concerns**: Each component focuses on its core functionality while dependencies are provided externally
+2. **Testability**: Dependencies can be easily mocked or replaced during testing
+3. **Reusability**: Dependencies can be shared across multiple components
+4. **Flexibility**: Implementation details can be changed without modifying dependent components
+
+## How Dependency Injection Works in Nexios
+
+The Nexios DI system automatically resolves and injects dependencies into your route handlers. Here's a visual representation of how it works:
+
+```
+┌─────────────────────┐
+│ Dependency Provider │
+│  (Function/Class)   │
+└─────────┬───────────┘
+          │
+          │ provides
+          │
+          ▼
+┌─────────────────────┐     injects    ┌─────────────────────┐
+│  Depend(provider)   │────────────────▶  Route Handler      │
+└─────────────────────┘                └─────────────────────┘
+```
+
+When a request is received, Nexios:
+1. Identifies dependencies in the route handler signature
+2. Resolves each dependency by calling its provider function
+3. Passes resolved dependencies as arguments to the route handler
+4. Handles the request with all dependencies properly injected
+
 ## Core Components
 
 ### The Depend Class
@@ -20,57 +53,103 @@ Dependency Injection (DI) is a design pattern that helps manage dependencies bet
 The `Depend` class is the main building block of Nexios' dependency injection system. It declares dependencies that should be injected into your route handlers.
 
 ```python
-from nexios import Depend
+from nexios import Depend, get_application
+
+app = get_application()
 
 async def get_current_user():
-    # ... logic to get current user
-    return user
+    # Extract token from request header
+  
+    return User
 
 @app.get("/profile")
 async def profile(request, response, current_user=Depend(get_current_user)):
+    if not current_user:
+        response.status_code = 401
+        return {"error": "Authentication required"}
     return {"user": current_user}
 ```
 
-### The inject\_dependencies Decorator
+In this example:
+- `get_current_user` is a dependency provider function
+- `Depend(get_current_user)` creates a dependency instance
+- When `/profile` is accessed, Nexios automatically calls `get_current_user` and injects the result
+
+### The inject_dependencies Decorator
 
 Under the hood, the `inject_dependencies` decorator manages the injection of dependencies into your route handlers. While you typically don't need to use this decorator directly (as it's automatically applied to route handlers), understanding how it works can be helpful:
 
 ```python
-from nexios import inject_dependencies
+from nexios import inject_dependencies, Depend
+
+def some_provider():
+    return "dependency value"
 
 @inject_dependencies
 async def my_handler(request, response, dependency=Depend(some_provider)):
     # The dependency will be automatically injected
-    pass
+    print(dependency)  # Outputs: "dependency value"
+    return {"result": dependency}
 ```
 
-## Usage Examples
+## Basic Usage Examples
 
-### Basic Usage with Synchronous Dependencies
+### Synchronous Dependencies
 
 Here's a simple example demonstrating dependency injection with synchronous dependencies:
 
 ```python
-from nexios import Depend
+from nexios import get_application, Depend
+
+app = get_application()
 
 def get_settings():
-    return {"api_version": "1.0", "environment": "production"}
+    """Provider function that returns application settings"""
+    return {
+        "api_version": "1.0",
+        "environment": "production",
+        "debug": False,
+        "allowed_origins": ["https://example.com"]
+    }
 
 @app.get("/api/info")
 async def api_info(request, response, settings=Depend(get_settings)):
-    return settings
+    """Route handler that uses the settings dependency"""
+    return {
+        "status": "online",
+        "version": settings["api_version"],
+        "environment": settings["environment"]
+    }
 ```
 
-### Working with Async Dependencies
+### Asynchronous Dependencies
 
 Nexios seamlessly handles both synchronous and asynchronous dependencies:
 
 ```python
-from nexios import Depend
+import asyncio
+from nexios import get_application, Depend
+
+app = get_application()
 
 async def get_db_connection():
-    # Simulating async database connection
-    return await create_db_connection()
+    """Async provider function that establishes a database connection"""
+    # Simulating async database connection with a delay
+    await asyncio.sleep(0.1)
+    
+    # In a real app, you'd use a real database connection library
+    class DBConnection:
+        async def query(self, sql):
+            # Simulate a query execution
+            await asyncio.sleep(0.05)
+            if sql == "SELECT * FROM users":
+                return [
+                    {"id": 1, "name": "John Doe"},
+                    {"id": 2, "name": "Jane Smith"}
+                ]
+            return []
+    
+    return DBConnection()
 
 @app.get("/users")
 async def list_users(
@@ -78,117 +157,164 @@ async def list_users(
     response, 
     db=Depend(get_db_connection)
 ):
-    return await db.query("SELECT * FROM users")
+    """Route handler that uses the database connection dependency"""
+    users = await db.query("SELECT * FROM users")
+    return {"users": users}
 ```
 
-### Error Handling
+### Dependencies with Parameters
 
-Nexios provides clear error handling for dependency injection failures:
+You can customize dependency behavior by passing parameters to provider functions:
 
 ```python
-from nexios import Depend
+from nexios import get_application, Depend, HTTPException
 
-# This will raise a ValueError since no provider is specified
-@app.get("/bad-route")
-async def bad_route(request, response, settings=Depend()):
-    return settings
+app = get_application()
 
-# Proper error handling in a dependency provider
-def get_config():
-    try:
-        return load_config()
-    except FileNotFoundError:
-        raise ValueError("Configuration file not found")
+def require_permission(permission_name: str):
+    """Factory function that creates a permission-checking dependency provider"""
+    async def check_permission(request):
+        # Get the user role from request (from a header, token, etc.)
+        user_role = request.headers.get("X-Role", "guest")
+        
+        # Simple permission system (in real apps, use a proper permission system)
+        role_permissions = {
+            "admin": ["read", "write", "delete"],
+            "editor": ["read", "write"],
+            "user": ["read"],
+            "guest": []
+        }
+        
+        # Check if the role has the required permission
+        if permission_name in role_permissions.get(user_role, []):
+            return True
+        raise HTTPException(
+            status_code=403,
+            detail=f"Permission denied: {permission_name} required"
+        )
+    
+    return check_permission
 
-@app.get("/config")
-async def get_app_config(
+@app.get("/documents")
+async def list_documents(
     request, 
     response, 
-    config=Depend(get_config)
+    can_read=Depend(require_permission("read"))
 ):
-    return config
+    """Route that requires read permission"""
+    # If we get here, the user has read permission
+    return {"documents": ["doc1.pdf", "doc2.pdf"]}
+
+@app.post("/documents")
+async def create_document(
+    request, 
+    response, 
+    can_write=Depend(require_permission("write"))
+):
+    """Route that requires write permission"""
+    # If we get here, the user has write permission
+    return {"status": "Document created"}
 ```
 
-## Best Practices and Patterns
+## Dependency Chaining and Nesting
 
-1. **Keep Dependencies Focused**
-   * Each dependency provider should have a single responsibility
-   * Avoid complex logic in dependency providers
-2. **Reuse Dependencies**
-   * Create common dependencies that can be shared across multiple handlers
-   * Use dependency providers to abstract common functionality
-3. **Handle Errors Gracefully**
-   * Implement proper error handling in dependency providers
-   * Use appropriate HTTP status codes when dependency injection fails
-4. **Type Hints**
-   * Use type hints with your dependencies to improve code clarity
-   * Leverage IDE support for better development experience
-5. **Testing**
-   * Create mock dependencies for testing
-   * Test dependency providers in isolation
-
-Example of applying these practices:
+Nexios supports dependency chains where one dependency depends on another:
 
 ```python
-from typing import Dict, Optional
-from nexios import Depend
+from nexios import get_application, Depend, HTTPException
 
-async def get_db_pool():
-    # Single responsibility: managing database connections
-    return await create_db_pool()
+app = get_application()
 
-class CurrentUser:
-    def __init__(self, username: str, role: str):
-        self.username = username
-        self.role = role
+async def get_db():
+    """Database connection provider"""
+    # In a real app, create an actual database connection
+    return {"connection": "database_connection"}
 
-async def get_current_user(
-    request,
-    db=Depend(get_db_pool)
-) -> Optional[CurrentUser]:
-    # Proper error handling and type hints
-    try:
-        user_data = await db.fetch_user(request.headers["authorization"])
-        return CurrentUser(**user_data)
-    except KeyError:
+async def get_current_user(request, db=Depend(get_db)):
+    """User provider that depends on the database connection"""
+    auth_token = request.headers.get("Authorization")
+    if not auth_token:
         return None
-    except DatabaseError as e:
-        raise HTTPException(500, "Database error")
+    
+    # In a real app, you would verify the token and query the database
+    if auth_token == "valid-token":
+        # Simulate user retrieval using the db dependency
+        return {"id": 1, "username": "johndoe", "role": "admin"}
+    return None
 
-@app.get("/admin")
-async def admin_panel(
+async def get_current_active_user(current_user=Depend(get_current_user)):
+    """Ensures the user is authenticated"""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return current_user
+
+@app.get("/me")
+async def read_users_me(
     request, 
-    response,
-    current_user: CurrentUser = Depend(get_current_user)
+    response, 
+    current_user=Depend(get_current_active_user)
 ):
-    if not current_user or current_user.role != "admin":
-        raise HTTPException(403, "Forbidden")
-    return {"message": "Welcome to admin panel"}
+    """Route that requires an authenticated user"""
+    return current_user
 ```
 
-## Common Use Cases
+In this example:
+1. `get_current_user` depends on `get_db`
+2. `get_current_active_user` depends on `get_current_user`
+3. The route handler depends on `get_current_active_user`
 
-* Authentication and authorization
-* Database connections
-* Configuration management
-* Logging and monitoring
-* External service clients
-* Request-scoped resources
+Nexios automatically resolves this chain of dependencies.
 
-## Performance Considerations
+## Real-World Examples
 
-The Nexios dependency injection system is designed to be lightweight and efficient. Dependencies are resolved only when needed and results can be cached when appropriate. However, keep these points in mind:
+### Authentication System
 
-* Avoid expensive operations in dependency providers unless necessary
-* Consider caching results for frequently used dependencies
-* Be mindful of the number of dependencies in a single route handler
+Here's a complete JWT authentication system using Nexios dependency injection:
 
-## Integration with Other Features
+```python
+import jwt
+from datetime import datetime, timedelta
+from nexios import get_application, Depend, HTTPException
+from nexios.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-Dependency injection works seamlessly with other Nexios features:
+app = get_application()
 
-* OpenAPI documentation
-* Middleware
-* WebSockets
-* Authentication system
-* Testing utilities
+# Configuration
+JWT_SECRET = "your-secret-key"  # In production, use a secure secret
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRATION = 30  # minutes
+
+# Simulated user database
+USERS_DB = {
+    "johndoe": {
+        "username": "johndoe",
+        "full_name": "John Doe",
+        "email": "john@example.com",
+        "hashed_password": "fakehashedsecret",  # In production, use proper password hashing
+        "disabled": False,
+    }
+}
+
+# OAuth2 token handling
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def verify_password(plain_password, hashed_password):
+    # In production, use a proper password verification function
+    return plain_password + "notreallyhashed" == hashed_password
+
+def get_user(db, username: str):
+    if username in db:
+        user_dict = db[username]
+        return user_dict
+    return None
+
+def authenticate_user(db, username: str, password: str):
+    user = get_user(db, username)
+    if not user:
+        return False
+    if not verify_password(password, user["hashed_password"]):
+        return False
+    return user
+
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    to_
