@@ -28,7 +28,16 @@ from nexios.openapi.config import OpenAPIConfig
 from nexios.openapi.models import HTTPBearer, Parameter, Path, Schema
 from nexios.structs import URLPath
 from .routing import Router, Routes, WSRouter, WebsocketRoutes
-from .types import ASGIApp, HandlerType, Message, MiddlewareType, Receive, Scope, Send, WsHandlerType
+from .types import (
+    ASGIApp,
+    HandlerType,
+    Message,
+    MiddlewareType,
+    Receive,
+    Scope,
+    Send,
+    WsHandlerType,
+)
 
 # Constants
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
@@ -376,8 +385,6 @@ class NexiosApp(object):
             ```
         """
         self.ws_router.add_ws_route(route)
-
-    
 
     def mount_router(self, router: Router, path: Optional[str] = None) -> None:
         """
