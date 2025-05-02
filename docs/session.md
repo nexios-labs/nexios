@@ -1,24 +1,26 @@
 ---
-icon: key-round
+icon: server
 ---
 
 # Session Management
 
+## Session Management
+
 Session management is a critical component of web applications, allowing you to store and retrieve user data across multiple requests. Nexios provides a robust, flexible session management system that's easy to configure yet powerful enough for complex applications.
 
-## Introduction to Sessions
+### Introduction to Sessions
 
 Sessions in Nexios allow you to maintain state for users as they navigate through your application. Common uses for sessions include:
 
-- User authentication (storing logged-in state)
-- Shopping carts and order processes
-- User preferences and settings
-- Multi-step form completion
-- Temporary data storage
+* User authentication (storing logged-in state)
+* Shopping carts and order processes
+* User preferences and settings
+* Multi-step form completion
+* Temporary data storage
 
 Nexios provides several options for session storage, secure cookie handling, and customization to fit your application's needs.
 
-## Basic Session Setup
+### Basic Session Setup
 
 Setting up sessions in your Nexios application is straightforward:
 
@@ -48,7 +50,7 @@ async def index(req, res):
     return res.text(f"You've visited this page {counter} times")
 ```
 
-## Session Configuration Options
+### Session Configuration Options
 
 Nexios offers various configuration options for customizing session behavior:
 
@@ -89,22 +91,22 @@ app.config.session = {
 app.add_middleware(SessionMiddleware())
 ```
 
-### Configuration Options Reference
+#### Configuration Options Reference
 
-| Option | Description | Default | 
-|--------|-------------|---------|
-| `session_cookie_name` | Name of the cookie storing the session ID | `"session_id"` |
-| `cookie_path` | Path for which the cookie is valid | `"/"` |
-| `cookie_domain` | Domain for which the cookie is valid | `None` |
-| `cookie_secure` | Whether cookie should only be sent over HTTPS | `False` |
-| `cookie_httponly` | Whether cookie should be accessible via JavaScript | `True` |
-| `cookie_samesite` | SameSite attribute (`"lax"`, `"strict"`, or `"none"`) | `"lax"` |
-| `expiry` | Session lifetime in seconds | `86400` (24 hours) |
-| `manager` | Session backend class | `SignedSessionManager` |
+| Option                | Description                                           | Default                |
+| --------------------- | ----------------------------------------------------- | ---------------------- |
+| `session_cookie_name` | Name of the cookie storing the session ID             | `"session_id"`         |
+| `cookie_path`         | Path for which the cookie is valid                    | `"/"`                  |
+| `cookie_domain`       | Domain for which the cookie is valid                  | `None`                 |
+| `cookie_secure`       | Whether cookie should only be sent over HTTPS         | `False`                |
+| `cookie_httponly`     | Whether cookie should be accessible via JavaScript    | `True`                 |
+| `cookie_samesite`     | SameSite attribute (`"lax"`, `"strict"`, or `"none"`) | `"lax"`                |
+| `expiry`              | Session lifetime in seconds                           | `86400` (24 hours)     |
+| `manager`             | Session backend class                                 | `SignedSessionManager` |
 
-## Working with Sessions
+### Working with Sessions
 
-### Basic Session Operations
+#### Basic Session Operations
 
 ```python
 @app.get("/session-demo")
@@ -132,24 +134,24 @@ async def session_demo(req, res):
     })
 ```
 
-### Session Properties and Methods
+#### Session Properties and Methods
 
 Sessions in Nexios behave similar to dictionaries but with additional methods:
 
-| Method/Property | Description |
-|-----------------|-------------|
-| `session.get(key, default=None)` | Get a value, returning default if not present |
-| `session[key] = value` | Set a session value |
-| `key in session` | Check if key exists in the session |
-| `del session[key]` | Delete a key from the session |
-| `session.clear()` | Remove all keys from the session |
-| `session.keys()` | Get all keys in the session |
-| `session.items()` | Get all key-value pairs in the session |
+| Method/Property                  | Description                                            |
+| -------------------------------- | ------------------------------------------------------ |
+| `session.get(key, default=None)` | Get a value, returning default if not present          |
+| `session[key] = value`           | Set a session value                                    |
+| `key in session`                 | Check if key exists in the session                     |
+| `del session[key]`               | Delete a key from the session                          |
+| `session.clear()`                | Remove all keys from the session                       |
+| `session.keys()`                 | Get all keys in the session                            |
+| `session.items()`                | Get all key-value pairs in the session                 |
 | `session.pop(key, default=None)` | Get and remove a key, returning default if not present |
-| `session.is_empty()` | Check if session has no data |
-| `session.modified` | Whether session has been modified |
+| `session.is_empty()`             | Check if session has no data                           |
+| `session.modified`               | Whether session has been modified                      |
 
-### Session Expiration
+#### Session Expiration
 
 By default, sessions expire after 24 hours (86400 seconds). You can customize this:
 
@@ -171,11 +173,11 @@ async def login(req, res):
     return res.json({"success": True})
 ```
 
-## Session Backends
+### Session Backends
 
 Nexios supports multiple session backends to store session data. Each backend has different characteristics suitable for various use cases.
 
-### Signed Cookie Sessions (Default)
+#### Signed Cookie Sessions (Default)
 
 The simplest session backend, storing the session data directly in a signed cookie:
 
@@ -188,16 +190,18 @@ app.config.session = {
 ```
 
 **Pros**:
-- No server-side storage required
-- Works well in distributed environments
-- Simple setup
+
+* No server-side storage required
+* Works well in distributed environments
+* Simple setup
 
 **Cons**:
-- Limited storage size (4KB cookie limit)
-- Session data sent with every request
-- Cannot be invalidated server-side
 
-### File-based Sessions
+* Limited storage size (4KB cookie limit)
+* Session data sent with every request
+* Cannot be invalidated server-side
+
+#### File-based Sessions
 
 Stores session data in files on the server filesystem:
 
@@ -212,16 +216,18 @@ app.config.session = {
 ```
 
 **Pros**:
-- Unlimited session data size
-- Sessions can be invalidated server-side
-- Simple setup for single-server environments
+
+* Unlimited session data size
+* Sessions can be invalidated server-side
+* Simple setup for single-server environments
 
 **Cons**:
-- Not suitable for distributed environments
-- Requires filesystem access
-- Needs cleanup of expired session files
 
-### Building Custom Session Backends
+* Not suitable for distributed environments
+* Requires filesystem access
+* Needs cleanup of expired session files
+
+#### Building Custom Session Backends
 
 You can create custom session backends by implementing the `BaseSessionInterface`:
 
@@ -262,11 +268,11 @@ class RedisSessionInterface(BaseSessionInterface):
         return self.session_key
 ```
 
-## Session Security Best Practices
+### Session Security Best Practices
 
 Session management requires careful attention to security:
 
-### 1. Generate a Strong Secret Key
+#### 1. Generate a Strong Secret Key
 
 ```python
 import secrets
@@ -278,7 +284,7 @@ app.config.secret_key = secrets.token_hex(32)
 app.config.secret_key = os.environ.get("SECRET_KEY")
 ```
 
-### 2. Enable Secure Cookies
+#### 2. Enable Secure Cookies
 
 ```python
 app.config.session = {
@@ -288,7 +294,7 @@ app.config.session = {
 }
 ```
 
-### 3. Use Appropriate Session Expiration
+#### 3. Use Appropriate Session Expiration
 
 ```python
 # Short expiration for sensitive operations
@@ -302,7 +308,7 @@ async def transfer(req, res):
     # Process transfer...
 ```
 
-### 4. Regenerate Session IDs for Privilege Changes
+#### 4. Regenerate Session IDs for Privilege Changes
 
 ```python
 @app.post("/login")
@@ -320,7 +326,7 @@ async def login(req, res):
     return res.redirect("/dashboard")
 ```
 
-### 5. Implement Session Invalidation
+#### 5. Implement Session Invalidation
 
 ```python
 @app.post("/logout")
@@ -331,9 +337,9 @@ async def logout(req, res):
     return res.redirect("/login")
 ```
 
-## Practical Examples
+### Practical Examples
 
-### Example 1: User Authentication Flow
+#### Example 1: User Authentication Flow
 
 ```python
 @app.post("/login")
@@ -373,7 +379,7 @@ async def logout(req, res):
     return res.redirect("/login?message=logged_out")
 ```
 
-### Example 2: Shopping Cart
+#### Example 2: Shopping Cart
 
 ```python
 @app.get("/cart")
@@ -425,7 +431,7 @@ async def clear_cart(req, res):
     return res.json({"success": True})
 ```
 
-### Example 3: Multi-step Form with Session Data
+#### Example 3: Multi-step Form with Session Data
 
 ```python
 @app.get("/wizard/step1")
@@ -472,41 +478,38 @@ async def wizard_complete(req, res):
     return res.redirect(f"/wizard/success?id={result.id}")
 ```
 
-## Troubleshooting
+### Troubleshooting
 
-### Common Issues and Solutions
+#### Common Issues and Solutions
 
 1. **Sessions not persisting across requests**:
-   - Ensure `secret_key` is properly set
-   - Check that SessionMiddleware is added to the application
-   - Verify browser accepts cookies
-
+   * Ensure `secret_key` is properly set
+   * Check that SessionMiddleware is added to the application
+   * Verify browser accepts cookies
 2. **Session data size limits**:
-   - Cookie-based sessions are limited to ~4KB
-   - Switch to a server-side backend for larger data
-
+   * Cookie-based sessions are limited to \~4KB
+   * Switch to a server-side backend for larger data
 3. **Session security concerns**:
-   - Always use HTTPS in production (`cookie_secure=True`)
-   - Set `cookie_httponly=True` to prevent JavaScript access
-   - Use appropriate `cookie_samesite` setting
-
+   * Always use HTTPS in production (`cookie_secure=True`)
+   * Set `cookie_httponly=True` to prevent JavaScript access
+   * Use appropriate `cookie_samesite` setting
 4. **Performance optimization**:
-   - Only store necessary data in sessions
-   - Consider using Redis or another in-memory store for high-traffic sites
+   * Only store necessary data in sessions
+   * Consider using Redis or another in-memory store for high-traffic sites
 
-## Conclusion
+### Conclusion
 
 Nexios provides a flexible, secure session management system that adapts to your application's needs. From simple signed cookies to custom Redis or database backends, you can choose the approach that balances security, performance, and convenience for your specific use case.
 
----
-icon: server
----
+***
 
-# Session
+### icon: server
+
+## Session
 
 Session management is crucial for maintaining user state across requests in a web application. Nexios provides a flexible and scalable approach to session handling, supporting various backends such as in-memory storage, databases, and distributed caches.
 
-### Basic Configuration
+#### Basic Configuration
 
 First sessions in nexios require `secret_key` key in the application configuration
 
@@ -535,7 +538,7 @@ async def set_session(req, res):
     return res.json({"sucess","session set"})
 ```
 
-### More Session configuration
+#### More Session configuration
 
 ```py
 
@@ -549,7 +552,7 @@ app_config = MakeConfig({
 
 ```
 
-### Session Configuration Table
+#### Session Configuration Table
 
 | Configuration                  | Description                                                                                   |
 | ------------------------------ | --------------------------------------------------------------------------------------------- |
@@ -564,7 +567,7 @@ app_config = MakeConfig({
 | `session_permanent`            | If `True`, the session remains active across browser restarts.                                |
 | `session_refresh_each_request` | If `True`, resets the session expiration time on every request.                               |
 
-### Full Example of Session Management in Nexios
+#### Full Example of Session Management in Nexios
 
 ```python
 from nexios import get_application, MakeConfig
@@ -614,7 +617,7 @@ async def check_session(req, res):
 
 ***
 
-### Custom manager
+#### Custom manager
 
 By default, Nexios utilizes signed cookies for session storage, allowing lightweight and stateless management without requiring a database. However, for applications that need more robust session handling, Nexios provides additional backend options.
 
@@ -684,7 +687,7 @@ class MemorySessionManager(BaseSessionInterface):
 
 ```
 
-### Using the Custom Session Manager
+#### Using the Custom Session Manager
 
 ```py
 from nexios import get_application, MakeConfig

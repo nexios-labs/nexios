@@ -1,12 +1,14 @@
 ---
-icon: alert-circle
+icon: triangle-exclamation
 ---
 
-# Error Handling and Exceptions
+# Error Handling
+
+## Error Handling and Exceptions
 
 Robust error handling is critical for building reliable applications. Nexios provides a comprehensive exception system that helps you manage errors gracefully, provide clear feedback to users, and debug issues in development.
 
-## Basic Concepts
+### Basic Concepts
 
 Nexios's error handling system is built around these core components:
 
@@ -15,7 +17,7 @@ Nexios's error handling system is built around these core components:
 3. **Exception Handlers**: Custom functions that determine how specific exceptions are handled
 4. **Debug Mode**: Enhanced error information during development
 
-## HTTP Exceptions
+### HTTP Exceptions
 
 The most common way to handle errors in Nexios is through HTTP exceptions:
 
@@ -51,15 +53,15 @@ async def get_item(req, res):
     # Continue processing...
 ```
 
-### Built-in HTTP Exceptions
+#### Built-in HTTP Exceptions
 
 Nexios provides several built-in exceptions for common HTTP error scenarios:
 
-| Exception | Status Code | Description |
-|-----------|-------------|-------------|
-| `HTTPException` | Any | Base exception for HTTP errors |
-| `NotFoundException` | 404 | Resource not found |
-| `WebSocketException` | N/A | WebSocket-specific errors |
+| Exception            | Status Code | Description                    |
+| -------------------- | ----------- | ------------------------------ |
+| `HTTPException`      | Any         | Base exception for HTTP errors |
+| `NotFoundException`  | 404         | Resource not found             |
+| `WebSocketException` | N/A         | WebSocket-specific errors      |
 
 You can create your own exception classes by subclassing `HTTPException`:
 
@@ -82,7 +84,7 @@ async def admin_panel(req, res):
     # ...
 ```
 
-## Exception Middleware
+### Exception Middleware
 
 The `ExceptionMiddleware` is responsible for catching exceptions and converting them to appropriate HTTP responses:
 
@@ -97,7 +99,7 @@ app = get_application()
 # app.add_middleware(ExceptionMiddleware())
 ```
 
-### Exception Handlers
+#### Exception Handlers
 
 You can add custom exception handlers to control how specific exceptions are handled:
 
@@ -137,7 +139,7 @@ app.add_exception_handler(ValidationError, validation_error_handler)
 app.add_exception_handler(ConnectionError, db_error_handler)
 ```
 
-### Handling Status Codes
+#### Handling Status Codes
 
 You can also register handlers for specific HTTP status codes:
 
@@ -163,7 +165,7 @@ async def server_error_handler(req, res, exc):
     )
 ```
 
-## Debug Mode
+### Debug Mode
 
 Nexios's error handling becomes more detailed in debug mode, providing rich error information to help developers identify and fix issues:
 
@@ -183,11 +185,11 @@ In debug mode:
 1. **Detailed Error Pages**: HTML error pages with traceback information
 2. **Preserved Exception Information**: Original exceptions
 
----
-icon: triangle-exclamation
----
+***
 
-# Exceptions
+### icon: triangle-exclamation
+
+## Exceptions
 
 In Nexios, exception handling is designed to work asynchronously. When an error occurs during request processing, Nexios allows developers to catch and handle it using exception handlers.
 
@@ -291,7 +293,7 @@ app.add_exception_handler(CustomForbiddenException, handle_forbidden_exception)
 
 ***
 
-**Handling Multiple Exceptions**\
+**Handling Multiple Exceptions**\
 You can register multiple exception handlers for different error types.
 
 **Example: Handling Multiple Errors**

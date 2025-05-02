@@ -1,8 +1,8 @@
 ---
-icon: zap-fast
+icon: calendar-star
 ---
 
-# Nexios Events
+# Events System
 
 ## Introduction to the Event System
 
@@ -10,16 +10,16 @@ The Nexios event system provides a powerful way to implement loosely coupled, ev
 
 At its core, Nexios events implement the publish-subscribe (pub-sub) pattern, where:
 
-- **Publishers** emit events without knowing who will receive them
-- **Subscribers** listen for events without knowing who emitted them
-- **Event objects** carry data and metadata about what happened
+* **Publishers** emit events without knowing who will receive them
+* **Subscribers** listen for events without knowing who emitted them
+* **Event objects** carry data and metadata about what happened
 
 This architecture is particularly useful for:
 
-- Decoupling components of your application
-- Implementing cross-cutting concerns like logging or analytics
-- Building reactive systems that respond to state changes
-- Creating extensible applications with plugin architectures
+* Decoupling components of your application
+* Implementing cross-cutting concerns like logging or analytics
+* Building reactive systems that respond to state changes
+* Creating extensible applications with plugin architectures
 
 ## Basic Event Usage
 
@@ -97,11 +97,12 @@ domain.action[.subaction]
 ```
 
 Examples:
-- `user.created`
-- `user.profile.updated`
-- `payment.processing.failed`
-- `app.startup`
-- `app.shutdown`
+
+* `user.created`
+* `user.profile.updated`
+* `payment.processing.failed`
+* `app.startup`
+* `app.shutdown`
 
 ### Built-in Application Events
 
@@ -421,15 +422,10 @@ async def update_document(req, res):
 ### Event Design Guidelines
 
 1. **Name events hierarchically**: Use dot-notation for a clear event hierarchy (e.g., `user.created`, `payment.failed`).
-
 2. **Event payloads**: Keep event data serializable and include all relevant information the handlers might need.
-
 3. **Event documentation**: Document events (names, payloads, purposes) clearly for other developers.
-
 4. **Single responsibility**: Design event handlers to do one thing well.
-
 5. **Idempotency**: When possible, make event handlers idempotent (safe to execute multiple times).
-
 6. **Error handling**: Always include proper error handling in event subscribers.
 
 ```python
@@ -451,9 +447,7 @@ async def send_welcome_email(user_data):
 ### Performance Considerations
 
 1. **Minimize heavy processing**: Keep event handlers lightweight or offload to background tasks.
-
 2. **Be cautious with wildcard listeners**: They can impact performance if overused.
-
 3. **Consider event queue systems**: For high-volume events, consider using external message queues.
 
 ```python
@@ -467,7 +461,7 @@ async def process_order_background(order_data):
 
 Nexios events can be integrated with external message brokers and event systems:
 
-```python
+````python
 from nexios import get_application
 import aio_pika  # AMQP client (RabbitMQ)
 
@@ -556,7 +550,7 @@ def handle_user_created(user):
 
 # Trigger the event
 emitter.emit("user.created", {"name": "Alice", "email": "alice@example.com"})
-```
+````
 
 #### One-time Listeners
 

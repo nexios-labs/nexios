@@ -1,5 +1,5 @@
 ---
-icon: git-branch
+icon: syringe
 ---
 
 # Dependency Injection
@@ -8,10 +8,10 @@ icon: git-branch
 
 Dependency Injection (DI) is a design pattern that helps manage dependencies between components in your application. Nexios provides a lightweight yet powerful dependency injection system that allows you to:
 
-- Decouple your route handlers from their dependencies
-- Easily inject both synchronous and asynchronous dependencies
-- Write more testable and maintainable code
-- Manage shared resources efficiently
+* Decouple your route handlers from their dependencies
+* Easily inject both synchronous and asynchronous dependencies
+* Write more testable and maintainable code
+* Manage shared resources efficiently
 
 ## Core Components
 
@@ -31,7 +31,7 @@ async def profile(request, response, current_user=Depend(get_current_user)):
     return {"user": current_user}
 ```
 
-### The inject_dependencies Decorator
+### The inject\_dependencies Decorator
 
 Under the hood, the `inject_dependencies` decorator manages the injection of dependencies into your route handlers. While you typically don't need to use this decorator directly (as it's automatically applied to route handlers), understanding how it works can be helpful:
 
@@ -112,24 +112,20 @@ async def get_app_config(
 ## Best Practices and Patterns
 
 1. **Keep Dependencies Focused**
-   - Each dependency provider should have a single responsibility
-   - Avoid complex logic in dependency providers
-
+   * Each dependency provider should have a single responsibility
+   * Avoid complex logic in dependency providers
 2. **Reuse Dependencies**
-   - Create common dependencies that can be shared across multiple handlers
-   - Use dependency providers to abstract common functionality
-
+   * Create common dependencies that can be shared across multiple handlers
+   * Use dependency providers to abstract common functionality
 3. **Handle Errors Gracefully**
-   - Implement proper error handling in dependency providers
-   - Use appropriate HTTP status codes when dependency injection fails
-
+   * Implement proper error handling in dependency providers
+   * Use appropriate HTTP status codes when dependency injection fails
 4. **Type Hints**
-   - Use type hints with your dependencies to improve code clarity
-   - Leverage IDE support for better development experience
-
+   * Use type hints with your dependencies to improve code clarity
+   * Leverage IDE support for better development experience
 5. **Testing**
-   - Create mock dependencies for testing
-   - Test dependency providers in isolation
+   * Create mock dependencies for testing
+   * Test dependency providers in isolation
 
 Example of applying these practices:
 
@@ -172,28 +168,27 @@ async def admin_panel(
 
 ## Common Use Cases
 
-- Authentication and authorization
-- Database connections
-- Configuration management
-- Logging and monitoring
-- External service clients
-- Request-scoped resources
+* Authentication and authorization
+* Database connections
+* Configuration management
+* Logging and monitoring
+* External service clients
+* Request-scoped resources
 
 ## Performance Considerations
 
 The Nexios dependency injection system is designed to be lightweight and efficient. Dependencies are resolved only when needed and results can be cached when appropriate. However, keep these points in mind:
 
-- Avoid expensive operations in dependency providers unless necessary
-- Consider caching results for frequently used dependencies
-- Be mindful of the number of dependencies in a single route handler
+* Avoid expensive operations in dependency providers unless necessary
+* Consider caching results for frequently used dependencies
+* Be mindful of the number of dependencies in a single route handler
 
 ## Integration with Other Features
 
 Dependency injection works seamlessly with other Nexios features:
 
-- OpenAPI documentation
-- Middleware
-- WebSockets
-- Authentication system
-- Testing utilities
-
+* OpenAPI documentation
+* Middleware
+* WebSockets
+* Authentication system
+* Testing utilities

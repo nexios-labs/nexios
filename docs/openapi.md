@@ -1,8 +1,8 @@
 ---
-icon: document
+icon: file-doc
 ---
 
-# OpenAPI Documentation
+# OpenAPI
 
 Nexios provides built-in support for generating OpenAPI documentation (formerly known as Swagger) for your API. This allows you to create interactive API documentation that helps developers understand your endpoints, request/response models, and authentication requirements.
 
@@ -450,7 +450,7 @@ api_docs._generate_swagger_ui = custom_swagger_ui
 
 In some cases, you might need finer control over your API documentation. Nexios allows you to manually document endpoints:
 
-```python
+````python
 from nexios import get_application
 from nexios.openapi import APIDocumentation, Parameter, Schema, ExternalDocumentation
 from pydantic import BaseModel
@@ -531,22 +531,22 @@ async def create_user(request: Request, response: Response):
     user_data = await request.json()
     # ... process user creation
     return response.json({"id": 1, "username": user_data["username"], "email": user_data["email"]})
-```
+````
 
 #### Route Documentation Parameters
 
 All route decorators (`get`, `post`, `put`, etc.) accept the following documentation parameters:
 
-- `summary`: Short summary of the endpoint
-- `description`: Detailed description of the endpoint
-- `request_model`: Pydantic model for the request body
-- `responses`: Dictionary mapping status codes to response models or descriptions
-- `tags`: List of tags for grouping endpoints
-- `security`: Security requirements for the endpoint
-- `operation_id`: Unique identifier for the operation
-- `deprecated`: Mark endpoint as deprecated (True/False)
-- `parameters`: List of `Parameter` objects for path/query parameters
-- `exclude_from_schema`: Exclude endpoint from OpenAPI docs (True/False)
+* `summary`: Short summary of the endpoint
+* `description`: Detailed description of the endpoint
+* `request_model`: Pydantic model for the request body
+* `responses`: Dictionary mapping status codes to response models or descriptions
+* `tags`: List of tags for grouping endpoints
+* `security`: Security requirements for the endpoint
+* `operation_id`: Unique identifier for the operation
+* `deprecated`: Mark endpoint as deprecated (True/False)
+* `parameters`: List of `Parameter` objects for path/query parameters
+* `exclude_from_schema`: Exclude endpoint from OpenAPI docs (True/False)
 
 ### Path Parameters
 

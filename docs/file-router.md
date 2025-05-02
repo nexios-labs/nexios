@@ -1,24 +1,26 @@
 ---
-icon: folder-symlink
+icon: swap
 ---
 
 # File Router
 
+## File Router
+
 The File Router system in Nexios allows you to define your application's routes using the filesystem structure, providing a convention-over-configuration approach to routing that can make your API more organized and maintainable.
 
-## Introduction
+### Introduction
 
 File routing is an intuitive approach to organizing web application endpoints. Instead of defining all routes explicitly in code, the file system itself becomes the router based on predefined conventions. This is similar to the file-based routing systems used in frameworks like Next.js and Nuxt.js, but adapted for backend API development.
 
-### Benefits of File Routing
+#### Benefits of File Routing
 
-- **Visual Structure**: Your directory structure gives a clear visual map of your API endpoints
-- **Organization**: Keeps related route handlers together and organized by domain
-- **Discoverability**: Easier to find specific endpoint implementations
-- **Scalability**: Routes can grow naturally as your application expands
-- **Convention over Configuration**: Reduces boilerplate code needed for routing setup
+* **Visual Structure**: Your directory structure gives a clear visual map of your API endpoints
+* **Organization**: Keeps related route handlers together and organized by domain
+* **Discoverability**: Easier to find specific endpoint implementations
+* **Scalability**: Routes can grow naturally as your application expands
+* **Convention over Configuration**: Reduces boilerplate code needed for routing setup
 
-## Basic Setup
+### Basic Setup
 
 To use the File Router in your Nexios application, set it up in your main application file:
 
@@ -40,19 +42,19 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 ```
 
-### Configuration Options
+#### Configuration Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `root` | The root directory where route files will be located | `"./routes"` |
-| `exempt_paths` | List of path patterns to exclude from file routing | `[]` |
-| `exclude_from_schema` | Whether to exclude file routes from OpenAPI documentation | `False` |
+| Option                | Description                                               | Default      |
+| --------------------- | --------------------------------------------------------- | ------------ |
+| `root`                | The root directory where route files will be located      | `"./routes"` |
+| `exempt_paths`        | List of path patterns to exclude from file routing        | `[]`         |
+| `exclude_from_schema` | Whether to exclude file routes from OpenAPI documentation | `False`      |
 
-## Directory Structure and Conventions
+### Directory Structure and Conventions
 
 File Router looks for files named `route.py` in your routes directory and its subdirectories. The path to each `route.py` file determines the URL endpoint it will handle.
 
-### Basic Structure Example
+#### Basic Structure Example
 
 ```
 routes/
@@ -71,7 +73,7 @@ routes/
             └── route.py  # Handles "/products/categories/{category_id}"
 ```
 
-### Creating Route Handlers
+#### Creating Route Handlers
 
 Each `route.py` file contains handlers for different HTTP methods at that endpoint:
 
@@ -93,11 +95,11 @@ def delete(req, res):
 
 The file router automatically maps the functions named after HTTP methods (`get`, `post`, `put`, `delete`, `patch`, etc.) to the corresponding HTTP verbs for that route.
 
-## Dynamic Route Parameters
+### Dynamic Route Parameters
 
 Dynamic route segments are indicated by prefixing a directory name with an underscore (`_`). This tells the File Router that this segment of the path should be treated as a parameter.
 
-### Simple Parameters
+#### Simple Parameters
 
 ```
 routes/
@@ -116,7 +118,7 @@ def get(req, res):
     return res.json({"message": f"Get user {user_id}"})
 ```
 
-### Nested Parameters
+#### Nested Parameters
 
 Parameters can be nested at multiple levels:
 
@@ -138,7 +140,7 @@ def get(req, res):
     return res.json({"message": f"Get post {post_id} by user {user_id}"})
 ```
 
-### Catch-all Parameters
+#### Catch-all Parameters
 
 For catch-all route segments that can include multiple path parts, use multiple underscores:
 
@@ -158,11 +160,11 @@ def get(req, res):
     return res.text(f"Serving file: {filepath}")
 ```
 
-## Advanced Route Configuration
+### Advanced Route Configuration
 
 While the file-based routing system provides default behavior based on file names, you can enhance your routes with additional configuration using decorators.
 
-### Custom Route Decorators
+#### Custom Route Decorators
 
 Nexios provides several decorators to configure route behavior:
 
@@ -178,7 +180,7 @@ def get(req, res):
     return res.json({"products": [{"id": 1, "name": "Example Product"}]})
 ```
 
-### Custom Path Override
+#### Custom Path Override
 
 You can override the automatically determined path:
 
@@ -192,7 +194,7 @@ def get(req, res):
     return res.json({"message": "Custom path"})
 ```
 
-### Route Metadata for OpenAPI Documentation
+#### Route Metadata for OpenAPI Documentation
 
 Add OpenAPI metadata to your routes:
 
@@ -221,7 +223,7 @@ def post(req, res):
     return res.json({"id": 1, "name": user_data["name"], "email": user_data["email"]}, status_code=201)
 ```
 
-### Route-Specific Middleware
+#### Route-Specific Middleware
 
 Apply middleware to specific routes:
 
@@ -235,7 +237,7 @@ def get(req, res):
     return res.json({"message": "Admin dashboard"})
 ```
 
-## Custom Route Handlers
+### Custom Route Handlers
 
 For more complex routes, you can use a custom function instead of the standard HTTP method handlers:
 
@@ -252,9 +254,9 @@ def handle_complex(req, res):
         return res.json({"message": "POST method"})
 ```
 
-## Common Patterns and Best Practices
+### Common Patterns and Best Practices
 
-### API Versioning
+#### API Versioning
 
 Organize your API versions in the file structure:
 
@@ -272,7 +274,7 @@ routes/
 │       └── route.py      # Handles "/v2/products"
 ```
 
-### Resource-Based Organization
+#### Resource-Based Organization
 
 Structure your routes around your resources:
 
@@ -292,7 +294,7 @@ routes/
 │       └── route.py      # Single post endpoints
 ```
 
-### Index Routes vs. Route Files
+#### Index Routes vs. Route Files
 
 For clarity, you can use `index.py` instead of `route.py` to indicate the default route for a directory:
 
@@ -307,11 +309,11 @@ routes/
 
 The File Router will treat `index.py` the same as `route.py` if you configure it to recognize both patterns.
 
-## Complete Example
+### Complete Example
 
 Let's put it all together with a complete example of a blog API:
 
-### Directory Structure
+#### Directory Structure
 
 ```
 routes/
@@ -340,7 +342,7 @@ routes/
             └── route.py  # Posts by category
 ```
 
-### Implementation Example
+#### Implementation Example
 
 ```python
 # routes/route.py
@@ -431,7 +433,7 @@ def delete(req, res):
     return res.json({"message": f"Post {post_id} deleted"})
 ```
 
-## Integration with Traditional Routing
+### Integration with Traditional Routing
 
 The File Router can coexist with traditional decorator-based routes in the same application:
 
@@ -454,27 +456,27 @@ async def health_check(req, res):
 
 This approach gives you the flexibility to use file-based routing for the majority of your application while still allowing for special cases to be handled with traditional routes.
 
-## Conclusion
+### Conclusion
 
 The File Router system in Nexios provides a powerful, organized approach to structuring your API endpoints. By leveraging the filesystem hierarchy, you can create intuitive, maintainable route structures that grow naturally with your application. Combined with the various decorators and configuration options, File Router offers both simplicity and flexibility for your web API development.
 
----
-icon: swap
----
+***
 
-# File Router
+### icon: swap
+
+## File Router
 
 The FileRouter is a filesystem-based routing system for Nexios that automatically discovers and registers route handlers from Python files in a specified directory structure. This system follows convention-over-configuration principles, making API route management intuitive and scalable while reducing boilerplate code.
 
-### Core Features
+#### Core Features
 
-- **Automatic Route Registration**: Scans directories for route files and maps them to URL paths
-- **HTTP Method Detection**: Recognizes standard HTTP methods (GET, POST, PUT, etc.) from handler function names
-- **Dynamic Path Parameters**: Supports parameterized routes using curly brace syntax
-- **Metadata Support**: Enables OpenAPI documentation through decorators
-- **Flexible Configuration**: Allows exclusion of specific directories from scanning
+* **Automatic Route Registration**: Scans directories for route files and maps them to URL paths
+* **HTTP Method Detection**: Recognizes standard HTTP methods (GET, POST, PUT, etc.) from handler function names
+* **Dynamic Path Parameters**: Supports parameterized routes using curly brace syntax
+* **Metadata Support**: Enables OpenAPI documentation through decorators
+* **Flexible Configuration**: Allows exclusion of specific directories from scanning
 
-### Installation and Setup
+#### Installation and Setup
 
 To use the FileRouter, first ensure Nexios is installed, then configure the router in your application entry point:
 
@@ -488,12 +490,12 @@ app = get_application()
 FileRouter(app, config={"root": "./routes"})
 ```
 
-### Configuration Options
+#### Configuration Options
 
 The FileRouter accepts a configuration dictionary with the following properties:
 
-- **root** (str): Required. The base directory to scan for route files
-- **exempt_paths** (list\[str]): Optional. List of directory names to exclude from scanning
+* **root** (str): Required. The base directory to scan for route files
+* **exempt\_paths** (list\[str]): Optional. List of directory names to exclude from scanning
 
 Example with custom configuration:
 
@@ -505,7 +507,7 @@ FileRouter(app, config={
 })
 ```
 
-### Filesystem Routing Conventions
+#### Filesystem Routing Conventions
 
 The router maps directory structure to URL paths following these rules:
 
@@ -513,7 +515,7 @@ The router maps directory structure to URL paths following these rules:
 2. Files must be named `route.py` to be detected
 3. Dynamic parameters are specified using curly braces `{param}`
 
-#### Example Structure
+**Example Structure**
 
 ```
 routes/
@@ -526,9 +528,9 @@ routes/
         └── route.py    # → /users/{user_id}
 ```
 
-### Route Handlers
+#### Route Handlers
 
-#### Basic Route Handling
+**Basic Route Handling**
 
 For simple routes, define functions named after HTTP methods in your `route.py` files:
 
@@ -545,7 +547,7 @@ def post(req, res):
     return res.json({"created": True, "data": data}, status_code=201)
 ```
 
-#### Accessing Path Parameters
+**Accessing Path Parameters**
 
 Dynamic route parameters are available in the request object:
 
@@ -557,7 +559,7 @@ def get(req, res):
     return res.json({"product": {"id": product_id}})
 ```
 
-### Advanced Route Configuration
+#### Advanced Route Configuration
 
 For more control over route behavior and documentation, use the `@mark_as_route` decorator:
 
@@ -582,24 +584,24 @@ async def create_user(req, res):
     return res.json(user_data, status_code=201)
 ```
 
-#### Available Decorator Options
+**Available Decorator Options**
 
-| Parameter     | Description                                              |
-| ------------- | -------------------------------------------------------- |
-| path          | Custom URL path (overrides auto-detected path)           |
-| methods       | List of HTTP methods (defaults to function name)         |
-| summary       | Brief description for OpenAPI docs                       |
-| description   | Detailed route description                               |
-| request_model | Pydantic model for request validation                    |
-| responses     | Dictionary mapping status codes to response descriptions |
-| tags          | OpenAPI tags for grouping related routes                 |
-| security      | Security requirements for the route                      |
-| middlewares   | Route-specific middleware functions                      |
-| operation_id  | Unique identifier for the operation in OpenAPI docs      |
-| deprecated    | Marks the route as deprecated in documentation           |
-| parameters    | Additional OpenAPI parameter definitions                 |
+| Parameter      | Description                                              |
+| -------------- | -------------------------------------------------------- |
+| path           | Custom URL path (overrides auto-detected path)           |
+| methods        | List of HTTP methods (defaults to function name)         |
+| summary        | Brief description for OpenAPI docs                       |
+| description    | Detailed route description                               |
+| request\_model | Pydantic model for request validation                    |
+| responses      | Dictionary mapping status codes to response descriptions |
+| tags           | OpenAPI tags for grouping related routes                 |
+| security       | Security requirements for the route                      |
+| middlewares    | Route-specific middleware functions                      |
+| operation\_id  | Unique identifier for the operation in OpenAPI docs      |
+| deprecated     | Marks the route as deprecated in documentation           |
+| parameters     | Additional OpenAPI parameter definitions                 |
 
-### Error Handling
+#### Error Handling
 
 The FileRouter integrates with Nexios's exception handling system. Define custom error handlers in your application:
 
@@ -609,13 +611,13 @@ async def not_found_handler(req, res, exc):
     return res.json({"error": "Not Found"}, status_code=404)
 ```
 
-### Limitations
+#### Limitations
 
 1. Route files must be named `route.py`
 2. Directory scanning occurs at startup (changes require restart in production)
 3. Complex routing patterns may require manual route registration
 
-### Example Project Structure
+#### Example Project Structure
 
 ```
 project/
@@ -633,24 +635,24 @@ project/
         └── route.py
 ```
 
-### Template Rendering System
+#### Template Rendering System
 
 The `html.py` module provides Jinja2 template rendering capabilities for Nexios applications. This system integrates seamlessly with the FileRouter to enable server-side HTML rendering.
 
-#### Core Components
+**Core Components**
 
 1. **Template Environment Configuration**
-   - Global Jinja2 environment management
-   - Custom loader implementation
-   - Auto-escaping and auto-reloading support
+   * Global Jinja2 environment management
+   * Custom loader implementation
+   * Auto-escaping and auto-reloading support
 2. **Rendering Decorator**
-   - `@render()` decorator for route handlers
-   - Automatic template discovery
-   - Context passing from handlers to templates
+   * `@render()` decorator for route handlers
+   * Automatic template discovery
+   * Context passing from handlers to templates
 
-### Template Configuration
+#### Template Configuration
 
-#### Global Setup
+**Global Setup**
 
 Configure the template system at application startup:
 
@@ -672,15 +674,15 @@ custom_env = Environment(
 configure_templates(env=custom_env)
 ```
 
-#### Configuration Options
+**Configuration Options**
 
-- `template_dir`: Base directory for template files
-- `env`: Pre-configured Jinja2 environment (overrides template_dir)
-- `**env_options`: Additional Jinja2 environment parameters
+* `template_dir`: Base directory for template files
+* `env`: Pre-configured Jinja2 environment (overrides template\_dir)
+* `**env_options`: Additional Jinja2 environment parameters
 
-### Template Rendering in Routes
+#### Template Rendering in Routes
 
-#### Basic Usage
+**Basic Usage**
 
 ```python
 from nexios.file_router.html import render
@@ -710,7 +712,7 @@ def get(req, res):
     }
 ```
 
-### Template Directory Structure
+#### Template Directory Structure
 
 Recommended structure for templates:
 
@@ -730,9 +732,9 @@ project/
             └── route.py   # Route handler
 ```
 
-### Advanced Features
+#### Advanced Features
 
-#### Template Inheritance
+**Template Inheritance**
 
 ```html
 <!-- templates/base.html -->
@@ -749,22 +751,22 @@ project/
 
 <div data-gb-custom-block data-tag="extends" data-0="base.html"></div>
 <div data-gb-custom-block data-tag="block"></div>
-User Profile - {{ username }}{% endblock %}
+User Profile - {{ username }}</div>
 <div data-gb-custom-block data-tag="block">
   <h1>{{ username }}</h1>
   <p>Email: {{ email }}</p>
 </div>
 ```
 
-#### Custom Loader Behavior
+**Custom Loader Behavior**
 
 The included `Loader` class provides:
 
-- Template file discovery
-- Modification time checking
-- Automatic reloading in development
+* Template file discovery
+* Modification time checking
+* Automatic reloading in development
 
-#### Context Validation
+**Context Validation**
 
 For type-safe templates, use Pydantic models:
 
@@ -785,27 +787,27 @@ def get(req, res):
     ).dict()
 ```
 
-### Error Handling
+#### Error Handling
 
 The rendering system provides clear error messages for:
 
-- Missing templates
-- Invalid context data
-- Template syntax errors
+* Missing templates
+* Invalid context data
+* Template syntax errors
 
-### Performance Considerations
+#### Performance Considerations
 
 1. **Template Caching**: Enabled by default in production
 2. **Auto-reload**: Disable in production for better performance
 3. **Pre-compilation**: Consider pre-compiling templates for deployment
 
-### Debugging Tips
+#### Debugging Tips
 
 1. Set `auto_reload=True` during development
 2. Use `print(template_directory)` in the render decorator to verify paths
 3. Check Jinja2's built-in debugging features
 
-### Complete Example
+#### Complete Example
 
 ```python
 # routes/products/{id}/route.py

@@ -1,4 +1,4 @@
-# CLI Tools
+# 🛠️ CLI Tools
 
 Nexios comes with a powerful CLI tool that helps you bootstrap new projects and manage development servers. It supports multiple server engines (Uvicorn by default, with optional Granian support) to run your ASGI applications.
 
@@ -20,15 +20,16 @@ pip install "nexios[granian]"  # Install Nexios with optional Granian support
 
 You can invoke the CLI in two ways:
 
-1. Using the `nexios` command (recommended):
-   ```bash
-   nexios [command]
-   ```
+1.  Using the `nexios` command (recommended):
 
-2. Using Python's module runner:
-   ```bash
-   python -m nexios [command]
-   ```
+    ```bash
+    nexios [command]
+    ```
+2.  Using Python's module runner:
+
+    ```bash
+    python -m nexios [command]
+    ```
 
 Both methods provide the same functionality. The first method is recommended for regular use, while the second method can be useful in environments where command-line scripts are not properly installed or when you need to ensure you're using a specific Python interpreter.
 
@@ -41,8 +42,9 @@ nexios new PROJECT_NAME
 ```
 
 Options:
-- `--output-dir, -o`: Directory where the project should be created (default: current directory)
-- `--title`: Display title for the project (defaults to project name)
+
+* `--output-dir, -o`: Directory where the project should be created (default: current directory)
+* `--title`: Display title for the project (defaults to project name)
 
 ### Running the Development Server
 
@@ -51,19 +53,21 @@ nexios run
 ```
 
 Options:
-- `--app, -a`: Application import path (default: main:app)
-- `--host`: Host to bind the server to (default: 127.0.0.1)
-- `--port, -p`: Port to bind the server to (default: 4000)
-- `--reload/--no-reload`: Enable/disable auto-reload (default: enabled)
-- `--log-level`: Log level for the server (default: info)
-- `--workers`: Number of worker processes (default: 1)
-- `--server`: Server to use for running the application (choices: auto, uvicorn, granian, default: auto)
-- `--access-log/--no-access-log`: Enable/disable access logging (default: enabled)
+
+* `--app, -a`: Application import path (default: main:app)
+* `--host`: Host to bind the server to (default: 127.0.0.1)
+* `--port, -p`: Port to bind the server to (default: 4000)
+* `--reload/--no-reload`: Enable/disable auto-reload (default: enabled)
+* `--log-level`: Log level for the server (default: info)
+* `--workers`: Number of worker processes (default: 1)
+* `--server`: Server to use for running the application (choices: auto, uvicorn, granian, default: auto)
+* `--access-log/--no-access-log`: Enable/disable access logging (default: enabled)
 
 Granian-specific options:
-- `--interface`: Server interface type (choices: asgi, wsgi, asgi-http, default: asgi)
-- `--http-protocol`: HTTP protocol to use (choices: h11, h2, auto, default: auto)
-- `--threading/--no-threading`: Enable/disable threading (default: disabled)
+
+* `--interface`: Server interface type (choices: asgi, wsgi, asgi-http, default: asgi)
+* `--http-protocol`: HTTP protocol to use (choices: h11, h2, auto, default: auto)
+* `--threading/--no-threading`: Enable/disable threading (default: disabled)
 
 ### Display Version Information
 
@@ -88,30 +92,32 @@ project_name/
 
 ## Development Workflow
 
-1. Create a new project:
-   ```bash
-   nexios new myproject
-   cd myproject
-   ```
+1.  Create a new project:
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+    ```bash
+    nexios new myproject
+    cd myproject
+    ```
+2.  Install dependencies:
 
-3. Run the development server:
-   ```bash
-   nexios run
-   ```
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  Run the development server:
+
+    ```bash
+    nexios run
+    ```
 
 The server will start with auto-reload enabled by default. Any changes to your code will automatically restart the server.
 
 ## Environment Variables
 
 The `.env` file in your project supports the following variables:
-- `DEBUG`: Enable/disable debug mode (default: True)
-- `HOST`: Server host (default: 127.0.0.1)
-- `PORT`: Server port (default: 4000)
+
+* `DEBUG`: Enable/disable debug mode (default: True)
+* `HOST`: Server host (default: 127.0.0.1)
+* `PORT`: Server port (default: 4000)
 
 You can add your own environment variables to this file, and they will be available to your application.
 
@@ -119,21 +125,22 @@ You can add your own environment variables to this file, and they will be availa
 
 If you're using Poetry for dependency management:
 
-1. Create a new project:
-   ```bash
-   nexios new myproject
-   cd myproject
-   ```
+1.  Create a new project:
 
-2. Initialize Poetry and install dependencies:
-   ```bash
-   poetry install
-   ```
+    ```bash
+    nexios new myproject
+    cd myproject
+    ```
+2.  Initialize Poetry and install dependencies:
 
-3. Run the development server:
-   ```bash
-   poetry run nexios run
-   ```
+    ```bash
+    poetry install
+    ```
+3.  Run the development server:
+
+    ```bash
+    poetry run nexios run
+    ```
 
 ## Common Issues and Solutions
 
@@ -223,22 +230,21 @@ server_config = {
 If you have existing applications built with earlier versions of Nexios that used Granian by default:
 
 1. **No action required**: Your applications will continue to work if Granian is installed.
+2.  **Explicit server selection**: To ensure your application continues to use Granian:
 
-2. **Explicit server selection**: To ensure your application continues to use Granian:
-   ```bash
-   nexios run --server granian
-   ```
+    ```bash
+    nexios run --server granian
+    ```
+3.  **Configuration update**: Update your configuration to explicitly set Granian as the server:
 
-3. **Configuration update**: Update your configuration to explicitly set Granian as the server:
-   ```python
-   server_config = {
-       # other options...
-       "server": "granian"
-   }
-   ```
+    ```python
+    server_config = {
+        # other options...
+        "server": "granian"
+    }
+    ```
+4.  **Installation**: Make sure to install Nexios with Granian support:
 
-4. **Installation**: Make sure to install Nexios with Granian support:
-   ```bash
-   pip install "nexios[granian]"
-   ```
-
+    ```bash
+    pip install "nexios[granian]"
+    ```

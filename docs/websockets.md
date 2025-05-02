@@ -1,5 +1,5 @@
 ---
-icon: zap
+icon: wifi-fair
 ---
 
 # WebSockets
@@ -10,9 +10,9 @@ WebSockets provide a persistent connection between a client and server, allowing
 
 The Nexios WebSocket system is built around these key components:
 
-- **WebSocket**: The base connection between client and server
-- **Channel**: A wrapper around a WebSocket connection with additional functionality
-- **ChannelBox**: A manager for organizing channels into groups and handling messaging
+* **WebSocket**: The base connection between client and server
+* **Channel**: A wrapper around a WebSocket connection with additional functionality
+* **ChannelBox**: A manager for organizing channels into groups and handling messaging
 
 ## Basic WebSocket Setup
 
@@ -86,11 +86,11 @@ async def channel_example(ws: WebSocket):
 
 ### Channel Properties
 
-- **websocket**: The underlying WebSocket connection
-- **expires**: Time-to-live in seconds (None for no expiration)
-- **payload_type**: Format of messages ("json", "text", or "bytes")
-- **uuid**: Unique identifier for the channel
-- **created**: Timestamp when the channel was created
+* **websocket**: The underlying WebSocket connection
+* **expires**: Time-to-live in seconds (None for no expiration)
+* **payload\_type**: Format of messages ("json", "text", or "bytes")
+* **uuid**: Unique identifier for the channel
+* **created**: Timestamp when the channel was created
 
 ## ChannelBox: Managing Channel Groups
 
@@ -286,7 +286,7 @@ if is_expired:
 
 Here's a complete example of a chat application using Nexios WebSockets:
 
-```python
+````python
 from nexios import get_application
 from nexios.websockets import WebSocket
 from nexios.websockets.channels import Channel, ChannelBox, PayloadTypeEnum
@@ -491,7 +491,7 @@ async def basic_websocket(ws: WebSocket):
             await ws.send_text(f"You said: {data}")
     except Exception as e:
         print(f"Connection closed: {e}")
-```
+````
 
 #### 2. Handling Different Message Types
 
