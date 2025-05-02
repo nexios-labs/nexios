@@ -16,7 +16,7 @@ from typing_extensions import Annotated, Doc
 
 from nexios.config import DEFAULT_CONFIG, MakeConfig
 from nexios.events import AsyncEventEmitter
-from nexios.exception_handler import ExceptionMiddleware
+from nexios.exception_handler import ExceptionHandlerType, ExceptionMiddleware
 from nexios.logging import create_logger
 from nexios.middlewares.core import BaseMiddleware, Middleware
 from nexios.middlewares.errors.server_error_handler import (
@@ -28,7 +28,7 @@ from nexios.openapi.config import OpenAPIConfig
 from nexios.openapi.models import HTTPBearer, Parameter, Path, Schema
 from nexios.structs import URLPath
 from .routing import Router, Routes, WSRouter, WebsocketRoutes
-from .types import ASGIApp, HandlerType, Message, MiddlewareType, Receive, Scope, Send
+from .types import ASGIApp, HandlerType, Message, MiddlewareType, Receive, Scope, Send, WsHandlerType
 
 # Constants
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
@@ -103,7 +103,7 @@ class NexiosApp(object):
         self.ws_middlewares: List[ASGIApp] = []
         self.startup_handlers: List[Callable[[], Awaitable[None]]] = []
         self.shutdown_handlers: List[Callable[[], Awaitable[None]]] = []
-        self.exceptions_handler: Union[ExceptionMiddleware, None] = ExceptionMiddleware()
+        self.exceptions_handler: ExceptionMiddleware = ExceptionMiddleware()
         self.server_error_handler = server_error_handler
 
         self.app = Router()
@@ -373,26 +373,7 @@ class NexiosApp(object):
         """
         self.ws_router.add_ws_route(route)
 
-    def ws_route(self, route: str) -> Callable[[Callable], Callable]:
-        """
-        Decorator for registering a WebSocket route.
-
-        Args:
-            route (str): The path pattern for the WebSocket route
-
-        Returns:
-            Callable: A decorator function that registers the handler
-
-        Example:
-            ```python
-            @app.ws_route("/ws/chat/{room_id}")
-            async def chat_room(websocket):
-                # WebSocket handling logic
-                await websocket.accept()
-                # ...
-            ```
-        """
-        return self.ws_router.ws_route(route)
+    
 
     def mount_router(self, router: Router, path: Optional[str] = None) -> None:
         """
@@ -1949,11 +1930,11 @@ class NexiosApp(object):
     def add_exception_handler(
         self,
         exc_class_or_status_code: Union[Type[Exception], int],
-        handler: HandlerType = None,
-    ) -> Optional[Callable[[HandlerType], HandlerType]]:
+        handler: Optional[ExceptionHandlerType] = None,
+    ) -> Any:
         if handler is None:
             # If handler is not given yet, return a decorator
-            def decorator(func: HandlerType) -> HandlerType:
+            def decorator(func: ExceptionHandlerType) -> Any:
                 self.exceptions_handler.add_exception_handler(
                     exc_class_or_status_code, func
                 )
@@ -2028,7 +2009,7 @@ class NexiosApp(object):
             ),
         ],
         handler: Annotated[
-            Optional[HandlerType],
+            Optional[WsHandlerType],
             Doc(
                 """
                 Async handler function for WebSocket connections.

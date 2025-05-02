@@ -25,7 +25,7 @@ WsMiddlewareType = Callable[
 WsHandlerType = typing.Callable[[WebSocket], typing.Awaitable[None]]
 HandlerType = Callable[[Request, Response], Awaitable[Any]]
 ExceptionHandlerType = Callable[
-    [Request, Response, Exception], typing.Coroutine[Any, Any, Any]
+    [Request, Response, Exception], typing.Any
 ]
 
 ASGIApp = typing.Callable[[Scope, Receive, Send], typing.Awaitable[None]]

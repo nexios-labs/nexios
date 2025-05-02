@@ -338,7 +338,7 @@ class ServerErrorMiddleware(BaseMiddleware):
         self,
         request: Request,
         response: Response,
-        next_middleware: typing.Coroutine[None, None, typing.Awaitable[None]],
+        next_middleware: typing.Awaitable[typing.Any],
     ) -> typing.Any:
         # Store the current request for error context
         self.current_request = request
