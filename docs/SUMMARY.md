@@ -10,13 +10,6 @@
   * [Example: Basic Nexios Application](basic-example.md#example-basic-nexios-application)
   * [Explanation](basic-example.md#explanation)
 
-## About
-
-* [About Nexios](about/index.md)
-  * [Philosophy](about/philosophy.md)
-  * [Design Patterns](about/design-patterns.md)
-  * [Performance](about/performance.md)
-  * [Authors](about/authors.md)
 
 ## Getting Started
 
