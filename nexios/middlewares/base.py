@@ -49,7 +49,7 @@ class BaseMiddleware:
             Doc("The HTTP response object that will be returned to the client."),
         ],
         call_next: Annotated[
-            typing.Coroutine[None, None, typing.Awaitable[Any]],
+            typing.Callable[..., typing.Awaitable[Any]],
             Doc("The next middleware function in the processing chain."),
         ],
     ) -> Any:

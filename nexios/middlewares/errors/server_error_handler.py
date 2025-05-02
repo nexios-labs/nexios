@@ -338,7 +338,7 @@ class ServerErrorMiddleware(BaseMiddleware):
         self,
         request: Request,
         response: Response,
-        next_middleware: typing.Awaitable[typing.Any],
+        next_middleware: typing.Callable[[], typing.Awaitable[Response]],
     ) -> typing.Any:
         # Store the current request for error context
         self.current_request = request
@@ -442,10 +442,10 @@ class ServerErrorMiddleware(BaseMiddleware):
     def _format_request_info(self, request: Request) -> str:
         """Format request information for display in the error template."""
         method = request.method
-        url = request.url
+        url = str(request.url)
 
         # General request info
-        html = f"""
+        _html = f"""
         <div class="info-grid">
             <div class="info-block">
                 <h3>Request Details</h3>
@@ -461,10 +461,7 @@ class ServerErrorMiddleware(BaseMiddleware):
                     <div class="info-label">Path:</div>
                     <div class="info-value">{html.escape(request.path)}</div>
                 </div>
-                <div class="info-item">
-                    <div class="info-label">Query String:</div>
-                    <div class="info-value">{html.escape(request.query_string or '')}</div>
-                </div>
+                
             </div>
             
             <div class="info-block">
@@ -474,14 +471,14 @@ class ServerErrorMiddleware(BaseMiddleware):
 
         # Add headers
         for name, value in request.headers.items():
-            html += f"""
+            _html += f"""
                     <tr>
                         <td>{html.escape(name)}</td>
                         <td>{html.escape(value)}</td>
                     </tr>
             """
 
-        html += """
+        _html += """
                 </table>
             </div>
         </div>
@@ -489,38 +486,38 @@ class ServerErrorMiddleware(BaseMiddleware):
 
         # Add query parameters if available
         if hasattr(request, "query_params") and request.query_params:
-            html += """
+            _html += """
             <div class="info-block">
                 <h3>Query Parameters</h3>
                 <table class="key-value-table">
             """
 
             for name, value in request.query_params.items():
-                html += f"""
+                _html += f"""
                     <tr>
                         <td>{html.escape(name)}</td>
                         <td>{html.escape(str(value))}</td>
                     </tr>
                 """
 
-            html += """
+            _html += """
                 </table>
             </div>
             """
 
-        return html
+        return _html
 
     def _format_system_info(self) -> str:
         """Format system information for display in the error template."""
         python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
 
-        html = f"""
+        _html = f"""
         <div class="info-grid">
             <div class="info-block">
                 <h3>Nexios</h3>
                 <div class="info-item">
                     <div class="info-label">Nexios Version:</div>
-                    <div class="info-value">{html.escape(nexios_version)}</div>
+                    <div class="info-value">{html.escape(nexios_version.__version__)}</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Debug Mode:</div>
@@ -580,11 +577,11 @@ class ServerErrorMiddleware(BaseMiddleware):
         </div>
         """
 
-        return html
+        return _html
 
     def _generate_error_json(self, exc: Exception, exc_type_str: str) -> str:
         """Generate a JSON representation of the error for debugging."""
-        error_data = {
+        error_data :typing.Dict[str, typing.Any] = {
             "error": {
                 "type": exc_type_str,
                 "message": str(exc),
@@ -617,7 +614,7 @@ class ServerErrorMiddleware(BaseMiddleware):
 
     def _generate_debugging_suggestions(self, exc: Exception, exc_type_str: str) -> str:
         """Generate debugging suggestions based on the error type."""
-        suggestions = []
+        suggestions :typing.List[typing.Dict[str, str]]= []
 
         # Common error types and suggestions
         if "ImportError" in exc_type_str or "ModuleNotFoundError" in exc_type_str:
@@ -709,16 +706,16 @@ class ServerErrorMiddleware(BaseMiddleware):
         )
 
         # Format the suggestions as HTML
-        html = ""
+        _html = ""
         for suggestion in suggestions:
-            html += f"""
+            _html += f"""
             <div class="suggestion">
                 <div class="suggestion-title">{html.escape(suggestion["title"])}</div>
                 <div>{suggestion["text"]}</div>
             </div>
             """
 
-        return html
+        return _html
 
     def generate_html(self, exc: Exception, limit: int = 7) -> str:
         """Generate an enhanced HTML page for displaying error information."""

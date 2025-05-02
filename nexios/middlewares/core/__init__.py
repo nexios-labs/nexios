@@ -11,7 +11,7 @@ from nexios._utils.async_helpers import collapse_excgroups
 
 RequestResponseEndpoint = typing.Callable[[Request], typing.Awaitable[Response]]
 DispatchFunction = typing.Callable[
-    [Request, Response, typing.Awaitable[None]],
+    [Request, Response, typing.Callable[[], typing.Awaitable[Response]]],
     typing.Awaitable[Response],
 ]
 T = typing.TypeVar("T")
@@ -236,11 +236,11 @@ WebSocketDispatchFunction = typing.Callable[
 
 
 MiddlewareType = typing.Callable[
-    [Request, Response, typing.Awaitable[None]], typing.Awaitable[typing.Any]
+    [Request, Response, typing.Awaitable[None]], typing.Callable[[], typing.Awaitable[None]]
 ]
 
 
-def wrap_middleware(middleware_function: MiddlewareType) -> Middleware:
+def wrap_middleware(middleware_function: DispatchFunction) -> Middleware:
     return Middleware(BaseMiddleware, dispatch=middleware_function)
 
 

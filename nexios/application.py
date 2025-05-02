@@ -104,7 +104,7 @@ class NexiosApp(object):
         self.ws_middlewares: List[ASGIApp] = []
         self.startup_handlers: List[Callable[[], Awaitable[None]]] = []
         self.shutdown_handlers: List[Callable[[], Awaitable[None]]] = []
-        self.exceptions_handler: ExceptionMiddleware = ExceptionMiddleware()
+        self.exceptions_handler = ExceptionMiddleware()
         self.server_error_handler = server_error_handler
 
         self.app = Router()
@@ -491,7 +491,7 @@ class NexiosApp(object):
                 )
             ]
             + self.http_middlewares
-            + [Middleware(BaseMiddleware, dispatch=self.exceptions_handler)]
+            + [Middleware(BaseMiddleware, dispatch=self.exceptions_handler)] # type:ignore
         )
         for cls, args, kwargs in reversed(middleware):
             app = cls(app, *args, **kwargs)

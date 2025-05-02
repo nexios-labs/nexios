@@ -84,7 +84,7 @@ class ExceptionMiddleware:
         self,
         request: Request,
         response: Response,
-        call_next: typing.Callable[..., typing.Awaitable[None]],
+        call_next: typing.Callable[[], typing.Awaitable[None]],
     ) -> Response:
 
         return await wrap_http_exceptions(
