@@ -12,10 +12,17 @@
     - [API-First Approach](what-is-nexios.md#api-first-approach)
     - [ORM-Agnostic](what-is-nexios.md#orm-agnostic)
     - [Inspired by Express.js](what-is-nexios.md#inspired-by-expressjs)
-- [Philosophy](philosophy.md)
 - [😃 Basic Example](basic-example.md)
   - [Example: Basic Nexios Application](basic-example.md#example-basic-nexios-application)
   - [Explanation](basic-example.md#explanation)
+
+## About
+
+- [About Nexios](about/index.md)
+  - [Philosophy](about/philosophy.md)
+  - [Design Patterns](about/design-patterns.md)
+  - [Performance](about/performance.md)
+  - [Authors](about/authors.md)
 
 ## Getting Started
 
@@ -28,15 +35,16 @@
     - [Using Poetry](fundamentals/installation-guide.md#2-install-nexios-using-poetry)
     - [From GitHub Branch](fundamentals/installation-guide.md#3-install-nexios-from-a-specific-github-branch)
   - [🛠️ CLI Tools](fundamentals/cli-tools.md)
-  - [Middleware](fundamentals/middleware.md)
-  - [Routing](fundamentals/routing.md)
-  - [Processing Inputs](fundamentals/processing-inputs.md)
-
+ 
 ## Core Concepts
 
 - [Managing Config](managing_config.md)
 - [Request and Response](request-and-response.md)
 - [Error Handling](exceptions.md)
+- [Routing](fundamentals/routing.md)
+- [Middleware](fundamentals/middleware.md)
+- [Processing Inputs](fundamentals/processing-inputs.md)
+
 
 ## Features
 
@@ -125,6 +133,14 @@
   - [Authentication Documentation](openapi.md#authentication-documentation)
   - [Customizing Swagger UI](openapi.md#customizing-swagger-ui)
   - [Advanced Usage: Manual Documentation](openapi.md#advanced-usage-manual-documentation)
+- [Dependency Injection](dependency-injection.md)
+  - [Introduction to Dependency Injection](dependency-injection.md#introduction-to-dependency-injection-in-nexios)
+  - [Core Components](dependency-injection.md#core-components)
+  - [Usage Examples](dependency-injection.md#usage-examples)
+  - [Best Practices and Patterns](dependency-injection.md#best-practices-and-patterns)
+  - [Common Use Cases](dependency-injection.md#common-use-cases)
+  - [Performance Considerations](dependency-injection.md#performance-considerations)
+  - [Integration with Other Features](dependency-injection.md#integration-with-other-features)
 
 ## Advanced Topics
 

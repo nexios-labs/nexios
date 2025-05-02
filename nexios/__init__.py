@@ -27,6 +27,7 @@ from .middlewares.csrf import CSRFMiddleware
 from .routing import Router  # type:ignore
 from .session.middleware import SessionMiddleware
 from .types import ExceptionHandlerType
+from .dependencies import Depend
 
 
 def get_application(
@@ -117,4 +118,4 @@ def get_application(
     return app
 
 
-__all__ = ["MakeConfig", "Router"]
+__all__ = ["MakeConfig", "Router","NexiosApp", "get_application","Depend"]
