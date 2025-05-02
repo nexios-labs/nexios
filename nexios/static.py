@@ -54,7 +54,6 @@ class StaticFilesHandler:
             try:
                 file_path = (directory / path).resolve()
 
-
                 if self._is_safe_path(file_path) and file_path.is_file():
                     return response.file(
                         str(file_path), content_disposition_type="inline"
