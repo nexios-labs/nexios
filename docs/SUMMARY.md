@@ -114,6 +114,14 @@
   - [Practical Examples](events.md#practical-examples)
   - [Best Practices](events.md#best-practices)
   - [Integration with External Systems](events.md#integration-with-external-systems)
+- [Dependency Injection](dependency-injection.md)
+  - [Introduction to Dependency Injection](dependency-injection.md#introduction-to-dependency-injection-in-nexios)
+  - [Core Components](dependency-injection.md#core-components)
+  - [Usage Examples](dependency-injection.md#usage-examples)
+  - [Best Practices and Patterns](dependency-injection.md#best-practices-and-patterns)
+  - [Common Use Cases](dependency-injection.md#common-use-cases)
+  - [Performance Considerations](dependency-injection.md#performance-considerations)
+  - [Integration with Other Features](dependency-injection.md#integration-with-other-features)
 - [File Router](file-router.md)
   - [Introduction](file-router.md#introduction)
   - [Basic Setup](file-router.md#basic-setup)
@@ -133,14 +141,7 @@
   - [Authentication Documentation](openapi.md#authentication-documentation)
   - [Customizing Swagger UI](openapi.md#customizing-swagger-ui)
   - [Advanced Usage: Manual Documentation](openapi.md#advanced-usage-manual-documentation)
-- [Dependency Injection](dependency-injection.md)
-  - [Introduction to Dependency Injection](dependency-injection.md#introduction-to-dependency-injection-in-nexios)
-  - [Core Components](dependency-injection.md#core-components)
-  - [Usage Examples](dependency-injection.md#usage-examples)
-  - [Best Practices and Patterns](dependency-injection.md#best-practices-and-patterns)
-  - [Common Use Cases](dependency-injection.md#common-use-cases)
-  - [Performance Considerations](dependency-injection.md#performance-considerations)
-  - [Integration with Other Features](dependency-injection.md#integration-with-other-features)
+
 
 ## Advanced Topics
 
