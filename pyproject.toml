@@ -55,7 +55,7 @@ granian = ["granian"]  # Optional Granian server support
 nexios = "nexios.cli:cli"
 
 [tool.poetry.group.dev.dependencies]
-mypy = ">=0.910,<1.16"
+mypy = "^1.15.0"
 pytest = "~=8.3.4"
 mkdocs = "^1.2.3"
 coverage = ">=6.3,<8.0"
@@ -69,9 +69,13 @@ asyncio_mode = "auto"
 asyncio_fixture_scope = "function"
 
 [tool.mypy]
+python_version = "3.13"
 ignore_missing_imports = true
 warn_unused_ignores = true
 warn_redundant_casts = true
 warn_return_any = false
 disallow_untyped_calls = false
 disallow_untyped_defs = false
+files = ["nexios"]
+exclude = "(nexios/templates/.*)"
+
