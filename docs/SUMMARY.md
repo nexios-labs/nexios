@@ -139,5 +139,3 @@
 * [Miscellaneous](misc.md)
 
 ---
-
-* [About Nexios](about.md)
