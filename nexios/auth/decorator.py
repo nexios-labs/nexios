@@ -34,6 +34,6 @@ class auth(RouteDecorator):
             if self.scopes and scope not in self.scopes:
                 raise AuthenticationFailed
 
-            return await handler(request, response)
+            return await handler(request, response, **kwargs)
 
         return wrapper

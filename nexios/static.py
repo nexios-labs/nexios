@@ -54,7 +54,6 @@ class StaticFilesHandler:
             try:
                 file_path = (directory / path).resolve()
 
-                print(f"Checking {file_path} (relative to {directory})")
 
                 if self._is_safe_path(file_path) and file_path.is_file():
                     return response.file(

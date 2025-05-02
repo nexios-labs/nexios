@@ -35,7 +35,7 @@ from nexios.exceptions import NotFoundException
 from nexios.websockets.errors import WebSocketErrorMiddleware
 from pydantic import BaseModel
 from nexios.http.response import BaseResponse
-from nexios.dependencies import DependencyProvider
+from nexios.dependencies import inject_dependencies
 
 
 T = TypeVar("T")
@@ -587,6 +587,8 @@ class Router(BaseRouter):
         route.tags = self.tags + route.tags if route.tags else self.tags
         if self.exclude_from_schema:
             route.exlude_from_schema = True
+        handler = inject_dependencies(route.handler)
+        route.handler = handler
         self.routes.append(route)
 
     def add_middleware(self, middleware: MiddlewareType) -> None:
