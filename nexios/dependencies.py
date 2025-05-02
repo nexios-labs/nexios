@@ -1,4 +1,4 @@
-from typing import  Callable, Dict, List,  Optional,Any
+from typing import Callable, Dict, List, Optional, Any
 from inspect import signature, Parameter
 from functools import wraps
 import inspect
@@ -13,7 +13,7 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to inject dependencies into a route handler while preserving parameter names."""
 
     @wraps(handler)
-    async def wrapped(*args :List[Any]  , **kwargs :Dict[str, Any] ) -> Any:
+    async def wrapped(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
         sig = signature(handler)
         bound_args = sig.bind_partial(*args, **kwargs)
 
