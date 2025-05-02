@@ -11,7 +11,7 @@ from nexios.structs import FormData, Headers, UploadedFile
 
 if typing.TYPE_CHECKING:
     import multipart  # type:ignore
-    from multipart.multipart import ( # type:ignore
+    from multipart.multipart import (  # type:ignore
         parse_options_header,
     )
 else:
@@ -223,9 +223,7 @@ class MultiPartParser:
         self._current_partial_header_value = b""
 
     def on_headers_finished(self) -> None:
-        _, options = parse_options_header(
-            self._current_part.content_disposition
-        )
+        _, options = parse_options_header(self._current_part.content_disposition)
         try:
             self._current_part.field_name = _user_safe_decode(
                 options[b"name"], self._charset  # type: ignore
@@ -277,7 +275,7 @@ class MultiPartParser:
         charset = params.get(b"charset")
         self._charset = charset.decode("latin-1") if charset else "utf-8"
 
-        callbacks :typing.Dict[str, typing.Callable[...,typing.Any]]= {
+        callbacks: typing.Dict[str, typing.Callable[..., typing.Any]] = {
             "on_part_begin": self.on_part_begin,
             "on_part_data": self.on_part_data,
             "on_part_end": self.on_part_end,
@@ -288,7 +286,7 @@ class MultiPartParser:
             "on_end": self.on_end,
         }
 
-        parser = multipart.MultipartParser(boundary, callbacks) #type:ignore
+        parser = multipart.MultipartParser(boundary, callbacks)  # type:ignore
         try:
             # Feed the parser with data from the request.
             async for chunk in self.stream:
