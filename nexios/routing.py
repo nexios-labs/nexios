@@ -188,8 +188,8 @@ class RouteBuilder:
             pattern=path_regex,
             raw_path=path,
             param_names=param_names,
-            route_type=path_format,  
-            convertor=param_convertors,  
+            route_type=path_format,
+            convertor=param_convertors,
         )
 
 
@@ -2257,9 +2257,7 @@ class Router:
 
         raise NotFoundException
 
-    def mount_router( 
-        self, app: "Router", path: typing.Optional[str] = None
-    ) -> None:  
+    def mount_router(self, app: "Router", path: typing.Optional[str] = None) -> None:
         """
         Mount an ASGI application (e.g., another Router) under a specific path prefix.
 

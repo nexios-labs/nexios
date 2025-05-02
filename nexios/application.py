@@ -12,7 +12,7 @@ from typing import (
 )
 
 from pydantic import BaseModel
-from typing_extensions import Annotated, Doc 
+from typing_extensions import Annotated, Doc
 
 from nexios.config import DEFAULT_CONFIG, MakeConfig
 from nexios.events import AsyncEventEmitter
@@ -38,7 +38,8 @@ AppType = TypeVar("AppType", bound="NexiosApp")
 
 # Module globals
 logger = create_logger("nexios")
-lifespan_manager =  Callable[["NexiosApp"], AsyncContextManager[bool]]
+lifespan_manager = Callable[["NexiosApp"], AsyncContextManager[bool]]
+
 
 class NexiosApp(object):
     def __init__(
@@ -103,15 +104,15 @@ class NexiosApp(object):
         self.ws_middlewares: List[ASGIApp] = []
         self.startup_handlers: List[Callable[[], Awaitable[None]]] = []
         self.shutdown_handlers: List[Callable[[], Awaitable[None]]] = []
-        self.exceptions_handler: Union[ExceptionMiddleware, None] = ExceptionMiddleware()
+        self.exceptions_handler: Union[ExceptionMiddleware, None] = (
+            ExceptionMiddleware()
+        )
         self.server_error_handler = server_error_handler
 
         self.app = Router()
         self.router = self.app
         self.route = self.router.route
-        self.lifespan_context: Optional[
-          lifespan_manager
-        ] = lifespan
+        self.lifespan_context: Optional[lifespan_manager] = lifespan
 
         openapi_config: Dict[str, Any] = self.config.to_dict().get(
             "openapi", {}
@@ -259,7 +260,9 @@ class NexiosApp(object):
                             await self._startup()
                             await send({"type": "lifespan.startup.complete"})
                     except Exception as e:
-                        await send({"type": "lifespan.startup.failed", "message": str(e)})
+                        await send(
+                            {"type": "lifespan.startup.failed", "message": str(e)}
+                        )
                         return
 
                 elif message["type"] == "lifespan.shutdown":
@@ -272,7 +275,9 @@ class NexiosApp(object):
                         await send({"type": "lifespan.shutdown.complete"})
                         return
                     except Exception as e:
-                        await send({"type": "lifespan.shutdown.failed", "message": str(e)})
+                        await send(
+                            {"type": "lifespan.shutdown.failed", "message": str(e)}
+                        )
                         return
 
         except Exception as e:
@@ -281,6 +286,7 @@ class NexiosApp(object):
                 await send({"type": "lifespan.startup.failed", "message": str(e)})
             else:
                 await send({"type": "lifespan.shutdown.failed", "message": str(e)})
+
     def _setup_openapi(self) -> None:
         """Set up automatic OpenAPI documentation"""
         docs = self.docs
@@ -2054,8 +2060,6 @@ class NexiosApp(object):
             path=path,
             handler=handler,
         )
-
-   
 
     def __str__(self) -> str:
         return f"<NexiosApp: {self.title}>"
