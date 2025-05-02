@@ -236,7 +236,8 @@ WebSocketDispatchFunction = typing.Callable[
 
 
 MiddlewareType = typing.Callable[
-    [Request, Response, typing.Awaitable[None]], typing.Callable[[], typing.Awaitable[None]]
+    [Request, Response, typing.Awaitable[None]],
+    typing.Callable[[], typing.Awaitable[None]],
 ]
 
 

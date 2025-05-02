@@ -581,7 +581,7 @@ class ServerErrorMiddleware(BaseMiddleware):
 
     def _generate_error_json(self, exc: Exception, exc_type_str: str) -> str:
         """Generate a JSON representation of the error for debugging."""
-        error_data :typing.Dict[str, typing.Any] = {
+        error_data: typing.Dict[str, typing.Any] = {
             "error": {
                 "type": exc_type_str,
                 "message": str(exc),
@@ -614,7 +614,7 @@ class ServerErrorMiddleware(BaseMiddleware):
 
     def _generate_debugging_suggestions(self, exc: Exception, exc_type_str: str) -> str:
         """Generate debugging suggestions based on the error type."""
-        suggestions :typing.List[typing.Dict[str, str]]= []
+        suggestions: typing.List[typing.Dict[str, str]] = []
 
         # Common error types and suggestions
         if "ImportError" in exc_type_str or "ModuleNotFoundError" in exc_type_str:
