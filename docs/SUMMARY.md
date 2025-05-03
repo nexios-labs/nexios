@@ -125,7 +125,6 @@
   * [Customizing Swagger UI](openapi.md#customizing-swagger-ui)
   * [Advanced Usage: Manual Documentation](openapi.md#advanced-usage-manual-documentation)
 
-## Advanced Topics
 
 * [Guides](<README (1).md>)
   * [Logging](guides/logging.md)
@@ -135,8 +134,6 @@
 
 ## API Reference
 
-* [Application](api/application.md)
-  * [NexiosApp](api/application.md#nexiosapp)
 * [Request](api/request.md)
   * [Basic Properties](api/request.md#basic-properties)
   * [Body Content](api/request.md#body-content)
