@@ -423,3 +423,6 @@ class Request(HTTPConnection):
     @user.setter
     def user(self, value: str):
         self.scope["user"] = value
+
+    def __str__(self) -> str:
+        return f"<Request {self.method} {self.url}>"

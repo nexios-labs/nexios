@@ -344,6 +344,12 @@ Visit http://localhost:4000/docs to view the Swagger API documentation.
 Sure thing, Dunamis! Here's a well-written **"Donate"** section for Nexios with more context, purpose, and a call to action. You can just replace the link with your actual Buy Me a Coffee profile:
 
 ---
+## Contributors:
+<a href="https://github.com/nexios-labs/nexios/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=nexios-labs/nexios" />
+</a>
+
+---
 
 ## ☕ Donate to Support Nexios
 
