@@ -28,8 +28,8 @@ class auth(RouteDecorator):
             *args: typing.List[typing.Any], **kwargs: typing.Dict[str, typing.Any]
         ) -> typing.Any:
             print("kwargs are", kwargs.values())
-            request, response,*_ = kwargs.values()
-            
+            request, response, *_ = kwargs.values()
+
             if not isinstance(request, Request) or not isinstance(response, Response):
                 raise TypeError("Expected request and response as the fist arguments")
 
@@ -42,5 +42,6 @@ class auth(RouteDecorator):
                 raise AuthenticationFailed
 
             return await handler(*args, **kwargs)
+
         wrapper._is_wrapped = True  # type: ignore
         return wrapper

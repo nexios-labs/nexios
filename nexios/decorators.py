@@ -91,7 +91,7 @@ class catch_exception(RouteDecorator):
                         "Expected request and response as the last arguments"
                     )
 
-                return self.exception_handler(request, response, e) # type:ignore
+                return self.exception_handler(request, response, e)  # type:ignore
 
         wrapper._is_wrapped = True  # type: ignore
         return wrapper  # type: ignore
