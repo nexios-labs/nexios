@@ -35,13 +35,13 @@ class allowed_methods(RouteDecorator):
 
         @wraps(handler)
         async def wrapper(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
-
+            print(kwargs)
             *_, request, response = args  # Ensure request and response are last
 
             if not isinstance(request, Request) or not isinstance(
                 response, NexiosResponse
             ):
-                raise TypeError("Expected request and response as the last arguments")
+                raise TypeError("Expected request and response as the first arguments")
 
             if request.method.upper() not in self.allowed_methods:
                 return response.json(
@@ -91,7 +91,7 @@ class catch_exception(RouteDecorator):
                         "Expected request and response as the last arguments"
                     )
 
-                return self.exception_handler(request, response, e)
+                return self.exception_handler(request, response, e) # type:ignore
 
         wrapper._is_wrapped = True  # type: ignore
         return wrapper  # type: ignore

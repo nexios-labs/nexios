@@ -2,6 +2,7 @@ from nexios.decorators import RouteDecorator
 import typing
 from .exceptions import AuthenticationFailed
 from nexios.http import Request, Response
+from functools import wraps
 
 
 class auth(RouteDecorator):
@@ -18,13 +19,19 @@ class auth(RouteDecorator):
     def __call__(
         self, handler: typing.Callable[..., typing.Awaitable[typing.Any]]
     ) -> typing.Any:
+
+        if getattr(handler, "_is_wrapped", False):
+            return handler
+
+        @wraps(handler)  # type: ignore
         async def wrapper(
             *args: typing.List[typing.Any], **kwargs: typing.Dict[str, typing.Any]
         ) -> typing.Any:
-            *_, request, response = args  # Ensure request and response are last
-
+            print("kwargs are", kwargs.values())
+            request, response,*_ = kwargs.values()
+            
             if not isinstance(request, Request) or not isinstance(response, Response):
-                raise TypeError("Expected request and response as the last arguments")
+                raise TypeError("Expected request and response as the fist arguments")
 
             if not request.scope.get("user"):
                 raise AuthenticationFailed
@@ -34,6 +41,6 @@ class auth(RouteDecorator):
             if self.scopes and scope not in self.scopes:
                 raise AuthenticationFailed
 
-            return await handler(request, response, **kwargs)
-
+            return await handler(*args, **kwargs)
+        wrapper._is_wrapped = True  # type: ignore
         return wrapper
