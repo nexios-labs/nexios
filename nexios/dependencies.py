@@ -34,17 +34,20 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
                         f"Dependency for parameter '{param.name}' has no provider"
                     )
 
-                if hasattr(dependency_func, '__wrapped__'):  
+                if hasattr(dependency_func, "__wrapped__"):
                     dependency_func = dependency_func.__wrapped__  # type: ignore[attr-defined]
 
                 dep_sig = signature(dependency_func)
                 dep_kwargs = {}
-                
+
                 for dep_param in dep_sig.parameters.values():
                     if dep_param.name in bound_args.arguments:
-                        dep_kwargs[dep_param.name] = bound_args.arguments[dep_param.name]
-                    elif (dep_param.default != Parameter.empty 
-                          and isinstance(dep_param.default, Depend)):
+                        dep_kwargs[dep_param.name] = bound_args.arguments[
+                            dep_param.name
+                        ]
+                    elif dep_param.default != Parameter.empty and isinstance(
+                        dep_param.default, Depend
+                    ):
                         nested_dep = dep_param.default.dependency
                         if inspect.iscoroutinefunction(nested_dep):
                             dep_kwargs[dep_param.name] = await nested_dep()
@@ -53,7 +56,9 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
 
                 # Call the dependency
                 if inspect.iscoroutinefunction(dependency_func):
-                    bound_args.arguments[param.name] = await dependency_func(**dep_kwargs)
+                    bound_args.arguments[param.name] = await dependency_func(
+                        **dep_kwargs
+                    )
                 else:
                     bound_args.arguments[param.name] = dependency_func(**dep_kwargs)
 
