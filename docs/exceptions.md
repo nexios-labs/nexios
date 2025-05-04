@@ -84,20 +84,7 @@ async def admin_panel(req, res):
     # ...
 ```
 
-### Exception Middleware
 
-The `ExceptionMiddleware` is responsible for catching exceptions and converting them to appropriate HTTP responses:
-
-```python
-from nexios import get_application
-from nexios.exception_handler import ExceptionMiddleware
-
-app = get_application()
-
-# The exception middleware is added automatically when creating the application,
-# but you can add it explicitly if needed:
-# app.add_middleware(ExceptionMiddleware())
-```
 
 #### Exception Handlers
 
