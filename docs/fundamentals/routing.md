@@ -69,12 +69,13 @@ async def multiple_methods(req, res):
 Routes can also be added dynamically using the `app.add_route()` method. This is useful when routes need to be generated programmatically or loaded from external configurations.
 
 ```python
+from nexios.routing import Routes
 async def dynamic_handler(req, res):
     return res.text(f"Dynamic Route: {req.path}")
 
-app.add_route(Route("/dynamic", dynamic_handler))  # Handles GET by default
-app.add_route(Route("/dynamic-post", dynamic_handler, methods=["POST"]))  # Handles POST
-app.add_route(Route("/multi-dynamic", dynamic_handler, methods=["GET", "PATCH"]))  # Handles multiple methods
+app.add_route(Routes("/dynamic", dynamic_handler))  # Handles GET by default
+app.add_route(Routes("/dynamic-post", dynamic_handler, methods=["POST"]))  # Handles POST
+app.add_route(Routes("/multi-dynamic", dynamic_handler, methods=["GET", "PATCH"]))  # Handles multiple methods
 ```
 
 #### **Explanation and Notes:**
