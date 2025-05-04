@@ -193,7 +193,7 @@ The `@use_for_route` decorator binds a middleware function to specific routes or
 ```python
 from nexios.middleware.utils import use_for_route
 
-@app.use_for_route("/dashboard", "GET")
+@use_for_route("/dashboard")
 async def log_middleware(req, res, cnext):
     print(f"User accessed {req.path.url}")
     await cnext(req, res)  # Proceed to the next function (handler or middleware)
