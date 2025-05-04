@@ -156,7 +156,7 @@ Benchmark comparisons show that Nexios with Granian can handle significantly mor
 
 ### Upcoming Features
 
-- [ ] **Database ORM Integration**
+- [ ] **Inbuilt Database ORM Integration**
 - [ ] **Asynchronous Task Queue**
 - [ ] **Rate Limiting**
 - [ ] **API Throttling**

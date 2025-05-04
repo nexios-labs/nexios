@@ -375,7 +375,7 @@ Nexios leverages Granian, a high-performance Rust-based ASGI server, providing s
 
 ### Coming Soon 🔜
 
-- [ ] **Database ORM Integration**
+- [ ] **Inbuilt Database ORM Integration**
 - [ ] **Asynchronous Task Queue**
 - [ ] **Rate Limiting**
 - [ ] **API Throttling**

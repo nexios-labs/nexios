@@ -3,11 +3,8 @@
 
 * [Introduction](README.md)
 * [What is Nexios ?](what-is-nexios.md)
-  * [Why Nexios ?](what-is-nexios.md#why-nexios-)
-  * [Features](what-is-nexios.md#features)
+* [🚀 Features](what-is-nexios.md#features)
 * [😃 Basic Example](basic-example.md)
-  * [Example: Basic Nexios Application](basic-example.md#example-basic-nexios-application)
-  * [Explanation](basic-example.md#explanation)
 
 
 ## Getting Started
