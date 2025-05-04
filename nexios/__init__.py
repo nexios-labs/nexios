@@ -112,7 +112,7 @@ def get_application(
         title=title,
         version=version,
         description=description,
-        lifespan  = lifespan,
+        lifespan=lifespan,
     )
 
     return app
