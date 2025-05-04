@@ -6,7 +6,6 @@ from typing import (
     List,
     Optional,
     Type,
-    TypeVar,
     Union,
     AsyncContextManager,
 )
@@ -39,13 +38,8 @@ from .types import (
     WsHandlerType,
 )
 
-# Constants
-allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
 
-# Type aliases
-AppType = TypeVar("AppType", bound="NexiosApp")
 
-# Module globals
 logger = create_logger("nexios")
 lifespan_manager = Callable[["NexiosApp"], AsyncContextManager[bool]]
 
@@ -252,20 +246,20 @@ class NexiosApp(object):
     async def handle_lifespan(self, receive: Receive, send: Send) -> None:
         """Handle ASGI lifespan protocol events."""
         self._setup_openapi()
-        message: Optional[Message] = None
 
         try:
             while True:
-                message = await receive()
+                message: Message = await receive()
                 if message["type"] == "lifespan.startup":
                     try:
                         if self.lifespan_context:
-                            async with self.lifespan_context(self):
-                                await send({"type": "lifespan.startup.complete"})
-                                break  # wait for shutdown
+                            # If a lifespan context manager is provided, use it
+                            self.lifespan_manager: Any = self.lifespan_context(self)
+                            await self.lifespan_manager.__aenter__()
                         else:
+                            # Otherwise, fall back to the default startup handlers
                             await self._startup()
-                            await send({"type": "lifespan.startup.complete"})
+                        await send({"type": "lifespan.startup.complete"})
                     except Exception as e:
                         await send(
                             {"type": "lifespan.startup.failed", "message": str(e)}
@@ -275,9 +269,10 @@ class NexiosApp(object):
                 elif message["type"] == "lifespan.shutdown":
                     try:
                         if self.lifespan_context:
-                            # already exited if we used `async with` above
-                            pass
+                            # If a lifespan context manager is provided, use it
+                            await self.lifespan_manager.__aexit__(None, None, None)
                         else:
+                            # Otherwise, fall back to the default shutdown handlers
                             await self._shutdown()
                         await send({"type": "lifespan.shutdown.complete"})
                         return
@@ -288,8 +283,7 @@ class NexiosApp(object):
                         return
 
         except Exception as e:
-            err_type = message["type"] if message else "lifespan.unknown"
-            if err_type.startswith("lifespan.startup"):
+            if message["type"].startswith("lifespan.startup"):  # type: ignore
                 await send({"type": "lifespan.startup.failed", "message": str(e)})
             else:
                 await send({"type": "lifespan.shutdown.failed", "message": str(e)})
@@ -499,8 +493,8 @@ class NexiosApp(object):
             ]
             + self.http_middlewares
             + [
-                Middleware(BaseMiddleware, dispatch=self.exceptions_handler)
-            ]  # type:ignore
+                Middleware(BaseMiddleware, dispatch=self.exceptions_handler) # type:ignore
+            ]  
         )
         for cls, args, kwargs in reversed(middleware):
             app = cls(app, *args, **kwargs)
