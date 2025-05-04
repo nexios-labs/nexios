@@ -4,13 +4,12 @@ cover: .gitbook/assets/icon.svg
 coverY: 0
 ---
 
-# What is Nexios?
-
-If Express.js and Python had a wild night of coding, the result would be Nexios—a fast, lightweight, no-nonsense framework that lets you build web apps without the headache.
+# What is Nexios 🤷‍♂️?
+Nexios is a modern, high-performance ASGI framework for building asynchronous web applications in Python. It combines the simplicity of Express.js with Python's async capabilities to create a powerful, developer-friendly web framework that's easy to learn and easy to use 🚀.
 
 Think of it as Express.js but speaking fluent Python. It doesn't force you into strict rules, doesn't ask for long configurations, and definitely doesn't judge your coding habits. It just works—so you can focus on writing awesome code instead of wrestling with boilerplate.
 
-## Introduction
+---
 
 Nexios is a modern Python web framework designed for developers who value simplicity, performance, and flexibility. Built with the philosophy that web development shouldn't be complicated, Nexios brings the elegance of Express.js to the Python ecosystem.
 
@@ -32,8 +31,6 @@ async def create_data(request, response):
     # Process your data here
     return {"status": "success", "id": 123, "data": data}
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
 ```
 
 With Nexios, you're in charge. Want to structure your app your way? Go for it. Need to slap together a quick API in minutes? Done. It's all about freedom, speed, and keeping things simple—just like Express, but Pythonic.
@@ -43,7 +40,6 @@ No magic. No unnecessary fluff. Just clean, modular, and fun development. Becaus
 ## Architecture Overview
 
 Nexios follows a modular, middleware-based architecture that provides both simplicity and power:
-
 ```
 ┌─────────────────────────────────────────────────┐
 │                  Client Request                 │
@@ -57,14 +53,14 @@ Nexios follows a modular, middleware-based architecture that provides both simpl
 └───────────────────────┬─────────────────────────┘
                         ▼
 ┌─────────────────────────────────────────────────┐
+│             Dependency Injection (DI)           │
+└───────────────────────┬─────────────────────────┘
+                        ▼
+┌─────────────────────────────────────────────────┐
 │                 Route Handlers                  │
 │  ┌─────────┐   ┌─────────┐   ┌─────────────┐    │
 │  │ get()   │   │ post()  │   │ websocket() │    │
 │  └─────────┘   └─────────┘   └─────────────┘    │
-└───────────────────────┬─────────────────────────┘
-                        ▼
-┌─────────────────────────────────────────────────┐
-│              Dependency Injection               │
 └───────────────────────┬─────────────────────────┘
                         ▼
 ┌─────────────────────────────────────────────────┐
@@ -110,15 +106,14 @@ async def get_user(request, response, user_id: int):
     # In a real app, you would fetch this from a database
     return {"user_id": user_id, "name": "John Doe", "email": "john@example.com"}
 
-if __name__ == "__main__":
-    app.run(debug=True)
+
 ```
 
 ### Run Your Application
 
 ```bash
-# Run directly with Python
-python app.py
+# Run directly with uvicorn
+uvicorn app:app --host 0.0.0.0 --port 8000
 
 # Or use the Nexios CLI (recommended for production)
 nexios run app:app --host 0.0.0.0 --port 8000
@@ -165,13 +160,13 @@ async def get_user(request, response, user_id: int):
 @app.delete("/users/{user_id}")
 
 # Handler organization with Blueprint objects
-users = Blueprint("users", url_prefix="/api/users")
+users = Router(prefix="/api/users")
 
 @users.get("/")
 async def list_users(request, response):
     return {"users": [...]}
 
-app.register_blueprint(users)
+app.mount_router(users)
 ```
 
 #### Powerful Middleware System
@@ -183,7 +178,7 @@ async def custom_middleware(request, response, next_handler):
     print("Processing request to", request.url.path)
     
     # Call the next middleware or route handler
-    response = await next_handler(request, response)
+    response = await next_handler()
     
     # Do something after the request is processed
     print("Completed request to", request.url.path)
@@ -210,11 +205,11 @@ async def count_visits(request, response):
 
 ```python
 @app.websocket("/chat")
-async def chat_websocket(socket):
-    await socket.accept()
+async def chat_websocket(ws):
+    await ws.accept()
     while True:
-        data = await socket.receive_text()
-        await socket.send_text(f"Echo: {data}")
+        data = await ws.receive_text()
+        await ws.send_text(f"Echo: {data}")
 ```
 
 #### Dependency Injection
@@ -265,7 +260,7 @@ Ready to start building with Nexios? Check out these resources:
 
 ## Community and Support
 
-- [GitHub Repository](https://github.com/your-organization/nexios) - Star us, fork us, contribute!
+- [GitHub Repository](https://github.com/nexios-labs/nexios) - Star us, fork us, contribute!
 - [Discord Community](https://discord.gg/nexios) - Get help and share your experiences
-- [Issue Tracker](https://github.com/your-organization/nexios/issues) - Report bugs or request features
+- [Issue Tracker](https://github.com/nexios-labs/nexios/issues) - Report bugs or request features
 

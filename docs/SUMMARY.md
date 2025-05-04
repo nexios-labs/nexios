@@ -1,8 +1,7 @@
 # Table of contents
 
-## Introduction
 
-* [Welcome](README.md)
+* [Introduction](README.md)
 * [What is Nexios ?](what-is-nexios.md)
   * [Why Nexios ?](what-is-nexios.md#why-nexios-)
   * [Features](what-is-nexios.md#features)
@@ -18,16 +17,16 @@
   * [Installing Python 3.10+](fundamentals/installation-guide.md#installing-python-310)
   * [Installing Poetry](fundamentals/installation-guide.md#installing-poetry)
   * [Installing Nexios](fundamentals/installation-guide.md#installing-nexios)
-  * [🛠️ CLI Tools](fundamentals/cli-tools.md)
+* [🛠️ CLI Tools](fundamentals/cli-tools.md)
 
 ## Core Concepts
 
-* [Managing Config](managing_config.md)
-* [Request and Response](request-and-response.md)
-* [Error Handling](exceptions.md)
 * [Routing](fundamentals/routing.md)
-* [Middleware](fundamentals/middleware.md)
+* [Request and Response](request-and-response.md)
+* [Managing Config](managing_config.md)
+* [Error Handling](exceptions.md)
 * [Processing Inputs](fundamentals/processing-inputs.md)
+* [Middleware](fundamentals/middleware.md)
 
 ## Features
 

@@ -1,3 +1,4 @@
+
 # 🛠️ CLI Tools
 
 Nexios comes with a powerful CLI tool that helps you bootstrap new projects and manage development servers. It supports multiple server engines (Uvicorn by default, with optional Granian support) to run your ASGI applications.
@@ -215,7 +216,6 @@ nexios run --server granian --interface asgi --http-protocol h2 --threading
 You can also set the server preference in your application's configuration:
 
 ```python
-# In your config file
 server_config = {
     "host": "0.0.0.0",
     "port": 8000,
@@ -223,6 +223,8 @@ server_config = {
     "workers": 2,
     "log_level": "info"
 }
+
+app.config.server = server_config
 ```
 
 ## For Existing Granian Users
