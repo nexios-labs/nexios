@@ -14,7 +14,7 @@ Note: Adjustments have been made for dependency injection, custom error handling
 and simplified routing mechanisms to better suit the Nexios framework architecture.
 """
 
-from typing import Optional, Callable, AsyncIterator, List
+from typing import Optional, Callable, AsyncContextManager
 
 from typing_extensions import Doc, Annotated
 
@@ -74,7 +74,7 @@ def get_application(
                         A function in Nexios responsible for handling server-side exceptions by logging errors, reporting issues, or initiating recovery mechanisms. It prevents crashes by intercepting unexpected failures, ensuring the application remains stable and operational. This function provides a structured approach to error management, allowing developers to define custom handling strategies such as retrying failed requests, sending alerts, or gracefully degrading functionality. By centralizing error processing, it improves maintainability and observability, making debugging and monitoring more efficient. Additionally, it ensures that critical failures do not disrupt the entire system, allowing services to continue running while appropriately managing faults and failures."""
         ),
     ] = None,
-    lifespan: Optional[Callable[[NexiosApp], AsyncIterator[None]]] = None,
+    lifespan: Optional[Callable[["NexiosApp"], AsyncContextManager[bool]]] = None,
 ) -> NexiosApp:
     """
     Initializes and returns a `Nexios` application instance, serving as the core entry point for building web applications.
@@ -112,7 +112,7 @@ def get_application(
         title=title,
         version=version,
         description=description,
-        lifespan=lifespan,
+        lifespan  = lifespan,
     )
 
     return app
