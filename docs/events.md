@@ -104,112 +104,9 @@ Examples:
 * `app.startup`
 * `app.shutdown`
 
-### Built-in Application Events
 
-Nexios provides several built-in events for application lifecycle:
 
-```python
-# Application startup
-@app.events.on("app.startup")
-async def on_startup():
-    print("Application is starting up")
-    await database.connect()
 
-# Application shutdown
-@app.events.on("app.shutdown")
-async def on_shutdown():
-    print("Application is shutting down")
-    await database.disconnect()
-
-# Route not found
-@app.events.on("http.not_found")
-async def on_not_found(request, response):
-    print(f"Route not found: {request.url}")
-    # Optional: custom 404 handling
-
-# Server error
-@app.events.on("http.error")
-async def on_error(request, response, error):
-    print(f"Server error: {error}")
-    # Optional: error logging or reporting
-```
-
-### Request and Response Events
-
-Nexios emits events during the HTTP request lifecycle:
-
-```python
-# Before request processing
-@app.events.on("http.request.started")
-async def on_request_started(request):
-    request.state.start_time = time.time()
-    print(f"New request to {request.url}")
-
-# After request processing
-@app.events.on("http.request.finished")
-async def on_request_finished(request, response):
-    duration = time.time() - request.state.start_time
-    print(f"Request to {request.url} finished in {duration:.2f}s")
-    
-    # Example: log request for analytics
-    await log_request(
-        url=str(request.url),
-        method=request.method,
-        status_code=response.status_code,
-        duration=duration
-    )
-```
-
-## Advanced Event Handling
-
-### One-Time Events
-
-To subscribe to an event that should only be triggered once, use `once`:
-
-```python
-# This handler will be called only once
-@app.events.once("cache.initialized")
-async def on_cache_init():
-    print("Cache initialized")
-```
-
-### Wildcard Event Listeners
-
-You can subscribe to multiple events using wildcard patterns:
-
-```python
-# Listen to all user events
-@app.events.on("user.*")
-async def user_event_handler(event_name, event_data):
-    print(f"User event detected: {event_name}")
-    print(f"Event data: {event_data}")
-
-# Listen to all events (use with caution!)
-@app.events.on("*")
-async def all_events_logger(event_name, event_data):
-    print(f"Event: {event_name}, Data: {event_data}")
-```
-
-### Prioritized Event Handlers
-
-You can specify a priority for your event handlers, which determines the order of execution:
-
-```python
-# Higher priority handlers execute first
-@app.events.on("data.processing", priority=10)
-async def high_priority_handler(data):
-    print("High priority handler")
-
-# Default priority is 0
-@app.events.on("data.processing")
-async def normal_handler(data):
-    print("Normal priority handler")
-
-# Lower priority handlers execute last
-@app.events.on("data.processing", priority=-10)
-async def low_priority_handler(data):
-    print("Low priority handler")
-```
 
 ### Removing Event Listeners
 
@@ -372,51 +269,6 @@ async def create_order(req, res):
     return res.json({"success": True, "order": new_order})
 ```
 
-### Example 3: Audit Logging System
-
-```python
-from nexios import get_application
-
-app = get_application()
-
-# Global audit logger using wildcard subscription
-@app.events.on("audit.*")
-async def audit_logger(event_name, data):
-    # Extract user from event data if available
-    user = data.get("user", {"id": "anonymous"})
-    
-    # Create audit log entry
-    await db.audit_logs.insert({
-        "user_id": user["id"],
-        "action": event_name.replace("audit.", ""),
-        "resource_type": data.get("resource_type"),
-        "resource_id": data.get("resource_id"),
-        "details": data.get("details", {}),
-        "timestamp": datetime.now().isoformat()
-    })
-
-# Usage in routes
-@app.put("/documents/{doc_id}")
-async def update_document(req, res):
-    doc_id = req.path_params["doc_id"]
-    update_data = await req.json
-    
-    # Update document in database...
-    
-    # Emit audit event
-    await app.events.emit("audit.document.updated", {
-        "user": req.user,
-        "resource_type": "document",
-        "resource_id": doc_id,
-        "details": {
-            "changes": update_data,
-            "ip_address": req.client.host
-        }
-    })
-    
-    return res.json({"success": True})
-```
-
 ## Best Practices
 
 ### Event Design Guidelines
@@ -477,7 +329,7 @@ async def setup_rabbitmq():
     )
 
 # Forward specific events to RabbitMQ
-@app.events.on("user.*")
+@app.events.on("user")
 async def forward_to_rabbitmq(event_name, data):
     # Only if RabbitMQ is connected
     if hasattr(app.state, "exchange"):
