@@ -1,4 +1,4 @@
-#type: ignore[overide]
+# type: ignore[overide]
 from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional, Union
@@ -45,7 +45,9 @@ class Info(BaseModel):
     license: Optional[License] = None
 
     model_config = ConfigDict(extra="allow")
-  # for extensions
+
+
+# for extensions
 
 
 class ServerVariable(BaseModel):
@@ -244,7 +246,9 @@ class Operation(BaseModel):
     servers: Optional[List[Server]] = None
 
     model_config = ConfigDict(extra="allow")
-  # for extensions
+
+
+# for extensions
 
 
 class PathItem(BaseModel):
@@ -263,7 +267,9 @@ class PathItem(BaseModel):
     parameters: Optional[List[Union[Parameter, Reference]]] = None
 
     model_config = ConfigDict(extra="allow")
-  # for extensions
+
+
+# for extensions
 
 
 SecuritySchemeName = Literal["apiKey", "http", "oauth2", "openIdConnect"]
