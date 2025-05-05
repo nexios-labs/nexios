@@ -1,11 +1,8 @@
 # Table of contents
 
-
-* [Introduction](README.md)
+* [Nexios](README.md)
 * [What is Nexios ?](what-is-nexios.md)
-* [🚀 Features](what-is-nexios.md#features)
 * [😃 Basic Example](basic-example.md)
-
 
 ## Getting Started
 
@@ -120,9 +117,7 @@
   * [Authentication Documentation](openapi.md#authentication-documentation)
   * [Customizing Swagger UI](openapi.md#customizing-swagger-ui)
   * [Advanced Usage: Manual Documentation](openapi.md#advanced-usage-manual-documentation)
-
-
-* [Guides](<README (1).md>)
+* [Guides](features/guides/README.md)
   * [Logging](guides/logging.md)
   * [Compression (Gzip)](guides/gzip.md)
   * [Templating (Jinja 2)](guides/jinja-2.md)
@@ -169,5 +164,6 @@
 * [Contributing](contributing.md)
 * [Miscellaneous](misc.md)
 
----
+***
+
 * [.](about.md)

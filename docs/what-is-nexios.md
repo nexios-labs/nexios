@@ -4,263 +4,238 @@ cover: .gitbook/assets/icon.svg
 coverY: 0
 ---
 
-# What is Nexios 🤷‍♂️?
-Nexios is a modern, high-performance ASGI framework for building asynchronous web applications in Python. It combines the simplicity of Express.js with Python's async capabilities to create a powerful, developer-friendly web framework that's easy to learn and easy to use 🚀.
+# What is Nexios ?
 
-Think of it as Express.js but speaking fluent Python. It doesn't force you into strict rules, doesn't ask for long configurations, and definitely doesn't judge your coding habits. It just works—so you can focus on writing awesome code instead of wrestling with boilerplate.
+Nexios is a high-performance tool built with Python that helps developers create web applications quickly and efficiently. It focuses on being lightweight, developer-friendly, and easy to use, especially for those who enjoy writing clean, straightforward code. It supports features like routing, authentication, and async handling, allowing you to build scalable apps with minimal setup. It's designed with speed and clarity in mind, making it a solid choice for anyone who values productivity and performance.
 
----
 
-Nexios is a modern Python web framework designed for developers who value simplicity, performance, and flexibility. Built with the philosophy that web development shouldn't be complicated, Nexios brings the elegance of Express.js to the Python ecosystem.
 
-Whether you're building APIs, microservices, or full-stack web applications, Nexios provides the tools you need without the overhead of complex configurations or rigid conventions.
 
-```python
-# A taste of Nexios - create a complete API in just a few lines
-from nexios import get_application
-
-app = get_application()
-
-@app.get("/hello/{name}")
-async def hello(request, response, name: str):
-    return {"message": f"Hello, {name}!"}
-
-@app.post("/api/data")
-async def create_data(request, response):
-    data = await request.json
-    # Process your data here
-    return {"status": "success", "id": 123, "data": data}
-
-```
-
-With Nexios, you're in charge. Want to structure your app your way? Go for it. Need to slap together a quick API in minutes? Done. It's all about freedom, speed, and keeping things simple—just like Express, but Pythonic.
-
-No magic. No unnecessary fluff. Just clean, modular, and fun development. Because let's be honest—who doesn't love a framework that gets out of the way and lets you ship fast?
-
-## Architecture Overview
-
-Nexios follows a modular, middleware-based architecture that provides both simplicity and power:
-```
-┌─────────────────────────────────────────────────┐
-│                  Client Request                 │
-└───────────────────────┬─────────────────────────┘
-                        ▼
-┌─────────────────────────────────────────────────┐
-│                Middleware Stack                 │
-│  ┌─────────┐   ┌─────────┐   ┌─────────────┐    │
-│  │ Session │──►│  Auth   │──►│ CORS/CSRF   │──► │
-│  └─────────┘   └─────────┘   └─────────────┘    │
-└───────────────────────┬─────────────────────────┘
-                        ▼
-┌─────────────────────────────────────────────────┐
-│             Dependency Injection (DI)           │
-└───────────────────────┬─────────────────────────┘
-                        ▼
-┌─────────────────────────────────────────────────┐
-│                 Route Handlers                  │
-│  ┌─────────┐   ┌─────────┐   ┌─────────────┐    │
-│  │ get()   │   │ post()  │   │ websocket() │    │
-│  └─────────┘   └─────────┘   └─────────────┘    │
-└───────────────────────┬─────────────────────────┘
-                        ▼
-┌─────────────────────────────────────────────────┐
-│                    Response                     │
-└─────────────────────────────────────────────────┘
-```
-
-### Core Concepts
-
-1. **Application**: The central object that manages routes, middleware, and configuration.
-2. **Request/Response**: Objects representing HTTP requests and responses with intuitive APIs.
-3. **Routing**: Flexible route definition with support for parameters, query strings, and more.
-4. **Middleware**: Modular components that process requests before they reach your handlers.
-5. **Dependency Injection**: A powerful system for managing dependencies and promoting testability.
-6. **WebSockets**: First-class support for real-time communications.
-
-## Quick Start
 
 ### Installation
 
-```bash
-# Install Nexios with pip
+{% tabs %}
+{% tab title="Pip" %}
+```sh
 pip install nexios
+```
+{% endtab %}
 
-# Or with Poetry
+{% tab title="Poetry" %}
+```sh
 poetry add nexios
 ```
+{% endtab %}
 
-### Create a Basic Application
+{% tab title="Uv" %}
+```sh
+uv pip install nexios
+```
+{% endtab %}
+
+{% tab title="Git" %}
+```sh
+git clone https://github.com/nexios-labs/Nexios.git
+cd Nexios
+pip install -e .
+
+```
+{% endtab %}
+{% endtabs %}
+
+### Quick Start
+
+#### Simple Hello World
+
+Your first Nexios application can be as simple as:
 
 ```python
-# app.py
 from nexios import get_application
 
 app = get_application()
 
 @app.get("/")
+async def hello(request, response):
+    return response.json({"message": "Hello, World!"})
+
+
+```
+
+#### Adding Middleware
+
+Enhance your application with middleware:
+
+```python
+from nexios import get_application
+
+async def JSONMiddleware(request, response, next):
+    request.json = process_json(request.body)
+    return await next()
+
+app = get_application()
+app.use(JSONMiddleware)
+
+@app.get("/")
 async def index(request, response):
-    return {"message": "Welcome to Nexios!"}
+    return response.json({"message": "Welcome to Nexios!"})
+```
 
+#### Creating Routes with Parameters
+
+Define routes with dynamic parameters:
+
+```python
 @app.get("/users/{user_id}")
-async def get_user(request, response, user_id: int):
-    # In a real app, you would fetch this from a database
-    return {"user_id": user_id, "name": "John Doe", "email": "john@example.com"}
-
-
+async def get_user(request, response):
+    user_id = request.path_params["user_id"]
+    return response.json({"user_id": user_id})
 ```
 
-### Run Your Application
+#### Working with Different HTTP Methods
 
-```bash
-# Run directly with uvicorn
-uvicorn app:app --host 0.0.0.0 --port 8000
-
-# Or use the Nexios CLI (recommended for production)
-nexios run app:app --host 0.0.0.0 --port 8000
-```
-
-Then visit [http://localhost:8000](http://localhost:8000) in your browser or use a tool like curl:
-
-```bash
-curl http://localhost:8000/users/42
-# {"user_id": 42, "name": "John Doe", "email": "john@example.com"}
-```
-
-## Why Nexios?
-
-* **Lightweight & Fast** – No unnecessary bloat, just install and start coding immediately. Benchmarks show Nexios performing on par with the fastest Python frameworks.
-
-* **Modular & Flexible** – Use what you need, ignore what you don't. No rigid structures. Add middleware, extend functionality, or integrate with your favorite libraries.
-
-* **Pythonic & Expressive** – Clean, readable, and intuitive, designed to feel natural in Python. Write code that makes sense to you and other Python developers.
-
-* **API-First Approach** – Ideal for building RESTful APIs, microservices, or full-stack applications with automatic documentation via OpenAPI/Swagger.
-
-* **ORM-Agnostic** – Works with SQLAlchemy, Tortoise, Django ORM, or even raw SQL. Use the database toolkit you're comfortable with.
-
-* **Inspired by Express.js** – Minimal yet powerful, giving you full control over your application without unnecessary abstractions.
-
-## Features
-
-Nexios aims to be the most comprehensive yet intuitive web framework out there. It comes packed with powerful features right out of the box while still allowing you to extend its capabilities with plugins.
-
-### Key Features
-
-#### Robust Routing System
+Handle various HTTP methods with ease:
 
 ```python
-# Parameter types with automatic validation
-@app.get("/users/{user_id:int}")
-async def get_user(request, response, user_id: int):
-    return {"user_id": user_id}
-
-# Request methods support
 @app.post("/users")
+async def create_user(request, response):
+    user_data = await request.json
+    # Process user data
+    return response.json({"created": True, "user": user_data})
+
 @app.put("/users/{user_id}")
+async def update_user(request, response):
+    user_id = request.path_params["user_id"]
+    updates = await request.json
+    # Update user with ID
+    return response.json({"updated": True, "id": user_id})
+
 @app.delete("/users/{user_id}")
-
-# Handler organization with Blueprint objects
-users = Router(prefix="/api/users")
-
-@users.get("/")
-async def list_users(request, response):
-    return {"users": [...]}
-
-app.mount_router(users)
+async def delete_user(request, response):
+    user_id = request.path_params["user_id"]
+    # Delete user with ID
+    return response.json({"deleted": True, "id": user_id})
 ```
 
-#### Powerful Middleware System
+#### Using Pydantic for Data Validation
+
+Leverage Pydantic for request validation:
 
 ```python
-@app.middleware
-async def custom_middleware(request, response, next_handler):
-    # Do something before the request is processed
-    print("Processing request to", request.url.path)
-    
-    # Call the next middleware or route handler
-    response = await next_handler()
-    
-    # Do something after the request is processed
-    print("Completed request to", request.url.path)
-    
-    return response
+from pydantic import BaseModel
+from typing import Optional
+
+class UserCreate(BaseModel):
+    username: str
+    email: str
+    full_name: Optional[str] = None
+
+@app.post("/users")
+async def create_user(request, response):
+    data = await request.json
+    user = UserCreate(**data)
+    return response.json({"created": user.dict()})
 ```
 
-#### Built-in Session Management
+#### Application Lifecycle Events
+
+Handle startup and shutdown events:
 
 ```python
-from nexios.session.middleware import SessionMiddleware
+@app.on_startup
+async def initialize_resources():
+    print("Application starting up!")
+    # Initialize database connections, etc.
 
-app.add_middleware(SessionMiddleware())
-
-@app.get("/visit-counter")
-async def count_visits(request, response):
-    if "visits" not in request.session:
-        request.session["visits"] = 0
-    request.session["visits"] += 1
-    return {"visits": request.session["visits"]}
+@app.on_shutdown
+async def cleanup_resources():
+    print("Application shutting down!")
+    # Close connections, free resources, etc.
 ```
 
-#### Integrated WebSocket Support
 
-```python
-@app.websocket("/chat")
-async def chat_websocket(ws):
-    await ws.accept()
-    while True:
-        data = await ws.receive_text()
-        await ws.send_text(f"Echo: {data}")
+
+
+
+### 🛠️ CLI Tools
+
+Nexios includes a powerful CLI tool to help you bootstrap projects and run development servers:
+
+#### Creating a New Project
+
+```bash
+nexios new my_project
 ```
 
-#### Dependency Injection
+Options:
 
-```python
-from nexios import Depend
+* `--output-dir, -o`: Directory where the project should be created (default: current directory)
+* `--title`: Display title for the project (defaults to project name)
 
-async def get_db():
-    # Connect to database...
-    db = Database()
-    try:
-        yield db
-    finally:
-        # Close connection when done
-        await db.close()
+#### Running the Development Server
 
-@app.get("/items")
-async def list_items(request, response, db=Depend(get_db)):
-    items = await db.query("SELECT * FROM items")
-    return {"items": items}
+```bash
+nexios run
 ```
 
-## Framework Comparison
+Options:
 
-How does Nexios stack up against other Python web frameworks?
+* `--app, -a`: Application import path (default: main:app)
+* `--host`: Host to bind the server to (default: 127.0.0.1)
+* `--port, -p`: Port to bind the server to (default: 4000)
+* `--reload/--no-reload`: Enable/disable auto-reload (default: enabled)
+* `--log-level`: Log level for the server (default: info)
+* `--workers`: Number of worker processes (default: 1)
 
-| Feature | Nexios | Django | Flask | FastAPI |
-|---------|--------|--------|-------|---------|
-| Learning Curve | Low | High | Low | Medium |
-| Speed | Fast | Moderate | Moderate | Fast |
-| Built-in ORM | No (Flexible) | Yes | No | No |
-| Async Support | Full | Partial | Partial | Full |
-| Middleware | Simple | Complex | Simple | Simple |
-| Dependency Injection | Yes | No | No | Yes |
-| WebSockets | Built-in | Addon | Addon | Built-in |
-| API Documentation | Built-in OpenAPI | Addon | Addon | Built-in OpenAPI |
-| Community Size | Growing | Large | Large | Medium |
 
-## Next Steps
 
-Ready to start building with Nexios? Check out these resources:
 
-- [Basic Example](./basic-example.md) - A complete walkthrough of your first Nexios application
-- [Installation Guide](./fundamentals/installation-guide.md) - Detailed installation instructions
-- [Routing](./routing.md) - Learn more about Nexios' powerful routing system
-- [Dependency Injection](./dependency-injection.md) - Master the DI system
-- [Authentication](./authentication.md) - Secure your applications
 
-## Community and Support
+### 📸 OpenAPI Documentation
 
-- [GitHub Repository](https://github.com/nexios-labs/nexios) - Star us, fork us, contribute!
-- [Discord Community](https://discord.gg/nexios) - Get help and share your experiences
-- [Issue Tracker](https://github.com/nexios-labs/nexios/issues) - Report bugs or request features
+<div align="center"><img src="_media/openapi.jpg" alt="OpenAPI Screenshot"></div>
 
+After running your Nexios application, visit `http://localhost:4000/docs` to access the automatically generated Swagger documentation.
+
+### 🗣️ What Developers Say
+
+> "Adopting Nexios at our startup has been a practical and effective choice. In a fast-moving development environment, we needed something lightweight and efficient — Nexios met that need.
+>
+> Its clean architecture and compatibility with different ORMs helped our team work more efficiently and keep things maintainable. One of its strengths is how straightforward it is — minimal overhead, just the tools we need to build and scale our backend services."
+>
+> — Joseph Mmadubuike, Chief Technology Officer at buzzbuntu.com
+
+### 🤝 Join Our Community
+
+Get involved with Nexios development and connect with other developers:
+
+[![WhatsApp Community](https://img.shields.io/badge/Join%20WhatsApp-Community-00C200?style=for-the-badge\&logo=whatsapp\&logoColor=white)](https://chat.whatsapp.com/KZBM6HMmDZ39yzr7ApvBrC)
+
+[![Documentation](https://img.shields.io/badge/Read-Documentation-blue?style=for-the-badge\&logo=gitbook\&logoColor=white)](https://nexios-labs.gitbook.io/nexios)
+
+* 📚 [Read the Docs](https://nexios-labs.gitbook.io/nexios)
+* 💬 [Join WhatsApp Group](https://chat.whatsapp.com/KZBM6HMmDZ39yzr7ApvBrC)
+* 🐱 [GitHub Repository](https://github.com/nexios-labs/Nexios)
+* 🐛 [Report Issues](https://github.com/nexios-labs/Nexios/issues)
+* 🤝 [Contribute](../CONTRIBUTING.md)
+
+### ☕ Support Nexios
+
+Nexios is a passion project built to make backend development in Python faster, cleaner, and more developer-friendly. It's fully open-source and maintained with love, late nights, and lots of coffee.
+
+If Nexios has helped you build something awesome, consider supporting its continued development. Your donation helps cover:
+
+* 📚 Documentation hosting and tools
+* 🚀 New feature development
+* 🐛 Bug fixes and maintenance
+* 🎓 Tutorial and example creation
+* 🌐 Community support resources
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-Support%20Development-yellow?style=for-the-badge\&logo=buy-me-a-coffee\&logoColor=white)](https://www.buymeacoffee.com/techwithdul)
+
+Every contribution, no matter how small, helps keep Nexios growing and improving. Thank you for your support! 🙏
+
+### 📚 Full Documentation
+
+For complete documentation, visit our [GitBook](https://nexios-labs.gitbook.io/nexios).
+
+### Star the repo if you like it! ⭐
