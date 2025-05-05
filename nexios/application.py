@@ -100,6 +100,7 @@ class NexiosApp(object):
 
         self.config = config or DEFAULT_CONFIG
         from nexios.config import set_config, get_config
+
         try:
             get_config()
         except RuntimeError:
