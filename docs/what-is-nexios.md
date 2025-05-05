@@ -1,7 +1,5 @@
 ---
 icon: question
-cover: .gitbook/assets/icon.svg
-coverY: 0
 ---
 
 # What is Nexios ?
