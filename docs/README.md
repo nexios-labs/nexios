@@ -67,7 +67,7 @@ uvicorn main:app --reload #or nexios run --reload
 ### Explore the Docs
 
 * [Quickstart](./#what-is-nexios)
-* [Routing](https://chatgpt.com/c/routing.md)
+* [Routing](fundamentals/routing.md)
 * [Authentication](authentication.md)
 * [Class-based Views](class-based-views.md)
 * [Middleware](api/middleware.md)
