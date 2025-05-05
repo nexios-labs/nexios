@@ -48,7 +48,7 @@ async def test_http_exception_handling(async_client: Tuple[Client, NexiosApp]):
 
     response = await client.get("/test-http-exception")
     assert response.status_code == 403
-    assert response.text == "Access denied"
+    assert response.json() == "Access denied"
 
 
 async def test_custom_exception_handler(async_client: Tuple[Client, NexiosApp]):

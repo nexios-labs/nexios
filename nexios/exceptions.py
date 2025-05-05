@@ -7,7 +7,7 @@ class HTTPException(Exception):
     def __init__(
         self,
         status_code: int,
-        detail: typing.Optional[str] = None,
+        detail: typing.Optional[typing.Any] = None,
         headers: typing.Dict[str, typing.Any] = {},
     ) -> None:
         super().__init__(detail or http.HTTPStatus(status_code).phrase)

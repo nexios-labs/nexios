@@ -1,8 +1,9 @@
+#type: ignore[overide]
 from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from pydantic import BaseConfig, BaseModel, Extra, Field
+from pydantic import ConfigDict, BaseModel, Field
 from pydantic.networks import AnyUrl
 
 try:
@@ -43,8 +44,8 @@ class Info(BaseModel):
     contact: Optional[Contact] = None
     license: Optional[License] = None
 
-    class Config(BaseConfig):
-        extra = Extra.allow  # for extensions
+    model_config = ConfigDict(extra="allow")
+  # for extensions
 
 
 class ServerVariable(BaseModel):
@@ -242,8 +243,8 @@ class Operation(BaseModel):
     security: Optional[List[Dict[str, List[str]]]] = None
     servers: Optional[List[Server]] = None
 
-    class Config(BaseConfig):
-        extra = Extra.allow  # for extensions
+    model_config = ConfigDict(extra="allow")
+  # for extensions
 
 
 class PathItem(BaseModel):
@@ -261,8 +262,8 @@ class PathItem(BaseModel):
     servers: Optional[List[Server]] = None
     parameters: Optional[List[Union[Parameter, Reference]]] = None
 
-    class Config(BaseConfig):
-        extra = Extra.allow  # for extensions
+    model_config = ConfigDict(extra="allow")
+  # for extensions
 
 
 SecuritySchemeName = Literal["apiKey", "http", "oauth2", "openIdConnect"]

@@ -103,6 +103,6 @@ class ExceptionMiddleware:
         assert isinstance(exc, HTTPException)
         if exc.status_code in {204, 304}:  # type:ignore
             return response.empty(status_code=exc.status_code, headers=exc.headers)
-        return response.text(
+        return response.json(
             exc.detail, status_code=exc.status_code, headers=exc.headers
         )
