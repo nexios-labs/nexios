@@ -4,7 +4,7 @@ icon: arrow-progress
 
 # Routing
 
-#### **Routing in Nexios: A Comprehensive Guide**
+####
 
 Routing is the backbone of any web application, defining how the application responds to client requests at specific endpoints (URIs or paths) using HTTP methods like GET, POST, PUT, DELETE, and more. Nexios provides a flexible, intuitive, and powerful routing system that allows developers to define routes in a clear and structured manner. This guide will explore Nexios routing in detail, covering basic routing, path parameters, route converters, and advanced routing techniques like modular routers and nested routing.
 
@@ -328,23 +328,23 @@ app.add_route(route)
 
 #### Parameters
 
-| Parameter | Description | Type | Default |
-|------------|-------------|------|---------|
-| `path` | URL path pattern with optional parameters | `str` | Required |
-| `handler` | Request processing function/method | `Callable` | Required |
-| `methods` | Allowed HTTP methods | `List[str]` | `["get", "post", "delete", "put", "patch", "options"]` |
-| `name` | Route name (for URL generation) | `Optional[str]` | `None` |
-| `summary` | Brief description for OpenAPI docs | `Optional[str]` | `None` |
-| `description` | Detailed description for OpenAPI docs | `Optional[str]` | `None` |
-| `responses` | Response schemas or descriptions | `Optional[Dict[int, Any]]` | `None` |
-| `request_model` | Pydantic model for request validation | `Optional[Type[BaseModel]]` | `None` |
-| `middlewares` | Route-specific middleware | `List[Any]` | `[]` |
-| `tags` | OpenAPI tags for grouping | `Optional[List[str]]` | `None` |
-| `security` | Security requirements | `Optional[List[Dict[str, List[str]]]]` | `None` |
-| `operation_id` | Unique identifier for OpenAPI | `Optional[str]` | `None` |
-| `deprecated` | Mark route as deprecated | `bool` | `False` |
-| `parameters` | Additional parameters for OpenAPI | `List[Parameter]` | `[]` |
-| `exclude_from_schema` | Hide from OpenAPI docs | `bool` | `False` |
+| Parameter             | Description                               | Type                                   | Default                                                |
+| --------------------- | ----------------------------------------- | -------------------------------------- | ------------------------------------------------------ |
+| `path`                | URL path pattern with optional parameters | `str`                                  | Required                                               |
+| `handler`             | Request processing function/method        | `Callable`                             | Required                                               |
+| `methods`             | Allowed HTTP methods                      | `List[str]`                            | `["get", "post", "delete", "put", "patch", "options"]` |
+| `name`                | Route name (for URL generation)           | `Optional[str]`                        | `None`                                                 |
+| `summary`             | Brief description for OpenAPI docs        | `Optional[str]`                        | `None`                                                 |
+| `description`         | Detailed description for OpenAPI docs     | `Optional[str]`                        | `None`                                                 |
+| `responses`           | Response schemas or descriptions          | `Optional[Dict[int, Any]]`             | `None`                                                 |
+| `request_model`       | Pydantic model for request validation     | `Optional[Type[BaseModel]]`            | `None`                                                 |
+| `middlewares`         | Route-specific middleware                 | `List[Any]`                            | `[]`                                                   |
+| `tags`                | OpenAPI tags for grouping                 | `Optional[List[str]]`                  | `None`                                                 |
+| `security`            | Security requirements                     | `Optional[List[Dict[str, List[str]]]]` | `None`                                                 |
+| `operation_id`        | Unique identifier for OpenAPI             | `Optional[str]`                        | `None`                                                 |
+| `deprecated`          | Mark route as deprecated                  | `bool`                                 | `False`                                                |
+| `parameters`          | Additional parameters for OpenAPI         | `List[Parameter]`                      | `[]`                                                   |
+| `exclude_from_schema` | Hide from OpenAPI docs                    | `bool`                                 | `False`                                                |
 
 ### Advanced Path Parameters
 

@@ -1,8 +1,8 @@
 ---
-icon: question
+icon: bolt-lightning
 ---
 
-# What is Nexios ?
+# Quick Start
 
 Nexios is a high-performance tool built with Python that helps developers create web applications quickly and efficiently. It focuses on being lightweight, developer-friendly, and easy to use, especially for those who enjoy writing clean, straightforward code. It supports features like routing, authentication, and async handling, allowing you to build scalable apps with minimal setup. It's designed with speed and clarity in mind, making it a solid choice for anyone who values productivity and performance.
 
