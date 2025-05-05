@@ -192,7 +192,7 @@ Options:
 
 ### 📸 OpenAPI Documentation
 
-<div align="center"><img src="_media/openapi.jpg" alt="OpenAPI Screenshot"></div>
+<div align="center"><img src=".gitbook/assets/openapi.jpg" alt="OpenAPI Screenshot"></div>
 
 After running your Nexios application, visit `http://localhost:4000/docs` to access the automatically generated Swagger documentation.
 
