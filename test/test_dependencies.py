@@ -2,7 +2,7 @@ from nexios import get_application
 import pytest
 from nexios.http import Request, Response
 from nexios.testing import Client
-from nexios.dependencies import Depend
+from nexios import Depend
 from typing import Optional
 from pydantic import BaseModel
 

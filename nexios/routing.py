@@ -18,6 +18,7 @@ import warnings, typing
 from enum import Enum
 from abc import abstractmethod, ABC
 import asyncio
+from nexios.events import AsyncEventEmitter
 from nexios.openapi.models import Parameter
 from nexios.types import MiddlewareType, WsMiddlewareType, HandlerType, WsHandlerType
 from nexios.decorators import allowed_methods
@@ -541,6 +542,7 @@ class Router:
         self.route_class = Routes
         self.tags = tags or []
         self.exclude_from_schema = exclude_from_schema
+        self.event = AsyncEventEmitter()
 
         if self.prefix and not self.prefix.startswith("/"):
             warnings.warn("Router prefix should start with '/'")
