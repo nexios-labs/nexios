@@ -99,6 +99,11 @@ class NexiosApp(object):
     ):
 
         self.config = config or DEFAULT_CONFIG
+        from nexios.config import set_config, get_config
+        try:
+            get_config()
+        except RuntimeError:
+            set_config(self.config)
         self.server_error_handler = None
         self.ws_router = WSRouter()
         self.ws_routes: List[WebsocketRoutes] = []
