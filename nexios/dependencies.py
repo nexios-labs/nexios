@@ -8,7 +8,7 @@ class Depend(Any):
     def __init__(self, dependency: Optional[Callable[..., Any]] = None):
         self.dependency = dependency
 
-    def __class_getitem__(cls, item : Any):
+    def __class_getitem__(cls, item: Any):
         return cls
 
 

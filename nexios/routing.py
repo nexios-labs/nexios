@@ -2367,7 +2367,7 @@ class WebsocketRoutes:
             return match, matched_params
         return None, None
 
-    async def handle(self, scope :Scope, receive :Receive, send :Send) -> None:
+    async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
         """
         Handles the WebSocket connection by calling the route's handler.
 
@@ -2496,7 +2496,7 @@ class WSRouter:
         for route in self.routes:
             match, params = route.match(url)
             if match:
-               
+
                 scope["route_params"] = params
                 await route.handle(scope, receive, send)
                 return
