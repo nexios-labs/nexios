@@ -618,7 +618,8 @@ Nexios provides built-in room management through:
 from nexios.websockets.channels import Channel, ChannelBox, PayloadTypeEnum
 
 @ws_router.ws_route("/room/{room_name}")
-async def room_handler(ws: WebSocket, room_name: str):
+async def room_handler(ws: WebSocket):
+    rom_name = ws.path_params['room_name']
     await ws.accept()
     
     # Create channel
@@ -664,7 +665,7 @@ class ChatEndpoint(WebSocketConsumer):
     
     async def on_connect(self, ws: WebSocket):
         await ws.accept()
-        room_name = ws.scope["path_params"]["room_name"]
+        room_name = ws.path_params["room_name"]
         await self.join_group(room_name)
         await self.broadcast(
             {"system": f"New user joined {room_name}"},
@@ -672,7 +673,7 @@ class ChatEndpoint(WebSocketConsumer):
         )
     
     async def on_receive(self, ws: WebSocket, data: typing.Any):
-        room_name = ws.scope["path_params"]["room_name"]
+        room_name = ws.path_params["room_name"]
         await self.broadcast(
             {
                 "user": data["user"],
@@ -684,7 +685,7 @@ class ChatEndpoint(WebSocketConsumer):
         )
     
     async def on_disconnect(self, ws: WebSocket, close_code: int):
-        room_name = ws.scope["path_params"]["room_name"]
+        room_name = ws.path_params["room_name"]
         await self.broadcast(
             {"system": f"User left {room_name}"},
             room_name
@@ -745,8 +746,9 @@ class ChatRoom(WebSocketEndpoint):
     
     async def on_connect(self, ws: WebSocket):
         await ws.accept()
-        self.room = ws.scope["path_params"]["room_id"]
-        self.user = ws.scope["query_params"].get("username", "anonymous")
+        self.room_name = ws.path_params["room_name"]
+
+        self.user = ws.query_params.get("username", "anonymous")
         
         await self.join_group(self.room)
         await self.broadcast(
