@@ -96,6 +96,7 @@ class NexiosApp(object):
             ),
         ] = None,
         lifespan: Optional[lifespan_manager] = None,
+        routes :Optional[List[Routes]] = None
     ):
 
         self.config = config or DEFAULT_CONFIG
@@ -115,7 +116,7 @@ class NexiosApp(object):
         self.exceptions_handler = ExceptionMiddleware()
         self.server_error_handler = server_error_handler
 
-        self.app = Router()
+        self.app = Router(routes=routes)
         self.router = self.app
         self.route = self.router.route
         self.lifespan_context: Optional[lifespan_manager] = lifespan

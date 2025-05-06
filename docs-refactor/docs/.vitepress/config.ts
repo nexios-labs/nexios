@@ -1,4 +1,5 @@
 // docs/.vitepress/config.js
+
 export default {
     title: 'Nexios',
     description: 'Async web framework for Python',
@@ -14,13 +15,20 @@ export default {
           "items": [
             { text: 'Async Python', link: '/architecture/async-python' },
             { text: 'Asgi', link: '/architecture/asgi' },
-            { text: 'Request and Response', link: '/guide/request-and-response' },
-            { text: 'Error Handling', link: '/guide/error-handling' },
-            { text: 'Static Files', link: '/guide/static-files' },
-            { text: 'Middleware', link: '/guide/middleware' },
-            { text: 'Processing Inputs', link: '/guide/processing-inputs' }
+           
+          ],
+
+          
+        },
+
+        {
+          "text": "Guide",
+          "items": [
+            { text: 'Getting Started', link: '/guide/getting-started' },
+            { text: 'Routing', link: '/guide/routing' },
+            { text: 'API Reference', link: '/guide/api-reference' },
           ]
-        }
+        },
       ]
     },
     markdown: {
