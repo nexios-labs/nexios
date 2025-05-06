@@ -403,7 +403,7 @@ class Routes:
         if path == "":
             path = "/"
         self.raw_path = path
-        self.handler = handler
+        self.handler = inject_dependencies(handler)
         self.methods = methods or allowed_methods_default
         self.name = name
 
@@ -2316,7 +2316,7 @@ class WebsocketRoutes:
         assert callable(handler), "Route handler must be callable"
         assert asyncio.iscoroutinefunction(handler), "Route handler must be async"
         self.raw_path = path
-        self.handler: WsHandlerType = handler
+        self.handler: WsHandlerType = inject_dependencies(handler)
         self.middlewares = middlewares
         self.route_info = RouteBuilder.create_pattern(path)
         self.pattern = self.route_info.pattern
@@ -2345,7 +2345,7 @@ class WebsocketRoutes:
             return match, matched_params
         return None, None
 
-    async def handle(self, websocket: WebSocket) -> None:
+    async def handle(self, scope :Scope, receive :Receive, send :Send) -> None:
         """
         Handles the WebSocket connection by calling the route's handler.
 
@@ -2353,7 +2353,8 @@ class WebsocketRoutes:
             websocket: The WebSocket connection.
             params: The extracted route parameters.
         """
-        await self.handler(websocket)
+        websocket_session = WebSocket(scope, receive=receive, send=send)
+        await self.handler(websocket_session)
 
     def __repr__(self) -> str:
         return f"<WSRoute {self.raw_path}>"
@@ -2414,7 +2415,7 @@ class WSRouter:
             List[WsMiddlewareType],
             Doc("List of middleware to be executes before the router handler"),
         ] = [],
-    ) -> Union[WsHandlerType, Any]:
+    ) -> Any:
         """
         Registers a WebSocket route.
 
@@ -2473,9 +2474,9 @@ class WSRouter:
         for route in self.routes:
             match, params = route.match(url)
             if match:
-                websocket = WebSocket(scope, receive, send)
+               
                 scope["route_params"] = params
-                await route.handle(websocket)
+                await route.handle(scope, receive, send)
                 return
         await send({"type": "websocket.close", "code": 404})
 
