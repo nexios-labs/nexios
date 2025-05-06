@@ -1,10 +1,9 @@
 from __future__ import annotations
-from typing import Callable, Type, Awaitable, Any
+from typing import Callable, Type, Awaitable, Any,ParamSpec
 import typing
 from .http.request import Request
 from .http.response import NexiosResponse as Response
 from .websockets import WebSocket
-
 
 AppType = typing.TypeVar("AppType")
 
@@ -23,7 +22,7 @@ WsMiddlewareType = Callable[
 ]
 
 WsHandlerType = typing.Callable[[WebSocket], typing.Awaitable[None]]
-HandlerType = Callable[[Request, Response], Awaitable[Any]]
+HandlerType = Callable[..., Awaitable[Any]]
 ExceptionHandlerType = Callable[[Request, Response, Exception], typing.Any]
 
 ASGIApp = typing.Callable[[Scope, Receive, Send], typing.Awaitable[None]]

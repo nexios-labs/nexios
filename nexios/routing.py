@@ -1,4 +1,5 @@
 from __future__ import annotations
+import inspect
 from typing import (
     Any,
     List,
@@ -55,7 +56,7 @@ def request_response(
         request = Request(scope, receive, send)
         response_manager = Response()
 
-        func_result = await func(request, response_manager)
+        func_result = await func(request, response_manager, **request.path_params)
         if isinstance(func_result, (dict, list, str)):
             response_manager.json(func_result)
 
@@ -586,10 +587,31 @@ class Router:
             ```
         """
         route.tags = self.tags + route.tags if route.tags else self.tags
+        # original_handler = route.handler
+
         if self.exclude_from_schema:
             route.exlude_from_schema = True
-        handler = inject_dependencies(route.handler)
-        route.handler = handler
+        original_handler = route.handler
+        async def wrapped_handler(request :Request, response :Response, **kwargs :Dict[str, Any]):
+            sig = inspect.signature(original_handler)
+            params = list(sig.parameters.keys())
+            print(params)
+            handler_args = [request, response]
+            handler_kwargs = {}
+            if len(params) > 2:
+                # Get path parameters from request
+                path_params = request.path_params
+                
+                # For parameters after the first two (request/response)
+                for param in params[2:]:
+                    if param in path_params:
+                        handler_kwargs[param] = path_params[param]
+
+            
+            return await original_handler(*handler_args, **handler_kwargs)
+            
+        route.handler = inject_dependencies(wrapped_handler)
+        
         self.routes.append(route)
 
     def add_middleware(self, middleware: MiddlewareType) -> None:
