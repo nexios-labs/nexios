@@ -18,7 +18,7 @@ from typing import List, Optional, Callable, AsyncContextManager
 
 from typing_extensions import Doc, Annotated
 
-from .application import NexiosApp 
+from .application import NexiosApp
 from .config import set_config, DEFAULT_CONFIG
 from .config.base import MakeConfig
 from .middlewares.core import wrap_middleware

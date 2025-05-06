@@ -96,7 +96,7 @@ class NexiosApp(object):
             ),
         ] = None,
         lifespan: Optional[lifespan_manager] = None,
-        routes :Optional[List[Routes]] = None
+        routes: Optional[List[Routes]] = None,
     ):
 
         self.config = config or DEFAULT_CONFIG
