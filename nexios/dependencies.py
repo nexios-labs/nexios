@@ -4,12 +4,15 @@ from functools import wraps
 import inspect
 
 
-class Depend(Any):
+class Depend:
     def __init__(self, dependency: Optional[Callable[..., Any]] = None):
         self.dependency = dependency
 
     def __class_getitem__(cls, item: Any):
         return cls
+
+
+
 
 
 def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
