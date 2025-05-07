@@ -1,5 +1,5 @@
 """
-implemented from from starlatte,
+implemented from  starlatte,
 """
 
 from __future__ import annotations

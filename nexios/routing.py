@@ -28,7 +28,7 @@ from nexios.structs import URLPath, RouteParam
 from nexios.http import Request, Response
 from nexios.http.response import JSONResponse
 from nexios.types import Scope, Send, Receive, ASGIApp
-from .routing_utils import Convertor, CONVERTOR_TYPES, get_route_path
+from .converters import Convertor, CONVERTOR_TYPES, get_route_path
 from nexios.websockets import WebSocket
 from nexios.middlewares.core import BaseMiddleware
 from nexios.middlewares.core import Middleware, wrap_middleware
