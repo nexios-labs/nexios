@@ -135,3 +135,18 @@ async def get_post_comment(req, res):
    comment_id = req.path_params.comment_id
    return {"message": f"post_id: {post_id}, comment_id: {comment_id}"}
 ```
+
+Alternatively, you can use pass the path parameters to the handler directly using 
+
+```python{5,6}
+from nexios import NexiosApp
+app = NexiosApp()
+@app.get('/posts/{post_id}/comment/{comment_id}') 
+async def get_post_comment(req, res, post_id, comment_id):
+   return {"message": f"post_id: {post_id}, comment_id: {comment_id}"}
+```
+
+
+**Optional Route Parameters**
+
+To use Optional Parameters

@@ -488,7 +488,7 @@ class NexiosApp(object):
         """
         self.ws_middlewares.append(middleware)
 
-    def handle_http_request(self) -> ASGIApp:
+    def handle_http_request(self, scope: Scope, receive: Receive, send: Send ) :
         app = self.app
         middleware = (
             [
@@ -506,7 +506,7 @@ class NexiosApp(object):
         )
         for cls, args, kwargs in reversed(middleware):
             app = cls(app, *args, **kwargs)
-        return app
+        return app(scope, receive, send)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """ASGI application callable"""
@@ -514,7 +514,7 @@ class NexiosApp(object):
         if scope["type"] == "lifespan":
             await self.handle_lifespan(receive, send)
         elif scope["type"] == "http":
-            await self.handle_http_request()(scope, receive, send)
+            await self.handle_http_request(scope, receive, send)
 
         else:
 

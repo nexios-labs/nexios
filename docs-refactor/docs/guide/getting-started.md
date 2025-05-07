@@ -12,7 +12,7 @@ Nexios Requires Python 3.9+
 
 
 
-## Install
+## ⬇️ Install 
 install With pip :
 
 ```sh
@@ -32,7 +32,7 @@ poetry add nexios
 ```
 
 
-## Your First Nexios App
+## ☝️ Your First Nexios App
 **main.py**
 ```py
 from nexios import NexiosApp
@@ -76,7 +76,7 @@ uvicorn main:app --reload
 
 Visit http://localhost:8000/docs to view the Swagger API documentation.
 
-## Managing Configuration
+## ⚙️ Managing Configuration
 
 Nexios uses a `MakeConfig` class that you can use to manage your application's configuration.
 
