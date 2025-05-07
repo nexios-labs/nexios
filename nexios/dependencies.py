@@ -12,9 +12,6 @@ class Depend:
         return cls
 
 
-
-
-
 def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to inject dependencies into a route handler while preserving parameter names."""
 
