@@ -488,7 +488,7 @@ class NexiosApp(object):
         """
         self.ws_middlewares.append(middleware)
 
-    def handle_http_request(self, scope: Scope, receive: Receive, send: Send ) :
+    def handle_http_request(self, scope: Scope, receive: Receive, send: Send):
         app = self.app
         middleware = (
             [
