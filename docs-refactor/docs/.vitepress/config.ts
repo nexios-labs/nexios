@@ -40,6 +40,8 @@ export default {
             { text: 'Startups and Shutdowns', link: '/guide/startups-and-shutdowns' },
             { text: 'Request Inputs', link: '/guide/request-inputs' },
             { text: 'Configuration', link: '/guide/configuration' },
+            { text: 'Sending Responses', link: '/guide/sending-responses' },
+
             { text: 'API Reference', link: '/guide/api-reference' },
           ]
         }
