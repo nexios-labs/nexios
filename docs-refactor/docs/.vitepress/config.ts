@@ -42,6 +42,9 @@ export default {
             { text: 'Configuration', link: '/guide/configuration' },
             { text: 'Sending Responses', link: '/guide/sending-responses' },
             { text : "Routers and subapps", link: "/guide/routers-and-subapps" },
+            { text : "Middleware", link: "/guide/middleware" },
+            { text : "Cookies", link: "/guide/cookies" },
+
 
             { text: 'API Reference', link: '/guide/api-reference' },
           ]
