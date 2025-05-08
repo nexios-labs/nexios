@@ -1,3 +1,4 @@
+
 # 🫴Handlers
 
 In Nexios, all route handlers must be async functions. These handlers receive a Request object and return a Response, dict, str, or other supported types.
@@ -7,7 +8,6 @@ Every Nexios handler must be async def; it’s triggered by a route and returns 
 :::
 
 Example
-
 ```py 
 from nexios import NexiosApp
 
@@ -39,3 +39,17 @@ async def index(request: Request, response: Response): // [!code focus]
 :::
 
 For more information, see [Request](/guide/request) and [Response](/guide/response)
+
+
+
+You can also use handler with `Routes` class
+
+```py
+from nexios.routing import Routes
+from nexios import NexiosApp
+app = NexiosApp()
+
+async def dynamic_handler(req, res):
+    return "Hello, world!"
+
+app.add_route(Routes("/dynamic", dynamic_handler))  # Handles All Methods by default

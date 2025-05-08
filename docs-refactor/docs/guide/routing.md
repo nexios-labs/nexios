@@ -120,7 +120,7 @@ route = Routes(
     description="Get, update or delete a user by ID",
     responses={
         200: UserResponse,
-        404: {"description": "User not found"}
+        404: Error_404
     },
     request_model=UserUpdate,
     middlewares=[auth_middleware, logging_middleware],
