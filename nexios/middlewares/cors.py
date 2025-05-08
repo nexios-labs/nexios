@@ -110,15 +110,15 @@ class CORSMiddleware(BaseMiddleware):
         origin = request.origin
 
         if origin and self.is_allowed_origin(origin):
-            response.header("Access-Control-Allow-Origin", origin, overide=True)
+            response.set_header("Access-Control-Allow-Origin", origin, overide=True)
 
             if self.allow_credentials:
-                response.header(
+                response.set_header(
                     "Access-Control-Allow-Credentials", "true", overide=True
                 )
 
         if self.expose_headers:
-            response.header(
+            response.set_header(
                 "Access-Control-Expose-Headers",
                 ", ".join(self.expose_headers),
                 overide=True,

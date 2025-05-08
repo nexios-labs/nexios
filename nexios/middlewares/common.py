@@ -70,30 +70,30 @@ class CommonMiddleware(BaseMiddleware):
             None
         """
         self.config = get_config()
-        response.header("X-Frame-Options", "DENY")
-        response.header("X-XSS-Protection", "1; mode=block")
-        response.header("X-Content-Type-Options", "nosniff")
-        response.header(
+        response.set_header("X-Frame-Options", "DENY")
+        response.set_header("X-XSS-Protection", "1; mode=block")
+        response.set_header("X-Content-Type-Options", "nosniff")
+        response.set_header(
             "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
         )
-        response.header(
+        response.set_header(
             "Cache-Control", "no-store, no-cache, must-revalidate, max-age=0"
         )
-        response.header("Pragma", "no-cache")
+        response.set_header("Pragma", "no-cache")
 
         if self.config.content_security_policy:
-            response.header(
+            response.set_header(
                 "Content-Security-Policy", self.config.content_security_policy
             )
 
         if self.config.permissions_policy:
-            response.header("Permissions-Policy", self.config.permissions_policy)
+            response.set_header("Permissions-Policy", self.config.permissions_policy)
 
         if self.config.referrer_policy:
-            response.header("Referrer-Policy", self.config.referrer_policy)
+            response.set_header("Referrer-Policy", self.config.referrer_policy)
 
         if self.config.feature_policy:
-            response.header("Feature-Policy", self.config.feature_policy)
+            response.set_header("Feature-Policy", self.config.feature_policy)
 
         if request.user_agent:
-            response.header("X-User-Agent", request.user_agent)
+            response.set_header("X-User-Agent", request.user_agent)

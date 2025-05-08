@@ -74,7 +74,8 @@ async def handle_json(request, response):
 
 ```
 
-**`request.form_data`**\
+**`request.form_data`**
+\
 The request.form\_data property retrieves data from application/x-www-form-urlencoded form submissions. This is commonly used for HTML forms.
 
 ```python
@@ -232,7 +233,8 @@ The Nexios Response object provides a fluent interface for building HTTP respons
 
 **Methods**
 
-**`text(content, status_code=200, headers={})`**\
+**`text(content, status_code=200, headers={})`**
+\
 Sends a plain text response.
 
 **Parameters:**
@@ -249,7 +251,8 @@ response.text("Hello World", 200, {"X-Custom-Header": "Value"})
 
 ***
 
-**`json(data, status_code=200, headers={}, indent=None, ensure_ascii=True)`**\
+**`json(data, status_code=200, headers={}, indent=None, ensure_ascii=True)`**
+\
 Sends a JSON response.
 
 **Parameters:**
@@ -268,7 +271,8 @@ response.json({"message": "Success"}, 200, indent=2)
 
 ***
 
-**`html(content, status_code=200, headers={})`**\
+**`html(content, status_code=200, headers={})`**
+\
 Sends an HTML response.
 
 **Parameters:**
@@ -285,7 +289,8 @@ response.html("<h1>Welcome</h1>", 200)
 
 ***
 
-**`file(path, filename=None, content_disposition_type="inline")`**\
+**`file(path, filename=None, content_disposition_type="inline")`**
+\
 Sends a file as the response.
 
 **Parameters:**
@@ -302,7 +307,8 @@ response.file("/data/report.pdf", filename="Q4-Report.pdf", content_disposition_
 
 ***
 
-**`stream(iterator, content_type="text/plain")`**\
+**`stream(iterator, content_type="text/plain")`**
+\
 Streams content from an asynchronous iterator.
 
 **Parameters:**
@@ -322,7 +328,8 @@ response.stream(data_streamer(), "text/event-stream")
 
 ***
 
-**`redirect(url, status_code=302)`**\
+**`redirect(url, status_code=302)`**
+\
 Redirects to a URL.
 
 **Parameters:**
@@ -338,7 +345,8 @@ response.redirect("/new-location", 301)
 
 ***
 
-**`status(status_code)`**\
+**`status(status_code)`**
+\
 Sets the HTTP status code.
 
 **Parameters:**
@@ -353,9 +361,10 @@ response.status(404)
 
 ***
 
-**`header(key, value)`**\
+**`header(key, value)`**
+\
 Adds a custom header.
-
+.set_header(
 **Parameters:**
 
 * `key`: Header name (case-insensitive).
@@ -369,7 +378,8 @@ response.header("X-API-Version", "1.0")
 
 ***
 
-**`set_cookie(key, value, max_age=None, expires=None, path="/", domain=None, secure=True, httponly=False, samesite="lax")`**\
+**`set_cookie(key, value, max_age=None, expires=None, path="/", domain=None, secure=True, httponly=False, samesite="lax")`**
+\
 Sets a cookie.
 
 **Parameters:**
@@ -392,7 +402,8 @@ response.set_cookie("session_id", "abc123", max_age=3600, path="/admin")
 
 ***
 
-**`delete_cookie(key, path="/", domain=None)`**\
+**`delete_cookie(key, path="/", domain=None)`**
+\
 Deletes a cookie.
 
 **Parameters:**
@@ -409,7 +420,8 @@ response.delete_cookie("session_id")
 
 ***
 
-**`cache(max_age=3600, private=True)`**\
+**`cache(max_age=3600, private=True)`**
+\
 Enables caching with `Cache-Control` headers.
 
 **Parameters:**
@@ -425,7 +437,8 @@ response.cache(max_age=86400, private=False)  # Public cache for 24h
 
 ***
 
-**`no_cache()`**\
+**`no_cache()`**
+\
 Disables caching.
 
 **Example:**
@@ -455,7 +468,7 @@ response.resp(b"Raw Data", 200, content_type="application/octet-stream")
 
 **funny example**
 
-```py
+```p.set_header(
 
 @app.get("user-data")
 async def create_user(request :Request, response :Response) -> None:

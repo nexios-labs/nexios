@@ -126,7 +126,7 @@ class CustomStaticFilesHandler(StaticFilesHandler):
         
         # Add cache control headers
         if res.status_code == 200:
-            res.header("Cache-Control", "public, max-age=31536000")
+            res.set_header("Cache-Control", "public, max-age=31536000")
         
         return res
 
@@ -169,8 +169,8 @@ class ConditionalStaticHandler(StaticFilesHandler):
                     return response.empty(status_code=304)  # Not Modified
                 
                 # Set headers and return file
-                response.header("Last-Modified", last_modified)
-                response.header("ETag", etag)
+                response.set_header("Last-Modified", last_modified)
+                response.set_header("ETag", etag)
                 return response.file(str(file_path))
         
         return response.json("Resource not found", status_code=404)

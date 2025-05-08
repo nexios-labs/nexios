@@ -97,7 +97,7 @@ class BaseResponse:
             and not (self.status_code < 200 or self.status_code in (204, 304))
         ):
             content_length = str(len(body))
-            self.header("content-length", content_length, overide=True)
+            self.set_header("content-length", content_length, overide=True)
         content_type: typing.Optional[str] = self.content_type
         if content_type is not None and populate_content_type:
             if (
@@ -147,7 +147,7 @@ class BaseResponse:
             ], "samesite must be either 'strict', 'lax' or 'none'"
             cookie[key]["samesite"] = samesite
         cookie_val = cookie.output(header="").strip()
-        self.header("set-cookie", cookie_val)
+        self.set_header("set-cookie", cookie_val)
 
         return cookie
 
@@ -219,7 +219,7 @@ class BaseResponse:
         content_hash.update(self._body)  # type:ignore
         return f'W/"{b64encode(content_hash.digest()).decode("utf-8")}"'
 
-    def header(self, key: str, value: str, overide: bool = False) -> "BaseResponse":
+    def set_header(self, key: str, value: str, overide: bool = False) -> "BaseResponse":
         """
         Set a response header. If `overide` is True, replace the existing header.
         """
@@ -322,12 +322,12 @@ class FileResponse(BaseResponse):
 
         self.headers = headers or {}
         content_type, _ = mimetypes.guess_type(str(self.path))
-        self.header("content-type", content_type or "application/octet-stream")
-        self.header(
+        self.set_header("content-type", content_type or "application/octet-stream")
+        self.set_header(
             "content-disposition",
             f'{content_disposition_type}; filename="{self.filename}"',
         )
-        self.header("accept-ranges", "bytes")
+        self.set_header("accept-ranges", "bytes")
 
         self._ranges: List[Tuple[int, int]] = []
         self._multipart_boundary: Optional[str] = None
@@ -338,7 +338,7 @@ class FileResponse(BaseResponse):
         etag_base = str(stat_result.st_mtime) + "-" + str(stat_result.st_size)
         etag = f'"{hashlib.md5(etag_base.encode(), usedforsecurity=False).hexdigest()}"'
 
-        self.header("content-length", content_length, overide=True)
+        self.set_header("content-length", content_length, overide=True)
         self.headers.setdefault("last-modified", last_modified)
         self.headers.setdefault("etag", etag)
 
@@ -386,13 +386,13 @@ class FileResponse(BaseResponse):
             if len(self._ranges) == 1:
                 start, end = self._ranges[0]
                 content_length = end - start + 1
-                self.header("content-range", f"bytes {start}-{end}/{file_size}")
-                self.header("content-length", str(content_length), overide=True)
+                self.set_header("content-range", f"bytes {start}-{end}/{file_size}")
+                self.set_header("content-length", str(content_length), overide=True)
                 self.status_code = 206
             elif len(self._ranges) > 1:
 
                 self._multipart_boundary = self._generate_multipart_boundary()
-                self.header(
+                self.set_header(
                     "content-type",
                     f"multipart/byteranges; boundary={self._multipart_boundary}",
                 )
@@ -400,7 +400,7 @@ class FileResponse(BaseResponse):
 
         except ValueError as _:
 
-            self.header("content-range", f"bytes */{file_size}")
+            self.set_header("content-range", f"bytes */{file_size}")
             self.status_code = 416
 
     async def _send_response(self, scope: Scope, receive: Receive, send: Send) -> None:
@@ -468,7 +468,7 @@ class FileResponse(BaseResponse):
         """Send a single range of the file using AnyIO."""
         await file.seek(start)
         remaining = end - start + 1
-        self.header("content-length", str(remaining), overide=True)
+        self.set_header("content-length", str(remaining), overide=True)
 
         while remaining > 0:
             chunk_size = min(self.chunk_size, remaining)
@@ -674,7 +674,7 @@ class NexiosResponse:
     def _preserve_headers_and_cookies(self, new_response: BaseResponse) -> BaseResponse:
         """Preserve headers and cookies when switching to a new response."""
         for key, value in self.headers.items():
-            new_response.header(key, value, overide=True)
+            new_response.set_header(key, value, overide=True)
 
         return new_response
 
@@ -783,10 +783,10 @@ class NexiosResponse:
         self._response.status_code = status_code
         return self
 
-    def header(self, key: str, value: str, overide: bool = False):
+    def set_header(self, key: str, value: str, overide: bool = False):
         """Set a response header."""
 
-        self._response.header(key, value, overide=overide)
+        self._response.set_header(key, value, overide=overide)
         return self
 
     def set_cookie(
@@ -874,7 +874,7 @@ class NexiosResponse:
             return
         """Set multiple headers at once."""
         for key, value in headers.items():
-            self.header(key, value)
+            self.set_header(key, value)
         return self
 
     def set_body(self, new_body: Any):
@@ -886,7 +886,7 @@ class NexiosResponse:
 
     def add_csp_header(self, policy: str) -> "NexiosResponse":
         """Add a Content Security Policy header."""
-        self.header("Content-Security-Policy", policy)
+        self.set_header("Content-Security-Policy", policy)
         return self
 
     def make_response(self, response_class: BaseResponse) -> "NexiosResponse":

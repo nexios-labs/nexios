@@ -114,12 +114,12 @@ async def handler(req: Request, response: Response) -> Response:
 
 #### `header()`
 ```python
-.header(key: str, value: str, overide: bool = False) -> Response
+.set_header(key: str, value: str, overide: bool = False) -> Response
 ```
 - Sets response header
 - Example:
   ```python
-  return response.header("X-Custom", "value")
+  return response.set_header("X-Custom", "value")
   ```
 
 #### `set_headers()`

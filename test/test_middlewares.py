@@ -20,7 +20,7 @@ async def test_middleware_modifies_response(async_client: Client):
 
     async def header_middleware(request: Request, response: Response, call_next):
         await call_next()
-        response.header("X-Middleware-Added", "True")
+        response.set_header("X-Middleware-Added", "True")
 
     app.add_middleware(header_middleware)
 
@@ -61,12 +61,12 @@ async def test_middleware_order(async_client: Client):
 
     async def first_middleware(equest: Request, response: Response, call_next):
         await call_next()
-        response.header("X-Order-1", "First")
+        response.set_header("X-Order-1", "First")
         return response
 
     async def second_middleware(equest: Request, response: Response, call_next):
         await call_next()
-        response.header("X-Order-2", "Second")
+        response.set_header("X-Order-2", "Second")
         return response
 
     app.add_middleware(first_middleware)
