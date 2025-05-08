@@ -41,6 +41,7 @@ export default {
             { text: 'Request Inputs', link: '/guide/request-inputs' },
             { text: 'Configuration', link: '/guide/configuration' },
             { text: 'Sending Responses', link: '/guide/sending-responses' },
+            { text : "Routers and subapps", link: "/guide/routers-and-subapps" },
 
             { text: 'API Reference', link: '/guide/api-reference' },
           ]
