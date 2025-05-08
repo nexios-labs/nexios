@@ -43,7 +43,7 @@ T = TypeVar("T")
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
 
 
-def request_response(
+async def request_response(
     func: typing.Callable[[Request, Response], typing.Awaitable[Response]],
 ) -> ASGIApp:
     """
@@ -503,7 +503,7 @@ class Routes:
                 app = cls(app, *args, **kwargs)
             return app
 
-        app = await apply_middlewares(request_response(self.handler))
+        app = await apply_middlewares(await request_response(self.handler))
 
         await app(scope, receive, send)
 
