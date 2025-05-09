@@ -47,6 +47,7 @@ export default {
             { text : "Headers", link: "/guide/headers" },
             { text : "Error Handling", link: "/guide/error-handling" },
             { text : "Pagination", link: "/guide/pagination" },
+            { text : "Class Based Hndlers", link: "/guide/class-based-handlers" },
 
 
 
