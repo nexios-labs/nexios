@@ -910,6 +910,7 @@ class NexiosResponse:
         items: List[Any],
         total_items: Optional[int] = None,
         strategy: Union[str, BasePaginationStrategy] = "page_number",
+        data_handler :type[SyncListDataHandler]= SyncListDataHandler,
         **kwargs :Dict[str, Any]
     ) -> "NexiosResponse":
         """
@@ -932,13 +933,13 @@ class NexiosResponse:
             else:
                 raise ValueError(f"Unknown pagination strategy: {strategy}")
         
+       
         
-        
-        data_handler = SyncListDataHandler(items)
+        _data_handler = data_handler(items)
         request = self._request  # You'll need to store the request in the response
         
         paginator = SyncPaginator(
-            data_handler=data_handler,
+            data_handler=_data_handler,
             pagination_strategy=strategy,
             base_url=str(request.url),
             request_params=dict(request.query_params)
@@ -952,6 +953,8 @@ class NexiosResponse:
         items: List[Any],
         total_items: Optional[int] = None,
         strategy: Union[str, BasePaginationStrategy] = "page_number",
+        data_handler :type[AsyncListDataHandler]= AsyncListDataHandler,
+
         **kwargs :Dict[str, Any]
     ) -> "NexiosResponse":
         """
@@ -976,11 +979,11 @@ class NexiosResponse:
         
         
         
-        data_handler = AsyncListDataHandler(items)
+        _data_handler = AsyncListDataHandler(items)
         request = self._request  # You'll need to store the request in the response
         
         paginator = AsyncPaginator(
-            data_handler=data_handler,
+            data_handler=_data_handler,
             pagination_strategy=strategy,
             base_url=str(request.url),
             request_params=dict(request.query_params)
