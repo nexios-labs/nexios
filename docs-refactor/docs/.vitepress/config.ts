@@ -17,6 +17,8 @@ export default {
     nav: [
       { text: 'Architecture', link: '/architecture/async-python' },
       { text: 'Guide', link: '/guide/getting-started' },
+      { text: "Howto's", link: '/howtos/index' },
+      { text : "Websockets", link: "/howtos/websockets" },
       { text: 'API Reference', link: '/guide/api-reference' },
       { text: 'GitHub', link: 'https://github.com/nexios-labs/Nexios' }
     ],
@@ -57,6 +59,30 @@ export default {
 
 
             { text: 'API Reference', link: '/guide/api-reference' },
+          ]
+        }
+      ],
+      '/howtos/': [
+        {
+          text: 'Howto',
+          items: [
+            { text: 'Index', link: '/howtos/index' },
+            { text : "File Upload", link: "/howtos/file-upload" },
+            { text : "Templating", link: "/howtos/templating" },
+            { text : "Orm Integration", link: "/howtos/orm-integration" },
+            { text : "Static Files", link: "/howtos/static-files" },
+            { text : "Websockets", link: "/howtos/websockets" },
+            { text : "Health Checks", link: "/howtos/health-checks" },
+            { text : "Caching", link: "/howtos/caching" },
+
+          ]
+        }
+      ],
+      "websockets": [
+        {
+          text: 'Websockets',
+          items: [
+            { text : "Websockets", link: "/websockets/index" },
           ]
         }
       ]
