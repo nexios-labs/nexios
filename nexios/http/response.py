@@ -918,8 +918,8 @@ class NexiosResponse:
         items: List[Any],
         total_items: Optional[int] = None,
         strategy: Union[str, BasePaginationStrategy] = "page_number",
-        data_handler :type[SyncListDataHandler]= SyncListDataHandler,
-        **kwargs :Dict[str, Any]
+        data_handler: type[SyncListDataHandler] = SyncListDataHandler,
+        **kwargs: Dict[str, Any],
     ) -> "NexiosResponse":
         """
         Paginate the response data.
@@ -940,9 +940,7 @@ class NexiosResponse:
                 strategy = CursorPagination(**kwargs)  # type:ignore
             else:
                 raise ValueError(f"Unknown pagination strategy: {strategy}")
-        
-       
-        
+
         _data_handler = data_handler(items)
         request = self._request  # You'll need to store the request in the response
 
@@ -961,9 +959,8 @@ class NexiosResponse:
         items: List[Any],
         total_items: Optional[int] = None,
         strategy: Union[str, BasePaginationStrategy] = "page_number",
-        data_handler :type[AsyncListDataHandler]= AsyncListDataHandler,
-
-        **kwargs :Dict[str, Any]
+        data_handler: type[AsyncListDataHandler] = AsyncListDataHandler,
+        **kwargs: Dict[str, Any],
     ) -> "NexiosResponse":
         """
         Paginate the response data.
@@ -984,9 +981,7 @@ class NexiosResponse:
                 strategy = CursorPagination(**kwargs)  # type:ignore
             else:
                 raise ValueError(f"Unknown pagination strategy: {strategy}")
-        
-        
-        
+
         _data_handler = AsyncListDataHandler(items)
         request = self._request  # You'll need to store the request in the response
 
