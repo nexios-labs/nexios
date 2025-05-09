@@ -17,8 +17,9 @@ from datetime import datetime, timezone
 from urllib.parse import quote
 import hashlib
 import anyio.to_thread
+from nexios.pagination import AsyncListDataHandler, AsyncPaginator, BasePaginationStrategy, CursorPagination, LimitOffsetPagination, SyncListDataHandler, PageNumberPagination,SyncPaginator
 from nexios.structs import MutableHeaders
-from nexios.http.request import ClientDisconnect
+from nexios.http.request import ClientDisconnect, Request
 import stat
 from functools import partial
 
@@ -626,10 +627,11 @@ class NexiosResponse:
             cls._instance._initialized = False  # type:ignore
         return cls._instance
 
-    def __init__(self):
+    def __init__(self, request: Request):
         self._response: BaseResponse = BaseResponse()
         self._cookies: List[Dict[str, Any]] = []
         self._status_code = self._response.status_code
+        self._request = request
 
     @property
     def headers(self):
@@ -901,6 +903,92 @@ class NexiosResponse:
 
         self._response = self._preserve_headers_and_cookies(response_class)
         return self
+
+    
+    def paginate(
+        self,
+        items: List[Any],
+        total_items: Optional[int] = None,
+        strategy: Union[str, BasePaginationStrategy] = "page_number",
+        **kwargs :Dict[str, Any]
+    ) -> "NexiosResponse":
+        """
+        Paginate the response data.
+        
+        Args:
+            items: List of items to paginate
+            total_items: Total number of items (optional, defaults to len(items))
+            strategy: Either a string ('page_number', 'limit_offset', 'cursor') or 
+                    a custom pagination strategy instance
+            **kwargs: Additional arguments for the pagination strategy
+        """
+        if isinstance(strategy, str):
+            if strategy == "page_number":
+                strategy = PageNumberPagination(**kwargs) # type:ignore
+            elif strategy == "limit_offset":
+                strategy = LimitOffsetPagination(**kwargs) # type:ignore
+            elif strategy == "cursor":
+                strategy = CursorPagination(**kwargs) # type:ignore
+            else:
+                raise ValueError(f"Unknown pagination strategy: {strategy}")
+        
+        
+        
+        data_handler = SyncListDataHandler(items)
+        request = self._request  # You'll need to store the request in the response
+        
+        paginator = SyncPaginator(
+            data_handler=data_handler,
+            pagination_strategy=strategy,
+            base_url=str(request.url),
+            request_params=dict(request.query_params)
+        )
+        
+        result = paginator.paginate()
+        return self.json(result)
+
+    async def apaginate(
+        self,
+        items: List[Any],
+        total_items: Optional[int] = None,
+        strategy: Union[str, BasePaginationStrategy] = "page_number",
+        **kwargs :Dict[str, Any]
+    ) -> "NexiosResponse":
+        """
+        Paginate the response data.
+        
+        Args:
+            items: List of items to paginate
+            total_items: Total number of items (optional, defaults to len(items))
+            strategy: Either a string ('page_number', 'limit_offset', 'cursor') or 
+                    a custom pagination strategy instance
+            **kwargs: Additional arguments for the pagination strategy
+        """
+        if isinstance(strategy, str):
+            if strategy == "page_number":
+                strategy = PageNumberPagination(**kwargs) # type:ignore
+            elif strategy == "limit_offset":
+                strategy = LimitOffsetPagination(**kwargs) # type:ignore
+            elif strategy == "cursor":
+                strategy = CursorPagination(**kwargs) # type:ignore
+            else:
+                raise ValueError(f"Unknown pagination strategy: {strategy}")
+        
+        
+        
+        data_handler = AsyncListDataHandler(items)
+        request = self._request  # You'll need to store the request in the response
+        
+        paginator = AsyncPaginator(
+            data_handler=data_handler,
+            pagination_strategy=strategy,
+            base_url=str(request.url),
+            request_params=dict(request.query_params)
+        )
+        
+        result = await paginator.paginate()
+        return self.json(result)
+    
 
     def __str__(self):
         return f"Response [{self._status_code} {self.body}]"

@@ -7,7 +7,7 @@ from nexios.pagination import (
     PageNumberPagination,
     LimitOffsetPagination,
     CursorPagination,
-    ListDataHandler,
+    AsyncListDataHandler as ListDataHandler,
     PaginationError,
     InvalidPageError,
     InvalidPageSizeError,

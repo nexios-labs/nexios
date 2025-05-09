@@ -147,7 +147,7 @@ class BaseMiddleware:
             return
 
         request = _CachedRequest(scope, receive)
-        response = Response()
+        response = Response(request=request)
 
         wrapped_receive = request.wrapped_receive
         response_sent = anyio.Event()

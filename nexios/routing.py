@@ -54,7 +54,7 @@ async def request_response(
 
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         request = Request(scope, receive, send)
-        response_manager = Response()
+        response_manager = Response(request)
 
         func_result = await func(request, response_manager, **request.path_params)
         if isinstance(func_result, (dict, list, str)):

@@ -46,6 +46,7 @@ export default {
             { text : "Cookies", link: "/guide/cookies" },
             { text : "Headers", link: "/guide/headers" },
             { text : "Error Handling", link: "/guide/error-handling" },
+            { text : "Pagination", link: "/guide/pagination" },
 
 
 

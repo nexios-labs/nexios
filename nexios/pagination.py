@@ -21,27 +21,6 @@ class InvalidCursorError(PaginationError):
     """Raised when providing an invalid cursor"""
 
 
-class AsyncDataHandler(abc.ABC):
-    @abc.abstractmethod
-    async def get_total_items(self) -> int:
-        pass
-
-    @abc.abstractmethod
-    async def get_items(self, offset: int, limit: int) -> List[Any]:
-        pass
-
-
-class ListDataHandler(AsyncDataHandler):
-    def __init__(self, data: List[Any]):
-        self.data = data
-
-    async def get_total_items(self) -> int:
-        return len(self.data)
-
-    async def get_items(self, offset: int, limit: int) -> List[Any]:
-        return self.data[offset : offset + limit]
-
-
 class LinkBuilder:
     def __init__(
         self,
@@ -82,6 +61,52 @@ class BasePaginationStrategy(abc.ABC):
     ) -> Dict[str, Any]:
         pass
 
+
+
+class SyncDataHandler(abc.ABC):
+    @abc.abstractmethod
+    def get_total_items(self) -> int:
+        pass
+
+    @abc.abstractmethod
+    def get_items(self, offset: int, limit: int) -> List[Any]:
+        pass
+
+
+class SyncListDataHandler(SyncDataHandler):
+    def __init__(self, data: List[Any]):
+        self.data = data
+
+    def get_total_items(self) -> int:
+        return len(self.data)
+
+    def get_items(self, offset: int, limit: int) -> List[Any]:
+        return self.data[offset : offset + limit]
+
+
+
+class AsyncDataHandler(abc.ABC):
+    @abc.abstractmethod
+    async def get_total_items(self) -> int:
+        pass
+
+    @abc.abstractmethod
+    async def get_items(self, offset: int, limit: int) -> List[Any]:
+        pass
+
+
+class AsyncListDataHandler(AsyncDataHandler):
+    def __init__(self, data: List[Any]):
+        self.data = data
+
+    async def get_total_items(self) -> int:
+        return len(self.data)
+
+    async def get_items(self, offset: int, limit: int) -> List[Any]:
+        return self.data[offset : offset + limit]
+
+
+# ==================== PAGINATION STRATEGIES ====================
 
 class PageNumberPagination(BasePaginationStrategy):
     def __init__(
@@ -269,7 +294,7 @@ class CursorPagination(BasePaginationStrategy):
         cursor_data = {self.sort_field: value}
         return base64.b64encode(json.dumps(cursor_data).encode("utf-8")).decode("utf-8")
 
-    def calculate_offset_limit(
+    def calculate_offset_limit( #type:ignore
         self, cursor: Optional[str], page_size: int
     ) -> Tuple[int, int]:  # type:ignore
         return 0, page_size
@@ -307,8 +332,40 @@ class CursorPagination(BasePaginationStrategy):
         }
 
 
-class AsyncPaginator:
+# ==================== PAGINATORS ====================
 
+class SyncPaginator:
+    def __init__(
+        self,
+        data_handler: SyncDataHandler,
+        pagination_strategy: BasePaginationStrategy,
+        base_url: str,
+        request_params: Dict[str, Any],
+        validate_total_items: bool = True,
+    ):
+        self.data_handler = data_handler
+        self.pagination_strategy = pagination_strategy
+        self.base_url = base_url
+        self.request_params = request_params
+        self.validate_total_items = validate_total_items
+
+    def paginate(self) -> Dict[str, Any]:
+        params = self.pagination_strategy.parse_parameters(self.request_params)
+        offset, limit = self.pagination_strategy.calculate_offset_limit(*params)
+
+        total_items = self.data_handler.get_total_items()
+        if self.validate_total_items and offset >= total_items and total_items > 0:
+            raise InvalidPageError("Requested offset exceeds total items")
+
+        items = self.data_handler.get_items(offset, limit)
+        metadata = self.pagination_strategy.generate_metadata(
+            total_items, items, self.base_url, self.request_params
+        )
+
+        return {"items": items, "pagination": metadata}
+
+
+class AsyncPaginator:
     def __init__(
         self,
         data_handler: AsyncDataHandler,
@@ -327,11 +384,11 @@ class AsyncPaginator:
         params = self.pagination_strategy.parse_parameters(self.request_params)
         offset, limit = self.pagination_strategy.calculate_offset_limit(*params)
 
-        total_items = await self.data_handler.get_total_items()  # type:ignore
+        total_items = await self.data_handler.get_total_items()
         if self.validate_total_items and offset >= total_items and total_items > 0:
             raise InvalidPageError("Requested offset exceeds total items")
 
-        items = await self.data_handler.get_items(offset, limit)  # type:ignore
+        items = await self.data_handler.get_items(offset, limit)
         metadata = self.pagination_strategy.generate_metadata(
             total_items, items, self.base_url, self.request_params
         )
@@ -339,7 +396,17 @@ class AsyncPaginator:
         return {"items": items, "pagination": metadata}
 
 
+
 class PaginatedResponse:
+    def __init__(self, data: Dict[str, Any]):
+        self.items = data["items"]
+        self.metadata = data["pagination"]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {"data": self.items, "pagination": self.metadata}
+
+
+class AsyncPaginatedResponse:
     def __init__(self, data: Dict[str, Any]):
         self.items = data["items"]
         self.metadata = data["pagination"]
