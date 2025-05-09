@@ -45,10 +45,13 @@ export default {
             { text : "Middleware", link: "/guide/middleware" },
             { text : "Cookies", link: "/guide/cookies" },
             { text : "Headers", link: "/guide/headers" },
+            { text : "Sessions", link: "/guide/sessions" },
             { text : "Error Handling", link: "/guide/error-handling" },
             { text : "Pagination", link: "/guide/pagination" },
+            { text : "Authentication", link: "/guide/authentication" },
             { text : "Class Based Hndlers", link: "/guide/class-based-handlers" },
             { text : "Events", link: "/guide/events" },
+            { text : "Dependency Injection", link: "/guide/dependency-injection" },
 
 
 
