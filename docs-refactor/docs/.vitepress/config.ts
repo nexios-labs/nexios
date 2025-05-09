@@ -44,6 +44,8 @@ export default {
             { text : "Routers and subapps", link: "/guide/routers-and-subapps" },
             { text : "Middleware", link: "/guide/middleware" },
             { text : "Cookies", link: "/guide/cookies" },
+            { text : "Headers", link: "/guide/headers" },
+
 
 
             { text: 'API Reference', link: '/guide/api-reference' },
