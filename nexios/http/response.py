@@ -633,7 +633,7 @@ class NexiosResponse:
 
     @property
     def headers(self):
-        return MutableHeaders(raw = self._response._headers)  # type:ignore
+        return MutableHeaders(raw=self._response._headers)  # type:ignore
 
     @property
     def cookies(self):
