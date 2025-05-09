@@ -1,6 +1,6 @@
 // docs/.vitepress/config.js
-
-export default {
+import { defineConfig } from 'vitepress'
+export default defineConfig({
   head: [
     ['link', { rel: 'stylesheet', href: 'https://unpkg.com/tailwindcss@3.2.4/dist/tailwind.min.css' }],
     ['link', { rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css' }],
@@ -14,12 +14,17 @@ export default {
   description: 'Async web framework for Python',
   themeConfig: {
     logo: '/icon.svg',
+    themeSwitcher: true,
+    search:{
+      provider: 'local'
+    },
     nav: [
       { text: 'Architecture', link: '/architecture/async-python' },
       { text: 'Guide', link: '/guide/getting-started' },
       { text: "Howto's", link: '/howtos/index' },
       { text : "Websockets", link: "/howtos/websockets" },
       { text: 'API Reference', link: '/guide/api-reference' },
+      { text: "Team", link: 'team' },
       { text: 'GitHub', link: 'https://github.com/nexios-labs/Nexios' }
     ],
     sidebar: {
@@ -37,6 +42,10 @@ export default {
           text: 'Guide',
           items: [
             { text: 'Getting Started', link: '/guide/getting-started' },
+            { text: "CLI", link: "/guide/cli" },
+            { text: "philosophy", link: "/guide/philosophy" },
+            {
+              items : [
             { text: 'Routing', link: '/guide/routing' },
             { text: 'Handlers', link: '/guide/handlers' },
             { text: 'Startups and Shutdowns', link: '/guide/startups-and-shutdowns' },
@@ -59,6 +68,8 @@ export default {
 
 
             { text: 'API Reference', link: '/guide/api-reference' },
+              ]
+            }
           ]
         }
       ],
@@ -91,4 +102,4 @@ export default {
   markdown: {
     lineNumbers: true
   }
-}
+})
