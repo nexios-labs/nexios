@@ -45,6 +45,7 @@ export default {
             { text : "Middleware", link: "/guide/middleware" },
             { text : "Cookies", link: "/guide/cookies" },
             { text : "Headers", link: "/guide/headers" },
+            { text : "Error Handling", link: "/guide/error-handling" },
 
 
 
