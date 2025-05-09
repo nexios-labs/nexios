@@ -633,11 +633,7 @@ class NexiosResponse:
 
     @property
     def headers(self):
-        return MutableHeaders(
-            {
-                k.decode("utf-8"): v.decode("utf-8") for k, v in self._response._headers
-            },  # type:ignore
-        )  # type:ignore
+        return MutableHeaders(raw = self._response._headers)  # type:ignore
 
     @property
     def cookies(self):
@@ -668,13 +664,14 @@ class NexiosResponse:
 
         return content_length
 
+    @property
     def status_code(self):
         return self._response.status_code
 
     def _preserve_headers_and_cookies(self, new_response: BaseResponse) -> BaseResponse:
         """Preserve headers and cookies when switching to a new response."""
         for key, value in self.headers.items():
-            new_response.set_header(key, value, overide=True)
+            new_response.set_header(key, value)
 
         return new_response
 
