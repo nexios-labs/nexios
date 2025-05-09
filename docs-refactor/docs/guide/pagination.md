@@ -259,3 +259,26 @@ You can override the following methods:
 - `parse_parameters(request_params: Dict[str, Any]) -> Tuple[int, int]`
 - `generate_metadata(total_items: int, items: List[Any], base_url: str, request_params: Dict[str, Any]) -> Dict[str, Any]`
 - `calculate_offset_limit(self, page, page_size)`
+
+
+## 💪 Manual Integration 
+
+While Nexios provides a convenient way to use pagination, you can also manually integrate pagination into your app.
+
+```python
+from nexios import NexiosApp
+fromnexios.pagination import SyncListDataHandler, PageNumberPagination, SyncPaginator
+app = NexiosApp()
+
+@app.get("/get-items")
+async def get_items(request, response):
+
+    data_handler = SyncListDataHandler(data=[...])
+    pagination_strategy = PageNumberPagination(page_param="page", page_size_param="page_size", default_page=1, default_page_size=20, max_page_size=100)
+    paginator = SyncPaginator(data_handler=data_handler, strategy=pagination_strategy)
+    return paginator.paginate()
+```
+
+::: tip 💡Tip
+Use this only if you know what you are doing.
+::: 
