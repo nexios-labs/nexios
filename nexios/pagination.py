@@ -62,7 +62,6 @@ class BasePaginationStrategy(abc.ABC):
         pass
 
 
-
 class SyncDataHandler(abc.ABC):
     @abc.abstractmethod
     def get_total_items(self) -> int:
@@ -82,7 +81,6 @@ class SyncListDataHandler(SyncDataHandler):
 
     def get_items(self, offset: int, limit: int) -> List[Any]:
         return self.data[offset : offset + limit]
-
 
 
 class AsyncDataHandler(abc.ABC):
@@ -107,6 +105,7 @@ class AsyncListDataHandler(AsyncDataHandler):
 
 
 # ==================== PAGINATION STRATEGIES ====================
+
 
 class PageNumberPagination(BasePaginationStrategy):
     def __init__(
@@ -294,7 +293,7 @@ class CursorPagination(BasePaginationStrategy):
         cursor_data = {self.sort_field: value}
         return base64.b64encode(json.dumps(cursor_data).encode("utf-8")).decode("utf-8")
 
-    def calculate_offset_limit( #type:ignore
+    def calculate_offset_limit(  # type:ignore
         self, cursor: Optional[str], page_size: int
     ) -> Tuple[int, int]:  # type:ignore
         return 0, page_size
@@ -333,6 +332,7 @@ class CursorPagination(BasePaginationStrategy):
 
 
 # ==================== PAGINATORS ====================
+
 
 class SyncPaginator:
     def __init__(
@@ -394,7 +394,6 @@ class AsyncPaginator:
         )
 
         return {"items": items, "pagination": metadata}
-
 
 
 class PaginatedResponse:
