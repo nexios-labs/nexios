@@ -33,35 +33,22 @@ features:
 
 ## Getting Started
 
-You can get started using VitePress right away using `npx`!
+You can get started using <> right away using `pip`
 
 ```sh
-npm init
-npx vitepress init
+pip install nexios
+nexios new <project_name>
 ```
 
 
-::: code-group
 
-```js [config.js]
-/**
- * @type {import('vitepress').UserConfig}
- */
-const config = {
-  // ...
-}
+```py [config.js]
+from NexiosApp
 
-export default config
+app = NexiosApp
+
+@app.get("/")
+async def index(request, response):
+
+  return {"message" : "Nexios , Fast Async , Minimal"}
 ```
-
-```ts [config.ts]
-import type { UserConfig } from 'vitepress'
-
-const config: UserConfig = {
-  // ...
-}
-
-export default config
-```
-
-:::
