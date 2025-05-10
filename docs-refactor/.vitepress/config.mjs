@@ -34,7 +34,7 @@ export default defineConfig({
       { text: 'Guide', link: '/guide/getting-started' },
       { text : "Websockets", link: "/websockets/index" },
       { text : "OpenAPI", link: "/openapi/index" },
-      { text: 'API Reference', link: '/api/index' },
+      { text: 'API Reference', link: '/api/application' },
       { text: "Team", link: 'team' },
     ],
     sidebar: {
@@ -50,8 +50,7 @@ export default defineConfig({
         {
           text: '',
           items: [
-            {text : "Concepts", link: "/guide/concepts" },
-            { text: "philosophy", link: "/guide/philosophy" },
+            
             { text: "CLI", link: "/guide/cli" },
             { text: 'Getting Started', link: '/guide/getting-started' },
             {

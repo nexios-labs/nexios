@@ -15,7 +15,7 @@ from nexios.structs import URL, Address, FormData, Headers, QueryParams, State
 from .formparsers import FormParser, MultiPartException, MultiPartParser
 
 try:
-    from multipart.multipart import parse_options_header  # type:ignore
+    from python_multipart.multipart import parse_options_header  # type:ignore
 
 except ImportError:
     parse_options_header = None

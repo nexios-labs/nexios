@@ -21,7 +21,7 @@ features:
     title: Async by Design
     details: Nexios is built from the ground up with native async support, making it perfect for I/O-bound operations like API calls, database access, or file handling. Every route, middleware, and lifecycle hook supports async/await, allowing you to write clean, non-blocking code that scales naturally under heavy loads.
 
-  - icon: 🚀
+  - icon: 🚀 
     title: Lightning-Fast Performance 
     details: Nexios is ultra-lightweight and avoids bloated abstractions. It uses minimal layers between your code and the core ASGI server, ensuring requests are processed with blazing speed. The focus on performance makes it a great choice for microservices, APIs, and real-time apps where low latency matters.
 
@@ -31,9 +31,9 @@ features:
 ---
 
 
-## Getting Started
+## Getting Started  <Badge type="tip" text="2.4.0rc1" />
 
-You can get started using <> right away using `pip`
+You can get started using Nexios right away using `pip`
 
 ```sh
 pip install nexios
