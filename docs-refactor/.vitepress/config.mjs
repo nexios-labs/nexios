@@ -106,12 +106,10 @@ export default defineConfig({
           items: [
             { text: 'Index', link: '/openapi/index' },
             { text: 'Documenting Response Models with Pydantic', link: '/openapi/response-models' },
-            { text: 'Complex Response Schemas', link: '/openapi/complex-response-schemas' },
-            { text: 'Generic Response Types', link: '/openapi/generic-response-types' },
+            { text: 'Request Schemas', link: '/openapi/request-schemas' },
+            { text: "Request Parameters", link: "/openapi/request-parameters" },
             { text: 'Customizing OpenAPI Configuration', link: '/openapi/customizing-openapi-configuration' },
             { text: 'Authentication Documentation', link: '/openapi/authentication-documentation' },
-            { text: 'Customizing Swagger UI', link: '/openapi/customizing-swagger-ui' },
-            { text: 'Advanced Usage: Manual Documentation', link: '/openapi/advanced-usage-manual-documentation' },
           ]
         }
       ],

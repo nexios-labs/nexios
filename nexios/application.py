@@ -307,8 +307,7 @@ class NexiosApp(object):
                     for x in route.param_names
                 ]
 
-                if route.parameters.__len__() > 0:
-                    parameters.extend(parameters)
+                parameters.extend(route.parameters) # type: ignore
                 docs.document_endpoint(
                     path=route.raw_path,
                     method=method,

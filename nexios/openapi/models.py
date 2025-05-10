@@ -169,7 +169,7 @@ class Header(ConcreteParameter):
     in_: Literal["header"] = Field(default="header", alias="in")
     style: HeaderParamStyles = "simple"
     explode: bool = False
-
+    schema_: Annotated[Optional[Union[Schema, Reference]], Field(alias="schema")] = Schema(type="string")
 
 class Query(ConcreteParameter):
     in_: Literal["query"] = Field(
@@ -178,6 +178,7 @@ class Query(ConcreteParameter):
     )
     style: QueryParamStyles = "form"
     explode: bool = True
+    schema_: Annotated[Optional[Union[Schema, Reference]], Field(alias="schema")] = Schema(type="string")
 
 
 class Path(ConcreteParameter):
@@ -285,7 +286,7 @@ APIKeyLocation = Literal["query", "header", "cookie"]
 
 class APIKey(SecurityBase):
     name: str
-    in_: Annotated[APIKeyLocation, Field(alias="in")]
+    in_: Annotated[APIKeyLocation, Field(alias="in")] 
     type: Literal["apiKey"] = "apiKey"
 
 
