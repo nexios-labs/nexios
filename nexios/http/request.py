@@ -386,6 +386,7 @@ class Request(HTTPConnection):
                 files_dict[key] = value
         return files_dict
 
+    @property
     async def form(self) -> FormData:
         """
         Parse and return form data from the request body.

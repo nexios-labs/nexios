@@ -73,7 +73,7 @@ export default defineConfig({
 
 
 
-            { text: 'API Reference', link: '/guide/api-reference' },
+            { text: 'Cors', link: '/guide/cors' },
               ]
             }
           ]
@@ -83,8 +83,7 @@ export default defineConfig({
         {
           text: 'Howto',
           items: [
-            { text: 'Index', link: '/howtos/index' },
-            { text : "File Upload", link: "/howtos/file-upload" },
+            { text: 'Index', link: '/howtos/file-upload' },
             { text : "Templating", link: "/howtos/templating" },
             { text : "Orm Integration", link: "/howtos/orm-integration" },
             { text : "Static Files", link: "/howtos/static-files" },
