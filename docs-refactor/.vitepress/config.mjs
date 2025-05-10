@@ -2,10 +2,15 @@
 import { defineConfig } from 'vitepress'
 export default defineConfig({
   head: [
-    ['link', { rel: 'stylesheet', href: 'https://unpkg.com/tailwindcss@3.2.4/dist/tailwind.min.css' }],
-    ['link', { rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css' }],
-    ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap' }],
-    ['script', { src: 'https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4' }]
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/./icon.svg' }],
+    ['meta', { name: 'theme-color', content: '#ff7e17' }],
+    ['meta', { property: 'og:title', content: "Nexios" }],
+    ['meta', { property: 'og:description', content: "Nexios - Async web framework for Python" }],
+    ['meta', { property: 'og:image', content: "./icon.svg" }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    // ['meta', { property: 'og:url', content: docsLink }],
+    // ['meta', { property: 'twitter:card', content: 'summary_large_image' }],
+    // ['meta', { property: 'twitter:image', content: ogImage }],
 
 
 ]
@@ -14,6 +19,7 @@ export default defineConfig({
   description: 'Async web framework for Python',
   themeConfig: {
     logo: '/icon.svg',
+    favicon: '/icon.svg',
     themeSwitcher: true,
     search:{
       provider: 'local'
