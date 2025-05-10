@@ -20,7 +20,7 @@ class APIView:
     ] = {}
 
     @classmethod
-    def as_route(cls, path: str, methods: Optional[List[str]] = None. **kwargs) -> Route:
+    def as_route(cls, path: str, methods: Optional[List[str]] = None, **kwargs) -> Route:
         """
         Convert the APIView class into a Route that can be registered with the app or router.
         """

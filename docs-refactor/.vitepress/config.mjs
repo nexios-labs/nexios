@@ -33,6 +33,7 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
       { text : "Websockets", link: "/websockets/index" },
+      { text : "OpenAPI", link: "/openapi/index" },
       { text: 'API Reference', link: '/api/index' },
       { text: "Team", link: 'team' },
     ],
@@ -96,6 +97,22 @@ export default defineConfig({
             { text : "Consumer", link: "/websockets/consumer" },
 
 
+          ]
+        }
+      ],
+      "openapi": [
+        {
+          text: 'OpenAPI',
+          items: [
+            { text: 'Index', link: '/openapi/index' },
+            { text: 'Basic Setup', link: '/openapi/basic-setup' },
+            { text: 'Documenting Response Models with Pydantic', link: '/openapi/pydantic' },
+            { text: 'Complex Response Schemas', link: '/openapi/complex-response-schemas' },
+            { text: 'Generic Response Types', link: '/openapi/generic-response-types' },
+            { text: 'Customizing OpenAPI Configuration', link: '/openapi/customizing-openapi-configuration' },
+            { text: 'Authentication Documentation', link: '/openapi/authentication-documentation' },
+            { text: 'Customizing Swagger UI', link: '/openapi/customizing-swagger-ui' },
+            { text: 'Advanced Usage: Manual Documentation', link: '/openapi/advanced-usage-manual-documentation' },
           ]
         }
       ],
