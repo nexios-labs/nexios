@@ -18,6 +18,12 @@ export default defineConfig({
   title: 'Nexios',
   description: 'Async web framework for Python',
   themeConfig: {
+    socialLinks : [
+      {icon : "github", link : "https://github.com/nexioslabs/nexios"},
+      {icon : "twitter", link : "https://twitter.com/nexioslabs"},
+
+    ],
+    siteTitle: 'Nexios',
     logo: '/icon.svg',
     favicon: '/icon.svg',
     themeSwitcher: true,
@@ -26,11 +32,9 @@ export default defineConfig({
     },
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
-      { text: "Howto's", link: '/howtos/index' },
       { text : "Websockets", link: "/websockets/index" },
       { text: 'API Reference', link: '/api/index' },
       { text: "Team", link: 'team' },
-      { text: 'GitHub', link: 'https://github.com/nexios-labs/Nexios' }
     ],
     sidebar: {
      
@@ -73,27 +77,14 @@ export default defineConfig({
 
 
 
+            { text: 'File Upload', link: '/guide/file-upload' },
             { text: 'Cors', link: '/guide/cors' },
               ]
             }
           ]
         }
       ],
-      '/howtos/': [
-        {
-          text: 'Howto',
-          items: [
-            { text: 'Index', link: '/howtos/file-upload' },
-            { text : "Templating", link: "/howtos/templating" },
-            { text : "Orm Integration", link: "/howtos/orm-integration" },
-            { text : "Static Files", link: "/howtos/static-files" },
-            { text : "Websockets", link: "/howtos/websockets" },
-            { text : "Health Checks", link: "/howtos/health-checks" },
-            { text : "Caching", link: "/howtos/caching" },
-
-          ]
-        }
-      ],
+      
       "websockets": [
         {
           text: 'Websockets',
@@ -123,6 +114,7 @@ export default defineConfig({
       ]
     }
   },
+
   markdown: {
     lineNumbers: true
   }
