@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: Nexios
+  name: Nexios 
   text: Async Python Web Framework
   tagline: Nexios is a fast, minimalist Python framework for building async APIs with clean architecture, zero boilerplate, and a Pythonic feel.
   image:
@@ -41,3 +41,27 @@ npx vitepress init
 ```
 
 
+::: code-group
+
+```js [config.js]
+/**
+ * @type {import('vitepress').UserConfig}
+ */
+const config = {
+  // ...
+}
+
+export default config
+```
+
+```ts [config.ts]
+import type { UserConfig } from 'vitepress'
+
+const config: UserConfig = {
+  // ...
+}
+
+export default config
+```
+
+:::
