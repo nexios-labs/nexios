@@ -307,7 +307,7 @@ class NexiosApp(object):
                     for x in route.param_names
                 ]
 
-                parameters.extend(route.parameters) # type: ignore
+                parameters.extend(route.parameters)  # type: ignore
                 docs.document_endpoint(
                     path=route.raw_path,
                     method=method,
