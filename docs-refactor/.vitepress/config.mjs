@@ -25,33 +25,32 @@ export default defineConfig({
       provider: 'local'
     },
     nav: [
-      { text: 'Architecture', link: '/architecture/async-python' },
       { text: 'Guide', link: '/guide/getting-started' },
       { text: "Howto's", link: '/howtos/index' },
       { text : "Websockets", link: "/websockets/index" },
-      { text: 'API Reference', link: '/guide/api-reference' },
+      { text: 'API Reference', link: '/api/index' },
       { text: "Team", link: 'team' },
       { text: 'GitHub', link: 'https://github.com/nexios-labs/Nexios' }
     ],
     sidebar: {
-      '/architecture/': [
-        {
-          text: 'Architecture',
-          items: [
-            { text: 'Async Python', link: '/architecture/async-python' },
-            { text: 'Asgi', link: '/architecture/asgi' },
-          ]
-        }
+     
+      text: 'Architecture',
+      items: [
+        { text: 'Async Python', link: '/architecture/async-python' },
+        { text: 'Asgi', link: '/architecture/asgi' },
       ],
+        
+    
       '/guide/': [
         {
-          text: 'Guide',
+          text: '',
           items: [
-            { text: 'Getting Started', link: '/guide/getting-started' },
-            { text: "CLI", link: "/guide/cli" },
+            {text : "Concepts", link: "/guide/concepts" },
             { text: "philosophy", link: "/guide/philosophy" },
+            { text: "CLI", link: "/guide/cli" },
+            { text: 'Getting Started', link: '/guide/getting-started' },
             {
-              items : [
+            items : [
             { text: 'Routing', link: '/guide/routing' },
             { text: 'Handlers', link: '/guide/handlers' },
             { text: 'Startups and Shutdowns', link: '/guide/startups-and-shutdowns' },
@@ -106,6 +105,19 @@ export default defineConfig({
             { text :"Events", link: "/websockets/events" },
             { text : "Consumer", link: "/websockets/consumer" },
 
+
+          ]
+        }
+      ],
+      "api": [
+        {
+          text: 'API Reference',
+          items: [
+            { text: 'Index', link: '/api/application' },
+            { text: 'Routing', link: '/api/routing' },
+            { text: "Response", link: "/api/response" },
+            { text : "Exceptions", link : "/api/exceptions" },
+            { text : "Websocket", link : "/api/websockets" },
 
           ]
         }
