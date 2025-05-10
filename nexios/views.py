@@ -20,7 +20,9 @@ class APIView:
     ] = {}
 
     @classmethod
-    def as_route(cls, path: str, methods: Optional[List[str]] = None, **kwargs) -> Route:
+    def as_route(
+        cls, path: str, methods: Optional[List[str]] = None, **kwargs
+    ) -> Route:
         """
         Convert the APIView class into a Route that can be registered with the app or router.
         """
@@ -31,7 +33,9 @@ class APIView:
             instance = cls()
             return await instance.dispatch(req, res, **kwargs)
 
-        return Route(path, handler, methods=methods, middlewares=cls.middlewares, **kwargs)
+        return Route(
+            path, handler, methods=methods, middlewares=cls.middlewares, **kwargs
+        )
 
     async def dispatch(self, req: Request, res: Response, **kwargs) -> Response:
         """

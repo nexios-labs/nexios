@@ -2386,7 +2386,10 @@ class WebsocketRoutes:
 
 class WSRouter:
     def __init__(
-        self, prefix: Optional[str] = None, middleware: Optional[List[Any]] = [], routes: Optional[List[WebsocketRoutes]] = []
+        self,
+        prefix: Optional[str] = None,
+        middleware: Optional[List[Any]] = [],
+        routes: Optional[List[WebsocketRoutes]] = [],
     ):
         self.prefix = prefix or ""
         self.routes: List[WebsocketRoutes] = routes or []
