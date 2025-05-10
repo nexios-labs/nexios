@@ -105,8 +105,7 @@ export default defineConfig({
           text: 'OpenAPI',
           items: [
             { text: 'Index', link: '/openapi/index' },
-            { text: 'Basic Setup', link: '/openapi/basic-setup' },
-            { text: 'Documenting Response Models with Pydantic', link: '/openapi/pydantic' },
+            { text: 'Documenting Response Models with Pydantic', link: '/openapi/response-models' },
             { text: 'Complex Response Schemas', link: '/openapi/complex-response-schemas' },
             { text: 'Generic Response Types', link: '/openapi/generic-response-types' },
             { text: 'Customizing OpenAPI Configuration', link: '/openapi/customizing-openapi-configuration' },
