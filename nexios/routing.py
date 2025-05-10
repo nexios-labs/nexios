@@ -2386,10 +2386,10 @@ class WebsocketRoutes:
 
 class WSRouter:
     def __init__(
-        self, prefix: Optional[str] = None, middleware: Optional[List[Any]] = []
+        self, prefix: Optional[str] = None, middleware: Optional[List[Any]] = [], routes: Optional[List[WebsocketRoutes]] = []
     ):
         self.prefix = prefix or ""
-        self.routes: List[WebsocketRoutes] = []
+        self.routes: List[WebsocketRoutes] = routes or []
         self.middlewares: List[Callable[[ASGIApp], ASGIApp]] = []
         self.sub_routers: Dict[str, ASGIApp] = {}
         if self.prefix and not self.prefix.startswith("/"):

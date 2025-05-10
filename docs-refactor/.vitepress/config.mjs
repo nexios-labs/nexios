@@ -22,7 +22,7 @@ export default defineConfig({
       { text: 'Architecture', link: '/architecture/async-python' },
       { text: 'Guide', link: '/guide/getting-started' },
       { text: "Howto's", link: '/howtos/index' },
-      { text : "Websockets", link: "/howtos/websockets" },
+      { text : "Websockets", link: "/websockets/index" },
       { text: 'API Reference', link: '/guide/api-reference' },
       { text: "Team", link: 'team' },
       { text: 'GitHub', link: 'https://github.com/nexios-labs/Nexios' }
@@ -64,6 +64,7 @@ export default defineConfig({
             { text : "Class Based Hndlers", link: "/guide/class-based-handlers" },
             { text : "Events", link: "/guide/events" },
             { text : "Dependency Injection", link: "/guide/dependency-injection" },
+            { text : "Static Files", link: "/guide/static-files" },
 
 
 
@@ -94,6 +95,12 @@ export default defineConfig({
           text: 'Websockets',
           items: [
             { text : "Websockets", link: "/websockets/index" },
+            { text : "Channels", link: "/websockets/channels" },
+            { text : "Groups", link: "/websockets/groups" },
+            { text :"Events", link: "/websockets/events" },
+            { text : "Consumer", link: "/websockets/consumer" },
+
+
           ]
         }
       ]
