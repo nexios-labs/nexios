@@ -1,4 +1,4 @@
-__version__ = "2.3.2"
+__version__ = "2.4.0rc1"
 
 ascii_art = f"""
   _   _                 _
