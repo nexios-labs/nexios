@@ -3,13 +3,13 @@
 # Response API Reference
 
 
-## ✒️ Handler Signature 
-```python 
+## Handler Signature
+```python
 async def handler(req: Request, response: Response) -> Response:
     # Usage examples below
 ```
 
-##  💡 Core Methods 
+## Core Methods
 
 ### 1. Setting Response Type
 
@@ -112,7 +112,7 @@ async def handler(req: Request, response: Response) -> Response:
 
 ### 2. Headers & Cookies
 
-#### `set_header()`
+#### `header()`
 ```python
 .set_header(key: str, value: str, overide: bool = False) -> Response
 ```
@@ -218,7 +218,7 @@ async def handler(req: Request, response: Response) -> Response:
   return response.no_cache()
   ```
 
-## 💫 Properties
+## Properties
 
 ```python
 .headers: MutableHeaders  # All current headers
@@ -228,7 +228,7 @@ async def handler(req: Request, response: Response) -> Response:
 .content_length: str  # Content-Length
 ```
 
-## 💥 Advanced Usage
+## Advanced Usage
 
 ### `make_response()`
 ```python

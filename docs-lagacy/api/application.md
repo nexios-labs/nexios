@@ -1,0 +1,3 @@
+# Application
+
+::: nexios.application.NexiosApp
