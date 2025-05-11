@@ -8,7 +8,7 @@
   <a href="">
     <img alt=Support height="350" src="https://raw.githubusercontent.com/nexios-labs/Nexios/90122b22fdd3a57fc1146f472087d483324df0e5/docs/_media/icon.svg"> 
     </p>
-    <h1 align="center">Nexios 2.4.0rc1<br></h1>
+    <h1 align="center">Nexios 2.4.0<br></h1>
     
    </a>
 </p>
@@ -16,7 +16,6 @@
 <!-- Badges Section -->
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.9+-blue?logo=python" alt="Python Version">
-  <img src="https://img.shields.io/badge/License-BSD-3-green" alt="License">
   <img src="https://img.shields.io/badge/Downloads-10k/month-brightgreen" alt="Downloads">
   <img src="https://img.shields.io/badge/Contributions-Welcome-orange" alt="Contributions">
   <img src="https://img.shields.io/badge/Active Development-Yes-success" alt="Active Development">

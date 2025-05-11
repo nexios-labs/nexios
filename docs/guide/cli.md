@@ -211,3 +211,10 @@ nexios run --server granian
     ```bash
     pip install "nexios[granian]"
     ```
+
+
+::: warning ⚠️ Warning
+
+Granian Integration in nexios cli is not yet solid, use directly or use uvicorn instead
+
+:::
