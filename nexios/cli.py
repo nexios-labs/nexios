@@ -20,22 +20,27 @@ CONTEXT_SETTINGS = {
     "auto_envvar_prefix": "NEXIOS",
 }
 
+
 # Utility functions
 def _echo_success(message: str) -> None:
     """Print a success message."""
     click.echo(click.style(f"✓ {message}", fg="green"))
 
+
 def _echo_error(message: str) -> None:
     """Print an error message."""
     click.echo(click.style(f"✗ {message}", fg="red"), err=True)
+
 
 def _echo_info(message: str) -> None:
     """Print an info message."""
     click.echo(click.style(f"ℹ {message}", fg="blue"))
 
+
 def _echo_warning(message: str) -> None:
     """Print a warning message."""
     click.echo(click.style(f"⚠ {message}", fg="yellow"))
+
 
 def _has_write_permission(path: Path) -> bool:
     """Check if we have write permission for the given path."""
@@ -43,10 +48,12 @@ def _has_write_permission(path: Path) -> bool:
         return os.access(path, os.W_OK)
     return os.access(path.parent, os.W_OK)
 
+
 def _is_port_in_use(host: str, port: int) -> bool:
     """Check if a port is already in use."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex((host, port)) == 0
+
 
 def _check_server_installed(server: str) -> bool:
     """Check if the specified server is installed."""
@@ -55,6 +62,7 @@ def _check_server_installed(server: str) -> bool:
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
+
 
 # Validation functions
 def _validate_project_name(ctx, param, value):
@@ -69,6 +77,7 @@ def _validate_project_name(ctx, param, value):
         )
     return value
 
+
 def _validate_project_title(ctx, param, value):
     """Validate that the project title does not contain special characters."""
     if not value:
@@ -80,6 +89,7 @@ def _validate_project_title(ctx, param, value):
         )
     return value
 
+
 def _validate_host(ctx, param, value):
     """Validate hostname format."""
     if value not in ("localhost", "127.0.0.1") and not re.match(
@@ -88,25 +98,31 @@ def _validate_host(ctx, param, value):
         raise click.BadParameter(f"Invalid hostname: {value}")
     return value
 
+
 def _validate_port(ctx, param, value):
     """Validate that the port is within the valid range."""
     if not 1 <= value <= 65535:
         raise click.BadParameter(f"Port must be between 1 and 65535, got {value}.")
     return value
 
+
 def _validate_app_path(ctx, param, value):
     """Validate module:app format."""
-    if value and not re.match(r"^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*:[a-zA-Z0-9_]+$", value):
+    if value and not re.match(
+        r"^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*:[a-zA-Z0-9_]+$", value
+    ):
         raise click.BadParameter(
             f"App path must be in the format 'module:app_variable' or 'module.submodule:app_variable', got {value}."
         )
     return value
+
 
 def _validate_server(ctx, param, value):
     """Validate server choice."""
     if value and value not in ("uvicorn", "granian"):
         raise click.BadParameter("Server must be either 'uvicorn' or 'granian'")
     return value
+
 
 # Command implementations
 def _find_app_module(project_dir: Path) -> Optional[str]:
@@ -115,18 +131,19 @@ def _find_app_module(project_dir: Path) -> Optional[str]:
     main_py = project_dir / "main.py"
     if main_py.exists():
         return "main:app"
-    
+
     # Check for app/main.py
     app_main = project_dir / "app" / "main.py"
     if app_main.exists():
         return "app.main:app"
-    
+
     # Check for src/main.py
     src_main = project_dir / "src" / "main.py"
     if src_main.exists():
         return "src.main:app"
-    
+
     return None
+
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.version_option(version=__version__, prog_name="Nexios")
@@ -135,6 +152,7 @@ def cli():
     Nexios CLI - Command line tools for the Nexios framework.
     """
     pass
+
 
 @cli.command()
 @click.argument("project_name", callback=_validate_project_name, required=True)
@@ -262,6 +280,7 @@ def new(
         _echo_error(f"Error creating project: {str(e)}")
         sys.exit(1)
 
+
 @cli.command()
 @click.option(
     "--host",
@@ -312,17 +331,17 @@ def new(
 def run(host: str, port: int, reload: bool, app_path: str, server: str, workers: int):
     """
     Run the Nexios application using the specified server.
-    
+
     Automatically detects the app module if not specified, looking for:
     - main.py with 'app' variable
     - app/main.py with 'app' variable
     - src/main.py with 'app' variable
-    
+
     Supports both Uvicorn (development) and Granian (production) servers.
     """
     try:
         project_dir = Path.cwd()
-        
+
         if not app_path:
             app_path = _find_app_module(project_dir)
             if not app_path:
@@ -355,8 +374,10 @@ def run(host: str, port: int, reload: bool, app_path: str, server: str, workers:
             cmd = [
                 "uvicorn",
                 app_path,
-                "--host", host,
-                "--port", str(port),
+                "--host",
+                host,
+                "--port",
+                str(port),
             ]
             if reload:
                 cmd.append("--reload")
@@ -364,9 +385,12 @@ def run(host: str, port: int, reload: bool, app_path: str, server: str, workers:
         else:  # granian
             cmd = [
                 "granian",
-                "--host", host,
-                "--port", str(port),
-                "--workers", str(workers),
+                "--host",
+                host,
+                "--port",
+                str(port),
+                "--workers",
+                str(workers),
                 app_path,
             ]
             _echo_info(f"Using {workers} worker process(es)")
@@ -383,6 +407,7 @@ def run(host: str, port: int, reload: bool, app_path: str, server: str, workers:
     except Exception as e:
         _echo_error(f"Error running server: {str(e)}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     cli()
