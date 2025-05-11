@@ -1,7 +1,7 @@
 // docs/.vitepress/config.js
 import { defineConfig } from 'vitepress'
 export default defineConfig({
-  
+  base: '/nexios/docs',
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/./icon.svg' }],
     ['meta', { name: 'theme-color', content: '#ff7e17' }],
