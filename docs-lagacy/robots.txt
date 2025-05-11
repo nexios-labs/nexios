@@ -1,4 +1,0 @@
-User-agent: *
-Disallow: /private-page/
-Allow: *
-Sitemap: https://nexios.dev/sitemap.xml
