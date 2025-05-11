@@ -1,0 +1,14 @@
+{
+  "devDependencies": {
+    "release-it": "^19.0.1",
+    "vitepress": "2.0.0-alpha.5"
+  },
+  "scripts": {
+    "docs:dev": "vitepress dev docs-refactor",
+    "docs:build": "vitepress build docs-refactor",
+    "docs:preview": "vitepress preview docs-refactor"
+  },
+  "dependencies": {
+    "vitepress-plugin-group-icons": "^1.5.2"
+  }
+}

@@ -51,5 +51,4 @@ static/
 .DS_Store
 coverage.xml
 package-lock.json
-package.json
 testapp/
