@@ -51,8 +51,9 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs-refactor/.vitepress/dist
+      - name: Add .nojekyll to prevent GitHub Pages from ignoring _files
+        run: echo > .vitepress/dist/.nojekyll
 
-  # Deployment job
   deploy:
     environment:
       name: github-pages
@@ -65,6 +66,5 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: Add .nojekyll to prevent GitHub Pages from ignoring _files
-        run: echo > .vitepress/dist/.nojekyll
+     
       

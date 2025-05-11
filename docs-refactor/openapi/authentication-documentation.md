@@ -1,10 +1,10 @@
 # Nexios Framework: OpenAPI Authentication Guide
 
-Nexios supports OpenAPI authentication, which allows you to secure your API endpoints with JSON Web Tokens (JWT) or other authentication mechanisms. Here's how you can set up OpenAPI authentication in your Nexios application
+Nexios supports OpenAPI authentication, which allows you to secure your API endpoints with JSON Web Tokens (JWT) or other authentication mechanisms. Here's how you can set up OpenAPI authentication in your Nexios application 
 
 ## 🎨 basic setup
 
-By default already provide `bearerAuth` in OpenAPI documentation
+By default already provide `bearerAuth` in OpenAPI documentation .
 
 ```python
 from nexios import NexiosApp
