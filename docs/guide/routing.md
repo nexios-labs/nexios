@@ -276,3 +276,22 @@ async def get_person(req, res):
 
 * **Matches:** `/person/anyname`
 * **Does Not Match:** (Almost always matches)
+
+
+## 🔙 Reverse Routing
+
+You can also reverse route a path using the `url_for` method of the `NexiosApp` and `Router` instance.
+
+```python
+from nexios import NexiosApp
+app = NexiosApp()
+@app.get('/posts/{post_id}/comment/{comment_id}', name='get_post_comment') 
+async def get_post_comment(req, res):
+    url = app.url_for('get_post_comment', post_id=123, comment_id=456)
+    return res.text(url)
+```
+This will generate the URL `/posts/123/comment/456`
+
+::: warning ⚠️ Warning
+To use the `url_for` method, you must have a `name` attribute set for your route.
+:::

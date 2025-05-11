@@ -209,3 +209,53 @@ Avoind modifying the request object in middleware. This can lead to unexpected b
 Modifying the response object should be done after the request is processed. It's best to use the `process_response` method of middleware or `callnext` 
 
 :::
+
+##  🌈Raw ASGI Middleware
+
+Nexios Allow you to use raw ASGI middleware. This can be useful for adding middleware that needs lower-level control over the ASGI protocol.
+
+```python
+def raw_middleware(app):
+    async def middleware(scope, receive, send):
+        ## Do something with scope, receive, send
+        await app(scope, receive, send)
+    return middleware
+```
+
+The `app(scope, receive, send)` function is the next middleware in the chain
+
+**Adding raw middleware**
+
+```python
+app.wrap_asgi(raw_middleware)
+
+```
+
+::: tip 💡Tip
+The `app` objects is an instance of `NexiosApp` You can access the `app` object in your middleware by calling `app`.
+:::
+#### Class Based Raw Middleware
+
+```python
+class RawMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        ## Do something with scope, receive, send
+        await self.app(scope, receive, send)
+``` 
+
+### Raw Middleware with args
+
+```python
+class RawMiddleware:
+    def __init__(self, app, *args, **kwargs):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        ## Do something with scope, receive, send
+        await self.app(scope, receive, send)
+
+app.wrap_asgi(RawMiddleware, "arg1", "arg2")
+```
