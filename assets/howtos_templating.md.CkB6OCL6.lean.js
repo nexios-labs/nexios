@@ -1,0 +1,1 @@
+import{_ as t,c as e,o as a}from"./chunks/framework.C_cZWXvK.js";const _=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"howtos/templating.md","filePath":"howtos/templating.md"}'),o={name:"howtos/templating.md"};function n(s,r,c,p,i,m){return a(),e("div")}const d=t(o,[["render",n]]);export{_ as __pageData,d as default};

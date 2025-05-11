@@ -1,0 +1,1 @@
+import{_ as i,c as a,o as e,ah as n}from"./chunks/framework.C_cZWXvK.js";const g=JSON.parse('{"title":"cors","description":"","frontmatter":{},"headers":[],"relativePath":"guide/cors.md","filePath":"guide/cors.md"}'),t={name:"guide/cors.md"};function l(h,s,r,o,p,k){return e(),a("div",null,s[0]||(s[0]=[n("",43)]))}const c=i(t,[["render",l]]);export{g as __pageData,c as default};
