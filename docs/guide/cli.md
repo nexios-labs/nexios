@@ -57,17 +57,11 @@ Options:
 * `--app, -a`: Application import path (default: main:app)
 * `--host`: Host to bind the server to (default: 127.0.0.1)
 * `--port, -p`: Port to bind the server to (default: 4000)
-* `--reload/--no-reload`: Enable/disable auto-reload (default: enabled)
-* `--log-level`: Log level for the server (default: info)
+* `--reload` : Enable auto-reload (default: enabled)
 * `--workers`: Number of worker processes (default: 1)
 * `--server`: Server to use for running the application (choices: auto, uvicorn, granian, default: auto)
-* `--access-log/--no-access-log`: Enable/disable access logging (default: enabled)
 
-Granian-specific options:
 
-* `--interface`: Server interface type (choices: asgi, wsgi, asgi-http, default: asgi)
-* `--http-protocol`: HTTP protocol to use (choices: h11, h2, auto, default: auto)
-* `--threading/--no-threading`: Enable/disable threading (default: disabled)
 
 ### Display Version Information
 
@@ -201,50 +195,18 @@ nexios run --server granian
 #### Uvicorn Example
 
 ```bash
-nexios run --server uvicorn --workers 4 --log-level debug --host 0.0.0.0
+nexios run --server uvicorn --workers 4  --host 0.0.0.0
 ```
 
 #### Granian Example
 
 ```bash
-nexios run --server granian --interface asgi --http-protocol h2 --threading
+nexios run --server granian 
 ```
 
-### Configuration in .env or Configuration Files
 
-You can also set the server preference in your application's configuration:
 
-```python
-server_config = {
-    "host": "0.0.0.0",
-    "port": 8000,
-    "server": "uvicorn",  # or "granian"
-    "workers": 2,
-    "log_level": "info"
-}
-
-app.config.server = server_config
-```
-
-## For Existing Granian Users
-
-If you have existing applications built with earlier versions of Nexios that used Granian by default:
-
-1. **No action required**: Your applications will continue to work if Granian is installed.
-2.  **Explicit server selection**: To ensure your application continues to use Granian:
-
-    ```bash
-    nexios run --server granian
-    ```
-3.  **Configuration update**: Update your configuration to explicitly set Granian as the server:
-
-    ```python
-    server_config = {
-        # other options...
-        "server": "granian"
-    }
-    ```
-4.  **Installation**: Make sure to install Nexios with Granian support:
+**Installation**: Make sure to install Nexios with Granian support:
 
     ```bash
     pip install "nexios[granian]"
