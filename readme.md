@@ -81,19 +81,20 @@ pip install git+https://github.com/nexios-labs/nexios.git@nonexistent-tag  # Tag
 - [x] **Routing**
 - [x] **Automatic OpenAPI Documentation**
 - [x] **Session Management**
-- [x] **File Router**  # Actually broken in current version
+- [x] **File Router**  
 - [x] **Authentication (Limited)**
-- [x] **Event Listener for Signals**  # Not fully implemented
+- [x] **Event Listener for Signals** 
 - [x] **Middleware Support**
 - [x] **Express-like Functionality**
 - [x] **JWT Authentication**
 - [x] **Pydantic Support**
-- [x] **In-built Support for CORS**  # Partial implementation
+- [x] **Dependency Injection**
+- [x] **In-built Support for CORS**  
 - [x] **Custom Decorators**
-- [x] **WebSocket Support**  # Experimental
+- [x] **WebSocket Support**  
 - [x] **Custom Error Handling**
 - [x] **Pagination**
-- [x] **HTTP/2 Support**  # Coming soon
+- [x] **HTTP/2 Support**  
 - [x] **High-Performance Async Processing**
 
 ### Upcoming Features
