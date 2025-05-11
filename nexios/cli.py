@@ -2,134 +2,66 @@
 """
 Nexios CLI - Command line interface for the Nexios framework.
 
-This module provides CLI commands for bootstrapping new Nexios projects
-and running development servers.
+This module provides CLI commands for bootstrapping and running Nexios projects.
 """
 
 import os
 import sys
-import shutil
 import click
 import re
-import socket
 import subprocess
-import platform
+import socket
 from pathlib import Path
-from string import Template
-from typing import Optional, List, Union, Callable
-import importlib.util
-import pkg_resources
-
-from nexios.__main__ import __version__, ascii_art
+from typing import Optional
+from nexios.__main__ import __version__
 
 CONTEXT_SETTINGS = {
     "help_option_names": ["-h", "--help"],
     "auto_envvar_prefix": "NEXIOS",
 }
 
-
+# Utility functions
 def _echo_success(message: str) -> None:
     """Print a success message."""
     click.echo(click.style(f"✓ {message}", fg="green"))
-
 
 def _echo_error(message: str) -> None:
     """Print an error message."""
     click.echo(click.style(f"✗ {message}", fg="red"), err=True)
 
-
 def _echo_info(message: str) -> None:
     """Print an info message."""
     click.echo(click.style(f"ℹ {message}", fg="blue"))
-
 
 def _echo_warning(message: str) -> None:
     """Print a warning message."""
     click.echo(click.style(f"⚠ {message}", fg="yellow"))
 
-
-def _is_port_in_use(host: str, port: int) -> bool:
-    """Check if the specified port is already in use."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
-            s.bind((host, port))
-            return False
-        except socket.error:
-            return True
-
-
-def _validate_hostname(hostname: str) -> bool:
-    """Validate hostname format."""
-    # Check for valid hostname or IP address format
-    if hostname == "localhost" or hostname == "127.0.0.1":
-        return True
-
-    # Check for valid IP address
-    try:
-        socket.inet_aton(hostname)
-        return True
-    except socket.error:
-        # Not a valid IP, check hostname format
-        if re.match(r"^[a-zA-Z0-9]([a-zA-Z0-9\-\.]{0,61}[a-zA-Z0-9])?$", hostname):
-            return True
-    return False
-
-
-def _is_virtualenv_active() -> bool:
-    """Check if running in an active virtual environment."""
-    return hasattr(sys, "real_prefix") or (
-        hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix
-    )
-
-
 def _has_write_permission(path: Path) -> bool:
     """Check if we have write permission for the given path."""
     if path.exists():
         return os.access(path, os.W_OK)
+    return os.access(path.parent, os.W_OK)
 
-    # If the path doesn't exist, check the parent directory
-    parent = path.parent
-    return os.access(parent, os.W_OK)
+def _is_port_in_use(host: str, port: int) -> bool:
+    """Check if a port is already in use."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex((host, port)) == 0
 
-
-def _check_granian_installed() -> bool:
-    """Check if granian is installed."""
+def _check_server_installed(server: str) -> bool:
+    """Check if the specified server is installed."""
     try:
-        pkg_resources.get_distribution("granian")
+        subprocess.run([server, "--version"], capture_output=True, check=True)
         return True
-    except pkg_resources.DistributionNotFound:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         return False
 
-
-def _check_uvicorn_installed() -> bool:
-    """Check if uvicorn is installed."""
-    try:
-        pkg_resources.get_distribution("uvicorn")
-        return True
-    except pkg_resources.DistributionNotFound:
-        return False
-
-
-def _check_python_version() -> bool:
-    """Check if Python version is compatible."""
-    import sys
-
-    return sys.version_info >= (3, 9)
-
-
-def _validate_host(ctx, param, value):
-    """Validate hostname format."""
-    if not _validate_hostname(value):
-        raise click.BadParameter(f"Invalid hostname: {value}")
-    return value
-
-
+# Validation functions
 def _validate_project_name(ctx, param, value):
     """Validate the project name for directory and Python module naming rules."""
     if not value:
         return value
 
-    # Check if the name is valid for both a directory and a Python module
     if not re.match(r"^[a-zA-Z][a-zA-Z0-9_]*$", value):
         raise click.BadParameter(
             "Project name must start with a letter and contain only letters, "
@@ -137,6 +69,24 @@ def _validate_project_name(ctx, param, value):
         )
     return value
 
+def _validate_project_title(ctx, param, value):
+    """Validate that the project title does not contain special characters."""
+    if not value:
+        return value
+
+    if re.search(r"[^a-zA-Z0-9_\s-]", value):
+        raise click.BadParameter(
+            "Project title should contain only letters, numbers, spaces, underscores, and hyphens."
+        )
+    return value
+
+def _validate_host(ctx, param, value):
+    """Validate hostname format."""
+    if value not in ("localhost", "127.0.0.1") and not re.match(
+        r"^[a-zA-Z0-9]([a-zA-Z0-9\-\.]{0,61}[a-zA-Z0-9])?$", value
+    ):
+        raise click.BadParameter(f"Invalid hostname: {value}")
+    return value
 
 def _validate_port(ctx, param, value):
     """Validate that the port is within the valid range."""
@@ -144,54 +94,47 @@ def _validate_port(ctx, param, value):
         raise click.BadParameter(f"Port must be between 1 and 65535, got {value}.")
     return value
 
-
-def _validate_workers(ctx, param, value):
-    """Validate worker count."""
-    if value < 1:
-        raise click.BadParameter(f"Worker count must be at least 1, got {value}.")
-    return value
-
-
 def _validate_app_path(ctx, param, value):
     """Validate module:app format."""
-    if not re.match(r"^[a-zA-Z0-9_]+:[a-zA-Z0-9_]+$", value):
+    if value and not re.match(r"^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*:[a-zA-Z0-9_]+$", value):
         raise click.BadParameter(
-            f"App path must be in the format 'module:app_variable', got {value}."
+            f"App path must be in the format 'module:app_variable' or 'module.submodule:app_variable', got {value}."
         )
     return value
 
-
-def _validate_project_title(ctx, param, value):
-    """Validate that the project title does not contain special characters."""
-    if not value:
-        return value
-
-    # Check if the title contains any special characters that might cause issues
-    if re.search(r"[^a-zA-Z0-9_\s-]", value):
-        raise click.BadParameter(
-            "Project title should contain only letters, numbers, spaces, underscores, and hyphens."
-        )
+def _validate_server(ctx, param, value):
+    """Validate server choice."""
+    if value and value not in ("uvicorn", "granian"):
+        raise click.BadParameter("Server must be either 'uvicorn' or 'granian'")
     return value
 
+# Command implementations
+def _find_app_module(project_dir: Path) -> Optional[str]:
+    """Try to find the app module in the project directory."""
+    # Check for main.py with app variable
+    main_py = project_dir / "main.py"
+    if main_py.exists():
+        return "main:app"
+    
+    # Check for app/main.py
+    app_main = project_dir / "app" / "main.py"
+    if app_main.exists():
+        return "app.main:app"
+    
+    # Check for src/main.py
+    src_main = project_dir / "src" / "main.py"
+    if src_main.exists():
+        return "src.main:app"
+    
+    return None
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.version_option(version=__version__, prog_name="Nexios")
 def cli():
     """
     Nexios CLI - Command line tools for the Nexios framework.
-
-    Nexios is a modern, high-performance framework for building scalable applications.
     """
     pass
-
-
-@cli.command()
-def version():
-    """Display the Nexios version information."""
-    click.echo(ascii_art)
-    click.echo(f"Nexios version: {__version__}")
-    click.echo("For more information, visit: https://nexios-labs.gitbook.io/nexios")
-
 
 @cli.command()
 @click.argument("project_name", callback=_validate_project_name, required=True)
@@ -229,42 +172,35 @@ def new(
     configuration files and a main application file.
 
     Available template types:
-
     - basic: Minimal starter template with essential structure
     - standard: A complete template with commonly used features
     - beta: An advanced template with experimental features
     """
     try:
-        # Convert to Path objects for cross-platform compatibility
         output_path = Path(output_dir).resolve()
         project_path = output_path / project_name
 
-        # Check for empty project name
         if not project_name.strip():
             _echo_error("Project name cannot be empty.")
             return
 
-        # Check if project directory already exists
         if project_path.exists():
             _echo_error(
                 f"Directory {project_path} already exists. Choose a different name or location."
             )
             return
 
-        # Check write permissions on the parent directory
         if not _has_write_permission(output_path):
             _echo_error(
                 f"No write permission for directory {output_path}. Choose a different location or run with appropriate permissions."
             )
             return
 
-        # Create the project directory
         project_path.mkdir(parents=True, exist_ok=True)
         _echo_info(
             f"Creating new Nexios project: {project_name} using {template} template"
         )
 
-        # Get the template directory
         template_dir = Path(__file__).parent / "templates" / template.lower()
 
         if not template_dir.exists():
@@ -283,43 +219,21 @@ def new(
                 _echo_info(f"Available templates: {', '.join(available_templates)}")
             return
 
-        # Copy template files with pathlib for cross-platform compatibility
         for src_path in template_dir.glob("**/*"):
-            # Skip directories, we'll create them as needed
             if src_path.is_dir():
                 continue
 
-            # Calculate relative path from template root
             rel_path = src_path.relative_to(template_dir)
-            # Create destination path
             dest_path = project_path / rel_path
-
-            # Create parent directories if they don't exist
             dest_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # Read template content
             try:
                 content = src_path.read_text(encoding="utf-8")
-
-                # Replace template variables
                 project_title = title or project_name.replace("_", " ").title()
                 content = content.replace("{{project_name}}", project_name)
                 content = content.replace("{{project_name_title}}", project_title)
                 content = content.replace("{{version}}", __version__)
-
-                # Write processed content
                 dest_path.write_text(content, encoding="utf-8")
-
-                # Make main.py executable on Unix-like systems
-                if dest_path.name == "main.py" and platform.system() != "Windows":
-                    try:
-                        dest_path.chmod(
-                            dest_path.stat().st_mode | 0o111
-                        )  # Add executable bit
-                    except PermissionError:
-                        _echo_warning(
-                            f"Unable to set executable permissions on {dest_path}. You may need to set them manually."
-                        )
 
             except PermissionError:
                 _echo_error(
@@ -329,7 +243,6 @@ def new(
             except Exception as e:
                 _echo_warning(f"Error processing template file {src_path}: {str(e)}")
 
-        # Create .env file (not included in template as it shouldn't be in version control)
         env_path = project_path / ".env"
         env_content = [
             "# Environment variables for the Nexios application",
@@ -340,374 +253,136 @@ def new(
         env_path.write_text("\n".join(env_content) + "\n", encoding="utf-8")
 
         _echo_success(f"Project {project_name} created successfully at {project_path}")
-
-        # Check if virtualenv is active and provide appropriate instructions
-        if _is_virtualenv_active():
-            _echo_info("Next steps:")
-            _echo_info(f"  1. cd {project_name}")
-            _echo_info("  2. pip install -r requirements.txt")
-            _echo_info("  3. nexios run")
-        else:
-            _echo_info("Next steps:")
-            _echo_info(f"  1. cd {project_name}")
-            _echo_info("  2. Create and activate a virtual environment (recommended)")
-            _echo_info("  3. pip install -r requirements.txt")
-            _echo_info("  4. nexios run")
-
-        _echo_info("\nAlternatively, if you prefer Poetry:")
+        _echo_info("Next steps:")
         _echo_info(f"  1. cd {project_name}")
-        _echo_info("  2. poetry install")
-        _echo_info("  3. poetry run nexios run")
+        _echo_info("  2. pip install -r requirements.txt")
+        _echo_info("  3. nexios run")
 
     except Exception as e:
         _echo_error(f"Error creating project: {str(e)}")
         sys.exit(1)
 
-
 @cli.command()
 @click.option(
-    "--app",
-    "-a",
-    default="main:app",
-    help="Application import path (module:app_variable).",
-    callback=_validate_app_path,
-)
-@click.option(
     "--host",
+    "-h",
     default="127.0.0.1",
-    help="Host to bind the server to.",
     callback=_validate_host,
+    help="Host to bind the server to.",
+    show_default=True,
 )
 @click.option(
     "--port",
     "-p",
-    default=4000,
+    default=8000,
     type=int,
-    help="Port to bind the server to.",
     callback=_validate_port,
+    help="Port to bind the server to.",
+    show_default=True,
 )
 @click.option(
-    "--reload/--no-reload",
-    default=True,
-    help="Enable/disable auto-reload on code changes.",
+    "--reload",
+    is_flag=True,
+    help="Enable auto-reload for development (uvicorn only).",
 )
 @click.option(
-    "--log-level",
-    default="info",
-    type=click.Choice(
-        ["critical", "error", "warning", "info", "debug", "trace"], case_sensitive=False
-    ),
-    help="Log level for the server.",
-)
-@click.option(
-    "--workers",
-    default=1,
-    type=int,
-    help="Number of worker processes.",
-    callback=_validate_workers,
-)
-@click.option(
-    "--interface",
-    default="asgi",
-    type=click.Choice(["asgi", "wsgi", "asgi-http"], case_sensitive=False),
-    help="Server interface type (Granian only).",
-)
-@click.option(
-    "--http-protocol",
-    default="auto",
-    type=click.Choice(["h11", "h2", "auto"], case_sensitive=False),
-    help="HTTP protocol to use (Granian only).",
-)
-@click.option(
-    "--threading/--no-threading",
-    default=False,
-    help="Enable/disable threading (Granian only).",
-)
-@click.option(
-    "--access-log/--no-access-log",
-    default=True,
-    help="Enable/disable access logging.",
+    "--app",
+    "-a",
+    "app_path",
+    callback=_validate_app_path,
+    help="App module path in format 'module:app_variable'. Auto-detected if not specified.",
 )
 @click.option(
     "--server",
-    type=click.Choice(["auto", "uvicorn", "granian"], case_sensitive=False),
-    default="auto",
-    help="Server to use for running the application. Auto will prefer Uvicorn.",
+    "-s",
+    type=click.Choice(["uvicorn", "granian"], case_sensitive=False),
+    default="uvicorn",
+    callback=_validate_server,
+    help="Server to use for running the application.",
+    show_default=True,
 )
-def run(
-    app: str,
-    host: str,
-    port: int,
-    reload: bool,
-    log_level: str,
-    workers: int,
-    interface: str,
-    http_protocol: str,
-    threading: bool,
-    access_log: bool,
-    server: str,
-):
+@click.option(
+    "--workers",
+    "-w",
+    type=int,
+    default=1,
+    help="Number of worker processes (granian only).",
+    show_default=True,
+)
+def run(host: str, port: int, reload: bool, app_path: str, server: str, workers: int):
     """
-    Run the Nexios development server.
-
-    Launches a development server using either Uvicorn (default) or Granian
-    with the specified options. The server will automatically reload on code
-    changes by default. Logs access requests and other information by default.
+    Run the Nexios application using the specified server.
+    
+    Automatically detects the app module if not specified, looking for:
+    - main.py with 'app' variable
+    - app/main.py with 'app' variable
+    - src/main.py with 'app' variable
+    
+    Supports both Uvicorn (development) and Granian (production) servers.
     """
-    # Check Python version compatibility
-    if not _check_python_version():
-        _echo_error("Nexios requires Python 3.9 or higher.")
-        sys.exit(1)
-
-    # Detect available servers
-    uvicorn_available = _check_uvicorn_installed()
-    granian_available = _check_granian_installed()
-
-    # Determine which server to use based on availability and user preference
-    use_uvicorn = False
-    use_granian = False
-
-    if server == "auto":
-        # Auto mode: prefer Uvicorn, fall back to Granian
-        if uvicorn_available:
-            use_uvicorn = True
-            _echo_info("Using Uvicorn server (default)")
-        elif granian_available:
-            use_granian = True
-            _echo_info("Using Granian server (Uvicorn not available)")
-        else:
-            _echo_error(
-                "Neither Uvicorn nor Granian is installed. Please install at least one with: "
-                "pip install uvicorn or pip install nexios[granian]"
-            )
-            sys.exit(1)
-    elif server == "uvicorn":
-        # Explicitly requested Uvicorn
-        if uvicorn_available:
-            use_uvicorn = True
-            _echo_info("Using Uvicorn server (as requested)")
-        else:
-            _echo_error(
-                "Uvicorn is not installed but was explicitly requested. "
-                "Please install it with: pip install uvicorn"
-            )
-            sys.exit(1)
-    elif server == "granian":
-        # Explicitly requested Granian
-        if granian_available:
-            use_granian = True
-            _echo_info("Using Granian server (as requested)")
-        else:
-            _echo_error(
-                "Granian is not installed but was explicitly requested. "
-                "Please install it with: pip install nexios[granian]"
-            )
-            sys.exit(1)
-
-    # Try to load Nexios configuration if available
-    config = None
     try:
-        from nexios.config import get_config
-
-        config = get_config()
-        _echo_info("Using Nexios configuration for server settings")
-    except (ImportError, RuntimeError):
-        _echo_info("No Nexios configuration found, using command line parameters")
-
-    try:
-        # Check if app file exists in current directory
-        app_module = app.split(":")[0]
-        app_var = app.split(":")[1]
-
-        if not Path(app_module + ".py").exists() and app_module != "main":
-            _echo_warning(
-                f"Application file '{app_module}.py' not found in current directory."
-            )
-            _echo_warning(
-                "Make sure you're in the correct project directory or specify the correct app path."
-            )
-
-        # Try to import the module to validate it exists and get config
-        try:
-            if Path(app_module + ".py").exists():
-                spec = importlib.util.spec_from_file_location(
-                    app_module, Path(app_module + ".py")
+        project_dir = Path.cwd()
+        
+        if not app_path:
+            app_path = _find_app_module(project_dir)
+            if not app_path:
+                _echo_error(
+                    "Could not automatically find the app module. "
+                    "Please specify it with --app option.\n"
+                    "Looking for one of:\n"
+                    "  - main.py with 'app' variable\n"
+                    "  - app/main.py with 'app' variable\n"
+                    "  - src/main.py with 'app' variable"
                 )
-                if spec and spec.loader:
-                    module = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(module)
+                sys.exit(1)
+            _echo_info(f"Auto-detected app module: {app_path}")
 
-                    # Check if the app variable exists in the module
-                    if not hasattr(module, app_var):
-                        _echo_warning(
-                            f"App variable '{app_var}' not found in module '{app_module}'."
-                        )
-                        _echo_warning(f"Available variables: {', '.join(dir(module))}")
-
-                    # Try to get the config from the module if it exists
-                    if not config and hasattr(module, "app_config"):
-                        config = module.app_config
-                        _echo_info("Found configuration in application module")
-        except Exception as e:
-            _echo_warning(f"Error importing module '{app_module}': {str(e)}")
-            _echo_warning("This may cause issues when starting the server.")
-
-        # Override command line parameters with config values if available
-        if config:
-            try:
-                # Get server settings from config if they exist
-                if hasattr(config, "server"):
-                    server_config = config.server
-                    host = server_config.get("host", host)
-                    port = server_config.get("port", port)
-                    workers = server_config.get("workers", workers)
-                    log_level = server_config.get("log_level", log_level)
-                    reload = server_config.get("reload", reload)
-                    interface = server_config.get("interface", interface)
-                    http_protocol = server_config.get("http_protocol", http_protocol)
-                    threading = server_config.get("threading", threading)
-                    access_log = server_config.get("access_log", access_log)
-
-                    # Check for server preference in config
-                    if "server" in server_config:
-                        server_pref = server_config.get("server", "auto").lower()
-                        if (
-                            server_pref in ["uvicorn", "granian", "auto"]
-                            and server == "auto"
-                        ):
-                            server = server_pref
-                            # Re-evaluate server selection based on config preference
-                            if server == "uvicorn" and uvicorn_available:
-                                use_uvicorn = True
-                                use_granian = False
-                                _echo_info("Using Uvicorn server (from config)")
-                            elif server == "granian" and granian_available:
-                                use_uvicorn = False
-                                use_granian = True
-                                _echo_info("Using Granian server (from config)")
-
-                    _echo_info("Using server configuration from config")
-            except Exception as e:
-                _echo_warning(f"Error loading server config: {str(e)}")
-                _echo_warning("Using command line parameters instead")
-
-        # Check if port is already in use
+        # Check if port is available
         if _is_port_in_use(host, port):
+            _echo_error(f"Port {port} is already in use on {host}")
+            sys.exit(1)
+
+        # Check server availability
+        if not _check_server_installed(server):
             _echo_error(
-                f"Port {port} is already in use. Try a different port with --port option."
+                f"{server.capitalize()} is not installed. Please install it with:\n"
+                f"pip install {server}"
             )
-            return
+            sys.exit(1)
 
-        # Display Nexios ASCII art
-        click.echo(ascii_art)
-
-        _echo_info(f"Starting development server at http://{host}:{port}")
-        if reload:
-            _echo_info("Auto-reload is enabled. Press CTRL+C to stop.")
-
-        # Prepare server command based on selected server
-        server_cmd = []
-
-        if use_uvicorn:
-            # Prepare uvicorn command
-            server_cmd = [
+        # Prepare the command based on server choice
+        if server == "uvicorn":
+            cmd = [
                 "uvicorn",
-                app,
-                "--host",
-                host,
-                "--port",
-                str(port),
-                "--log-level",
-                log_level,
+                app_path,
+                "--host", host,
+                "--port", str(port),
             ]
-
             if reload:
-                server_cmd.append("--reload")
-
-            if workers > 1:
-                server_cmd.extend(["--workers", str(workers)])
-
-            if access_log:
-                server_cmd.append("--access-log")
-            else:
-                server_cmd.append("--no-access-log")
-
-        elif use_granian:
-            # Prepare granian command
-            server_cmd = [
+                cmd.append("--reload")
+                _echo_info("Auto-reload enabled (development mode)")
+        else:  # granian
+            cmd = [
                 "granian",
-                "--interface",
-                interface,
-                "--host",
-                host,
-                "--port",
-                str(port),
-                "--log-level",
-                log_level,
-                "--http",
-                http_protocol,
-                app,
+                "--host", host,
+                "--port", str(port),
+                "--workers", str(workers),
+                app_path,
             ]
+            _echo_info(f"Using {workers} worker process(es)")
 
-            if reload:
-                server_cmd.append("--reload")
+        _echo_info(f"Starting Nexios server on http://{host}:{port} using {server}")
+        _echo_info(f"Using app module: {app_path}")
 
-            if workers > 1:
-                server_cmd.extend(["--workers", str(workers)])
+        # Run the server
+        subprocess.run(cmd, check=True)
 
-            if threading:
-                server_cmd.append("--threading")
-
-            if access_log:
-                server_cmd.append("--access-log")
-
-        # Log the command for debugging purposes
-        _echo_info(f"Running command: {' '.join(server_cmd)}")
-
-        # Run the server process
-        process = subprocess.Popen(
-            server_cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-        )
-
-        # Stream the output with improved exception handling
-        try:
-            # Process output and handle keyboard interrupts
-            while True:
-                try:
-                    line = process.stdout.readline()
-                    if not line:
-                        break
-                    click.echo(line.rstrip())
-                except KeyboardInterrupt:
-                    # Handle graceful termination on Ctrl+C
-                    _echo_info("\nStopping server...")
-                    process.terminate()
-                    process.wait()
-                    _echo_info("Server stopped.")
-                    return
-
-            # Wait for process to complete
-            return_code = process.wait()
-            if return_code != 0:
-                _echo_error(f"Server exited with code {return_code}")
-                sys.exit(return_code)
-            _echo_info("Server stopped.")
-
-        except Exception as e:
-            # Ensure process is terminated on any exception
-            try:
-                process.terminate()
-                process.wait(timeout=2)
-            except:
-                pass
-            _echo_error(f"Error while running server: {str(e)}")
+    except subprocess.CalledProcessError as e:
+        _echo_error(f"Server exited with error: {e}")
+        sys.exit(1)
     except Exception as e:
         _echo_error(f"Error running server: {str(e)}")
         sys.exit(1)
-
 
 if __name__ == "__main__":
     cli()
