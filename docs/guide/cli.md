@@ -215,6 +215,6 @@ nexios run --server granian
 
 ::: warning ⚠️ Warning
 
-Granian Integration in nexios cli is not yet solid, use directly or use uvicorn instead
+Granian Integration in nexios cli is not yet solid, use directly or use uvicorn
 
 :::
