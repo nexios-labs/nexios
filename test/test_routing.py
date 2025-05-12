@@ -159,3 +159,16 @@ async def test_nested_routers(async_client):
     response = await client.get("/parent/child/nested")
     assert response.status_code == 200
     assert response.text == "Nested Router Works"
+
+
+async def test_handler_args(async_client):
+    client, app = async_client
+
+    @app.get("/user/{user_id}")
+    async def handle_user(req: Request, res: Response, user_id: str):
+        return res.json({"user_id": user_id})
+
+    # Test with a specific user ID
+    response = await client.get("/user/123")
+    assert response.status_code == 200
+    assert response.json() == {"user_id": "123"}
