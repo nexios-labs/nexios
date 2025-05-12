@@ -11,7 +11,7 @@ authors = ["Chidebele Dunamis <techwithdunamix@gmail.com>"]
 license = "MIT"
 homepage = "https://github.com/nexios-labs/nexios"
 repository = "https://github.com/nexios-labs/nexios"
-documentation = "http://nexios-labs.gitbook.io/nexios"
+documentation = "https://nexios-docs.netlify.app/"
 readme = "readme.md"
 keywords = [
     "ASGI",
