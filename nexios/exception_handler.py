@@ -1,4 +1,5 @@
 from __future__ import annotations
+from shutil import ReadError
 import typing
 from nexios.exceptions import HTTPException
 from nexios.http import Request, Response
@@ -27,7 +28,7 @@ def _lookup_exception_handler(
 async def wrap_http_exceptions(
     request: Request,
     response: Response,
-    call_next: typing.Callable[..., typing.Awaitable[None]],
+    call_next: typing.Callable[..., typing.Awaitable[Response]],
     exception_handlers: typing.Dict[type[Exception], ExceptionHandlerType],
     status_handlers: typing.Dict[int, ExceptionHandlerType],
 ) -> typing.Any:
@@ -86,8 +87,8 @@ class ExceptionMiddleware:
         self,
         request: Request,
         response: Response,
-        call_next: typing.Callable[[], typing.Awaitable[None]],
-    ) -> Response:
+        call_next: typing.Callable[[], typing.Awaitable[Response]],
+    ) :
 
         return await wrap_http_exceptions(
             request=request,

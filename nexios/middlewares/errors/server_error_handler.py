@@ -346,7 +346,7 @@ class ServerErrorMiddleware(BaseMiddleware):
         self.debug = get_config().debug or True
 
         try:
-            return await next_middleware()  # type: ignore
+            return await next_middleware()  
         except Exception as exc:
             if self.handler:
                 response = await self.handler(request, response, exc)
@@ -517,7 +517,7 @@ class ServerErrorMiddleware(BaseMiddleware):
                 <h3>Nexios</h3>
                 <div class="info-item">
                     <div class="info-label">Nexios Version:</div>
-                    <div class="info-value">{html.escape(nexios_version.__version__)}</div>
+                    <div class="info-value">{html.escape(nexios_version)}</div> 
                 </div>
                 <div class="info-item">
                     <div class="info-label">Debug Mode:</div>
