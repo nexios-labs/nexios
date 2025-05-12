@@ -2250,6 +2250,7 @@ class Router:
         await app(scope, receive, send)
 
     async def app(self, scope: Scope, receive: Receive, send: Send):
+        scope['app'] = self
         url = get_route_path(scope)
 
         for mount_path, sub_app in self.sub_routers.items():
