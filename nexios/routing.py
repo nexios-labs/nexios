@@ -598,7 +598,6 @@ class Router:
         ):
             sig = inspect.signature(original_handler)
             params = list(sig.parameters.keys())
-            print(params)
             handler_args = [request, response]
             handler_kwargs = {}
             if len(params) > 2:
