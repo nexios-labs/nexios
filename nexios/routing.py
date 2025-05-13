@@ -534,15 +534,17 @@ class Router:
         routes: Optional[List[Routes]] = None,
         tags: Optional[List[str]] = None,
         exclude_from_schema: bool = False,
+        name: Optional[str] = None,
     ):
         self.prefix = prefix or ""
         self.prefix.rstrip("/")
         self.routes: List[Routes] = list(routes) if routes else []
         self.middlewares: typing.List[Middleware] = []
-        self.sub_routers: Dict[str, ASGIApp] = {}
+        self.sub_routers: Dict[str, Router] = {}
         self.route_class = Routes
         self.tags = tags or []
         self.exclude_from_schema = exclude_from_schema
+        self.name = name
         self.event = AsyncEventEmitter()
 
         if self.prefix and not self.prefix.startswith("/"):
@@ -2218,22 +2220,41 @@ class Router:
 
     def url_for(self, _name: str, **path_params: Any) -> URLPath:
         """
-        Generate a URL path for the route with the given name and parameters.
-
+        Generate a URL path including all router prefixes for nested routes.
+        
         Args:
-            name: The name of the route.
-            path_params: A dictionary of path parameters to substitute into the route's path.
-
+            _name: Route name in format 'router1.router2.route_name'
+            **path_params: Path parameters to substitute
+            
         Returns:
-            str: The generated URL path.
-
-        Raises:
-            ValueError: If the route name does not match or if required parameters are missing.
+            URLPath: Complete path including all router prefixes
         """
-        for route in self.routes:
-            if route.name == _name:
-                return route.url_path_for(_name, **path_params)
-        raise ValueError(f"Route name '{_name}' not found in router.")
+        name_parts = _name.split('.')
+        current_router = self
+        path_segments = []
+        
+        # First collect all router prefixes
+        for part in name_parts[:-1]:
+            found = False
+            for mount_path, sub_router in current_router.sub_routers.items():
+                if getattr(sub_router, 'name', None) == part:
+                    path_segments.append(mount_path.strip('/'))
+                    current_router = sub_router
+                    found = True
+                    break
+            if not found:
+                raise ValueError(f"Router '{part}' not found while building URL for '{_name}'")
+        
+        route_name = name_parts[-1]
+        for route in current_router.routes:
+            if route.name == route_name:
+                route_path = route.url_path_for(route_name, **path_params)
+                path_segments.append(route_path.strip('/'))
+                
+                full_path = '/' + '/'.join(filter(None, path_segments))
+                return URLPath(path=full_path, protocol="http")
+        
+        raise ValueError(f"Route '{route_name}' not found in router")
 
     def __repr__(self) -> str:
         return f"<Router prefix='{self.prefix}' routes={len(self.routes)}>"
@@ -2244,7 +2265,6 @@ class Router:
         receive: Receive,
         send: Send,
     ) -> Any:
-        # return super().__call__(*args, **kwds)
         app = self.build_middleware_stack(self.app)
         await app(scope, receive, send)
 
