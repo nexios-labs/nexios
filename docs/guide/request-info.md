@@ -1,8 +1,8 @@
-# Request Information in Nexios 📨
+# Request Information in Nexios 
 
 Nexios provides a comprehensive `Request` object that gives you access to all the information about the incoming HTTP request. This object is automatically passed to your route handlers and contains methods and properties to access request data.
 
-## 🔍 Basic Request Properties
+## Basic Request Properties
 
 ```python
 @app.get("/example")
@@ -15,7 +15,7 @@ async def example_handler(req: Request, res):
     client_ip = req.client     # Client address (IP, port)
 ```
 
-## 🔎 Query Parameters
+## Query Parameters
 
 Access URL query parameters (after the `?` in the URL):
 
@@ -28,7 +28,7 @@ async def search_handler(req: Request, res):
     all_params = dict(req.query_params)    # {'q': 'nexios', 'page': '2'}
 ```
 
-## 🛤️ Path Parameters
+## Path Parameters
 
 Access named parameters from the route path:
 
@@ -40,9 +40,9 @@ async def user_handler(req: Request, res):
     # Or directly as function parameter (shown above)
 ```
 
-## 📦 Request Body
+##  Request Body
 
-### 🗃️ JSON Data
+### JSON Data
 
 ```python
 @app.post("/data")
@@ -50,7 +50,7 @@ async def data_handler(req: Request, res):
     json_data = await req.json  # Parses JSON body
 ```
 
-### 📝 Form Data
+### Form Data
 
 ```python
 @app.post("/submit")
@@ -59,7 +59,7 @@ async def submit_handler(req: Request, res):
     username = form_data.get("username")
 ```
 
-### 📤 File Uploads
+### File Uploads
 
 ```python
 @app.post("/upload")
@@ -71,7 +71,7 @@ async def upload_handler(req: Request, res):
         content = await file.read()
 ```
 
-### 🧱 Raw Body
+### Raw Body
 
 ```python
 @app.post("/raw")
@@ -80,7 +80,7 @@ async def raw_handler(req: Request, res):
     body_text = await req.text()   # Decoded text
 ```
 
-## 🍪 Cookies
+## Cookies
 
 ```python
 @app.get("/profile")
@@ -88,7 +88,7 @@ async def profile_handler(req: Request, res):
     session_id = req.cookies.get("session_id")
 ```
 
-## 💻 Client Information
+## Client Information
 
 ```python
 @app.get("/client-info")
@@ -98,7 +98,7 @@ async def client_info_handler(req: Request, res):
     origin = req.origin
 ```
 
-## 🏗️ State and Middleware Data
+## State and Middleware Data
 
 ```python
 @app.get("/auth")
@@ -109,7 +109,7 @@ async def auth_handler(req: Request, res):
     custom_data = req.state.get("custom_data")
 ```
 
-## 🔗 URL Construction
+## URL Construction
 
 ```python
 @app.get("/links")
@@ -118,7 +118,7 @@ async def links_handler(req: Request, res):
     # Returns full URL like "https://example.com/api/resource"
 ```
 
-## ✅ Request Validation
+## Request Validation
 
 ```python
 @app.post("/validate")
@@ -127,9 +127,9 @@ async def validate_handler(req: Request, res):
         return res.status(400).text("Invalid request")
 ```
 
-## 🚀 Advanced Features
+## Advanced Features
 
-### 🌊 Streaming Requests
+### Streaming Requests
 
 For handling large uploads:
 
@@ -141,7 +141,7 @@ async def stream_handler(req: Request, res):
         process_chunk(chunk)
 ```
 
-### 🚀 Server Push
+### Server Push
 
 ```python
 @app.get("/push")
@@ -149,4 +149,4 @@ async def push_handler(req: Request, res):
     await req.send_push_promise("/static/style.css")
 ```
 
-The Nexios `Request` object provides a rich interface for working with incoming HTTP requests, with support for all common web standards and convenient access to request data. 🎯
+The Nexios `Request` object provides a rich interface for working with incoming HTTP requests, with support for all common web standards and convenient access to request data. 

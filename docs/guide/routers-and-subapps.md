@@ -3,7 +3,7 @@
 Nexios provides a powerful routing system that allows you to create modular and nested routing structures. Here's an example of how you can use routers and sub-applications in your application
 
 
-## 🆕 Creating a Router and Mounting it to the Main Application
+## Creating a Router and Mounting it to the Main Application
 ```python
 from nexios import NexiosApp
 from nexios.routing import Router
@@ -42,7 +42,7 @@ This matches `/v1/users` and `/v1/users/{user_id}`
 Ensure to use `mount_router` after all routes have been defined.
 :::
 
-## 🤷‍♂️ What is Router?
+##  What is Router?
 
 A Router is a container for routes and sub-applications. It allows you to create a modular and nested routing structure in your application.
 
@@ -86,7 +86,7 @@ You can nest as deeply as you want. Internally, Nexios flattens the route tree d
 The `Router` class also have similar routing methods as `NexiosApp` class
 
 
-## 🌴 Sub-Applications = Routers
+## Sub-Applications = Routers
 
 NexiosApp is a subclass of Router. This means you can treat entire apps as routers and mount them.
 

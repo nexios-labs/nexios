@@ -4,7 +4,7 @@
 Class-Based Views in Nexios offer a structured and modular approach to handling HTTP requests. By encapsulating request logic within a class, developers can easily manage middleware, request preprocessing, error handling, and response formatting. The `APIHandler` class serves as the **base class** for creating class-based handlers, providing hooks for handling requests before execution, after execution, and error handling.
 
 
-## 🧢 Basic Usage
+## Basic Usage
 
 ```python
 from nexios.views import APIHandler
@@ -24,7 +24,7 @@ app.add_route(UserView.as_route("/user"))
 
 :::
 
-## 🔗 Middleware Support
+## Middleware Support
 
 Class-Based Views in Nexios also support middleware functions. Middleware functions are executed in order, before the request reaches the handler method.
 
@@ -42,7 +42,7 @@ class UserView(APIHandler):
 app.add_route(UserView.as_route("/user"))
 ```
 
-## 💝Middleware Execution Flow
+## Middleware Execution Flow
 When a request is made to a class-based view with middleware, the execution flow is as follows:
 
 - Middleware Execution: Each middleware function in the middleware list is executed in sequence. Each middleware can modify the request or short-circuit the request by returning a response early.

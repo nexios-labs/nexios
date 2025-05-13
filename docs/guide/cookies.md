@@ -1,8 +1,8 @@
-# 🍪 Handling Cookies in Nexios
+# Handling Cookies in Nexios
 
 Cookies are an essential part of web development, allowing you to store small pieces of data on the client's browser. Nexios provides comprehensive support for working with cookies in both requests and responses.
 
-## 📦 Receiving Cookies
+##  Receiving Cookies
 
 When a client makes a request to your Nexios application, any cookies sent by the browser are automatically parsed and made available through the `request.cookies` property.
 
@@ -21,7 +21,7 @@ async def read_cookie(request, response):
 The `request.cookies` property returns a dictionary where keys are cookie names and values are the corresponding cookie values.
 :::
 
-## 📤 Sending Cookies
+## Sending Cookies
 
 You can set cookies in responses using the `response.set_cookie()` method:
 
@@ -59,7 +59,7 @@ Nexios supports all standard cookie attributes:
 - Consider `samesite='strict'` for authentication cookies
 :::
 
-## 🗑️ Deleting Cookies
+## Deleting Cookies
 
 To delete a cookie, set an expired cookie with the same name:
 
@@ -69,7 +69,7 @@ async def logout(request, response):
     return response.delete_cookie("auth_token").json({"status": "Logged out"})
 ```
 
-## 🔄 Permanent Cookies
+## Permanent Cookies
 
 For long-lived cookies (like "remember me" functionality), use `set_permanent_cookie()`:
 
@@ -82,7 +82,7 @@ async def remember_me(request, response):
     ).text("Cookie set for 10 years")
 ```
 
-## 🍪 Multiple Cookies
+## Multiple Cookies
 
 You can set multiple cookies at once:
 
@@ -96,7 +96,7 @@ async def multi_cookie(request, response):
     return response.set_cookies(cookies).json({"status": "Cookies set"})
 ```
 
-## 🛡️ Cookie Security Considerations
+## Cookie Security Considerations
 
 ::: danger 🚨 Critical Warning
 Improper cookie handling can lead to serious security vulnerabilities:
@@ -106,7 +106,7 @@ Improper cookie handling can lead to serious security vulnerabilities:
 - Regenerate session tokens after login
 :::
 
-## 📝 Practical Example
+## Practical Example
 
 Here's a complete authentication flow using cookies:
 
@@ -149,7 +149,7 @@ async def logout(request, response):
     return response.delete_cookie("auth_token").json({"status": "Logged out"})
 ```
 
-## 🧠 Best Practices
+## Best Practices
 
 1. **Size Limits**: Keep cookies small (typically under 4KB)
 2. **Essential Data Only**: Store only what's necessary

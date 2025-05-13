@@ -1,8 +1,8 @@
-# 📁 File Upload Documentation for Nexios Framework
+# File Upload Documentation for Nexios Framework
 
 This document provides a comprehensive guide to handling file uploads in the Nexios framework, covering both single and multiple file upload scenarios with proper validation and security considerations.
 
-## 🚀 Basic File Upload
+## Basic File Upload
 
 ### Single File Upload
 
@@ -49,7 +49,7 @@ async def upload_files(request: Request, response: Response):
     return response.json({"files": results})
 ```
 
-## 🔒 Security Considerations
+## Security Considerations
 
 
 
@@ -82,7 +82,7 @@ async def upload_image(request: Request, response: Response):
     # ...
 ```
 
-## 📝 Form Data with Files
+## Form Data with Files
 
 Handle mixed form data and file uploads:
 
@@ -103,7 +103,7 @@ async def update_profile(request: Request, response: Response):
     return response.json({"name": name, "avatar_uploaded": bool(avatar)})
 ```
 
-## ⚙️ Advanced Configuration
+## Advanced Configuration
 
 ### Custom Upload Handlers
 
@@ -152,7 +152,7 @@ async def upload_large_file(request: Request, response: Response):
     })
 ```
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 Common issues and solutions:
 
@@ -168,7 +168,7 @@ Common issues and solutions:
    - Always check both filename extension and MIME type
    - Consider scanning uploaded files for malware
 
-## 🏆 Best Practices
+## Best Practices
 
 1. Always validate file types and sizes
 2. Never trust original filenames - sanitize or generate new ones

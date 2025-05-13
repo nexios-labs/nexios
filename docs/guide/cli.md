@@ -1,4 +1,4 @@
-# 🛠️ CLI Tools
+#  CLI Tools
 
 Nexios comes with a powerful CLI tool that helps you bootstrap new projects and manage development servers. It supports multiple server engines (Uvicorn by default, with optional Granian support) to run your ASGI applications.
 

@@ -4,7 +4,7 @@ Routing of Nexios is flexible and intuitive. Let's take a look.
 
 
 
-## 🚀 The Basic Routing Example 
+##  The Basic Routing Example 
 
 ```python
 from nexios import NexiosApp
@@ -30,7 +30,7 @@ async def get_root(req, res):
 Nexios provides flexible routing that supports both traditional decorators and alternative styles like direct route registration using functions or classes, giving developers full control over how they structure their APIs.
 
 
-## 🌳 **Routing With Decorators** 
+## **Routing With Decorators** 
 
 ```python
 from nexios import NexiosApp
@@ -77,7 +77,7 @@ oute conflicts can occur if you register the same path with multiple handlers fo
 :::
 
 
-## 🚗 Other Route Methods 
+## Other Route Methods 
 
 Nexios Provides `Routes` class for more complex routing needs. This Helps in grouping routes and makes the code more readable and maintainable.
 
@@ -162,7 +162,7 @@ app.add_route(route)
 the decorator and Routes takes the same arguments. 😁
 
 :::
-## 🗳️ Path Parameter 
+## Path Parameter 
 
 Path parameters allow you to capture dynamic segments of a URL. These parameters are extracted from the URL and made available to the route handler via the `req.path_params` object.
 
@@ -213,7 +213,7 @@ async def get_post_comment(req, res):
 
 ```
 
-## 🔁 Route Converters 
+## Route Converters 
 
 Route converters in Nexios allow you to enforce specific types or patterns on dynamic segments of your routes. This ensures that only valid data is processed, improving the reliability and predictability of your API.
 
@@ -277,7 +277,7 @@ async def get_person(req, res):
 * **Does Not Match:** (Almost always matches)
 
 
-## 🔙 Reverse Routing
+## Reverse Routing
 
 You can also reverse route a path using the `url_for` method of the `NexiosApp` and `Router` instance.
 
@@ -296,7 +296,7 @@ To use the `url_for` method, you must have a `name` attribute set for your route
 :::
 
 
-## ⛓️ Reverse Routing with Nested Routers
+## Reverse Routing with Nested Routers
 
 Sometimes, you may want to reverse route a path from a nested router. In such cases, you can use the `url_for` method of the parent router to generate the URL.
 

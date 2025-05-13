@@ -6,7 +6,7 @@ Session management is a critical component of web applications, allowing you to 
 
 
 
-## 👤 Basic Session Setup
+## Basic Session Setup
 
 Setting up sessions in your Nexios application is straightforward:
 
@@ -36,7 +36,7 @@ async def index(req, res):
     return res.text(f"You've visited this page {counter} times")
 ```
 
-## ⚙️ Session Configuration Options
+## Session Configuration Options
 
 Nexios offers various configuration options for customizing session behavior:
 
@@ -77,7 +77,7 @@ app.config.session = {
 app.add_middleware(SessionMiddleware())
 ```
 
-## 🔧 Configuration Options Reference
+##  Configuration Options Reference
 
 | Option                | Description                                           | Default                |
 | --------------------- | ----------------------------------------------------- | ---------------------- |
@@ -92,7 +92,7 @@ app.add_middleware(SessionMiddleware())
 
 
 
-## 🧢 Basic Session Operations
+## Basic Session Operations
 
 ```python
 @app.get("/session-demo")
@@ -159,11 +159,11 @@ async def login(req, res):
     return res.json({"success": True})
 ```
 
-## 💻 Session Backends
+## Session Backends
 
 Nexios supports multiple session backends to store session data. Each backend has different characteristics suitable for various use cases.
 
-## 🔑 Signed Cookie Sessions (Default)
+## Signed Cookie Sessions (Default)
 
 The simplest session backend, storing the session data directly in a signed cookie:
 
@@ -187,7 +187,7 @@ app.config.session = {
 * Session data sent with every request
 * Cannot be invalidated server-side
 
-### 🗃️ File-based Sessions
+### File-based Sessions
 
 Stores session data in files on the server filesystem:
 
@@ -213,7 +213,7 @@ app.config.session = {
 * Requires filesystem access
 * Needs cleanup of expired session files
 
-## 🎨 Building Custom Session Backends
+## Building Custom Session Backends
 
 You can create custom session backends by implementing the `BaseSessionInterface`:
 
@@ -254,7 +254,7 @@ class RedisSessionInterface(BaseSessionInterface):
         return self.session_key
 ```
 
-## 😎 Session Security Best Practices
+## Session Security Best Practices
 
 Session management requires careful attention to security:
 
@@ -307,7 +307,7 @@ async def logout(req, res):
     return res.redirect("/login")
 ```
 
-## 👤 Practical Examples
+## Practical Examples
 
 #### Example 1: User Authentication Flow
 

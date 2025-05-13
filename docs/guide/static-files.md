@@ -6,7 +6,7 @@ icon: file
 
 Serving static files is a common requirement for web applications. Nexios provides a robust and flexible system for serving static assets like CSS, JavaScript, images, and other file types with security and performance in mind.
 
-## 🧢 Basic Setup
+## Basic Setup
 
 To serve static files in Nexios, you need to configure a static files handler and mount it to your application:
 
@@ -34,7 +34,7 @@ app.add_route(
 With this setup, a file at `static/css/style.css` would be accessible at `/static/css/style.css`.
 
 
-### 📁 Single Directory
+### Single Directory
 
 The simplest configuration uses a single directory for all static files:
 
@@ -45,7 +45,7 @@ static_handler = StaticFilesHandler(
 )
 ```
 
-## 🗃️ Multiple Directories
+## Multiple Directories
 
 For more complex setups, you can serve files from multiple directories:
 
@@ -58,7 +58,7 @@ static_handler = StaticFilesHandler(
 
 When serving from multiple directories, Nexios searches for files in the order the directories are specified.
 
-##  🌐 URL Prefixing
+##  URL Prefixing
 
 The `url_prefix` parameter defines the URL path under which static files are served:
 

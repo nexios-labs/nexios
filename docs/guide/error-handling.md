@@ -5,7 +5,7 @@
 Nexios provides a robust and flexible error handling system that allows you to manage exceptions gracefully and return appropriate responses to clients. This documentation covers all aspects of error handling in Nexios applications.
 
 
-## 🔥HTTP Exceptions
+## HTTP Exceptions
 
 Nexios includes built-in HTTP exceptions for common error scenarios:
 
@@ -20,7 +20,7 @@ async def get_user(request, response):
 ```
 
 
-## 🎯 Raising HTTP Exceptions
+## Raising HTTP Exceptions
 All HTTP exceptions accept these parameters:
 
 - status_code: HTTP status code (required for base HTTPException)
@@ -37,7 +37,7 @@ raise HTTPException(
 )
 ```
 
-🎨 Custom Exception Classes
+## Custom Exception Classes
 
 Nexios provides a way to create custom exception classes that extend the built-in HTTPException class. This allows you to define specific error handling behavior for specific types of errors.
 
@@ -60,7 +60,7 @@ async def get_premium_content(request, response):
 
 ```
 
-## 🔑 Exception Handlers
+## Exception Handlers
 
 Nexios provides a way to register custom exception handlers for specific exception types or HTTP status codes. This allows you to define custom error handling behavior for specific errors.
 
@@ -79,7 +79,7 @@ async def get_premium_content(request, response):
     return response.json({"message": "Premium content available"})      
 ``` 
 
-## 🔢 Status Code Handlers
+## Status Code Handlers
 Handle exceptions by status code:
 
 ```python
@@ -101,7 +101,7 @@ async def get_premium_content(request, response):
 In the provided example, we demonstrate how to create a custom exception handler for handling specific exceptions in a Nexios application. We define a custom exception handler `handle_payment_required_exception`, which returns a JSON response with an error message and a status code when a `PaymentRequiredException` is raised. This handler is registered with the application using `app.add_exception_handler()`. This approach allows for granular control over error responses, improving the user experience by providing clear feedback for specific scenarios, such as when a user tries to access premium content without a subscription.
 
 
-🐞 Debug Mode
+## Debug Mode
 Enable debug mode for detailed error responses:
 
 ```python

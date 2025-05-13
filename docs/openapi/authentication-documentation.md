@@ -2,7 +2,7 @@
 
 Nexios supports OpenAPI authentication, which allows you to secure your API endpoints with JSON Web Tokens (JWT) or other authentication mechanisms. Here's how you can set up OpenAPI authentication in your Nexios application 
 
-## 🎨 basic setup
+## basic setup
 
 By default already provide `bearerAuth` in OpenAPI documentation .
 
@@ -17,7 +17,7 @@ async def get_root(req, res):
 
 <img src="./bearerAuth.png">
 
-## 👥 Adding Multi  Security Schemes
+## Adding Multi  Security Schemes
 
 ```python
 from nexios import NexiosApp
@@ -30,7 +30,7 @@ async def get_root(req, res):
 ::: warning ⚠️ Warning
 You most register security scheme before using it.
 :::
-## 📄 Registering Security Schemes
+## Registering Security Schemes
 ::: tip 💡Tip
 You can also access the openapi config from `app.docs.cofig` object.
 :::
@@ -57,9 +57,9 @@ Note : The dict used indead of passing the argugument directly. because `in` is 
 
 :::
 
-### 🔑 Authentication Types
+### Authentication Types
 
-🛡️ JWT Bearer Authentication
+JWT Bearer Authentication
 The most common method for modern APIs. Clients include a token in the Authorization header.
 
 ```python 
@@ -75,7 +75,7 @@ app.docs.config.add_security_scheme(
 
 ```
 
-### 🔑 API Key Authentication
+### API Key Authentication
 For simpler authentication needs, using keys in headers, queries, or cookies.
 
 ```python
@@ -85,13 +85,13 @@ app.docs.config.add_security_scheme(
         name="X-API-KEY",  # Header/parameter name
         **{
             "in": "header",  # Can be "header", "query", or "cookie"
-            "description": "🔑 Access with your API key"
+            "description": "Access with your API key"
         }
     )
 )
 ```
 
-## 🔄 OAuth2 Authentication
+## OAuth2 Authentication
 
 ```py
 app.docs.config.add_security_scheme(
@@ -114,7 +114,7 @@ app.docs.config.add_security_scheme(
 
 
 
-## 🔄 OAuth2 Scoped Routes
+## OAuth2 Scoped Routes
 Require specific permissions:
 
 
