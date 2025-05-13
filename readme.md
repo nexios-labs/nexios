@@ -33,7 +33,7 @@
 <h2 align="center"> Star the repo if u like it🌟
 </h2>
 
-Nexios is a high-performance, Python-based web framework powered by Granian, a blazing-fast Rust-based ASGI server. Designed for speed, flexibility, and simplicity, Nexios delivers exceptional performance through its native Rust engine while maintaining the simplicity and elegance of Python. It supports RESTful APIs, authentication, and integrates easily with any ORM. Built for modern web development, Nexios allows developers to quickly spin up scalable, modular apps with minimal boilerplate—ideal for startups, rapid prototyping, and custom backend solutions. Think Django's capability with Rust-powered speed.
+Nexios is a high-performance Python web framework. Designed for speed, flexibility, and simplicity, Nexios delivers exceptional performance through its native Rust engine while maintaining the simplicity and elegance of Python. It supports RESTful APIs, authentication, and integrates easily with any ORM. Built for modern web development, Nexios allows developers to quickly spin up scalable, modular apps with minimal boilerplate—ideal for startups, rapid prototyping, and custom backend solutions. Think Django's capability with Rust-powered speed.
 
 ---
 
