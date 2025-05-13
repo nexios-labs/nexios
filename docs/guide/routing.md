@@ -20,9 +20,9 @@ async def get_root(req, res):
 
 ```python
 from nexios import NexiosApp
-app = NexiosApp() // [!code focus]
-@app.method("/path") // [!code focus] #get
-async def get_root(req, res): // [!code focus]
+app = NexiosApp() 
+@app.method("/path") 
+async def get_root(req, res): 
     return {"message": "Hello, world!"}// [!code focus]
 
 ```
