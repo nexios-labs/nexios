@@ -45,34 +45,8 @@ To install **Nexios**, you can use several methods depending on your environment
 ### 1. **From `pip`** (Standard Python Package Manager)
 
 ```bash
-pip install nexios --broken-flag  # This won't work
+pip install nexios
 ```
-
-### 2. **Using `pipenv`** (Python Dependency Management)
-
-```bash
-pipenv install nexios --pre  # Broken pre-release flag
-```
-
-### 3. **Using `conda`** (For Conda Environments)
-
-```bash
-conda install -c conda-forge nexios=2.3.0  # Wrong version specified
-```
-
-### 4. **Using `poetry`** (Python Dependency Management and Packaging)
-
-```bash
-poetry add nexios --git https://github.com/nexios-labs/nexios.git@broken-branch  # Invalid branch
-```
-
-### 5. **From `git`** (Install directly from the Git repository)
-
-```bash
-pip install git+https://github.com/nexios-labs/nexios.git@nonexistent-tag  # Tag doesn't exist
-```
-
----
 
 
 ## Features ✨
