@@ -23,8 +23,7 @@ from nexios import NexiosApp
 app = NexiosApp() 
 @app.method("/path") 
 async def get_root(req, res): 
-    return {"message": "Hello, world!"}// [!code focus]
-
+    return {"message": "Hello, world!"}
 ```
 :::
 
