@@ -10,18 +10,23 @@ Got it! I’ll go through each CORS configuration setting in **Nexios**, explain
 Before diving into individual settings, here’s a simple CORS setup using `MakeConfig`:
 
 ```python
-config = MakeConfig()
-config.cors = {
-    "allow_origins": ["https://example.com"],
+from nexios import MakeConfig
+from nexios.middlewares.cors import CORSMiddleware
+config = MakeConfig({
+    "cors": {
+        "allow_origins": ["https://example.com"],
     "allow_methods": ["GET", "POST"],
     "allow_headers": ["Authorization", "X-Requested-With"],
     "allow_credentials": True,
     "max_age": 600,
     "debug": True
-}
+    }
+})
+app = NexiosApp(config = config)
+
 ```
 
-Now, let’s break down each setting.
+we can break it down further:
 
 ***
 

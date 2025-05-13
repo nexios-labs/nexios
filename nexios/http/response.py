@@ -650,14 +650,7 @@ class NexiosResponse:
     def cookies(self):
         return self._cookies  # type:ignore
 
-    def remove_header(self, key: str) -> "NexiosResponse":
-        """Remove a header from the response."""
-        self._response._headers = [  # type:ignore
-            (k, v)
-            for k, v in self._response._headers  # type:ignore
-            if k.decode("latin-1").lower() != key.lower()
-        ]  # type:ignore
-        return self
+   
 
     @property
     def body(self):
@@ -912,7 +905,13 @@ class NexiosResponse:
 
         self._response = self._preserve_headers_and_cookies(response_class)
         return self
-
+    def remove_header(self, key: str):
+        """Remove a header from the response."""
+        self._response._headers = [  # type:ignore
+            (k, v)
+            for k, v in self._response._headers  # type:ignore
+            if k.decode("latin-1").lower() != key.lower()
+        ]  # type:ignore
     def paginate(
         self,
         items: List[Any],

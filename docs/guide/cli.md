@@ -45,6 +45,7 @@ Options:
 
 * `--output-dir, -o`: Directory where the project should be created (default: current directory)
 * `--title`: Display title for the project (defaults to project name)
+* `--template, -t`: Template type to use for the project (choices: basic, standard, beta, default: basic)
 
 ### Running the Development Server
 
