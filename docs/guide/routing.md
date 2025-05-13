@@ -295,3 +295,38 @@ This will generate the URL `/posts/123/comment/456`
 ::: warning ⚠️ Warning
 To use the `url_for` method, you must have a `name` attribute set for your route.
 :::
+
+
+## ⛓️ Reverse Routing with Nested Routers
+
+Sometimes, you may want to reverse route a path from a nested router. In such cases, you can use the `url_for` method of the parent router to generate the URL.
+
+```python
+from nexios import NexiosApp
+from nexios.routing import Router
+app = NexiosApp()
+v1_router = Router(prefix="/v1", name='v1') # Note the name attribute
+router.get('/posts/{post_id}/comment/{comment_id}', name='get_post_comment') 
+async def get_post_comment(req, res):
+    url = app.url_for('v1.get_post_comment', post_id=123, comment_id=456)
+    return res.text(url)
+```
+This will generate the URL `/posts/123/comment/456`
+
+::: info 😎 Info
+To use the `url_for` method, you must have a `name` attribute set for your route.
+:::
+
+Using reverse in nested router is limited to only it children. You can use the request object for global reverse routing.
+
+```python
+from nexios import NexiosApp
+from nexios.routing import Router
+app = NexiosApp()
+v1_router = Router(prefix="/v1", name='v1') # Note the name attribute
+router.get('/posts/{post_id}/comment/{comment_id}', name='get_post_comment') 
+async def get_post_comment(req, res):
+    url = req.app.url_for('v1.get_post_comment', post_id=123, comment_id=456)
+    return res.text(url)
+```
+This will generate the URL `/v1/posts/123/comment/456`

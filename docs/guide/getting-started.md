@@ -21,7 +21,7 @@ pip install nexios
 pip install nexios[granian] # Install Nexios with optional Granian support
 ```
 
-::: warning
+::: info 😎 Tip
 Use a virtual environment to manage project dependencies.
 :::
 
