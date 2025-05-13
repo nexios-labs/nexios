@@ -2,7 +2,7 @@
 icon: down-to-line
 ---
 
-# Getting Started  <Badge type="tip" text="2.4.0rc1" />
+# Getting Started  <Badge type="tip" text="2.4.0" />
 
 Nexios is simple to install , no stress !
 
@@ -32,7 +32,7 @@ poetry add nexios
 ```
 
 
-## ☝️ Your First Nexios App
+## Your First Nexios App
 **main.py**
 ```py
 from nexios import NexiosApp
@@ -76,7 +76,7 @@ uvicorn main:app --reload
 
 Visit http://localhost:8000/docs to view the Swagger API documentation.
 
-## ⚙️ Managing Configuration
+## Managing Configuration
 
 Nexios uses a `MakeConfig` class that you can use to manage your application's configuration.
 

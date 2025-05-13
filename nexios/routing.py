@@ -527,7 +527,7 @@ class Routes:
         return f"<Route {self.raw_path} methods={self.methods}>"
 
 
-class Router:
+class Router(BaseRouter):
     def __init__(
         self,
         prefix: Optional[str] = None,
@@ -2404,7 +2404,7 @@ class WebsocketRoutes:
         return f"<WSRoute {self.raw_path}>"
 
 
-class WSRouter:
+class WSRouter(BaseRouter):
     def __init__(
         self,
         prefix: Optional[str] = None,

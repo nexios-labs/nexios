@@ -6,7 +6,7 @@ icon: gear-code
 
 The Nexios framework provides a flexible and dynamic configuration system through its `MakeConfig` class. This system allows for structured configuration management with support for nested attributes, validation, and immutability.
 
-## 🧢 Basic Usage
+## Basic Usage
 
 ```python
 from nexios import NexiosApp
@@ -39,7 +39,7 @@ print(app.config.debug)  # Output: True
 
 ```
 
-##  ⚙️ Accessing Configuration Globally
+##  Accessing Configuration Globally
 
 The framework provides global configuration management through:
 
@@ -70,7 +70,7 @@ You get access to the global configuration through the `get_config` function fro
 If you try `get_config` before it has been set, it will raise an exception.
 :::
 
-## 💻 Set Config Dynamically
+## Set Config Dynamically
 
 ```python
 from nexios import NexiosApp

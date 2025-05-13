@@ -19,7 +19,7 @@ export default defineConfig({
   description: 'Async web framework for Python',
   themeConfig: {
     socialLinks : [
-      {icon : "github", link : "https://github.com/nexioslabs/nexios"},
+      {icon : "github", link : "https://github.com/nexios-labs/nexios"},
       {icon : "twitter", link : "https://twitter.com/nexioslabs"},
 
     ],

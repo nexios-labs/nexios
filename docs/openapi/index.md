@@ -9,7 +9,7 @@ In this guide, we will walk you through the process of generating a more customi
 
 ---
 
-## 🆕 Basic Setup
+##  Basic Setup
 
 ```python
 from nexios import NexiosApp
@@ -23,7 +23,7 @@ async def get_root(req, res):
 <img src="/openapi/basic-config.png">
 
 
-## 🌈 Adding Description
+## Adding Description
 
 ```python
 from nexios import NexiosApp

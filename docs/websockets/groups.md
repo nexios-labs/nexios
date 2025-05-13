@@ -4,7 +4,7 @@ The **ChannelBox** class in Nexios provides powerful tools for organizing WebSoc
 
 ---  
 
-## 🔑 **Key Features of ChannelBox**  
+## **Key Features of ChannelBox**  
 
 | Feature               | Description                                                                 |  
 |-----------------------|-----------------------------------------------------------------------------|  
@@ -17,7 +17,7 @@ The **ChannelBox** class in Nexios provides powerful tools for organizing WebSoc
 
 ## **Basic ChannelBox Usage**  
 
-## 👤 Adding Channels to Groups
+## Adding Channels to Groups
 ```python  
 from nexios.websockets.channels import ChannelBox  
 
@@ -44,7 +44,7 @@ async def chat_room(ws: WebSocket):
         await ChannelBox.remove_channel_from_group(channel, group_name=f"chat_{room_id}")  
 ```  
 
-##  🌐 Broadcasting Messages**  
+##  Broadcasting Messages**  
 Send to all channels in a group:  
 ```python  
 await ChannelBox.group_send(  
@@ -54,7 +54,7 @@ await ChannelBox.group_send(
 )  
 ```  
 
-###  📊 Checking Group Status**  
+###  Checking Group Status**  
 ```python  
 # List all active groups  
 groups = await ChannelBox.show_groups()  
@@ -66,7 +66,7 @@ num_users = len(room_channels)
 
 ---  
 
-## 📁 **Message History**  
+## **Message History**  
 
 ChannelBox can store sent messages for later retrieval:  
 
@@ -98,7 +98,7 @@ os.environ["CHANNEL_BOX_HISTORY_SIZE"] = "5242880"  # 5MB limit
 
 
 
-## 🔫 **1. Targeted Messaging**  
+## **1. Targeted Messaging**  
 Send to specific channels by UUID:  
 ```python  
 await ChannelBox.send_to(  
@@ -107,7 +107,7 @@ await ChannelBox.send_to(
 )  
 ```  
 
-## 🌐  **2. Global Operations**  
+## **2. Global Operations**  
 ```python  
 # Close all WebSocket connections  
 await ChannelBox.close_all_connections()  

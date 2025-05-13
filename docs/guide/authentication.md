@@ -10,7 +10,7 @@ The Nexios authentication system is built around three core components:
 
 
 
-## 🧢 Basic Authentication Setup
+## Basic Authentication Setup
 
 To get started with authentication in Nexios, you need to set up an authentication backend and add the authentication middleware:
 
@@ -45,7 +45,7 @@ async def profile(req, res):
         return res.redirect("/login")
 ```
 
-## 🔗 Authentication Middleware
+## Authentication Middleware
 
 The `AuthenticationMiddleware` is responsible for processing each request, delegating to the configured backend for authentication, and attaching the resulting user object to the request:
 
@@ -71,7 +71,7 @@ app.add_middleware(AuthenticationMiddleware(backend=api_key_backend))
 4. An authentication type string is also attached to `request.scope["auth"]`
 5. If authentication fails, an `UnauthenticatedUser` instance is attached instead
 
-## ⚙️ Authentication Backends
+## Authentication Backends
 
 Nexios includes several built-in authentication backends and allows you to create custom backends for specific needs.
 
@@ -142,7 +142,7 @@ The API key backend:
 - Loads the full user object using the provided loader function
 - Returns an authenticated user if found, or an unauthenticated user otherwise
 
-## 🎨 Creating a Custom Authentication Backend
+## Creating a Custom Authentication Backend
 
 You can create custom authentication backends by implementing the `AuthenticationBackend` abstract base class:
 
@@ -183,7 +183,7 @@ class CustomAuthBackend(AuthenticationBackend):
         return UnauthenticatedUser(), "no-auth"
 ```
 
-## 👤 User Objects and Lifecycle
+## User Objects and Lifecycle
 
 User objects in Nexios implement the `BaseUser` interface, ensuring a consistent API regardless of the authentication backend.
 
@@ -223,7 +223,7 @@ class CustomUser(BaseUser):
 
 The `UnauthenticatedUser` class implements the same interface but returns `False` for `is_authenticated`.
 
-## 🔒 Protecting Routes with Authentication
+## Protecting Routes with Authentication
 
 ### Basic Route Protection
 
@@ -239,7 +239,7 @@ async def admin_dashboard(req, res):
     return res.html("Admin Dashboard")
 ```
 
-## 🔐 Using Authentication Decorators
+## Using Authentication Decorators
 
 For cleaner route protection, Nexios provides authentication decorators:
 
@@ -260,7 +260,7 @@ async def api_data(req, res):
     return res.json({"data": "Protected API data"})
 ```
 
-## 💪  Custom Authentication Requirements
+## Custom Authentication Requirements
 
 You can create custom decorators for more specific authentication needs:
 
@@ -282,9 +282,9 @@ async def admin_users(req, res):
     return res.json({"users": ["user1", "user2"]})
 ```
 
-## 🛹 Authentication Flows
+## Authentication Flows
 
-## 🔑 Session-Based Authentication
+## Session-Based Authentication
 
 Session-based authentication is a common approach for web applications:
 
@@ -345,7 +345,7 @@ async def logout(req, res):
     return res.redirect("/login")
 ```
 
-## 🔑 JWT-Based Authentication
+## JWT-Based Authentication
 
 JWT authentication is commonly used for APIs:
 

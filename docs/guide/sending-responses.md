@@ -4,7 +4,7 @@ When building applications, sending responses to client requests is a fundamenta
 
 Nexios Provide Multiple Ways to Send Responses Based on Your Needs
 
-## 🧢 Basic Example
+## Basic Example
 Nexios Allow you to return a `dict`, `list` or `str` as a response. Here is an example of sending a `dict` as a response:
 
 ```python{5}
@@ -56,7 +56,7 @@ If it's neither, it uses the response object provided by Nexios.
 ::: tip 💡 Recomended 
 we recommend using the `response` object provided by Nexios to build the response.
 :::
-## 📩 File Responses
+## File Responses
 
 Nexios Allow you to send files as responses. Here is an example of sending a file as a response:
 
@@ -68,7 +68,7 @@ def index(req, res):
     return res.file("path/to/file.txt")
 ```
 
-::: details 📖 Alternatively use the `FileResponse` class
+::: details Alternatively use the `FileResponse` class
 
 ```python{5}
 from nexios import NexiosApp
@@ -106,5 +106,3 @@ def index(req, res):
 
 :::
 
-
-Nexios Also Includes Other types of response discoverable in the docss

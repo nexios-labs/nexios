@@ -2,7 +2,7 @@
 
 WebSocket connections in Nexios are managed using the Channel class, which provides enhanced functionality for handling real-time communication. Channels wrap WebSocket connections with additional features like metadata, expiration, and structured message handling.
 
-## 🆕 Creating a Channel
+## Creating a Channel
 
 ```python
 from nexios.websockets.channels import Channel, PayloadTypeEnum  

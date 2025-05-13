@@ -4,7 +4,7 @@ Nexios combines WebSockets with a powerful event system to create reactive, real
 
 ---
 
-## 🚀 **Basic WebSocket Event Integration**  
+## **Basic WebSocket Event Integration**  
 
 ### **Emitting Events from Connections**  
 WebSocket handlers can trigger events that other components can react to:  
@@ -37,7 +37,7 @@ async def push_notification(notification):
 
 ---
 
-## 🔌 **Advanced Integration Patterns**  
+## **Advanced Integration Patterns**  
 
 ### **Namespaced WebSocket Events**  
 Create isolated event spaces for better organization:  
@@ -67,7 +67,7 @@ await app.events.emit("connection.init", {"ws": ws})
 
 ---
 
-## 🛡️ **Error Handling with Events**  
+## **Error Handling with Events**  
 
 Centralize error management through events:  
 
@@ -86,7 +86,7 @@ except Exception as e:
 
 ---
 
-## 💡 **Complete Chat Application Example**  
+## **Complete Chat Application Example**  
 
 ```python
 @app.ws_route("/chat/{room}")  

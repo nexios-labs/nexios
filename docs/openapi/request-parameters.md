@@ -2,7 +2,7 @@
 
 Request parameters are query parameters or path parameters that are used to filter or identify specific resources it also includes headers .
 
-## 🆕 Path Parameters
+## Path Parameters
 
 By default Nexios automatically detects path parameters from your route path and documents them in OpenAPI. For example:
 
@@ -20,7 +20,7 @@ async def get_user(req, res):
 <img src="./path-params.png">
 
 
-## 🆕 Query Parameters
+## Query Parameters
 
 Nexios Does not automatically detect query parameters, but you can add them using the `parameters` argument:
 
@@ -38,7 +38,7 @@ async def get_user(req, res):
 <img src="./query-params.png">
 
 
-## 🆕 Headers
+## Headers
 
 Nexios Does not automatically detect headers, but you can add them using the `parameters` argument:
 

@@ -1,4 +1,4 @@
-# 🛠️ CLI Tools
+#  CLI Tools
 
 Nexios comes with a powerful CLI tool that helps you bootstrap new projects and manage development servers. It supports multiple server engines (Uvicorn by default, with optional Granian support) to run your ASGI applications.
 
@@ -45,6 +45,7 @@ Options:
 
 * `--output-dir, -o`: Directory where the project should be created (default: current directory)
 * `--title`: Display title for the project (defaults to project name)
+* `--template, -t`: Template type to use for the project (choices: basic, standard, beta, default: basic)
 
 ### Running the Development Server
 

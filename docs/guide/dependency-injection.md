@@ -1,4 +1,4 @@
-# Dependency Injection in Nexios 💉
+# Dependency Injection in Nexios
 
 Nexios provides a powerful yet intuitive dependency injection system that helps you write clean, maintainable code. Let's explore its capabilities.
 
@@ -24,7 +24,7 @@ async def show_config(request, response, settings: dict = Depend(get_settings)):
 - Dependencies can be any callable (function, method, etc.)
 - Injected automatically before your route handler executes
 
-## 🔗 Sub-Dependencies
+## Sub-Dependencies
 
 Dependencies can depend on other dependencies:
 
@@ -41,7 +41,7 @@ async def list_users(req, res, db: Database = Depend(get_db_connection)):
 ```
 
 
-## 🛫 Using Yield (Resource Management)
+## Using Yield (Resource Management)
 
 For resources that need cleanup, use `yield`:
 
@@ -60,7 +60,7 @@ async def create_item(req, res, session = Depend(get_db_session)):
 ```
 
 
-## 💪 Using Classes as Dependencies
+## Using Classes as Dependencies
 
 Classes can act as dependencies through their `__call__` method:
 
@@ -84,7 +84,7 @@ Advantages:
 - Configuration happens at initialization
 - Clean interface through `__call__`
 
-## 💻 Context-Aware Dependencies
+## Context-Aware Dependencies
 
 Dependencies can access request context:
 
@@ -101,7 +101,7 @@ async def show_ua(request, response , ua: str = Depend(get_user_agent)):
 The `request` parameter is drived from the same name in the route handler.
 :::
 
-## 🏃‍♂️ Async Dependencies
+##  Async Dependencies
 
 Full support for async dependencies:
 
