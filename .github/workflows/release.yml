@@ -3,7 +3,7 @@ name: Release on Tag
 on:
   push:
     tags:
-      - 'v*' 
+      - 'v*'  # only triggers on tags like v1.0.0
 
 jobs:
   release:
@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write       
-      id-token: write       
+      contents: write       # to create GitHub release
+      id-token: write       # for OIDC (trusted publishing)
 
     steps:
       - name: Checkout repo
@@ -42,9 +42,7 @@ jobs:
           generate_release_notes: true
           files: dist/*
 
-      - name: Publish to PyPI via Trusted Publishing
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          packages-dir: dist/
-
       
+
+      - name: Publish to PyPI with Poetry and token
+        run: poetry publish --username __token__ --password ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
