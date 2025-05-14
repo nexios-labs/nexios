@@ -28,9 +28,8 @@ def before_request(
 
     def decorator(handler: HandlerType) -> HandlerType:
         @wraps(handler)
-        async def wrapper(*args: List[Any], **kwargs: Dict[str, Any]):
-            req: Request = args[-2]  # type: ignore
-            res: Response = args[-1]  # type: ignore
+        async def wrapper(req: Request, res: Response, *args: List[Any], **kwargs: Dict[str, Any]):
+           
 
             if only_methods and req.method.upper() not in map(str.upper, only_methods):
                 return await handler(*args, **kwargs)
@@ -40,7 +39,7 @@ def before_request(
                 logger.info(f"[{log_level}] Before Request: {req.method} {req.url}")
             if func:
                 await func(req, res)
-            return await handler(*args, **kwargs)
+            return await handler(req, res, *args, **kwargs)
 
         return wrapper
 
@@ -87,54 +86,8 @@ def after_request(
     return decorator  # type:ignore
 
 
-def analytics(func: HandlerType) -> HandlerType:
-    """
-    A decorator to track analytics for an endpoint.
-    """
-
-    @wraps(func)
-    async def wrapper(*args: List[Any], **kwargs: Dict[str, Any]):
-        req: Request = args[-2]  # type:ignore
-        res: Response = args[-1]  # type:ignore
-        start_time = time.time()
-        response = await func(*args, **kwargs)
-        elapsed_time = time.time() - start_time
-        logger.info(
-            f"Analytics: {req.method} {req.url} - {response._status_code} in {elapsed_time:.2f}s"  # type:ignore
-        )  # type:ignore
-        return response
-
-    return wrapper
 
 
-def cache_response(max_size: int = 128):
-    """
-    A decorator to cache responses in memory.
-    """
-
-    def decorator(handler: HandlerType):
-        cached_func = lru_cache(maxsize=max_size)(handler)
-        return cached_func
-
-    return decorator
 
 
-def request_timeout(timeout: int):
-    """
-    A decorator to enforce request timeouts.
 
-    :param timeout: Timeout duration in seconds.
-    """
-
-    def decorator(handler: HandlerType) -> HandlerType:
-        @wraps(handler)
-        async def wrapper(*args: List[Any], **kwargs: Dict[str, Any]) -> Response:
-            res: Response = args[-1]  # type:ignore
-            try:
-                return await asyncio.wait_for(handler(*args, **kwargs), float(timeout))
-            except asyncio.TimeoutError:
-                return res.json({"error": "Request timed out"}, status_code=408)
-
-        return wrapper
-
-    return decorator
