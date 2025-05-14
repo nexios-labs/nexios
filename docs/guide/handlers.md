@@ -13,9 +13,9 @@ from nexios import NexiosApp
 
 app = NexiosApp()
 
-@app.get("/")  // [!code focus]
-async def index(request, response): // [!code focus]
-    return "Hello, world!" // [!code focus]
+@app.get("/")  
+async def index(request, response): 
+    return "Hello, world!" 
 ```
 
 ::: warning ⚠️ Warning
@@ -31,9 +31,9 @@ User type annotation for more IDE support .
 
 from nexios.http import Request, Response
 
-@app.get("/")  // [!code focus]
-async def index(request: Request, response: Response): // [!code focus]
-    return "Hello, world!" // [!code focus]
+@app.get("/")  
+async def index(request: Request, response: Response): 
+    return "Hello, world!" 
 ```
 
 :::
