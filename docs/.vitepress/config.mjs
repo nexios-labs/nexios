@@ -45,11 +45,14 @@ export default defineConfig({
           items: [
             { text: 'Getting Started', link: '/guide/getting-started' },
             { text: 'CLI', link: '/guide/cli' },
+            { text: "What is Asgi?", link: '/guide/asgi' },
+            { text : "Async Python", link: '/guide/async-python' },
           ]
         },
         {
           text: 'Core Concepts',
           collapsed: false,
+        
           items: [
             { text: 'Routing', link: '/guide/routing' },
             { text: 'Handlers', link: '/guide/handlers' },
