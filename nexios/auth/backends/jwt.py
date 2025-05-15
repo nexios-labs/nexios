@@ -1,7 +1,7 @@
 try:
     import jwt
 except ImportError:
-    raise ImportError("Install PyJWT to use JWT authentication backend")
+    jwt = None
 from typing import Optional, Dict, Any, List
 from nexios.auth.base import AuthenticationBackend
 from nexios.http import Request, Response
@@ -21,6 +21,8 @@ def create_jwt(
     Returns:
         str: Encoded JWT token.
     """
+    if jwt is None:
+        raise ImportError("JWT support is not installed.")
     secret = secret or get_config().secret_key
     return jwt.encode(payload, secret, algorithm=algorithm)  # type:ignore
 
@@ -37,6 +39,8 @@ def decode_jwt(
     Returns:
         dict: Decoded token payload.
     """
+    if jwt is None:
+        raise ImportError("JWT support is not installed.")
     secret = secret or get_config().secret_key
     try:
         return jwt.decode(token, secret, algorithms=algorithms)  # type:ignore
