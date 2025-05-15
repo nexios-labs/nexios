@@ -27,7 +27,11 @@ class APIView:
         Convert the APIView class into a Route that can be registered with the app or router.
         """
         if methods is None:
-            methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
+            methods = [
+                name.lower()
+                for name in {'get', 'post', 'put', 'delete', 'patch'}
+                if name in cls.__dict__  
+            ]
 
         async def handler(req: Request, res: Response, **kwargs) -> Response:
             instance = cls()
@@ -62,6 +66,8 @@ class APIView:
         Handle requests with unsupported HTTP methods.
         """
         return res.status(405).json({"error": "Method Not Allowed"})
+
+
 
     async def get(self, req: Request, res: Response) -> Response:
         """

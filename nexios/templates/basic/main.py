@@ -1,8 +1,8 @@
-from nexios import get_application
+from nexios import NexiosApp
 from nexios.http import Request, Response
 
 # Create the application
-app = get_application(title="{{project_name_title}}")
+app = NexiosApp(title="{{project_name_title}}")
 
 
 # Define routes
@@ -34,4 +34,3 @@ async def shutdown():
     print("{{project_name_title}} shutting down...")
 
 
-# Run

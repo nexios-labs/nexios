@@ -28,6 +28,7 @@ from .routing import Router, Routes
 from .session.middleware import SessionMiddleware
 from .types import ExceptionHandlerType
 from .dependencies import Depend
+import warnings
 
 
 def get_application(
@@ -100,7 +101,9 @@ def get_application(
     See Also:
         - [Nexios Documentation](https://example.com/nexios-docs)
     """
-
+    warnings.warn(
+        "get_application is deprecated. Please use NexiosApp instead.", DeprecationWarning
+    )
     set_config(config)
     app = NexiosApp(
         middlewares=[
