@@ -20,7 +20,7 @@ async def get_root(req, res):
     return res.json({"message": "Hello World"})
 ```
 
-<img src="/openapi/basic-config.png">
+<img src="./basic-config.png">
 
 
 ## Adding Description
@@ -34,4 +34,4 @@ async def get_root(req, res):
     return res.json({"message": "Hello World"})
 ```
 
-<img src="/openapi/description.png">
+<img src=./description.png">
