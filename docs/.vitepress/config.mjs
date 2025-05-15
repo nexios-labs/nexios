@@ -1,4 +1,3 @@
-// docs/.vitepress/config.js
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
@@ -31,8 +30,6 @@ export default defineConfig({
 
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
-      { text: 'Websockets', link: '/websockets/index' },
-      { text: 'OpenAPI', link: '/openapi/index' },
       { text: 'API Reference', link: '/api/application' },
       { text: 'Team', link: 'team' },
     ],
@@ -52,7 +49,6 @@ export default defineConfig({
         {
           text: 'Core Concepts',
           collapsed: false,
-        
           items: [
             { text: 'Routing', link: '/guide/routing' },
             { text: 'Handlers', link: '/guide/handlers' },
@@ -87,9 +83,32 @@ export default defineConfig({
             { text: 'Static Files', link: '/guide/static-files' },
             { text: 'File Upload', link: '/guide/file-upload' },
             { text: 'Cors', link: '/guide/cors' },
-            { text : "File Router", link: '/guide/file-router' },
+            { text: 'File Router', link: '/guide/file-router' },
           ]
         },
+        {
+          text: 'Websockets',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/guide/websockets/index' },
+            { text: 'Channels', link: '/guide/websockets/channels' },
+            { text: 'Groups', link: '/guide/websockets/groups' },
+            { text: 'Events', link: '/guide/websockets/events' },
+            { text: 'Consumer', link: '/guide/websockets/consumer' },
+          ]
+        },
+        {
+          text: 'OpenAPI',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/guide/openapi/index' },
+            { text: 'Response Models with Pydantic', link: '/guide/openapi/response-models' },
+            { text: 'Request Schemas', link: '/guide/openapi/request-schemas' },
+            { text: 'Request Parameters', link: '/guide/openapi/request-parameters' },
+            { text: 'Customizing OpenAPI Config', link: '/guide/openapi/customizing-openapi-configuration' },
+            { text: 'Authentication Docs', link: '/guide/openapi/authentication-documentation' },
+          ]
+        }
       ],
 
       '/architecture/': [
@@ -98,33 +117,6 @@ export default defineConfig({
           items: [
             { text: 'Async Python', link: '/architecture/async-python' },
             { text: 'Asgi', link: '/architecture/asgi' },
-          ]
-        }
-      ],
-
-      '/websockets/': [
-        {
-          text: 'Websockets',
-          items: [
-            { text: 'Overview', link: '/websockets/index' },
-            { text: 'Channels', link: '/websockets/channels' },
-            { text: 'Groups', link: '/websockets/groups' },
-            { text: 'Events', link: '/websockets/events' },
-            { text: 'Consumer', link: '/websockets/consumer' },
-          ]
-        }
-      ],
-
-      '/openapi/': [
-        {
-          text: 'OpenAPI',
-          items: [
-            { text: 'Overview', link: '/openapi/index' },
-            { text: 'Response Models with Pydantic', link: '/openapi/response-models' },
-            { text: 'Request Schemas', link: '/openapi/request-schemas' },
-            { text: 'Request Parameters', link: '/openapi/request-parameters' },
-            { text: 'Customizing OpenAPI Config', link: '/openapi/customizing-openapi-configuration' },
-            { text: 'Authentication Docs', link: '/openapi/authentication-documentation' },
           ]
         }
       ],
@@ -140,7 +132,7 @@ export default defineConfig({
             { text: 'Websocket', link: '/api/websockets' },
           ]
         }
-      ]
+      ],
     }
   },
 
