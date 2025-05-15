@@ -2,7 +2,7 @@
 icon: down-to-line
 ---
 
-# Getting Started  <Badge type="tip" text="2.4.1" />
+# Getting Started  <Badge type="tip" text="2.4.2" />
 
 Nexios is simple to install , no stress !
 
