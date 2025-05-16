@@ -12,7 +12,7 @@ Nexios Requires Python 3.9+
 
 
 
-## ⬇️ Install 
+##  Install 
 install With pip :
 
 ```sh
