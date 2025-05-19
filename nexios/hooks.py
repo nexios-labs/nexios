@@ -1,4 +1,4 @@
-from functools import wraps, lru_cache
+from functools import wraps
 import asyncio
 import time
 from typing import Callable, Optional, Awaitable, List, Any, Dict
@@ -64,11 +64,10 @@ def after_request(
 
     def decorator(handler: HandlerType) -> HandlerType:
         @wraps(handler)
-        async def wrapper(*args: List[Any], **kwargs: Dict[str, Any]):
-            req: Request = args[-2]  # type:ignore
-            res: Response = args[-2]  # type:ignore
+        async def wrapper(req: Request, res: Response, *args: List[Any], **kwargs: Dict[str, Any]):
+          
 
-            response: Response = await handler(*args, **kwargs)
+            response: Response = await handler(req, res, *args, **kwargs)
             if only_methods and req.method.upper() not in map(str.upper, only_methods):
                 return response
             if for_routes and req.url.path not in for_routes:
