@@ -2,7 +2,8 @@
 ## `NEXIOS` 
 
 <div align="left">
-<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Ribeye&size=50&pause=1000&color=00ff00&center=true&width=900&height=100&lines=Nexios+Framework;Developed+By+Dunamis" alt="Typing SVG" /></a>
+
+<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&color=4CAF50&center=true&width=435&lines=Nexios+ASGI+Framework;Fast%2C+Simple%2C+Flexible" alt="Typing SVG" /></a>
 
 <p align="center">
   <a href="">
