@@ -4,20 +4,22 @@ from nexios.http import Request, Response
 
 app = NexiosApp()
 
+
 @app.get("/dashboard")
 @auth(["jwt"])
 async def admin_dashboard(req: Request, res: Response):
     if not req.user.is_authenticated:
         return res.redirect("/login")
-    
+
     return res.html("Welcome to the Admin Dashboard!")
+
 
 @app.get("/user-profile")
 @auth(["session"])
 async def user_profile(req: Request, res: Response):
     if not req.user.is_authenticated:
         return res.redirect("/login")
-    
+
     return res.html("Welcome to your User Profile!")
 
 
@@ -26,6 +28,5 @@ async def user_profile(req: Request, res: Response):
 async def custom_auth(req: Request, res: Response):
     if not req.user.is_authenticated:
         return res.redirect("/login")
-    
-    return res.html("Welcome to the Custom Auth Page!")
 
+    return res.html("Welcome to the Custom Auth Page!")

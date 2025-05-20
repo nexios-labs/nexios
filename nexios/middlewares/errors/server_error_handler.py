@@ -344,7 +344,7 @@ class ServerErrorMiddleware(BaseMiddleware):
         self.debug = get_config().debug or True
 
         try:
-            return await next_middleware()  
+            return await next_middleware()
         except Exception as exc:
             if self.handler:
                 response = await self.handler(request, response, exc)
@@ -747,9 +747,7 @@ class ServerErrorMiddleware(BaseMiddleware):
 
         # Get request information if available
         try:
-            request_info = self._format_request_info(
-                self.current_request
-            )
+            request_info = self._format_request_info(self.current_request)
         except Exception as e:
             request_info = f"<div class='info-block'><h3>Error retrieving request information</h3><p>{html.escape(str(e))}</p></div>"
 

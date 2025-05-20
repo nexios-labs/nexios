@@ -2221,39 +2221,41 @@ class Router(BaseRouter):
     def url_for(self, _name: str, **path_params: Any) -> URLPath:
         """
         Generate a URL path including all router prefixes for nested routes.
-        
+
         Args:
             _name: Route name in format 'router1.router2.route_name'
             **path_params: Path parameters to substitute
-            
+
         Returns:
             URLPath: Complete path including all router prefixes
         """
-        name_parts = _name.split('.')
+        name_parts = _name.split(".")
         current_router = self
         path_segments = []
-        
+
         # First collect all router prefixes
         for part in name_parts[:-1]:
             found = False
             for mount_path, sub_router in current_router.sub_routers.items():
-                if getattr(sub_router, 'name', None) == part:
-                    path_segments.append(mount_path.strip('/'))
+                if getattr(sub_router, "name", None) == part:
+                    path_segments.append(mount_path.strip("/"))
                     current_router = sub_router
                     found = True
                     break
             if not found:
-                raise ValueError(f"Router '{part}' not found while building URL for '{_name}'")
-        
+                raise ValueError(
+                    f"Router '{part}' not found while building URL for '{_name}'"
+                )
+
         route_name = name_parts[-1]
         for route in current_router.routes:
             if route.name == route_name:
                 route_path = route.url_path_for(route_name, **path_params)
-                path_segments.append(route_path.strip('/'))
-                
-                full_path = '/' + '/'.join(filter(None, path_segments))
+                path_segments.append(route_path.strip("/"))
+
+                full_path = "/" + "/".join(filter(None, path_segments))
                 return URLPath(path=full_path, protocol="http")
-        
+
         raise ValueError(f"Route '{route_name}' not found in router")
 
     def __repr__(self) -> str:
@@ -2269,7 +2271,7 @@ class Router(BaseRouter):
         await app(scope, receive, send)
 
     async def app(self, scope: Scope, receive: Receive, send: Send):
-        scope['app'] = self
+        scope["app"] = self
         url = get_route_path(scope)
 
         for mount_path, sub_app in self.sub_routers.items():

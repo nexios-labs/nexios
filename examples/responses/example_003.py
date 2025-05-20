@@ -1,5 +1,7 @@
 from nexios import NexiosApp
+
 app = NexiosApp()
+
 
 @app.get("/text")
 async def test_handler(req, res):

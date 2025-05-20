@@ -3,7 +3,7 @@ Example of getting and processing JSON data
 """
 
 import json
-from pydantic import BaseModel,ValidationError
+from pydantic import BaseModel, ValidationError
 from nexios import NexiosApp
 
 app = NexiosApp()
@@ -22,7 +22,3 @@ async def process_json(req, res):
         return res.json({"status": "success", "user": user.dict()})
     except ValidationError as e:
         return res.json({"error": str(e)}, status_code=422)
- 
-
-
-

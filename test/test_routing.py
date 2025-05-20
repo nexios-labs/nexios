@@ -82,11 +82,12 @@ async def test_url_for_with_params(async_client):
     url = app.url_for("name", age=0)
     assert url == "/get/name/0"
 
+
 async def test_url_for_with_request(async_client):
     client, app = async_client
 
     @app.get("/get/name/{age}", name="name")
-    async def get(req: Request, res: Response): 
+    async def get(req: Request, res: Response):
 
         return res.json({"name": req.url_for("name", age=0)})
 

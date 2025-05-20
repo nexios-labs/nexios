@@ -29,8 +29,8 @@ class APIView:
         if methods is None:
             methods = [
                 name.lower()
-                for name in {'get', 'post', 'put', 'delete', 'patch'}
-                if name in cls.__dict__  
+                for name in {"get", "post", "put", "delete", "patch"}
+                if name in cls.__dict__
             ]
 
         async def handler(req: Request, res: Response, **kwargs) -> Response:
@@ -66,8 +66,6 @@ class APIView:
         Handle requests with unsupported HTTP methods.
         """
         return res.status(405).json({"error": "Method Not Allowed"})
-
-
 
     async def get(self, req: Request, res: Response) -> Response:
         """

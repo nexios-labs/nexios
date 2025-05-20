@@ -102,7 +102,8 @@ def get_application(
         - [Nexios Documentation](https://example.com/nexios-docs)
     """
     warnings.warn(
-        "get_application is deprecated. Please use NexiosApp instead.", DeprecationWarning
+        "get_application is deprecated. Please use NexiosApp instead.",
+        DeprecationWarning,
     )
     set_config(config)
     app = NexiosApp(

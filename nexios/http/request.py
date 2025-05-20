@@ -96,7 +96,7 @@ class HTTPConnection(object):
     @property
     def app(self) -> typing.Any:
         return self.scope["app"]
-    
+
     @property
     def base_app(self) -> "NexiosApp":  # type: ignore
         return self.scope["base_app"]
@@ -427,6 +427,7 @@ class Request(HTTPConnection):
 
     def url_for(self, _name: str, **path_params: typing.Dict[str, typing.Any]) -> str:
         return self.base_app.url_for(_name, **path_params)
+
     @user.setter
     def user(self, value: str):
         self.scope["user"] = value

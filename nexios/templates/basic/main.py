@@ -32,5 +32,3 @@ async def startup():
 async def shutdown():
     """Function that runs on application shutdown."""
     print("{{project_name_title}} shutting down...")
-
-
