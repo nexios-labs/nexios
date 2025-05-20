@@ -232,14 +232,20 @@ TEMPLATE = """
     </head>
     <body>
         <div class="container">
-            <div class="header-section">
-                <h1>500 - Internal Server Error</h1>
-                <h2>{error}</h2>
-                <div class="error-id">Error ID: {error_id}</div>
-                <div class="timestamp">Occurred at {timestamp}</div>
-            </div>
-
+            <h1>Server Error</h1>
+            <h1>Nexios Debug - {error_type}</h1>
             <!-- Traceback Section -->
+
+             <div class="section">
+                <div class="section-title">
+                    <span>Request Information</span>
+                    <button class="collapse-btn" data-section="request-section" onclick="toggleSection('request-section')">+</button>
+                </div>
+                <div id="request-section" class="section-content">
+                    {request_info}
+                </div>
+            </div>
+            
             <div class="section">
                 <div class="section-title">
                     <span>Traceback</span>
@@ -251,15 +257,7 @@ TEMPLATE = """
             </div>
 
             <!-- Request Information Section -->
-            <div class="section">
-                <div class="section-title">
-                    <span>Request Information</span>
-                    <button class="collapse-btn" data-section="request-section" onclick="toggleSection('request-section')">+</button>
-                </div>
-                <div id="request-section" class="section-content">
-                    {request_info}
-                </div>
-            </div>
+           
 
             <!-- System Information Section -->
             <div class="section">
@@ -750,7 +748,7 @@ class ServerErrorMiddleware(BaseMiddleware):
         # Get request information if available
         try:
             request_info = self._format_request_info(
-                getattr(self, "current_request", Request({}))
+                self.current_request
             )
         except Exception as e:
             request_info = f"<div class='info-block'><h3>Error retrieving request information</h3><p>{html.escape(str(e))}</p></div>"
