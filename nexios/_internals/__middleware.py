@@ -243,6 +243,3 @@ MiddlewareType = typing.Callable[
 
 def wrap_middleware(middleware_function: DispatchFunction) -> DefineMiddleware:
     return DefineMiddleware(ASGIRequestResponseBridge, dispatch=middleware_function)
-
-
-

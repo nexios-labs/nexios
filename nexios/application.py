@@ -36,7 +36,11 @@ from .types import (
     Send,
     WsHandlerType,
 )
-from nexios._internals.__middleware import wrap_middleware, ASGIRequestResponseBridge,DefineMiddleware as Middleware 
+from nexios._internals.__middleware import (
+    wrap_middleware,
+    ASGIRequestResponseBridge,
+    DefineMiddleware as Middleware,
+)
 
 
 logger = create_logger("nexios")

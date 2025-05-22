@@ -34,7 +34,11 @@ from nexios.exceptions import NotFoundException
 from nexios.websockets.errors import WebSocketErrorMiddleware
 from pydantic import BaseModel
 from nexios.http.response import BaseResponse
-from nexios._internals.__middleware import wrap_middleware, ASGIRequestResponseBridge,DefineMiddleware as Middleware 
+from nexios._internals.__middleware import (
+    wrap_middleware,
+    ASGIRequestResponseBridge,
+    DefineMiddleware as Middleware,
+)
 
 from nexios.dependencies import inject_dependencies
 
