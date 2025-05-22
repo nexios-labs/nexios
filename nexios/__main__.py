@@ -1,4 +1,4 @@
-__version__ :str = "2.4.3"
+__version__: str = "2.4.3"
 
 ascii_art = f"""
   _   _                 _

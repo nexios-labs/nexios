@@ -328,7 +328,14 @@ def new(
     help="Number of worker processes (granian only).",
     show_default=True,
 )
-def run(host: str, port: int, reload: bool, app_path: Optional[str], server: str, workers: int):
+def run(
+    host: str,
+    port: int,
+    reload: bool,
+    app_path: Optional[str],
+    server: str,
+    workers: int,
+):
     """
     Run the Nexios application using the specified server.
 

@@ -28,8 +28,9 @@ def before_request(
 
     def decorator(handler: HandlerType) -> HandlerType:
         @wraps(handler)
-        async def wrapper(req: Request, res: Response, *args: List[Any], **kwargs: Dict[str, Any]):
-           
+        async def wrapper(
+            req: Request, res: Response, *args: List[Any], **kwargs: Dict[str, Any]
+        ):
 
             if only_methods and req.method.upper() not in map(str.upper, only_methods):
                 return await handler(*args, **kwargs)
@@ -64,8 +65,9 @@ def after_request(
 
     def decorator(handler: HandlerType) -> HandlerType:
         @wraps(handler)
-        async def wrapper(req: Request, res: Response, *args: List[Any], **kwargs: Dict[str, Any]):
-          
+        async def wrapper(
+            req: Request, res: Response, *args: List[Any], **kwargs: Dict[str, Any]
+        ):
 
             response: Response = await handler(req, res, *args, **kwargs)
             if only_methods and req.method.upper() not in map(str.upper, only_methods):
@@ -83,10 +85,3 @@ def after_request(
         return wrapper
 
     return decorator  # type:ignore
-
-
-
-
-
-
-

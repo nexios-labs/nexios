@@ -7,8 +7,6 @@ from config import app_config
 app = get_application(title="{{project_name_title}}", config=app_config)
 
 
-
-
 @app.on_startup
 async def startup():
     """Function that runs on application startup."""

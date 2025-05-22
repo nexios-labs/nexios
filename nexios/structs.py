@@ -755,7 +755,7 @@ class UploadedFile:
 
 
 class FormData(
-    MultiDict[str, typing.Union[UploadedFile, str, Sequence[Any]]] # type:ignore
+    MultiDict[str, typing.Union[UploadedFile, str, Sequence[Any]]]  # type:ignore
 ):  # type:ignore
 
     def __init__(
