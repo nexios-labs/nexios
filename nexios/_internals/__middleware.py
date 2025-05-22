@@ -36,7 +36,7 @@ class _MiddlewareFactory(Protocol[P]):
     ) -> ASGIApp: ...  # pragma: no cover
 
 
-class Middleware:
+class DefineMiddleware:
     def __init__(
         self,
         cls: _MiddlewareFactory[P],
@@ -136,7 +136,7 @@ class _CachedRequest(Request):
                 return {"type": "http.disconnect"}
 
 
-class BaseMiddleware:
+class ASGIRequestResponseBridge:
     def __init__(self, app: ASGIApp, dispatch: DispatchFunction) -> None:
         self.app = app
         self.dispatch_func = dispatch
@@ -241,8 +241,8 @@ MiddlewareType = typing.Callable[
 ]
 
 
-def wrap_middleware(middleware_function: DispatchFunction) -> Middleware:
-    return Middleware(BaseMiddleware, dispatch=middleware_function)
+def wrap_middleware(middleware_function: DispatchFunction) -> DefineMiddleware:
+    return DefineMiddleware(ASGIRequestResponseBridge, dispatch=middleware_function)
 
 
-__all__ = ["BaseMiddleware"]
+

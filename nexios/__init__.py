@@ -21,13 +21,13 @@ from typing_extensions import Doc, Annotated
 from .application import NexiosApp
 from .config import set_config, DEFAULT_CONFIG
 from .config.base import MakeConfig
-from .middlewares.core import wrap_middleware
 from .middlewares.cors import CORSMiddleware
 from .middlewares.csrf import CSRFMiddleware
 from .routing import Router, Routes
 from .session.middleware import SessionMiddleware
 from .types import ExceptionHandlerType
 from .dependencies import Depend
+from ._internals.__middleware import wrap_middleware
 import warnings
 
 

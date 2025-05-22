@@ -30,12 +30,12 @@ from nexios.http.response import JSONResponse
 from nexios.types import Scope, Send, Receive, ASGIApp
 from .converters import Convertor, CONVERTOR_TYPES, get_route_path
 from nexios.websockets import WebSocket
-from nexios.middlewares.core import BaseMiddleware
-from nexios.middlewares.core import Middleware, wrap_middleware
 from nexios.exceptions import NotFoundException
 from nexios.websockets.errors import WebSocketErrorMiddleware
 from pydantic import BaseModel
 from nexios.http.response import BaseResponse
+from nexios._internals.__middleware import wrap_middleware, ASGIRequestResponseBridge,DefineMiddleware as Middleware 
+
 from nexios.dependencies import inject_dependencies
 
 
@@ -620,7 +620,7 @@ class Router(BaseRouter):
     def add_middleware(self, middleware: MiddlewareType) -> None:
         """Add middleware to the router"""
         if callable(middleware):
-            mdw = Middleware(BaseMiddleware, dispatch=middleware)  # type: ignore
+            mdw = Middleware(ASGIRequestResponseBridge, dispatch=middleware)  # type: ignore
             self.middlewares.insert(0, mdw)
 
     def get(

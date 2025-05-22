@@ -17,7 +17,6 @@ from nexios.config import DEFAULT_CONFIG, MakeConfig
 from nexios.events import AsyncEventEmitter
 from nexios.exception_handler import ExceptionHandlerType, ExceptionMiddleware
 from nexios.logging import create_logger
-from nexios.middlewares.core import BaseMiddleware, Middleware
 from nexios.middlewares.errors.server_error_handler import (
     ServerErrorMiddleware,
     ServerErrHandlerType,
@@ -37,6 +36,7 @@ from .types import (
     Send,
     WsHandlerType,
 )
+from nexios._internals.__middleware import wrap_middleware, ASGIRequestResponseBridge,DefineMiddleware as Middleware 
 
 
 logger = create_logger("nexios")
@@ -356,7 +356,7 @@ class NexiosApp(object):
         """
 
         self.http_middlewares.insert(
-            0, Middleware(BaseMiddleware, dispatch=middleware)  # type:ignore
+            0, Middleware(ASGIRequestResponseBridge, dispatch=middleware)  # type:ignore
         )
 
     def add_ws_route(
@@ -492,14 +492,14 @@ class NexiosApp(object):
         middleware = (
             [
                 Middleware(
-                    BaseMiddleware,
+                    ASGIRequestResponseBridge,
                     dispatch=ServerErrorMiddleware(handler=self.server_error_handler),
                 )
             ]
             + self.http_middlewares
             + [
                 Middleware(
-                    BaseMiddleware, dispatch=self.exceptions_handler
+                    ASGIRequestResponseBridge, dispatch=self.exceptions_handler
                 )  # type:ignore
             ]
         )
