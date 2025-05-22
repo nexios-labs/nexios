@@ -4,6 +4,7 @@ from nexios.types import ASGIApp, Receive, Scope, Send
 import typing
 import asyncio
 
+
 async def request_response(
     func: typing.Callable[[Request, Response], typing.Awaitable[Response]],
 ) -> ASGIApp:

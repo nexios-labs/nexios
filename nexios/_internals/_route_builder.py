@@ -4,12 +4,15 @@ from dataclasses import dataclass
 import re
 from enum import Enum
 from typing import Pattern, List, Dict
+
 PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
+
 
 class RouteType(Enum):
     REGEX = "regex"
     PATH = "path"
     WILDCARD = "wildcard"
+
 
 def replace_params(
     path: str,
@@ -23,8 +26,6 @@ def replace_params(
             path = path.replace("{" + key + "}", value)
             path_params.pop(key)
     return path, path_params
-
-
 
 
 def compile_path(

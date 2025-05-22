@@ -35,7 +35,7 @@ from nexios.websockets.errors import WebSocketErrorMiddleware
 from pydantic import BaseModel
 from nexios.http.response import BaseResponse
 from nexios._internals._response_transformer import request_response
-from nexios._internals._route_builder import RouteType,RouteBuilder
+from nexios._internals._route_builder import RouteType, RouteBuilder
 from nexios._internals.__middleware import (
     wrap_middleware,
     ASGIRequestResponseBridge,
@@ -47,6 +47,7 @@ from nexios.dependencies import inject_dependencies
 
 T = TypeVar("T")
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
+
 
 def websocket_session(
     func: typing.Callable[[WebSocket], typing.Awaitable[None]],
@@ -66,9 +67,6 @@ def websocket_session(
         await app(scope, receive, send)
 
     return app
-
-
-
 
 
 class BaseRouter(ABC):
