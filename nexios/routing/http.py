@@ -1,17 +1,6 @@
 from __future__ import annotations
-from typing import (
-    Any,
-    List,
-    Dict,
-    Optional,
-    Callable,
-    Union,
-    Pattern,
-    Tuple,
-    Annotated,
-    Type,
-)
-from typing_extensions import Literal, Doc
+from typing import Any, List, Dict, Optional, Callable, Union, Pattern, Tuple, Annotated, Type
+from typing_extensions import Literal,Doc
 import inspect
 import copy
 import warnings
@@ -19,27 +8,22 @@ import typing
 import re
 from dataclasses import dataclass
 from pydantic import BaseModel
-from .base import BaseRouter, BaseRoute
+from .base import BaseRouter,BaseRoute
 from nexios.http import Request, Response
 from nexios.types import Scope, Receive, Send, ASGIApp, MiddlewareType, HandlerType
 from nexios.exceptions import NotFoundException
 from nexios.http.response import JSONResponse
 from nexios.dependencies import inject_dependencies
 from nexios._internals._route_builder import RouteBuilder
-from nexios._internals.__middleware import (
-    wrap_middleware,
-    DefineMiddleware as Middleware,
-    ASGIRequestResponseBridge,
-)
+from nexios._internals.__middleware import wrap_middleware,DefineMiddleware as Middleware,ASGIRequestResponseBridge
 from nexios.openapi import Parameter
-from nexios.structs import URLPath, RouteParam
+from nexios.structs import URLPath,RouteParam
 from nexios._internals._response_transformer import request_response
 from nexios.events import AsyncEventEmitter
 from nexios.decorators import allowed_methods
 from ._utils import get_route_path
 
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
-
 
 class Routes(BaseRoute):
     """
@@ -272,6 +256,8 @@ class Routes(BaseRoute):
 
         await app(scope, receive, send)
 
+       
+
     def __repr__(self) -> str:
         """
         Return a string representation of the route.
@@ -280,6 +266,10 @@ class Routes(BaseRoute):
             str: A string describing the route.
         """
         return f"<Route {self.raw_path} methods={self.methods}>"
+
+
+
+
 
 
 class Router(BaseRouter):
@@ -295,7 +285,7 @@ class Router(BaseRouter):
         self.prefix.rstrip("/")
         self.routes = list(routes) if routes else []
         self.middlewares: typing.List[Middleware] = []
-        self.sub_routers: Dict[str, Union[Router, ASGIApp]] = {}
+        self.sub_routers: Dict[str, Union[Router,ASGIApp]] = {}
         self.route_class = Routes
         self.tags = tags or []
         self.exclude_from_schema = exclude_from_schema
@@ -323,8 +313,7 @@ class Router(BaseRouter):
     def add_route(
         self,
         route: Annotated[
-            Union[type[BaseRoute], Routes],
-            Doc("An instance of the Routes class representing an HTTP route."),
+            Union[type[BaseRoute], Routes], Doc("An instance of the Routes class representing an HTTP route.")
         ],
     ) -> None:
         """
@@ -346,8 +335,8 @@ class Router(BaseRouter):
         """
 
         if not isinstance(route, Routes):
-            self.routes.append(route)
-            return
+             self.routes.append(route)
+             return 
 
         route.tags = self.tags + route.tags if route.tags else self.tags
         # original_handler = route.handler
@@ -2040,7 +2029,7 @@ class Router(BaseRouter):
                 scope["path"] = url[len(mount_path) :]
                 print(sub_app)
                 await sub_app(scope, receive, send)
-
+                
                 return
 
         path_matched = False
@@ -2048,7 +2037,7 @@ class Router(BaseRouter):
         for route in self.routes:
             match, matched_params, is_allowed = route.match(url, scope["method"])
             print("prefix ", self.prefix)
-            print("match", route)
+            print('match',route)
             if match:
                 path_matched = True
                 if is_allowed:
@@ -2116,7 +2105,7 @@ class Router(BaseRouter):
 
     def register(
         self,
-        app: ASGIApp,
+        app :ASGIApp,
         prefix: str = "",
     ):
         """
@@ -2126,5 +2115,6 @@ class Router(BaseRouter):
             app: The ASGI application (e.g., another Router) to register.
             prefix: The path prefix under which the app will be registered.
         """
-
+        
         self.sub_routers[prefix] = app
+        
