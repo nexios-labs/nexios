@@ -1924,7 +1924,8 @@ class NexiosApp(object):
     def add_route(
         self,
         route: Annotated[
-            Union[Routes, type[BaseRoute]], Doc("An instance of the Routes class representing an HTTP route.")
+            Union[Routes, type[BaseRoute]],
+            Doc("An instance of the Routes class representing an HTTP route."),
         ],
     ) -> None:
         """

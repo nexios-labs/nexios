@@ -323,7 +323,8 @@ class Router(BaseRouter):
     def add_route(
         self,
         route: Annotated[
-            Union[type[BaseRoute], Routes], Doc("An instance of the Routes class representing an HTTP route.")
+            Union[type[BaseRoute], Routes],
+            Doc("An instance of the Routes class representing an HTTP route."),
         ],
     ) -> None:
         """
@@ -345,8 +346,8 @@ class Router(BaseRouter):
         """
 
         if not isinstance(route, Routes):
-             self.routes.append(route)
-             return 
+            self.routes.append(route)
+            return
 
         route.tags = self.tags + route.tags if route.tags else self.tags
         # original_handler = route.handler
@@ -2047,7 +2048,7 @@ class Router(BaseRouter):
         for route in self.routes:
             match, matched_params, is_allowed = route.match(url, scope["method"])
             print("prefix ", self.prefix)
-            print('match',route)
+            print("match", route)
             if match:
                 path_matched = True
                 if is_allowed:

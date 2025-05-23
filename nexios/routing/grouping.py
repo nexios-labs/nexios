@@ -27,7 +27,7 @@ class Group(BaseRoute):
         if app is not None:
             self._base_app: ASGIApp = app
         else:
-            self._base_app = Router(routes=routes, prefix=self.path) # type: ignore
+            self._base_app = Router(routes=routes, prefix=self.path)  # type: ignore
         self.app = self._base_app
         if middleware is not None:
             for cls, args, kwargs in reversed(middleware):
@@ -106,8 +106,6 @@ class Group(BaseRoute):
     async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
         print(self.app)
         await self.app(scope, receive, send)
-
-  
 
     def __repr__(self) -> str:
         class_name = self.__class__.__name__
