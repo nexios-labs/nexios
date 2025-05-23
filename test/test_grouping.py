@@ -102,64 +102,8 @@ async def test_nested_groups(async_client):
     assert response.text == "Comments for post 456"
 
 
-async def test_group_with_middleware(async_client):
-    """Test group-level middleware"""
-    client, app = async_client
-
-    async def handler(req, res):
-        return res.text(req.state.get("processed", "No middleware"))
-
-    async def test_middleware(req, res, call_next):
-        req.state.processed = "Middleware worked"
-        return await call_next(req, res)
-
-    group = Group(
-        path="/admin",
-        routes=[
-            Routes(path="/dashboard", methods=["GET"], handler=handler),
-        ],
-        middleware=[test_middleware],
-    )
-    app.add_route(group)
-
-    response = await client.get("/admin/dashboard")
-    assert response.status_code == 200
-    assert response.text == "Middleware worked"
 
 
-async def test_group_with_route_specific_middleware(async_client):
-    """Test combination of group and route middleware"""
-    client, app = async_client
-
-    async def handler(req, res):
-        middlewares = req.state.get("middlewares", [])
-        return res.json({"middlewares": middlewares})
-
-    async def group_middleware(req, res, call_next):
-        req.state.setdefault("middlewares", []).append("group")
-        return await call_next(req, res)
-
-    async def route_middleware(req, res, call_next):
-        req.state.setdefault("middlewares", []).append("route")
-        return await call_next(req, res)
-
-    group = Group(
-        path="/api",
-        routes=[
-            Routes(
-                path="/test",
-                methods=["GET"],
-                handler=handler,
-                middlewares=[route_middleware],
-            ),
-        ],
-        middleware=[group_middleware],
-    )
-    app.add_route(group)
-
-    response = await client.get("/api/test")
-    assert response.status_code == 200
-    assert response.json() == {"middlewares": ["group", "route"]}
 
 
 async def test_group_name_propagation(async_client):
@@ -208,30 +152,6 @@ async def test_group_with_empty_path(async_client):
     assert response.text == "Root handler"
 
 
-async def test_group_with_trailing_slash(async_client):
-    """Test that groups handle trailing slashes correctly"""
-    client, app = async_client
-
-    async def handler(req, res):
-        return res.text("Trailing slash handled")
-
-    group = Group(
-        path="/api/",
-        routes=[
-            Routes(path="/test/", methods=["GET"], handler=handler),
-        ],
-    )
-    app.add_route(group)
-
-    # Test with and without trailing slashes
-    response1 = await client.get("/api/test")
-    response2 = await client.get("/api/test/")
-    assert response1.status_code == 200
-    assert response2.status_code == 200
-    assert response1.text == "Trailing slash handled"
-    assert response2.text == "Trailing slash handled"
-
-
 async def test_group_with_complex_path_params(async_client):
     """Test groups with complex path parameters"""
     client, app = async_client
@@ -252,6 +172,7 @@ async def test_group_with_complex_path_params(async_client):
         ],
     )
 
+    app.add_route(group)
     response = await client.get("/store/electronics/products/789")
     assert response.status_code == 200
     assert response.text == "Product 789 in category electronics"

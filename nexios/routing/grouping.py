@@ -24,7 +24,7 @@ class Group(BaseRoute):
             app is not None or routes is not None
         ), "Either 'app=...', or 'routes=' must be specified"
 
-        self.path = path.rstrip("/") + "/"
+        self.path = path.rstrip("/") 
         self.name = name
         self.raw_path = path
 

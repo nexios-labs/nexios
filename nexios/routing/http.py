@@ -293,7 +293,7 @@ class Router(BaseRouter):
     ):
         self.prefix = prefix or ""
         self.prefix.rstrip("/")
-        self.routes = list(routes) if routes else []
+        self.routes = []
         self.middlewares: typing.List[Middleware] = []
         self.sub_routers: Dict[str, Union[Router, ASGIApp]] = {}
         self.route_class = Routes
@@ -305,6 +305,10 @@ class Router(BaseRouter):
         if self.prefix and not self.prefix.startswith("/"):
             warnings.warn("Router prefix should start with '/'")
             self.prefix = f"/{self.prefix}"
+
+        if routes:
+            for route in routes:
+                self.add_route(route)
 
     def build_middleware_stack(self, app: ASGIApp) -> ASGIApp:
         """
