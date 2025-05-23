@@ -23,7 +23,7 @@ class Group(BaseRoute):
         if app is not None:
             self._base_app: ASGIApp = app
         else:
-            self._base_app = Router(routes=routes) # type: ignore
+            self._base_app = Router(routes=routes, prefix=self.path) # type: ignore
         self.app = self._base_app
         if middleware is not None:
             for cls, args, kwargs in reversed(middleware):
@@ -58,8 +58,7 @@ class Group(BaseRoute):
                 matched_params[key] = self.route_info.convertor[  # type: ignore
                     key
                 ].convert(value)
-            is_method_allowed = method.lower() in [m.lower() for m in self.methods]
-            return match, matched_params, is_method_allowed
+            return match, matched_params, True
         return None, None, False
 
     def url_path_for(self, _name: str, **path_params: typing.Any) -> URLPath:
@@ -100,10 +99,10 @@ class Group(BaseRoute):
 
 
     async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
+        print(self.app)
         await self.app(scope, receive, send)
 
-    def __eq__(self, other: typing.Any) -> bool:
-        return isinstance(other, Group) and self.path == other.path and self.app == other.app
+  
 
     def __repr__(self) -> str:
         class_name = self.__class__.__name__
@@ -111,4 +110,5 @@ class Group(BaseRoute):
         return f"{class_name}(path={self.path!r}, name={name!r}, app={self.app!r})"
     
     def __call__(self, scope: Scope, receive: Receive, send: Send) -> typing.Any:
+        print(self.app)
         return self.app(scope, receive, send)

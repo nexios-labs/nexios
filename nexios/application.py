@@ -24,6 +24,7 @@ from nexios.middlewares.errors.server_error_handler import (
 from nexios.openapi._builder import APIDocumentation
 from nexios.openapi.config import OpenAPIConfig
 from nexios.openapi.models import HTTPBearer, Parameter, Path, Schema
+from nexios.routing.base import BaseRoute
 from nexios.structs import URLPath
 from .routing import Router, Routes, WSRouter, WebsocketRoutes
 from .types import (
@@ -1923,7 +1924,7 @@ class NexiosApp(object):
     def add_route(
         self,
         route: Annotated[
-            Routes, Doc("An instance of the Routes class representing an HTTP route.")
+            Union[Routes, type[BaseRoute]], Doc("An instance of the Routes class representing an HTTP route.")
         ],
     ) -> None:
         """

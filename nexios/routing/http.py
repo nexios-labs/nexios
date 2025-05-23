@@ -313,7 +313,7 @@ class Router(BaseRouter):
     def add_route(
         self,
         route: Annotated[
-            Routes, Doc("An instance of the Routes class representing an HTTP route.")
+            Union[type[BaseRoute], Routes], Doc("An instance of the Routes class representing an HTTP route.")
         ],
     ) -> None:
         """
@@ -335,7 +335,9 @@ class Router(BaseRouter):
         """
 
         if not isinstance(route, Routes):
-            raise TypeError("Route must be an instance of Routes")
+             self.routes.append(route)
+             return 
+
         route.tags = self.tags + route.tags if route.tags else self.tags
         # original_handler = route.handler
 
@@ -2025,6 +2027,7 @@ class Router(BaseRouter):
         for mount_path, sub_app in self.sub_routers.items():
             if url.startswith(mount_path):
                 scope["path"] = url[len(mount_path) :]
+                print(sub_app)
                 await sub_app(scope, receive, send)
                 
                 return
@@ -2033,11 +2036,11 @@ class Router(BaseRouter):
         allowed_methods_: typing.Set[str] = set()
         for route in self.routes:
             match, matched_params, is_allowed = route.match(url, scope["method"])
-
+            print("prefix ", self.prefix)
+            print('match',route)
             if match:
                 path_matched = True
                 if is_allowed:
-                    route.handler = allowed_methods(route.methods)(route.handler)
                     scope["route_params"] = RouteParam(matched_params)
                     await route.handle(scope, receive, send)
                     return
@@ -2106,7 +2109,7 @@ class Router(BaseRouter):
         prefix: str = "",
     ):
         """
-        Register an ASGI application (e.g., another Router) under a specific path prefix.
+        Register an ASGI application (e.g., another Router) under a specdefific path prefix.
 
         Args:
             app: The ASGI application (e.g., another Router) to register.
