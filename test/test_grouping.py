@@ -102,10 +102,6 @@ async def test_nested_groups(async_client):
     assert response.text == "Comments for post 456"
 
 
-
-
-
-
 async def test_group_name_propagation(async_client):
     """Test that group name is properly used in URL generation"""
     client, app = async_client
