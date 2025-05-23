@@ -5,6 +5,7 @@ import warnings
 from abc import abstractmethod, ABC
 from nexios.types import Scope, Receive, Send, ASGIApp
 
+
 class BaseRouter(ABC):
     """
     Base class for routers. This class should not be instantiated directly.
@@ -41,7 +42,7 @@ class BaseRouter(ABC):
 
     def __repr__(self) -> str:
         return f"<BaseRouter prefix='{self.prefix}' routes={len(self.routes)}>"
-    
+
 
 class BaseRoute(ABC):
     """
@@ -49,24 +50,24 @@ class BaseRoute(ABC):
     Subclasses should implement the `matches` method to handle specific routing logic.
     """
 
-    def __init__(self, path: str, methods: Optional[List[str]] = None,**kwargs: Dict[str, Any]) -> None:
+    def __init__(
+        self, path: str, methods: Optional[List[str]] = None, **kwargs: Dict[str, Any]
+    ) -> None:
         self.path = path
         self.methods = methods or []
 
     @abstractmethod
     def match(self, scope: Scope) -> bool:
         raise NotImplementedError("Subclasses must implement this method")
-    
 
     @abstractmethod
     async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
         raise NotImplementedError("Subclasses must implement this method")
-    
 
     @abstractmethod
     def url_path_for(self, name: str, **path_params: Any) -> str:
         raise NotImplementedError("Subclasses must implement this method")
-    
+
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if self.match(scope):
             await self.handle(scope, receive, send)

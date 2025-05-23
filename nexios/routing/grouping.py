@@ -5,8 +5,10 @@ from nexios.exceptions import NotFoundException
 from nexios._internals.__middleware import DefineMiddleware as Middleware
 from nexios._internals._route_builder import RouteBuilder
 from nexios.structs import URLPath
-from  .http import Router
+from .http import Router
 from .base import BaseRoute
+
+
 class Group(BaseRoute):
     def __init__(
         self,
@@ -18,7 +20,9 @@ class Group(BaseRoute):
         middleware: typing.List[Middleware] | None = None,
     ) -> None:
         assert path == "" or path.startswith("/"), "Routed paths must start with '/'"
-        assert app is not None or routes is not None, "Either 'app=...', or 'routes=' must be specified"
+        assert (
+            app is not None or routes is not None
+        ), "Either 'app=...', or 'routes=' must be specified"
         self.path = path.rstrip("/")
         if app is not None:
             self._base_app: ASGIApp = app
@@ -40,7 +44,9 @@ class Group(BaseRoute):
     def routes(self) -> list[BaseRoute]:
         return getattr(self._base_app, "routes", [])
 
-    def match(self, path: str, method: str) -> typing.Tuple[typing.Any, typing.Any, typing.Any]:
+    def match(
+        self, path: str, method: str
+    ) -> typing.Tuple[typing.Any, typing.Any, typing.Any]:
         """
         Match a path against this route's pattern and return captured parameters.
 
@@ -97,7 +103,6 @@ class Group(BaseRoute):
 
         return URLPath(path=path, protocol="http")
 
-
     async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
         print(self.app)
         await self.app(scope, receive, send)
@@ -108,7 +113,7 @@ class Group(BaseRoute):
         class_name = self.__class__.__name__
         name = self.name or ""
         return f"{class_name}(path={self.path!r}, name={name!r}, app={self.app!r})"
-    
+
     def __call__(self, scope: Scope, receive: Receive, send: Send) -> typing.Any:
         print(self.app)
         return self.app(scope, receive, send)
