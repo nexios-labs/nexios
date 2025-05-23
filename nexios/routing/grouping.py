@@ -23,22 +23,24 @@ class Group(BaseRoute):
         assert (
             app is not None or routes is not None
         ), "Either 'app=...', or 'routes=' must be specified"
-        
+
         self.path = path.rstrip("/") + "/"
         self.name = name
         self.raw_path = path
-        
+
         if app is not None:
             self._base_app = app
         else:
-            self._base_app = Router(routes=routes) #type:ignore
-        
-        self.app = self._base_app #type:ignore
+            self._base_app = Router(routes=routes)  # type:ignore
+
+        self.app = self._base_app  # type:ignore
         if middleware is not None:
             for cls, args, kwargs in reversed(middleware):
                 self.app = cls(self.app, *args, **kwargs)
-        
-        self.route_info = RouteBuilder.create_pattern(self.path.rstrip("/") + "{path:path}")
+
+        self.route_info = RouteBuilder.create_pattern(
+            self.path.rstrip("/") + "{path:path}"
+        )
         self.pattern = self.route_info.pattern
         self.param_names = self.route_info.param_names
         self.route_type = self.route_info.route_type
@@ -57,34 +59,34 @@ class Group(BaseRoute):
         if match:
             matched_params = match.groupdict()
             path_remainder = matched_params.pop("path", "")
-            
+
             # Ensure the remainder path starts with /
             if path_remainder and not path_remainder.startswith("/"):
                 path_remainder = "/" + path_remainder
-            
+
             # Convert path parameters
             for key, value in matched_params.items():
                 if value is not None:
                     matched_params[key] = self.route_info.convertor[key].convert(value)
-            
+
             return match, {"path": path_remainder, **matched_params}, True
         return None, None, False
 
     async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
         original_path = scope["path"]
         matched_path = self.path.rstrip("/")
-        
+
         if original_path.startswith(matched_path):
-            remaining_path = original_path[len(matched_path):] or "/"
+            remaining_path = original_path[len(matched_path) :] or "/"
             scope["path"] = remaining_path
             scope["root_path"] = scope.get("root_path", "") + matched_path
-        
+
         try:
             await self.app(scope, receive, send)
         except NotFoundException:
             scope["path"] = original_path
             if "root_path" in scope:
-                scope["root_path"] = scope["root_path"][:-len(matched_path)]
+                scope["root_path"] = scope["root_path"][: -len(matched_path)]
             raise
 
     def url_path_for(self, _name: str, **path_params: typing.Any) -> URLPath:
