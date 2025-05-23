@@ -23,15 +23,11 @@ async def test_group_basic_routing(async_client):
     group = Group(
         path="/api",
         routes=[
-            Routes(
-                path="/users",
-                methods=["GET"],
-                handler=handler
-            ),
+            Routes(path="/users", methods=["GET"], handler=handler),
         ],
     )
     app.add_route(group)
-    
+
     response = await client.get("/api/users")
     assert response.status_code == 200
     assert response.text == "Users list"
@@ -55,12 +51,12 @@ async def test_group_with_multiple_routes(async_client):
         ],
     )
     app.add_route(group)
-    
+
     # Test first route
     response = await client.get("/api/users")
     assert response.status_code == 200
     assert response.text == "Users list"
-    
+
     # Test second route with path parameter
     response = await client.get("/api/users/123")
     assert response.status_code == 200
@@ -80,7 +76,9 @@ async def test_nested_groups(async_client):
     inner_group = Group(
         path="/posts",
         routes=[
-            Routes(path="/{post_id}/comments", methods=["GET"], handler=comments_handler),
+            Routes(
+                path="/{post_id}/comments", methods=["GET"], handler=comments_handler
+            ),
         ],
     )
 
@@ -92,12 +90,12 @@ async def test_nested_groups(async_client):
         ],
     )
     app.add_route(outer_group)
-    
+
     # Test outer route
     response = await client.get("/api/posts")
     assert response.status_code == 200
     assert response.text == "Posts list"
-    
+
     # Test nested route
     response = await client.get("/api/posts/456/comments")
     assert response.status_code == 200
@@ -123,7 +121,7 @@ async def test_group_with_middleware(async_client):
         middleware=[test_middleware],
     )
     app.add_route(group)
-    
+
     response = await client.get("/admin/dashboard")
     assert response.status_code == 200
     assert response.text == "Middleware worked"
@@ -152,13 +150,13 @@ async def test_group_with_route_specific_middleware(async_client):
                 path="/test",
                 methods=["GET"],
                 handler=handler,
-                middlewares=[route_middleware]
+                middlewares=[route_middleware],
             ),
         ],
         middleware=[group_middleware],
     )
     app.add_route(group)
-    
+
     response = await client.get("/api/test")
     assert response.status_code == 200
     assert response.json() == {"middlewares": ["group", "route"]}
@@ -175,20 +173,15 @@ async def test_group_name_propagation(async_client):
         path="/shop",
         name="shop",
         routes=[
-            Routes(
-                path="/products",
-                methods=["GET"],
-                handler=handler,
-                name="products"
-            ),
+            Routes(path="/products", methods=["GET"], handler=handler, name="products"),
         ],
     )
     app.add_route(group)
-    
+
     # Test that the route works
     response = await client.get("/shop/products")
     assert response.status_code == 200
-    
+
     # Test URL generation (assuming your framework has url_for functionality)
     # This would depend on your actual URL generation implementation
     # url = app.url_for("shop.products")
@@ -209,7 +202,7 @@ async def test_group_with_empty_path(async_client):
         ],
     )
     app.add_route(group)
-    
+
     response = await client.get("/")
     assert response.status_code == 200
     assert response.text == "Root handler"
@@ -229,7 +222,7 @@ async def test_group_with_trailing_slash(async_client):
         ],
     )
     app.add_route(group)
-    
+
     # Test with and without trailing slashes
     response1 = await client.get("/api/test")
     response2 = await client.get("/api/test/")
@@ -244,7 +237,9 @@ async def test_group_with_complex_path_params(async_client):
     client, app = async_client
 
     async def product_handler(req, res):
-        return res.text(f"Product {req.path_params['product_id']} in category {req.path_params['category']}")
+        return res.text(
+            f"Product {req.path_params['product_id']} in category {req.path_params['category']}"
+        )
 
     group = Group(
         path="/store",
@@ -252,11 +247,11 @@ async def test_group_with_complex_path_params(async_client):
             Routes(
                 path="/{category}/products/{product_id}",
                 methods=["GET"],
-                handler=product_handler
+                handler=product_handler,
             ),
         ],
     )
-    
+
     response = await client.get("/store/electronics/products/789")
     assert response.status_code == 200
     assert response.text == "Product 789 in category electronics"
@@ -272,25 +267,21 @@ async def test_group_with_multiple_methods(async_client):
     group = Group(
         path="/api",
         routes=[
-            Routes(
-                path="/items",
-                methods=["GET", "POST"],
-                handler=handler
-            ),
+            Routes(path="/items", methods=["GET", "POST"], handler=handler),
         ],
     )
     app.add_route(group)
-    
+
     # Test GET
     response_get = await client.get("/api/items")
     assert response_get.status_code == 200
     assert response_get.text == "GET successful"
-    
+
     # Test POST
     response_post = await client.post("/api/items")
     assert response_post.status_code == 200
     assert response_post.text == "POST successful"
-    
+
     # Test unsupported method
     response_delete = await client.delete("/api/items")
     assert response_delete.status_code == 405
