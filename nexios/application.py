@@ -120,7 +120,7 @@ class NexiosApp(object):
         self.exceptions_handler = ExceptionMiddleware()
         self.server_error_handler = server_error_handler
 
-        self.app = Router(routes=routes) # type:ignore
+        self.app = Router(routes=routes)  # type:ignore
         self.router = self.app
         self.route = self.router.route
         self.lifespan_context: Optional[lifespan_manager] = lifespan
@@ -302,7 +302,7 @@ class NexiosApp(object):
         """Set up automatic OpenAPI documentation"""
         docs = self.docs
         for route in self.get_all_routes():
-            if getattr(self,"exlude_from_schema") == True:
+            if getattr(self, "exlude_from_schema") == True:
                 continue
             for method in route.methods:
 
@@ -2061,5 +2061,6 @@ class NexiosApp(object):
         prefix: str = "",
     ) -> None:
         self.router.register(app, prefix)
+
     def __str__(self) -> str:
         return f"<NexiosApp: {self.title}>"
