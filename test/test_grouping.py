@@ -204,7 +204,6 @@ async def test_group_with_multiple_methods(async_client):
     assert response_delete.status_code == 405
 
 
-
 async def test_external_asgi_app(async_client):
     """Test that external ASGI apps can be added to groups"""
     client, app = async_client
@@ -212,19 +211,20 @@ async def test_external_asgi_app(async_client):
     async def external_app(scope, receive, send):
         assert scope["type"] == "http"
 
-        await send({
-            "type": "http.response.start",
-            "status": 200,
-            "headers": [
-                [b"content-type", b"text/plain"]
-            ]
-        })
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [[b"content-type", b"text/plain"]],
+            }
+        )
 
-        await send({
-            "type": "http.response.body",
-            "body": b"External app response",
-        })
-
+        await send(
+            {
+                "type": "http.response.body",
+                "body": b"External app response",
+            }
+        )
 
     group = Group(
         app=external_app,
