@@ -105,3 +105,65 @@ main_app.mount_router(admin_app, prefix="/admin")
 Now you can access /admin/dashboard.
 
 This makes it trivial to build modular applications where teams can work on separate parts (e.g., auth, billing, analytics) in isolation and plug them into a larger system
+
+
+## Groups 
+
+Nexios also supports groups, which is a way to group routes together and share them between multiple apps.
+
+Sometimes you want to group routes or apps under a shared path or with middleware applied collectively — that’s where Group comes in.
+
+```py
+
+from nexios.routing import Router,Group,Routes
+from nexios import NexiosApp
+
+users = Router()
+
+async def list_users(req, res):
+    return res.json(["John", "Jane"])
+
+
+async def get_user(req, res, id):
+    return res.json({"user": id})
+
+group = Group(
+    path="/users",
+    routes=[
+        Routes(path="/", methods=["GET"], handler=list_users),
+        Routes(path="/{id}", methods=["GET"], handler=get_user),
+    ],
+)
+
+app = NexiosApp()
+app.add_route(group)
+
+```
+
+Now you can access `/users` and `/users/{id}`
+
+
+## Grouping Sub-Applications
+
+Nexios supports grouping sub-applications under a shared path or with middleware applied collectively.
+
+```py
+
+from nexios import NexiosApp
+from nexios.grouping import Group
+
+admin_app = NexiosApp()
+
+@admin_app.get("/dashboard")
+async def dashboard(req, res):
+    return res.text("Welcome to the admin panel")
+
+group = Group(path="/admin", app=admin_app)
+
+main_app = NexiosApp()
+main_app.register(group)
+
+```
+
+Now you can access /admin/dashboard
+

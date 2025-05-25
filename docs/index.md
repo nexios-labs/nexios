@@ -43,7 +43,7 @@ nexios new <project_name>
 
 
 ```py [config.js]
-from NexiosApp
+from NexiosApp()
 
 app = NexiosApp
 
