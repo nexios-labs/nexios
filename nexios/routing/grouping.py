@@ -12,7 +12,7 @@ from .base import BaseRoute
 class Group(BaseRoute):
     def __init__(
         self,
-        path: str,
+        path: str = "",
         app: ASGIApp | None = None,
         routes: typing.List[BaseRoute] | None = None,
         name: str | None = None,
