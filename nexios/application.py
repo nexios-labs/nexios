@@ -302,7 +302,7 @@ class NexiosApp(object):
     def _setup_openapi(self) -> None:
         """Set up automatic OpenAPI documentation"""
         docs = self.docs
-        
+
         for route in self.get_all_routes():
             if getattr(self, "exlude_from_schema") == True:
                 continue
