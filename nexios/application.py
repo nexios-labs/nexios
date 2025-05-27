@@ -257,7 +257,6 @@ class NexiosApp(object):
     async def handle_lifespan(self, receive: Receive, send: Send) -> None:
         """Handle ASGI lifespan protocol events."""
         self._setup_openapi()
-
         try:
             while True:
                 message: Message = await receive()
@@ -294,6 +293,7 @@ class NexiosApp(object):
                         return
 
         except Exception as e:
+            logger.debug(f"Error handling lifespan event: {e}")
             if message["type"].startswith("lifespan.startup"):  # type: ignore
                 await send({"type": "lifespan.startup.failed", "message": str(e)})
             else:
@@ -302,6 +302,7 @@ class NexiosApp(object):
     def _setup_openapi(self) -> None:
         """Set up automatic OpenAPI documentation"""
         docs = self.docs
+        
         for route in self.get_all_routes():
             if getattr(self, "exlude_from_schema") == True:
                 continue
