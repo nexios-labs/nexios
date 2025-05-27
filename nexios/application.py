@@ -256,6 +256,7 @@ class NexiosApp(object):
 
     async def handle_lifespan(self, receive: Receive, send: Send) -> None:
         """Handle ASGI lifespan protocol events."""
+        
     
         try:
             while True:
@@ -304,7 +305,7 @@ class NexiosApp(object):
         docs = self.docs
 
         for route in self.get_all_routes():
-            if getattr(self, "exlude_from_schema") == True:
+            if getattr(route, "exlude_from_schema", False) == True:
                 continue
             for method in route.methods:
 
