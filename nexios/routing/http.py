@@ -2042,7 +2042,6 @@ class Router(BaseRouter):
         for mount_path, sub_app in self.sub_routers.items():
             if url.startswith(mount_path):
                 scope["path"] = url[len(mount_path) :]
-                print(sub_app)
                 await sub_app(scope, receive, send)
 
                 return
@@ -2051,8 +2050,6 @@ class Router(BaseRouter):
         allowed_methods_: typing.Set[str] = set()
         for route in self.routes:
             match, matched_params, is_allowed = route.match(url, scope["method"])
-            print("prefix ", self.prefix)
-            print("match", route)
             if match:
                 path_matched = True
                 if is_allowed:
