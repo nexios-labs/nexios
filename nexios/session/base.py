@@ -17,12 +17,12 @@ class BaseSessionInterface:
 
     def __init__(self, session_key: str) -> None:
 
-        config: MakeConfig = get_config()
+        config = get_config()
         self.session_key = session_key
         if not config.secret_key:
             return
         self.config = config
-        self.session_config = config.session
+        self.session_config: MakeConfig = config.session
 
     def __getitem__(self, key: str) -> Any:
         self.accessed = True
@@ -190,4 +190,3 @@ class BaseSessionInterface:
         self.clear()
         self.session_key = None
         self.config = None
-        self.session_config = None
