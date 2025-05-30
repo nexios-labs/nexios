@@ -22,7 +22,7 @@ class BaseSessionInterface:
         if not config.secret_key:
             return
         self.config = config
-        self.session_config : MakeConfig = config.session
+        self.session_config: MakeConfig = config.session
 
     def __getitem__(self, key: str) -> Any:
         self.accessed = True
