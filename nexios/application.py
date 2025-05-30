@@ -248,6 +248,7 @@ class NexiosApp(object):
 
     async def _shutdown(self) -> None:
         """Execute all shutdown handlers sequentially with error handling"""
+        self._setup_openapi()
         for handler in self.shutdown_handlers:
             try:
                 await handler()

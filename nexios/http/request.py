@@ -275,7 +275,7 @@ class Request(HTTPConnection):
         return self._body
 
     @property
-    async def json(self) -> typing.Union[JSONType, dict[str, typing.Any]]:
+    async def json(self) -> typing.Dict[str, JSONType]:
 
         if not hasattr(self, "_json"):
             _body = await self.body()
@@ -284,7 +284,7 @@ class Request(HTTPConnection):
             except UnicodeDecodeError:
                 return {}
             try:
-                self._json: JSONType = json.loads(body)
+                self._json = json.loads(body)
             except json.JSONDecodeError:
                 self._json = {}
         return self._json
