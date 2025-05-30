@@ -10,13 +10,13 @@ class FileSessionManager(BaseSessionInterface):
         super().__init__(session_key)
         self.session_key = session_key or self.get_session_key()
         self.session_file_path = os.path.join(
-            getattr(self.session_config, "session_file_name", "sessions"),
+            self.session_config.session_file_name or "sessions",
             f"{self.session_key}.json",
         )
 
         # Ensure the session storage directory exists
         os.makedirs(
-            getattr(self.session_config, "session_file_name", "sessions"), exist_ok=True
+            self.session_config.session_file_storage_path or "sessions", exist_ok=True
         )
 
     def _load_session_data(self) -> Optional[Dict[str, Any]]:
@@ -68,9 +68,8 @@ class FileSessionManager(BaseSessionInterface):
     def should_set_cookie(self) -> bool:
         """Determines if the cookie should be set."""
         return self.modified or (
-            getattr(self.session_config, "session_permanent", False)
-            and getattr(self.session_config, "session_refresh_each_request", None)
-            is not None
+            self.session_config.session_permanent
+            and self.session_config.session_refresh_each_request
         )
 
     def has_expired(self) -> bool:
