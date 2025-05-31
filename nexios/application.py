@@ -37,7 +37,7 @@ from .types import (
     Send,
     WsHandlerType,
 )
-from nexios._internals.__middleware import (
+from nexios._internals._middleware import (
     wrap_middleware,
     ASGIRequestResponseBridge,
     DefineMiddleware as Middleware,

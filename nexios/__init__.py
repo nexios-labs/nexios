@@ -27,7 +27,7 @@ from .routing import Router, Routes
 from .session.middleware import SessionMiddleware
 from .types import ExceptionHandlerType
 from .dependencies import Depend
-from ._internals.__middleware import wrap_middleware
+from ._internals._middleware import wrap_middleware
 import warnings
 
 
