@@ -1927,7 +1927,7 @@ class NexiosApp(object):
     def add_route(
         self,
         route: Annotated[
-           Optional[ Union[Routes, type[BaseRoute]]],
+            Optional[Union[Routes, type[BaseRoute]]],
             Doc("An instance of the Routes class representing an HTTP route."),
         ] = None,
         path: Annotated[
@@ -1939,7 +1939,7 @@ class NexiosApp(object):
             """
             ),
         ] = None,
-         methods: Annotated[
+        methods: Annotated[
             List[str],
             Doc(
                 """
@@ -2047,7 +2047,6 @@ class NexiosApp(object):
             """
             ),
         ] = None,
-
         deprecated: Annotated[
             bool,
             Doc(
@@ -2084,7 +2083,6 @@ class NexiosApp(object):
             """
             ),
         ],
-
     ) -> None:
         """
         Adds an HTTP route to the application.
@@ -2105,7 +2103,9 @@ class NexiosApp(object):
         """
         if not route:
             if (not path) or (not handler):
-                raise ValueError("path and handler are required if route is not provided")
+                raise ValueError(
+                    "path and handler are required if route is not provided"
+                )
             route = Routes(
                 path=path,
                 handler=handler,
@@ -2122,7 +2122,6 @@ class NexiosApp(object):
                 deprecated=deprecated,
                 parameters=parameters,
                 exclude_from_schema=exclude_from_schema,
-                
                 **kwargs,
             )
         self.router.add_route(route)

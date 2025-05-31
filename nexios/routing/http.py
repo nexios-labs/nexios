@@ -327,7 +327,7 @@ class Router(BaseRouter):
     def add_route(
         self,
         route: Annotated[
-           Optional[ Union[Routes, type[BaseRoute]]],
+            Optional[Union[Routes, type[BaseRoute]]],
             Doc("An instance of the Routes class representing an HTTP route."),
         ] = None,
         path: Annotated[
@@ -339,7 +339,7 @@ class Router(BaseRouter):
             """
             ),
         ] = None,
-         methods: Annotated[
+        methods: Annotated[
             List[str],
             Doc(
                 """
@@ -447,7 +447,6 @@ class Router(BaseRouter):
             """
             ),
         ] = None,
-
         deprecated: Annotated[
             bool,
             Doc(
@@ -484,7 +483,6 @@ class Router(BaseRouter):
             """
             ),
         ],
-
     ) -> None:
         """
         Adds an HTTP route to the application.
@@ -505,7 +503,9 @@ class Router(BaseRouter):
         """
         if not route:
             if (not path) or (not handler):
-                raise ValueError("path and handler are required if route is not provided")
+                raise ValueError(
+                    "path and handler are required if route is not provided"
+                )
             route = Routes(
                 path=path,
                 handler=handler,
@@ -522,7 +522,6 @@ class Router(BaseRouter):
                 deprecated=deprecated,
                 parameters=parameters,
                 exclude_from_schema=exclude_from_schema,
-                
                 **kwargs,
             )
 
