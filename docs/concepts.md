@@ -1,79 +1,219 @@
-Sure, Dunamis. Here's a basic `concept.md` file for your Nexios documentation using **VitePress** syntax. This will explain the **concept of Nexios**, keeping it clear and dev-friendly:
+# Core Concepts
 
----
+Nexios is a modern, async-first Python web framework built on ASGI. It combines high performance with developer-friendly features while maintaining a clean and maintainable architecture.
 
-````md
-# Concept
+## Framework Architecture
 
-Nexios is a modern, async-first Python web framework built to prioritize simplicity, speed, and developer experience. Inspired by Express.js, it aims to eliminate unnecessary boilerplate and give full control back to the developer.
+### 1. ASGI Foundation
+Nexios is built on ASGI (Asynchronous Server Gateway Interface), providing:
+- Native async/await support
+- High performance request handling
+- WebSocket support
+- Lifespan protocol implementation
+- Server agnostic (works with Uvicorn, Hypercorn, etc.)
 
-## Why Nexios?
+### 2. Request Lifecycle
+```
+Request → Middleware → Route Matching → Dependencies → Handler → Response
+```
 
-Most Python frameworks are either:
-- **Too heavy** (like Django with hidden magic), or
-- **Too opinionated** (like FastAPI with excessive decorators and pydantic dependencies).
+Each request goes through:
+1. ASGI server receives the request
+2. Middleware chain processes request
+3. Router matches URL to handler
+4. Dependencies are resolved
+5. Handler processes request
+6. Response is sent back through middleware
 
-Nexios finds the balance — it's:
-- Lightweight  
-- Explicit  
-- Fast (ASGI-native)  
-- ORM-agnostic  
-- Middleware-friendly
+### 3. Core Components
 
-## Core Ideas
+#### Routing System
+```python
+from nexios import NexiosApp
 
-### 🧠 Simple, Explicit Code
-No inner `Meta` classes. No hidden inheritance. Just clean Python code.
+app = NexiosApp()
 
-### 🚀 Async By Default
-Built on ASGI, every route, middleware, and handler is `async def` by design.
+@app.get("/items/{item_id:int}")
+async def get_item(request, response):
+    return response.json({"id": request.path_params.item_id})
+```
 
-### 🔐 Flexible Authentication
-Supports:
-- JWT (with rotation and optional blacklisting)
-- API keys
-- Custom auth backends (`BaseAuthBackend`)
+- Path parameters with type conversion
+- Query string parsing
+- HTTP method handlers
+- Nested routers
+- WebSocket routes
 
-### 📦 Built-in Tools, No Bloat
-Includes:
-- Auto docs
-- JSON responses
-- Request validation
-- APIHandler (class-based views with hooks like `before_request`)
+#### Middleware System
+```python
+from nexios.middlewares import BaseMiddleware
 
-### 🧱 Inspired by Express.js
-Declare routes fast:
+class CustomMiddleware(BaseMiddleware):
+    async def __call__(self, request, response, call_next):
+        # Pre-processing
+        response = await call_next()
+        # Post-processing
+        return response
+```
+
+Built-in middleware:
+- CORS
+- CSRF Protection
+- Session handling
+- Authentication
+- Static files
+
+#### Event System
+```python
+@app.on_startup()
+async def startup():
+    await initialize_database()
+
+@app.on_shutdown()
+async def shutdown():
+    await cleanup_resources()
+```
+
+Events for:
+- Application startup/shutdown
+- Request lifecycle
+- WebSocket connections
+- Error handling
+
+#### Dependency Injection
+```python
+from nexios import Depend
+
+async def get_db():
+    async with Database() as db:
+        yield db
+
+@app.get("/users")
+async def list_users(request, response, db=Depend(get_db)):
+    users = await db.query("SELECT * FROM users")
+    return response.json(users)
+```
+
+Features:
+- Async dependency resolution
+- Scoped dependencies
+- Dependency overriding
+- Dependency caching
+
+### 4. WebSocket Support
 
 ```python
-from nexios import get_application
+from nexios.websockets import WebSocket, Channel
 
-app = get_application()
+@app.websocket("/ws/{room_id}")
+async def chat_room(websocket: WebSocket, room_id: str):
+    channel = Channel(f"room:{room_id}")
+    await channel.connect(websocket)
+    
+    try:
+        while True:
+            message = await websocket.receive_json()
+            await channel.broadcast(message)
+    except WebSocketDisconnect:
+        await channel.disconnect(websocket)
+```
 
-@app.get("/")
-async def home(req):
-    return {"message": "Hello, Nexios"}
-````
+Features:
+- WebSocket channels
+- Connection management
+- JSON message handling
+- Error handling
+- Room/group support
 
-No decorators for every detail. Minimal setup, maximum control.
+### 5. Security Features
+
+#### Authentication
+```python
+from nexios.auth import AuthBackend
+
+class JWTAuth(AuthBackend):
+    async def authenticate(self, request):
+        token = request.headers.get("Authorization")
+        return await validate_token(token)
+
+app.auth_backend = JWTAuth()
+```
+
+#### Session Management
+```python
+from nexios.session import SessionMiddleware
+
+app.add_middleware(SessionMiddleware,
+    secret_key="your-secret-key",
+    session_cookie="session-id"
+)
+```
+
+#### CSRF Protection
+```python
+from nexios.middlewares import CSRFMiddleware
+
+app.add_middleware(CSRFMiddleware)
+```
+
+### 6. Testing Support
+
+```python
+from nexios.testing import TestClient
+
+async def test_endpoint():
+    async with TestClient(app) as client:
+        response = await client.get("/api/endpoint")
+        assert response.status_code == 200
+```
+
+Features:
+- Async test client
+- WebSocket testing
+- Dependency overrides
+- Response assertions
+- Coverage support
+
+## Design Philosophy
+
+1. **Explicit is Better Than Implicit**
+   - Clear request/response flow
+   - No hidden magic
+   - Explicit dependency injection
+
+2. **Async First**
+   - Native async/await support
+   - Non-blocking I/O
+   - Scalable by design
+
+3. **Developer Experience**
+   - Clear error messages
+   - Comprehensive logging
+   - Type hints and validation
+   - OpenAPI documentation
+
+4. **Extensible Architecture**
+   - Custom middleware
+   - Plugin system
+   - Event hooks
+   - Custom authentication
+
+5. **Performance Focused**
+   - Minimal overhead
+   - Efficient routing
+   - Optional features
+   - Resource pooling
 
 ## Use Cases
 
-* Real-time apps (WebSockets support with Channels)
-* Clean APIs with minimal stack
-* Projects needing custom auth or logic
-* Young devs or teams who hate Django magic ✨
+- REST APIs
+- Real-time applications
+- Microservices
+- WebSocket servers
+- Server-side rendering
+- API gateways
 
----
-
-> Nexios isn't trying to replace Django or FastAPI — it's giving you a new tool to ship clean, async apps **your way**.
-
----
-
-## Next Up
-
-[Installation Guide →](./getting-started.md)
-
-```
+For detailed examples and API reference, check the [API Documentation](/api/) section.
 
 ---
 

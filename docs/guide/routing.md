@@ -1,4 +1,4 @@
-# Routing 🛣️
+# Routing 
 
 Routing of Nexios is flexible and intuitive. Let's take a look.
 
