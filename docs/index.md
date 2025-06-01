@@ -31,7 +31,7 @@ features:
 ---
 
 
-## Getting Started  <Badge type="tip" text="2.4.0" />
+## Getting Started  <Badge type="tip" text="2.4.x" />
 
 You can get started using Nexios right away using `pip`
 
