@@ -37,12 +37,13 @@ from .types import (
     Send,
     WsHandlerType,
 )
-from nexios._internals.__middleware import (
+from nexios._internals._middleware import (
     wrap_middleware,
     ASGIRequestResponseBridge,
     DefineMiddleware as Middleware,
 )
 
+allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
 
 logger = create_logger("nexios")
 lifespan_manager = Callable[["NexiosApp"], AsyncContextManager[bool]]
@@ -248,7 +249,6 @@ class NexiosApp(object):
 
     async def _shutdown(self) -> None:
         """Execute all shutdown handlers sequentially with error handling"""
-        self._setup_openapi()
         for handler in self.shutdown_handlers:
             try:
                 await handler()
@@ -257,7 +257,7 @@ class NexiosApp(object):
 
     async def handle_lifespan(self, receive: Receive, send: Send) -> None:
         """Handle ASGI lifespan protocol events."""
-
+        self._setup_openapi()
         try:
             while True:
                 message: Message = await receive()
@@ -1926,8 +1926,161 @@ class NexiosApp(object):
     def add_route(
         self,
         route: Annotated[
-            Union[Routes, type[BaseRoute]],
+            Optional[Union[Routes, type[BaseRoute]]],
             Doc("An instance of the Routes class representing an HTTP route."),
+        ] = None,
+        path: Annotated[
+            Optional[str],
+            Doc(
+                """
+                URL path pattern for the HEAD endpoint.
+                Example: '/api/v1/resources/{id}'
+            """
+            ),
+        ] = None,
+        methods: Annotated[
+            List[str],
+            Doc(
+                """
+                List of HTTP methods this route should handle.
+                Common methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD']
+                Defaults to all standard methods if not specified.
+            """
+            ),
+        ] = allowed_methods_default,
+        handler: Annotated[
+            Optional[HandlerType],
+            Doc(
+                """
+                Async handler function for HEAD requests.
+                Example:
+                async def check_resource(request, response):
+                    exists = await Resource.exists(request.path_params['id'])
+                    return response.status(200 if exists else 404)
+            """
+            ),
+        ] = None,
+        name: Annotated[
+            Optional[str],
+            Doc(
+                """
+                Unique route name for URL generation.
+                Example: 'api-v1-check-resource'
+            """
+            ),
+        ] = None,
+        summary: Annotated[
+            Optional[str],
+            Doc(
+                """
+                Brief endpoint summary.
+                Example: 'Check resource existence'
+            """
+            ),
+        ] = None,
+        description: Annotated[
+            Optional[str],
+            Doc(
+                """
+                Detailed endpoint description.
+                Example: 'Returns headers only to check if resource exists'
+            """
+            ),
+        ] = None,
+        responses: Annotated[
+            Optional[Dict[int, Any]],
+            Doc(
+                """
+                Response schemas by status code.
+                Example: {
+                    200: None,
+                    404: None
+                }
+            """
+            ),
+        ] = None,
+        request_model: Annotated[
+            Optional[Type[BaseModel]],
+            Doc(
+                """
+                Model for request validation.
+                Example:
+                class ResourceCheck(BaseModel):
+                    check_children: bool = False
+            """
+            ),
+        ] = None,
+        middlewares: Annotated[
+            List[Any],
+            Doc(
+                """
+                Route-specific middleware.
+                Example: [cache_control('public')]
+            """
+            ),
+        ] = [],
+        tags: Annotated[
+            Optional[List[str]],
+            Doc(
+                """
+                OpenAPI tags for grouping.
+                Example: ["Resource Management"]
+            """
+            ),
+        ] = None,
+        security: Annotated[
+            Optional[List[Dict[str, List[str]]]],
+            Doc(
+                """
+                Security requirements.
+                Example: [{"ApiKeyAuth": []}]
+            """
+            ),
+        ] = None,
+        operation_id: Annotated[
+            Optional[str],
+            Doc(
+                """
+                Unique operation ID.
+                Example: 'checkResource'
+            """
+            ),
+        ] = None,
+        deprecated: Annotated[
+            bool,
+            Doc(
+                """
+                Mark as deprecated.
+                Example: False
+            """
+            ),
+        ] = False,
+        parameters: Annotated[
+            List[Parameter],
+            Doc(
+                """
+                Additional parameters.
+                Example: [Parameter(name="X-Check-Type", in_="header")]
+            """
+            ),
+        ] = [],
+        exclude_from_schema: Annotated[
+            bool,
+            Doc(
+                """
+                Hide from OpenAPI docs.
+                Example: False
+            """
+            ),
+        ] = False,
+        **kwargs: Annotated[
+            Dict[str, Any],
+            Doc(
+                """
+                Additional metadata.
+                Example: {"x-head-only": True}
+            """
+            ),
         ],
     ) -> None:
         """
@@ -1947,7 +2100,29 @@ class NexiosApp(object):
             app.add_route(route)
             ```
         """
-
+        if not route:
+            if (not path) or (not handler):
+                raise ValueError(
+                    "path and handler are required if route is not provided"
+                )
+            route = Routes(
+                path=path,
+                handler=handler,
+                methods=methods,
+                name=name,
+                summary=summary,
+                description=description,
+                responses=responses,
+                request_model=request_model,
+                middlewares=middlewares,
+                tags=tags,
+                security=security,
+                operation_id=operation_id,
+                deprecated=deprecated,
+                parameters=parameters,
+                exclude_from_schema=exclude_from_schema,
+                **kwargs,
+            )
         self.router.add_route(route)
 
     def add_exception_handler(

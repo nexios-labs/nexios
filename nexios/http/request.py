@@ -422,7 +422,7 @@ class Request(HTTPConnection):
     @property
     def session(self) -> BaseSessionInterface:
         assert "session" in self.scope.keys(), "No Session Middleware Installed"
-        return self.scope["session"]
+        return typing.cast(BaseSessionInterface, self.scope["session"])
 
     @property
     def user(self):

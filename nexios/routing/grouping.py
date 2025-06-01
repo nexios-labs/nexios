@@ -2,7 +2,7 @@ import typing
 import re
 from nexios.types import ASGIApp, Receive, Scope, Send
 from nexios.exceptions import NotFoundException
-from nexios._internals.__middleware import DefineMiddleware as Middleware
+from nexios._internals._middleware import DefineMiddleware as Middleware
 from nexios._internals._route_builder import RouteBuilder
 from nexios.structs import URLPath
 from .http import Router
