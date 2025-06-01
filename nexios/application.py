@@ -249,7 +249,6 @@ class NexiosApp(object):
 
     async def _shutdown(self) -> None:
         """Execute all shutdown handlers sequentially with error handling"""
-        self._setup_openapi()
         for handler in self.shutdown_handlers:
             try:
                 await handler()
@@ -258,7 +257,7 @@ class NexiosApp(object):
 
     async def handle_lifespan(self, receive: Receive, send: Send) -> None:
         """Handle ASGI lifespan protocol events."""
-
+        self._setup_openapi()
         try:
             while True:
                 message: Message = await receive()
