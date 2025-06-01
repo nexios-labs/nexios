@@ -185,3 +185,20 @@ async def test_handler_args(async_client):
     response = await client.get("/user/123")
     assert response.status_code == 200
     assert response.json() == {"user_id": "123"}
+
+async def test_add_route_with_args(async_client):
+    client, app = async_client
+
+    async def handle_user(req: Request, res: Response, user_id: str):
+        return res.json({"user_id": user_id})
+
+    # Add route with args
+    app.add_route(
+        path="/user/{user_id}", 
+        handler=handle_user, 
+        methods=["GET"])
+
+    # Test with a specific user ID
+    response = await client.get("/user/123")
+    assert response.status_code == 200
+    assert response.json() == {"user_id": "123"}
