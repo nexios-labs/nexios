@@ -18,10 +18,11 @@ class auth(RouteDecorator):
             self.scopes = scopes
 
     def __call__(
-        self, handler: typing.Union[
+        self,
+        handler: typing.Union[
             typing.Callable[..., typing.Any],
-            typing.Callable[..., typing.Awaitable[typing.Any]]
-        ]
+            typing.Callable[..., typing.Awaitable[typing.Any]],
+        ],
     ) -> typing.Any:
 
         if getattr(handler, "_is_wrapped", False):

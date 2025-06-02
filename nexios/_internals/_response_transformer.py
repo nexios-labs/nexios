@@ -22,7 +22,9 @@ async def request_response(
         if is_async_callable(func):
             func_result = await func(request, response_manager, **request.path_params)
         else:
-            func_result = await run_in_threadpool(func, request, response_manager, **request.path_params) 
+            func_result = await run_in_threadpool(
+                func, request, response_manager, **request.path_params
+            )
         if isinstance(func_result, (dict, list, str)):
             response_manager.json(func_result)
 

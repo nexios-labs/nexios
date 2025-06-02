@@ -5,6 +5,7 @@ import inspect
 from nexios.utils.async_helpers import is_async_callable
 from nexios.utils.cuncurrency import run_in_threadpool
 
+
 class Depend:
     def __init__(self, dependency: Optional[Callable[..., Any]] = None):
         self.dependency = dependency
