@@ -49,8 +49,8 @@ import io
 
 @app.post("/upload")
 async def upload_image(req, res):
-    file_data = await req.form.get("image")
-    image = Image.open(io.BytesIO(file_data))
+    file_data = await req.form
+    image = Image.open(io.BytesIO(file_data.get("image")))
     
     # Process image in thread pool to avoid blocking
     thumbnail = await run_in_threadpool(
