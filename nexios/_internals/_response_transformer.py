@@ -1,6 +1,8 @@
 from nexios.http import Request, Response
 from nexios.http.response import BaseResponse
 from nexios.types import ASGIApp, Receive, Scope, Send
+from nexios.utils.cuncurrency import run_in_threadpool
+from nexios.utils.async_helpers import is_async_callable
 import typing
 import asyncio
 
@@ -17,8 +19,10 @@ async def request_response(
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         request = Request(scope, receive, send)
         response_manager = Response(request)
-
-        func_result = await func(request, response_manager, **request.path_params)
+        if is_async_callable(func):
+            func_result = await func(request, response_manager, **request.path_params)
+        else:
+            func_result = await run_in_threadpool(func, request, response_manager, **request.path_params) 
         if isinstance(func_result, (dict, list, str)):
             response_manager.json(func_result)
 

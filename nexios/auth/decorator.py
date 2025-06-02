@@ -3,6 +3,7 @@ import typing
 from .exceptions import AuthenticationFailed
 from nexios.http import Request, Response
 from functools import wraps
+import inspect
 
 
 class auth(RouteDecorator):
@@ -17,7 +18,10 @@ class auth(RouteDecorator):
             self.scopes = scopes
 
     def __call__(
-        self, handler: typing.Callable[..., typing.Awaitable[typing.Any]]
+        self, handler: typing.Union[
+            typing.Callable[..., typing.Any],
+            typing.Callable[..., typing.Awaitable[typing.Any]]
+        ]
     ) -> typing.Any:
 
         if getattr(handler, "_is_wrapped", False):
@@ -40,7 +44,9 @@ class auth(RouteDecorator):
             if self.scopes and scope not in self.scopes:
                 raise AuthenticationFailed
 
-            return await handler(*args, **kwargs)
+            if inspect.iscoroutinefunction(handler):
+                return await handler(*args, **kwargs)
+            return handler(*args, **kwargs)
 
         wrapper._is_wrapped = True  # type: ignore
         return wrapper

@@ -2,7 +2,8 @@ from typing import Callable, Dict, List, Optional, Any
 from inspect import signature, Parameter
 from functools import wraps
 import inspect
-
+from nexios.utils.async_helpers import is_async_callable
+from nexios.utils.cuncurrency import run_in_threadpool
 
 class Depend:
     def __init__(self, dependency: Optional[Callable[..., Any]] = None):
@@ -65,6 +66,9 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
                 else:
                     bound_args.arguments[param.name] = dependency_func(**dep_kwargs)
 
-        return await handler(**bound_args.arguments)
+        if is_async_callable(handler):
+            return await handler(**bound_args.arguments)
+        else:
+            return await run_in_threadpool(handler, **bound_args.arguments)
 
     return wrapped
