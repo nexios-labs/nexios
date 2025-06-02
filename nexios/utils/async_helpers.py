@@ -84,5 +84,3 @@ def collapse_excgroups() -> typing.Generator[None, None, None]:
                 exc = exc.exceptions[0]  # pragma: no cover
 
         raise exc
-
-
