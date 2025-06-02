@@ -85,6 +85,7 @@ export default defineConfig({
             { text: 'File Upload', link: '/guide/file-upload' },
             { text: 'Cors', link: '/guide/cors' },
             { text: 'File Router', link: '/guide/file-router' },
+            { text: 'Concurrency Utilities', link: '/guide/concurrency' },
           ]
         },
         {
