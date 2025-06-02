@@ -5,7 +5,7 @@ import typing
 from http import cookies as http_cookies
 
 import anyio
-from nexios._utils.async_helpers import (
+from nexios.utils.async_helpers import (
     AwaitableOrContextManager,
     AwaitableOrContextManagerWrapper,
 )

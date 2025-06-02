@@ -7,7 +7,7 @@ from nexios.http.request import ClientDisconnect, Request
 from nexios.http.response import NexiosResponse as Response
 from nexios.types import ASGIApp, Message, Receive, Scope, Send
 from nexios.websockets import WebSocket
-from nexios._utils.async_helpers import collapse_excgroups
+from nexios.utils.async_helpers import collapse_excgroups
 
 RequestResponseEndpoint = typing.Callable[[Request], typing.Awaitable[Response]]
 DispatchFunction = typing.Callable[
