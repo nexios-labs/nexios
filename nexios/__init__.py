@@ -17,13 +17,13 @@ Key Features:
 
 Quick Start:
     from nexios import NexiosApp, MakeConfig
-    
+
     app = NexiosApp(
         config=MakeConfig({"debug": True}),
         title="My API",
         version="1.0.0"
     )
-    
+
     @app.get("/hello/{name}")
     async def hello(request, response, name: str):
         return response.json({"message": f"Hello, {name}!"})
@@ -36,10 +36,10 @@ Common Patterns:
 
 1. Dependency Injection:
     from nexios import Depend
-    
+
     async def get_db():
         return Database()
-    
+
     @app.get("/items")
     async def list_items(request, response, db=Depend(get_db)):
         items = await db.query("SELECT * FROM items")
@@ -47,11 +47,11 @@ Common Patterns:
 
 2. Request Validation:
     from pydantic import BaseModel
-    
+
     class Item(BaseModel):
         name: str
         price: float
-    
+
     @app.post("/items")
     async def create_item(request, response):
         item = Item(**await request.json())
@@ -59,7 +59,7 @@ Common Patterns:
 
 3. Custom Middleware:
     from nexios.middlewares import BaseMiddleware
-    
+
     class LoggingMiddleware(BaseMiddleware):
         async def __call__(self, request, response, call_next):
             print(f"Request to {request.url}")
