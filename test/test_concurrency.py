@@ -181,5 +181,3 @@ async def test_combined_utilities():
     total = await lazy_sum.get()
     expected = sum(i * 2 for i in range(5))
     assert total == expected, f"Expected {expected}, got {total}, results: {results}"
-
-
