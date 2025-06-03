@@ -49,7 +49,7 @@ import io
 
 @app.post("/upload")
 async def upload_image(req, res):
-    file_data = await req.form
+    file_data = await req.files
     image = Image.open(io.BytesIO(file_data.get("image")))
     
     # Process image in thread pool to avoid blocking

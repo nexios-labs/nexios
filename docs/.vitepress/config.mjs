@@ -139,7 +139,7 @@ export default defineConfig({
   },
 
   markdown: {
-    lineNumbers: true
+    // lineNumbers: true
   },
 
   ignoreDeadLinks: true,
