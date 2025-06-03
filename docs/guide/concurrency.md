@@ -8,7 +8,7 @@ Perfect for aggregating data from multiple sources:
 
 ```python
 from nexios import NexiosApp
-from nexios.utils.cuncurrency import TaskGroup
+from nexios.utils.concurrency import TaskGroup
 import httpx
 
 app = NexiosApp()
@@ -43,7 +43,7 @@ async def fetch_user_data(user_id: str):
 Use for CPU-intensive operations in your handlers:
 
 ```python
-from nexios.utils.cuncurrency import run_in_threadpool
+from nexios.utils.concurrency import run_in_threadpool
 from PIL import Image
 import io
 
@@ -76,7 +76,7 @@ def create_thumbnail(image: Image.Image, size: tuple):
 Great for failover and timeout scenarios:
 
 ```python
-from nexios.utils.cuncurrency import run_until_first_complete
+from nexios.utils.concurrency import run_until_first_complete
 import asyncio
 
 @app.get("/search")
@@ -115,7 +115,7 @@ async def search_fallback(query: str, timeout: float):
 Perfect for handling long-running tasks without blocking the response:
 
 ```python
-from nexios.utils.cuncurrency import create_background_task
+from nexios.utils.concurrency import create_background_task
 
 @app.post("/send-newsletter")
 async def send_newsletter(req, res):
@@ -152,7 +152,7 @@ async def get_tasks_status(req, res):
 Useful for expensive operations that can be reused:
 
 ```python
-from nexios.utils.cuncurrency import AsyncLazy
+from nexios.utils.concurrency import AsyncLazy
 import pandas as pd
 
 # Create lazy loaded analytics

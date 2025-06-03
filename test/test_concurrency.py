@@ -1,7 +1,7 @@
 import pytest
 import asyncio
 import time
-from nexios.utils.cuncurrency import (
+from nexios.utils.concurrency import (
     TaskGroup,
     run_in_threadpool,
     run_until_first_complete,

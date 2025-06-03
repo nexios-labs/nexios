@@ -3,7 +3,7 @@ from inspect import signature, Parameter
 from functools import wraps
 import inspect
 from nexios.utils.async_helpers import is_async_callable
-from nexios.utils.cuncurrency import run_in_threadpool
+from nexios.utils.concurrency import run_in_threadpool
 
 
 class Depend:

@@ -7,6 +7,7 @@ from typing import (
     AsyncGenerator,
     Awaitable,
     Callable,
+    Generic,
     List,
     Optional,
     Set,
@@ -125,7 +126,7 @@ async def create_background_task(
                 pass
 
 
-class AsyncLazy[T]:
+class AsyncLazy(Generic[T]):
     """Lazy async value that is computed only when needed."""
 
     def __init__(self, func: Callable[[], Awaitable[T]]):
