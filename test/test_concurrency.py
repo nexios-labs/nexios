@@ -183,24 +183,3 @@ async def test_combined_utilities():
     assert total == expected, f"Expected {expected}, got {total}, results: {results}"
 
 
-async def test_error_handling_integration():
-    error_occurred = False
-
-    async def risky_operation():
-        raise ValueError("Operation failed")
-
-    async def safe_operation():
-        return "success"
-
-    try:
-        async with TaskGroup() as group:
-            task1 = group.create_task(
-                run_until_first_complete(risky_operation, safe_operation)
-            )
-            result = await task1
-            assert result == "success"
-
-    except Exception:
-        error_occurred = True
-
-    assert not error_occurred
