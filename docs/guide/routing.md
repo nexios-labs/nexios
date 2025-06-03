@@ -1,4 +1,4 @@
-# Routing 🛣️
+# Routing 
 
 Routing of Nexios is flexible and intuitive. Let's take a look.
 
@@ -315,7 +315,6 @@ This will generate the URL `/posts/123/comment/456`
 ::: info 😎 Info
 To use the `url_for` method, you must have a `name` attribute set for your route.
 :::
-
 Using reverse in nested router is limited to only it children. You can use the request object for global reverse routing.
 
 ```python
