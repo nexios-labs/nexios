@@ -167,3 +167,29 @@ main_app.register(group)
 
 Now you can access /admin/dashboard
 
+## External ASGI Apps
+
+Nexios `.register` method allows you to mount other asgi application on the `NexiosApp` Instnce or `Router` class
+
+```py
+app = NexiosApp()
+
+def external_app(scope, receive , send):
+    ...
+
+app.register(external_app, "/mount_path")
+```
+
+You can also mount  a `fastapi` or `starlatte` app
+
+```py
+from nexios import NexiosApp
+from fastapi import FastApi
+
+app = NexiosApp()
+
+fast_app = FastApi()
+
+app.register(fast_app,"/service2")
+```
+

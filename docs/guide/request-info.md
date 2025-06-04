@@ -55,7 +55,7 @@ async def data_handler(req: Request, res):
 ```python
 @app.post("/submit")
 async def submit_handler(req: Request, res):
-    form_data = await req.form()  # Parses both URL-encoded and multipart forms
+    form_data = await req.form  # Parses both URL-encoded and multipart forms
     username = form_data.get("username")
 ```
 
@@ -76,8 +76,8 @@ async def upload_handler(req: Request, res):
 ```python
 @app.post("/raw")
 async def raw_handler(req: Request, res):
-    body_bytes = await req.body()  # Raw bytes
-    body_text = await req.text()   # Decoded text
+    body_bytes = await req.body  # Raw bytes
+    body_text = await req.text  # Decoded text
 ```
 
 ## Cookies

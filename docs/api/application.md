@@ -1,6 +1,6 @@
-# Nexios API Reference 📚
+# Nexios API Reference 
 
-## Core Application 🏗️
+## Core Application 
 
 ### `NexiosApp` Class
 
@@ -20,7 +20,7 @@ app = NexiosApp(
 )
 ```
 
-## HTTP Routing 🛣️
+## HTTP Routing 
 
 ### Route Decorators
 
@@ -87,7 +87,7 @@ app = NexiosApp(
 )
 ```
 
-## WebSocket Routing 📡
+## WebSocket Routing 
 
 ### `@app.ws_route()`
 ```python
@@ -97,7 +97,7 @@ app = NexiosApp(
 )
 ```
 
-## Middleware ⚙️
+## Middleware 
 
 ### `app.add_middleware()`
 ```python
@@ -121,7 +121,7 @@ app.wrap_asgi(
 )
 ```
 
-## Lifecycle Events 🔄
+## Lifecycle Events 
 
 ### `app.on_startup()`
 ```python
@@ -137,7 +137,7 @@ app.on_shutdown(
 )
 ```
 
-## Error Handling ❗
+## Error Handling 
 
 ### `app.add_exception_handler()`
 ```python
@@ -147,7 +147,7 @@ app.add_exception_handler(
 )
 ```
 
-## Utility Methods 🛠️
+## Routing Utility Methods 
 
 ### `app.url_for()`
 ```python
@@ -191,7 +191,16 @@ app.add_ws_route(
 )
 ```
 
-## ASGI Implementation 🚀
+### `app.register()`
+
+```python
+app.register(
+    ASGIAPPLICATION,
+    "/mount-path"
+)
+```
+
+## ASGI Implementation 
 
 ### `app.__call__()`
 ```python

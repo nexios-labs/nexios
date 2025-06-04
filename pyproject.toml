@@ -50,6 +50,7 @@ granian = { version = ">=1.2.0", optional = true }
 templating = ["jinja2"]
 jwt = ["pyjwt"]
 granian = ["granian"]  # Optional Granian server support
+all = ["granian", "jwt", "templating"]
 
 [tool.poetry.scripts]
 nexios = "nexios.cli:cli"

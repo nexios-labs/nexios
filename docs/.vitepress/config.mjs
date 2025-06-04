@@ -127,9 +127,10 @@ export default defineConfig({
         {
           text: 'API Reference',
           items: [
-            { text: 'Overview', link: '/api/application' },
+            { text: 'Application', link: '/api/application' },
             { text: 'Routing', link: '/api/routing' },
             { text: 'Response', link: '/api/response' },
+            { text: "Request", link: '/api/request'},
             { text: 'Exceptions', link: '/api/exceptions' },
             { text: 'Websocket', link: '/api/websockets' },
           ]
@@ -139,7 +140,7 @@ export default defineConfig({
   },
 
   markdown: {
-    lineNumbers: true
+    // lineNumbers: true
   },
 
   ignoreDeadLinks: true,
