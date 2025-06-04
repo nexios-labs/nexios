@@ -516,11 +516,11 @@ class Request(HTTPConnection):
         forwarded_for = self.headers.get("x-forwarded-for")
         if forwarded_for:
             return forwarded_for.split(",")[0].strip()
-        
+
         real_ip = self.headers.get("x-real-ip")
         if real_ip:
             return real_ip
-            
+
         return self.client.host if self.client else ""
 
     def is_method(self, method: str) -> bool:
@@ -541,10 +541,12 @@ class Request(HTTPConnection):
         except (ValueError, TypeError):
             return 0
 
-    def get_query_params(self, flat: bool = True) -> typing.Union[typing.Dict[str, str], typing.Dict[str, typing.List[str]]]:
+    def get_query_params(
+        self, flat: bool = True
+    ) -> typing.Union[typing.Dict[str, str], typing.Dict[str, typing.List[str]]]:
         """
         Get query parameters with option to flatten multiple values.
-        
+
         Args:
             flat (bool): If True, returns only the first value for each parameter.
                         If False, returns all values as a list.
@@ -563,9 +565,10 @@ class Request(HTTPConnection):
         auth = self.headers.get("authorization", "")
         if not auth.startswith("Basic "):
             return ("", "")
-        
+
         try:
             import base64
+
             credentials = base64.b64decode(auth[6:]).decode("utf-8")
             username, password = credentials.split(":")
             return (username, password)
