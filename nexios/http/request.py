@@ -16,7 +16,7 @@ from nexios._internals._formparsers import (
     FormParser,
     MultiPartException,
     MultiPartParser,
-    UploadedFile
+    UploadedFile,
 )
 
 try:
@@ -86,8 +86,6 @@ class HTTPConnection(object):
         assert scope["type"] in ("http", "websocket")
         self.scope = scope
         self.scope.update({"extensions": {"websocket.http.response": {}}})
-
-        
 
     def __getitem__(self, key: str) -> typing.Any:
         return self.scope[key]

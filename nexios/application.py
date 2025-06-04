@@ -51,7 +51,6 @@ lifespan_manager = Callable[["NexiosApp"], AsyncContextManager[bool]]
 
 class NexiosApp(object):
 
-
     def __init__(
         self,
         config: Annotated[
