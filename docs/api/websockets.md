@@ -4,7 +4,7 @@
 
 ---
 
-## ⚙️ Initialize WebSocket
+##  Initialize WebSocket
 
 ```python
 ws = WebSocket(scope, receive, send)
@@ -12,7 +12,7 @@ ws = WebSocket(scope, receive, send)
 
 ---
 
-## ✅ Accepting a Connection
+## Accepting a Connection
 
 ```python
 await ws.accept()
@@ -26,21 +26,21 @@ await ws.accept(subprotocol="chat", headers=[(b"x-token", b"abc123")])
 
 ---
 
-## 📥 Receiving Messages
+## Receiving Messages
 
-### 📝 Receive Text
+### Receive Text
 
 ```python
 text = await ws.receive_text()
 ```
 
-### 🧱 Receive Bytes
+### Receive Bytes
 
 ```python
 data = await ws.receive_bytes()
 ```
 
-### 🧬 Receive JSON
+### Receive JSON
 
 ```python
 payload = await ws.receive_json()
@@ -49,7 +49,7 @@ payload = await ws.receive_json()
 
 ---
 
-## 🔁 Streaming Messages
+## Streaming Messages
 
 ```python
 async for message in ws.iter_text():
@@ -65,21 +65,21 @@ await ws.iter_json()
 
 ---
 
-## 📤 Sending Messages
+## Sending Messages
 
-### 📝 Send Text
+### Send Text
 
 ```python
 await ws.send_text("hello world")
 ```
 
-### 📦 Send Bytes
+###  Send Bytes
 
 ```python
 await ws.send_bytes(b"\x00\x01")
 ```
 
-### 🧬 Send JSON
+### Send JSON
 
 ```python
 await ws.send_json({"user": "dunamis", "msg": "yo!"})
@@ -89,7 +89,7 @@ await ws.send_json({"ping": True}, mode="binary")
 
 ---
 
-## ❌ Closing Connection
+## Closing Connection
 
 ```python
 await ws.close(code=1001, reason="bye bye!")
@@ -97,7 +97,7 @@ await ws.close(code=1001, reason="bye bye!")
 
 ---
 
-## 🔎 Check Connection
+## Check Connection
 
 ```python
 if ws.is_connected():

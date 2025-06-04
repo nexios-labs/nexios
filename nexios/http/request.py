@@ -5,6 +5,7 @@ import typing
 from http import cookies as http_cookies
 
 import anyio
+from mypy import scope
 from nexios.utils.async_helpers import (
     AwaitableOrContextManager,
     AwaitableOrContextManagerWrapper,
@@ -15,6 +16,7 @@ from nexios._internals._formparsers import (
     FormParser,
     MultiPartException,
     MultiPartParser,
+    UploadedFile
 )
 
 try:
@@ -83,6 +85,9 @@ class HTTPConnection(object):
     def __init__(self, scope: Scope, receive: Receive) -> None:
         assert scope["type"] in ("http", "websocket")
         self.scope = scope
+        self.scope.update({"extensions": {"websocket.http.response": {}}})
+
+        
 
     def __getitem__(self, key: str) -> typing.Any:
         return self.scope[key]
@@ -266,6 +271,7 @@ class Request(HTTPConnection):
                 raise ClientDisconnect()
         yield b""
 
+    @property
     async def body(self) -> bytes:
         if not hasattr(self, "_body"):
             chunks: list[bytes] = []
@@ -278,7 +284,7 @@ class Request(HTTPConnection):
     async def json(self) -> typing.Dict[str, JSONType]:
 
         if not hasattr(self, "_json"):
-            _body = await self.body()
+            _body = await self.body
             try:
                 body = _body.decode()
             except UnicodeDecodeError:
@@ -298,7 +304,7 @@ class Request(HTTPConnection):
             str: The decoded text content of the request body.
         """
         if not hasattr(self, "_text"):
-            body = await self.body()
+            body = await self.body
             try:
                 self._text = body.decode("utf-8")
             except UnicodeDecodeError:
@@ -369,6 +375,7 @@ class Request(HTTPConnection):
         if "http.response.push" in self.scope.get("extensions", {}):
             raw_headers: list[tuple[bytes, bytes]] = []
             for name in SERVER_PUSH_HEADERS_TO_COPY:
+                print(name)
                 for value in self.headers.getlist(name):
                     raw_headers.append(
                         (name.encode("latin-1"), value.encode("latin-1"))
@@ -378,11 +385,11 @@ class Request(HTTPConnection):
             )
 
     @property
-    async def files(self) -> typing.Dict[str, typing.Any]:
+    async def files(self) -> typing.Dict[str, UploadedFile]:
         """
         This method returns a dictionary of files from the form_data.
         """
-        form_data: FormData = await self.form_data
+        form_data = await self.form_data
         files_dict: typing.Dict[str, typing.Any] = {}
         for key, value in form_data.items():
             if isinstance(value, (list, tuple)):

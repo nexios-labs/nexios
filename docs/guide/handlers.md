@@ -1,5 +1,5 @@
 
-# 🫴Handlers
+# Handlers
 
 In Nexios, all route handlers must be async functions. These handlers receive a Request object and return a Response, dict, str, or other supported types.
 

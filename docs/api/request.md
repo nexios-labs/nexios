@@ -2,7 +2,7 @@
 
 ### **Request API Reference**
 
-#### **1. Basic Properties**
+## **Basic Properties**
 ```python
 # Access request data
 request.method          # "GET", "POST", etc
@@ -14,7 +14,7 @@ request.cookies         # Dict of cookies
 request.client          # (host, port) tuple
 ```
 
-#### **2. Body Content**
+## **Body Content**
 ```python
 # Read body content
 body = await request.body      # Raw bytes
@@ -28,7 +28,7 @@ async def create_user(request, response):
     return {"id": 42, **user_data}
 ```
 
-#### **3. Form Data**
+## **Form Data**
 ```python
 # Handle forms
 form = await request.form      # FormData object
@@ -41,7 +41,7 @@ filename = file.filename         # Original filename
 content = await file.read()      # File content
 ```
 
-#### **4. Advanced Features**
+## **Advanced Features**
 ```python
 # Path parameters (from route /users/{id})
 user_id = request.path_params["id"]
@@ -57,7 +57,7 @@ session["user_id"] = 42
 user = request.user  # None or authenticated user
 ```
 
-#### **5. Utility Methods**
+## **Utility Methods**
 ```python
 # Build absolute URLs
 url = request.build_absolute_uri("/profile")
@@ -72,7 +72,7 @@ await request.send_push_promise("/style.css")
 
 ---
 
-### **Key Notes**
+## **Key Notes**
 1. **Async Access**: Body/form methods are `await`able
 2. **Type Safety**: Path/query params convert types (e.g., `{id:int}` → `int`)
 3. **File Handling**: Stream large files without memory overload
@@ -80,7 +80,7 @@ await request.send_push_promise("/style.css")
 
 ### **Common Patterns**
 
-#### **JSON API**
+## **JSON API**
 ```python
 @app.post("/data")
 async def handle_data(request, response):
@@ -88,7 +88,7 @@ async def handle_data(request, response):
     return {"received": data}
 ```
 
-#### **Form Submission**
+## **Form Submission**
 ```python
 @app.post("/register")
 async def register(request, response):
@@ -98,7 +98,7 @@ async def register(request, response):
     # Process registration...
 ```
 
-#### **Protected Route**
+## **Protected Route**
 ```python
 @app.get("/profile")
 async def profile(request, response):

@@ -1,6 +1,6 @@
 # Exception Handling API Reference
 
-##  👤Core Components
+##  Core Components
 
 ### 1. HTTP Exceptions
 ```python
@@ -30,7 +30,7 @@ async def handler(req: Request, res: Response, exc: Exception) -> Response:
     return res.json({"error": str(exc)}, status_code=400)
 ```
 
-## ✒️ Common Patterns
+## Common Patterns
 
 ### Basic Error Handling
 ```python
@@ -42,7 +42,7 @@ async def get_item(req, res):
     return res.json(item)
 ```
 
-### 📊 Custom Error Handler
+### Custom Error Handler
 ```python
 async def handle_validation_error(req, res, exc):
     return res.json(
@@ -65,7 +65,7 @@ async def divide(req, res):
         return res.json({"error": "Division by zero"}, status_code=400)
 ```
 
-## 🔑 Configuration
+## Configuration
 
 ### Debug Mode
 ```python
@@ -74,13 +74,13 @@ app = get_application(config={"debug": True})
 - Shows detailed error pages with tracebacks
 - Preserves original exception information
 
-## 🌐 Built-in Exceptions
+## Built-in Exceptions
 
 | Exception Class       | Status Code | Typical Use Case               |
 |-----------------------|-------------|---------------------------------|
 | `HTTPException`       | Any         | Base class for HTTP exceptions  |
 
-##  💫Best Practices
+##  Best Practices
 
 1. **Use specific exceptions** where possible (404 vs generic 400)
 2. **Include useful details** in error responses
@@ -89,7 +89,7 @@ app = get_application(config={"debug": True})
 5. **Log errors** before returning responses
 6. **Keep error responses consistent** in format
 
-##  🔁 Example Flow
+##  Example Flow
 
 ```python
 # Custom exception

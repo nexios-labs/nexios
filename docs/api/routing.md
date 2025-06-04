@@ -1,6 +1,6 @@
-# Nexios Routing API Reference 🗺️
+# Nexios Routing API Reference 
 
-## Core Routing Components ⚙️
+## Core Routing Components 
 
 ### `Routes` Class
 ```python
@@ -33,7 +33,7 @@ class WebsocketRoutes(
 )
 ```
 
-## HTTP Router 🚦
+## HTTP Router 
 
 ### `Router` Class
 ```python
@@ -46,11 +46,11 @@ class Router(
 ```
 
 #### Key Methods:
-- `add_route(route: Routes) -> None` ➕
-- `add_middleware(middleware: MiddlewareType) -> None` 🛡️
-- `mount_router(app: Router, path: Optional[str] = None) -> None` 🧩
-- `url_for(_name: str, **path_params: Any) -> URLPath` 🔗
-- `get_all_routes() -> List[Routes]` 📜
+- `add_route(route: Routes) -> None` 
+- `add_middleware(middleware: MiddlewareType) -> None` 
+- `mount_router(app: Router, path: Optional[str] = None) -> None` 
+- `url_for(_name: str, **path_params: Any) -> URLPath` 
+- `get_all_routes() -> List[Routes]` 
 
 ### HTTP Method Decorators
 ```python
@@ -64,7 +64,7 @@ class Router(
 @router.route(path: str, methods: List[str], ...)
 ```
 
-## WebSocket Router 📡
+## WebSocket Router 
 
 ### `WSRouter` Class
 ```python
@@ -76,12 +76,12 @@ class WSRouter(
 ```
 
 #### Key Methods:
-- `add_ws_route(route: WebsocketRoutes) -> None` ➕
-- `add_ws_middleware(middleware: ASGIApp) -> None` 🛡️
-- `mount_router(app: WSRouter, path: Optional[str] = None) -> None` 🧩
-- `ws_route(path: str, handler: Optional[WsHandlerType] = None) -> Any` 🎭
+- `add_ws_route(route: WebsocketRoutes) -> None` 
+- `add_ws_middleware(middleware: ASGIApp) -> None` 
+- `mount_router(app: WSRouter, path: Optional[str] = None) -> None` 
+- `ws_route(path: str, handler: Optional[WsHandlerType] = None) -> Any` 
 
-## Base Components 🏗️
+## Base Components 
 
 ### `BaseRouter` (Abstract)
 ```python
@@ -104,7 +104,7 @@ def replace_params(path: str, param_convertors: dict, path_params: dict) -> tupl
 def compile_path(path: str) -> tuple
 ```
 
-## Type Definitions 📝
+## Type Definitions 
 
 ```python
 RouteType = Enum('REGEX', 'PATH', 'WILDCARD')
@@ -113,19 +113,19 @@ URLPath = dataclass(path, protocol)
 RouteParam = dataclass
 ```
 
-## Middleware Handling ⛓️
+## Middleware Handling 
 
 ### Common Methods:
 - `build_middleware_stack(app: ASGIApp) -> ASGIApp`
 - `wrap_middleware(mdw: MiddlewareType) -> Middleware`
 
-## Error Handling ❗
+## Error Handling 
 
 - Raises `NotFoundException` for 404 responses
 - Raises `ValueError` for duplicate parameters
 - Automatic 405 Method Not Allowed responses
 
-## Path Parameter Handling 🔠
+## Path Parameter Handling 
 
 Supports:
 - `/users/{id}` - Basic string params
