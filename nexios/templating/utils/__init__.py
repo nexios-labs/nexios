@@ -1,11 +1,13 @@
 """
 Template utility functions.
 """
+
 from typing import Any, Dict, Optional, Union
 from pathlib import Path
 import os
 import hashlib
 from datetime import datetime
+
 
 def static_hash(filepath: str) -> str:
     """Generate file hash for cache busting."""
@@ -14,9 +16,11 @@ def static_hash(filepath: str) -> str:
     with open(filepath, "rb") as f:
         return hashlib.md5(f.read()).hexdigest()[:8]
 
+
 def format_datetime(value: datetime, fmt: str = "%Y-%m-%d %H:%M:%S") -> str:
     """Format datetime with given format."""
     return value.strftime(fmt)
+
 
 def truncate(text: str, length: int = 100, suffix: str = "...") -> str:
     """Truncate text to length."""
@@ -24,12 +28,14 @@ def truncate(text: str, length: int = 100, suffix: str = "...") -> str:
         return text
     return text[:length].rsplit(" ", 1)[0] + suffix
 
+
 def merge_dicts(*dicts: Dict[str, Any]) -> Dict[str, Any]:
     """Merge multiple dictionaries."""
     result = {}
     for d in dicts:
         result.update(d)
     return result
+
 
 def get_template_globals() -> Dict[str, Any]:
     """Get default template globals."""
@@ -40,8 +46,9 @@ def get_template_globals() -> Dict[str, Any]:
         "truncate": truncate,
     }
 
+
 def create_template_dir(template_dir: Optional[Union[str, Path]] = None) -> Path:
     """Create and return template directory."""
     template_dir = Path(template_dir or "templates")
     template_dir.mkdir(parents=True, exist_ok=True)
-    return template_dir 
+    return template_dir
