@@ -59,10 +59,12 @@ class MakeConfig:
 
     def __init__(
         self,
-        config: Dict[str, Any],
+        config: Optional[Dict[str, Any]] = None,
+        *,
         defaults: Optional[Dict[str, Any]] = None,
         validate: Optional[Dict[str, Callable[[Any], bool]]] = None,
         immutable: bool = False,
+        **kwargs: Any,
     ):
         """
         Initialize the configuration object.
@@ -77,8 +79,9 @@ class MakeConfig:
         self._immutable: bool = immutable
         self._validate: Dict[str, Callable[[Any], bool]] = validate or {}
 
-        # Apply defaults before setting config
-        merged_config = {**(defaults or {}), **config}
+        config = config or {}
+        # Merge defaults, config dict, and kwargs, kwargs take highest priority
+        merged_config = {**(defaults or {}), **config, **kwargs}
 
         for key, value in merged_config.items():
             self._set_config(key, value)
