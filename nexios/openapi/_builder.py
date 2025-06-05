@@ -26,30 +26,70 @@ class APIDocumentation:
         return cls._instance
 
     def __init__(
-        self, app: Optional["NexiosApp"] = None, config: Optional[OpenAPIConfig] = None
+        self, app: Optional["NexiosApp"] = None, 
+        config: Optional[OpenAPIConfig] = None,
+        swagger_url: str = "/docs",
+        redoc_url: str = "/redoc",
+        openapi_url: str = "/openapi.json",
     ):
         self.app = app
         self.config = config or OpenAPIConfig()
+        self.swagger_url = swagger_url
+        self.redoc_url = redoc_url
+        self.openapi_url = openapi_url
         if app:
             self._setup_doc_routes()
 
     def _setup_doc_routes(self):
         """Set up routes for serving OpenAPI specification"""
 
-        @self.app.get("/openapi.json", exclude_from_schema=True)  # type:ignore
+        @self.app.get(self.openapi_url, exclude_from_schema=True)  # type:ignore
         async def serve_openapi(request: Request, response: Response):
             openapi_json = self.config.openapi_spec.model_dump(
                 by_alias=True, exclude_none=True
             )
             return response.json(openapi_json)
 
-        @self.app.get("/docs", exclude_from_schema=True)  # type:ignore
+        @self.app.get(self.swagger_url, exclude_from_schema=True)  # type:ignore
         async def swagger_ui(request: Request, response: Response):
             return response.html(self._generate_swagger_ui())
+
+        @self.app.get(self.redoc_url, exclude_from_schema=True)  # type:ignore
+        async def redoc_ui(request: Request, response: Response):
+            return response.html(self._generate_redoc_ui())
 
     @classmethod
     def get_instance(cls):
         return cls._instance
+
+    def _generate_redoc_ui(self) -> str:
+        """Generate ReDoc UI HTML"""
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>{self.config.openapi_spec.info.title} - API Documentation</title>
+            <meta charset="utf-8"/>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
+            <style>
+                body {{
+                    margin: 0;
+                    padding: 0;
+                }}
+            </style>
+        </head>
+        <body>
+            <div id="redoc"></div>
+            <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
+            <script>
+                Redoc.init('{self.openapi_url}', {{
+                    scrollYOffset: 50
+                }}, document.getElementById('redoc'))
+            </script>
+        </body>
+        </html>
+        """
 
     def _generate_swagger_ui(self) -> str:
         """Generate Swagger UI HTML"""
@@ -66,7 +106,7 @@ class APIDocumentation:
             <script>
                 window.onload = function() {{
                     SwaggerUIBundle({{
-                        url: '/openapi.json',
+                        url: '{self.openapi_url}',
                         dom_id: '#swagger-ui',
                         presets: [
                             SwaggerUIBundle.presets.apis,
@@ -79,6 +119,8 @@ class APIDocumentation:
         </body>
         </html>
         """
+    
+    
 
     def document_endpoint(
         self,
