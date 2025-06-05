@@ -122,6 +122,7 @@ class NexiosApp(object):
         self.shutdown_handlers: List[Callable[[], Awaitable[None]]] = []
         self.exceptions_handler = ExceptionMiddleware()
         self.server_error_handler = server_error_handler
+        self._background_tasks = set()
 
         self.app = Router(routes=routes)  # type:ignore
         self.router = self.app
