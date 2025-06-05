@@ -7,11 +7,13 @@ from pathlib import Path
 import jinja2
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from nexios.config import MakeConfig,get_config
+from nexios.config import MakeConfig, get_config
 from nexios.http.response import HTMLResponse
 
 
-engine :Union["TemplateEngine",None] = None
+engine: Union["TemplateEngine", None] = None
+
+
 class TemplateConfig(MakeConfig):
     """Template configuration settings."""
 
@@ -45,12 +47,13 @@ class TemplateConfig(MakeConfig):
 
 class TemplateEngine:
     """Template engine for rendering Jinja2 templates."""
-    
 
     def setup_environment(self, config: Optional[TemplateConfig] = None):
         """Initialize Jinja2 environment."""
         global engine
-        self.config :TemplateConfig = config or get_config().templating or TemplateConfig()
+        self.config: TemplateConfig = (
+            config or get_config().templating or TemplateConfig()
+        )
         template_dir = Path(self.config.template_dir)
         template_dir.mkdir(parents=True, exist_ok=True)
 
@@ -71,7 +74,7 @@ class TemplateEngine:
             self.env.filters.update(config_["custom_filters"])
         if config_.get("custom_globals"):
             self.env.globals.update(config_["custom_globals"])
-        
+
         engine = self
 
     async def render(
@@ -79,7 +82,6 @@ class TemplateEngine:
     ) -> str:
         """Render a template with context."""
 
-      
         context = context or {}
         context.update(kwargs)
 
@@ -87,8 +89,6 @@ class TemplateEngine:
         if self.config.enable_async:
             return await template.render_async(**context)
         return template.render(**context)
-
-
 
 
 async def render(
@@ -100,6 +100,6 @@ async def render(
 ) -> HTMLResponse:
     """Render template to response."""
     if not engine:
-            raise NotImplementedError("Template Engine Has not been set")
+        raise NotImplementedError("Template Engine Has not been set")
     content = await engine.render(template_name, context, **kwargs)
     return HTMLResponse(content=content, status_code=status_code, headers=headers)

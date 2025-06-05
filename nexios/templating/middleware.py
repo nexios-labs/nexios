@@ -3,7 +3,7 @@ Template context middleware for Nexios.
 """
 
 from typing import Any, Callable, Dict, Optional, Awaitable
-from nexios.types import Request, Response,MiddlewareType
+from nexios.types import Request, Response, MiddlewareType
 from nexios.middlewares import BaseMiddleware
 
 
@@ -48,6 +48,6 @@ class TemplateContextMiddleware(BaseMiddleware):
 def template_context(
     default_context: Optional[Dict[str, Any]] = None,
     context_processor: Optional[Callable[[Request], Awaitable[Dict[str, Any]]]] = None,
-) :
+):
     """Create template context middleware."""
     return TemplateContextMiddleware(default_context, context_processor)
