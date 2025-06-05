@@ -7,10 +7,11 @@ from pathlib import Path
 import jinja2
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from nexios.config import MakeConfig
+from nexios.config import MakeConfig,get_config
 from nexios.http.response import HTMLResponse
 
 
+engine :Union["TemplateEngine",None] = None
 class TemplateConfig(MakeConfig):
     """Template configuration settings."""
 
@@ -44,13 +45,12 @@ class TemplateConfig(MakeConfig):
 
 class TemplateEngine:
     """Template engine for rendering Jinja2 templates."""
+    
 
-    def __init__(self, config: Optional[TemplateConfig] = None):
-        self.config = config or TemplateConfig()
-        self._setup_environment()
-
-    def _setup_environment(self):
+    def setup_environment(self, config: Optional[TemplateConfig] = None):
         """Initialize Jinja2 environment."""
+        global engine
+        self.config :TemplateConfig = config or get_config().templating or TemplateConfig()
         template_dir = Path(self.config.template_dir)
         template_dir.mkdir(parents=True, exist_ok=True)
 
@@ -66,16 +66,20 @@ class TemplateEngine:
 
         filters = self.env.filters
         globals = self.env.globals
-        config = self.config.to_dict()
-        if config.get("custom_filters"):
-            self.env.filters.update(config["custom_filters"])
-        if config.get("custom_globals"):
-            self.env.globals.update(config["custom_globals"])
+        config_ = self.config.to_dict()
+        if config_.get("custom_filters"):
+            self.env.filters.update(config_["custom_filters"])
+        if config_.get("custom_globals"):
+            self.env.globals.update(config_["custom_globals"])
+        
+        engine = self
 
     async def render(
         self, template_name: str, context: Optional[Dict[str, Any]] = None, **kwargs
     ) -> str:
         """Render a template with context."""
+
+      
         context = context or {}
         context.update(kwargs)
 
@@ -85,8 +89,6 @@ class TemplateEngine:
         return template.render(**context)
 
 
-# Global engine instance
-engine = TemplateEngine()
 
 
 async def render(
@@ -97,6 +99,7 @@ async def render(
     **kwargs
 ) -> HTMLResponse:
     """Render template to response."""
+    if not engine:
+            raise NotImplementedError("Template Engine Has not been set")
     content = await engine.render(template_name, context, **kwargs)
-    headers = headers or {"Content-Type": "text/html"}
     return HTMLResponse(content=content, status_code=status_code, headers=headers)
