@@ -5,6 +5,7 @@ import secrets
 import typing
 import warnings
 
+
 class BaseSessionInterface:
 
     modified = False
