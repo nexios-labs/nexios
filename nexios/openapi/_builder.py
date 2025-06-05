@@ -26,7 +26,8 @@ class APIDocumentation:
         return cls._instance
 
     def __init__(
-        self, app: Optional["NexiosApp"] = None, 
+        self,
+        app: Optional["NexiosApp"] = None,
         config: Optional[OpenAPIConfig] = None,
         swagger_url: str = "/docs",
         redoc_url: str = "/redoc",
@@ -119,8 +120,6 @@ class APIDocumentation:
         </body>
         </html>
         """
-    
-    
 
     def document_endpoint(
         self,
