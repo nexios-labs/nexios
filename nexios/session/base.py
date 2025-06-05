@@ -3,6 +3,7 @@ from nexios.config import get_config, MakeConfig
 from datetime import datetime, timedelta, timezone
 import secrets
 import typing
+import warnings
 
 
 class BaseSessionInterface:
@@ -20,6 +21,10 @@ class BaseSessionInterface:
         config = get_config()
         self.session_key = session_key
         if not config.secret_key:
+            warnings.warn(
+                "`secret_key` is not set, `secret_key`  is required to use session",
+                RuntimeWarning,
+            )
             return
         self.config = config
         self.session_config: MakeConfig = config.session

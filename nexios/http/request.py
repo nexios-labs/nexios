@@ -442,3 +442,146 @@ class Request(HTTPConnection):
 
     def __str__(self) -> str:
         return f"<Request {self.method} {self.url}>"
+
+    @property
+    def is_ajax(self) -> bool:
+        """
+        Check if the request is an AJAX request.
+        Returns True if the X-Requested-With header is XMLHttpRequest.
+        """
+        return self.headers.get("x-requested-with", "").lower() == "xmlhttprequest"
+
+    @property
+    def is_secure(self) -> bool:
+        """
+        Check if the request is using HTTPS.
+        """
+        return self.url.scheme == "https"
+
+    @property
+    def accepts_json(self) -> bool:
+        """
+        Check if the request accepts JSON response.
+        Returns True if the Accept header includes application/json.
+        """
+        accept = self.headers.get("accept", "")
+        return "application/json" in accept or "*/*" in accept
+
+    @property
+    def accepts_html(self) -> bool:
+        """
+        Check if the request accepts HTML response.
+        Returns True if the Accept header includes text/html.
+        """
+        accept = self.headers.get("accept", "")
+        return "text/html" in accept or "*/*" in accept
+
+    def get_header(self, key: str, default: typing.Any = None) -> typing.Any:
+        """
+        Get a header value with a default if not found.
+        Case-insensitive header lookup.
+        """
+        return self.headers.get(key.lower(), default)
+
+    def has_header(self, key: str) -> bool:
+        """
+        Check if a header exists.
+        Case-insensitive header lookup.
+        """
+        return key.lower() in self.headers
+
+    @property
+    def origin(self) -> str:
+        """
+        Get the request's origin.
+        Returns the Origin header value or constructs it from the URL.
+        """
+        if "origin" in self.headers:
+            return typing.cast(str, self.headers["origin"])
+        return f"{self.url.scheme}://{self.url.netloc}"
+
+    @property
+    def referrer(self) -> str:
+        """
+        Get the request's referrer.
+        Returns the Referer header value or empty string if not set.
+        """
+        return typing.cast(str, self.headers.get("referer")) or ""
+
+    def get_client_ip(self) -> str:
+        """
+        Get the client's IP address.
+        Handles X-Forwarded-For and X-Real-IP headers for proxy scenarios.
+        """
+        forwarded_for = self.headers.get("x-forwarded-for")
+        if forwarded_for:
+            return forwarded_for.split(",")[0].strip()
+
+        real_ip = self.headers.get("x-real-ip")
+        if real_ip:
+            return real_ip
+
+        return self.client.host if self.client else ""
+
+    def is_method(self, method: str) -> bool:
+        """
+        Check if the request method matches the given method.
+        Case-insensitive method comparison.
+        """
+        return self.method.upper() == method.upper()
+
+    @property
+    def content_length(self) -> int:
+        """
+        Get the request's content length.
+        Returns the Content-Length header value as int or 0 if not set.
+        """
+        try:
+            return int(self.headers.get("content-length", 0))
+        except (ValueError, TypeError):
+            return 0
+
+    def get_query_params(
+        self, flat: bool = True
+    ) -> typing.Union[typing.Dict[str, str], typing.Dict[str, typing.List[str]]]:
+        """
+        Get query parameters with option to flatten multiple values.
+
+        Args:
+            flat (bool): If True, returns only the first value for each parameter.
+                        If False, returns all values as a list.
+        """
+        params = dict(self.query_params)
+        if flat:
+            return {k: v[0] if isinstance(v, list) else v for k, v in params.items()}
+        return params
+
+    @property
+    def basic_auth(self) -> typing.Tuple[str, str]:
+        """
+        Get HTTP Basic Authentication credentials.
+        Returns a tuple of (username, password) or ("", "").
+        """
+        auth = self.headers.get("authorization", "")
+        if not auth.startswith("Basic "):
+            return ("", "")
+
+        try:
+            import base64
+
+            credentials = base64.b64decode(auth[6:]).decode("utf-8")
+            username, password = credentials.split(":")
+            return (username, password)
+        except Exception:
+            return ("", "")
+
+    @property
+    def bearer_token(self) -> str:
+        """
+        Get the Bearer token from Authorization header.
+        Returns the token or empty string if not found.
+        """
+        auth = self.headers.get("authorization", "")
+        if not auth.startswith("Bearer "):
+            return ""
+        return auth[7:]

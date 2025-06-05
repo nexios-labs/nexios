@@ -23,10 +23,7 @@ class SessionMiddleware(BaseMiddleware):
 
         self.config = get_config().session
         if not self.secret:
-            warnings.warn(
-                "`secret_key` is not set, `secret_key`  is required to use session",
-                RuntimeWarning,
-            )
+
             return await call_next()
 
         if self.config:

@@ -81,11 +81,13 @@ export default defineConfig({
             { text: 'Class Based Handlers', link: '/guide/class-based-handlers' },
             { text: 'Events', link: '/guide/events' },
             { text: 'Dependency Injection', link: '/guide/dependency-injection' },
+            { text : "Templating", link:"/guide/templating/index"},
             { text: 'Static Files', link: '/guide/static-files' },
             { text: 'File Upload', link: '/guide/file-upload' },
             { text: 'Cors', link: '/guide/cors' },
             { text: 'File Router', link: '/guide/file-router' },
             { text: 'Concurrency Utilities', link: '/guide/concurrency' },
+
           ]
         },
         {
