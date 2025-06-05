@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Product Details{% endblock %}
+
+{% block content %}
+    <div class="product">
+        <h1>{{ name }}</h1>
+        <p class="price">{{ price|currency("€") }}</p>
+        <p class="description">{{ description|truncate(100) }}</p>
+    </div>
+{% endblock %} 

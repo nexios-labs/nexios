@@ -141,9 +141,9 @@ class MakeConfig:
         """Convert configuration to a JSON string."""
         return json.dumps(self.to_dict(), indent=4)
 
-    # def __repr__(self) -> str:
+    def __repr__(self) -> str:
 
-    #     return f"MakeConfig({self.to_dict()})"
+        return f"MakeConfig({self.to_dict()})"
 
 
 # Server configuration validation
