@@ -1,10 +1,11 @@
 from nexios import NexiosApp
-from pydantic import BaseModel, Field, EmailStr, constr,ValidationError
+from pydantic import BaseModel, Field, EmailStr, constr, ValidationError
 from typing import Optional, List
 from datetime import date, datetime
 from enum import Enum
 
 app = NexiosApp()
+
 
 # Enums for validation
 class UserRole(str, Enum):
@@ -12,10 +13,12 @@ class UserRole(str, Enum):
     USER = "user"
     GUEST = "guest"
 
+
 class UserStatus(str, Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
     SUSPENDED = "suspended"
+
 
 # Request Models
 class UserCreate(BaseModel):
@@ -27,11 +30,13 @@ class UserCreate(BaseModel):
     role: UserRole = UserRole.USER
     status: UserStatus = UserStatus.ACTIVE
 
+
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
     birth_date: Optional[date] = None
     status: Optional[UserStatus] = None
+
 
 # Response Models
 class UserResponse(BaseModel):
@@ -44,12 +49,13 @@ class UserResponse(BaseModel):
     status: UserStatus
     created_at: datetime
 
+
 # Custom validation middleware
 class ValidationMiddleware:
     def __init__(self, request_model=None, response_model=None):
         self.request_model = request_model
         self.response_model = response_model
-    
+
     def __call__(self, handler):
         async def wrapper(request, response):
             # Validate request data if model is provided
@@ -61,12 +67,12 @@ class ValidationMiddleware:
                 except ValidationError as e:
                     return response.json(
                         {"error": "Validation error", "details": e.errors()},
-                        status_code=422
+                        status_code=422,
                     )
-            
+
             # Call handler
             result = await handler(request, response)
-            
+
             # Validate response data if model is provided
             if self.response_model and not isinstance(result, Response):
                 try:
@@ -74,35 +80,32 @@ class ValidationMiddleware:
                     return response.json(validated_response.dict())
                 except ValidationError as e:
                     return response.json(
-                        {"error": "Response validation error"},
-                        status_code=500
+                        {"error": "Response validation error"}, status_code=500
                     )
-            
+
             return result
-        
+
         return wrapper
+
 
 # Example routes with validation
 @app.post("/users")
 @ValidationMiddleware(request_model=UserCreate, response_model=UserResponse)
 async def create_user(request, response):
     data = request.validated_data
-    
+
     # Simulate user creation
-    user = {
-        "id": 1,
-        **data.dict(),
-        "created_at": datetime.now()
-    }
-    
+    user = {"id": 1, **data.dict(), "created_at": datetime.now()}
+
     return user
+
 
 @app.put("/users/{user_id}")
 @ValidationMiddleware(request_model=UserUpdate, response_model=UserResponse)
 async def update_user(request, response):
     user_id = request.path_params["user_id"]
     data = request.validated_data
-    
+
     # Simulate user update
     user = {
         "id": int(user_id),
@@ -112,14 +115,15 @@ async def update_user(request, response):
         "birth_date": date(1990, 1, 1),
         "role": UserRole.USER,
         "status": UserStatus.ACTIVE,
-        "created_at": datetime.now()
+        "created_at": datetime.now(),
     }
-    
+
     # Update fields
     for field, value in data.dict(exclude_unset=True).items():
         user[field] = value
-    
+
     return user
+
 
 # Example of validation with query parameters
 class PaginationParams(BaseModel):
@@ -127,6 +131,7 @@ class PaginationParams(BaseModel):
     limit: int = Field(ge=1, le=100, default=10)
     sort_by: str = Field(default="created_at")
     order: str = Field(default="desc")
+
 
 @app.get("/users")
 async def list_users(request, response):
@@ -136,14 +141,14 @@ async def list_users(request, response):
             page=int(request.query_params.get("page", 1)),
             limit=int(request.query_params.get("limit", 10)),
             sort_by=request.query_params.get("sort_by", "created_at"),
-            order=request.query_params.get("order", "desc")
+            order=request.query_params.get("order", "desc"),
         )
     except ValidationError as e:
         return response.json(
             {"error": "Invalid query parameters", "details": e.errors()},
-            status_code=422
+            status_code=422,
         )
-    
+
     # Simulate paginated response
     users = [
         {
@@ -153,14 +158,16 @@ async def list_users(request, response):
             "full_name": f"User {i}",
             "role": UserRole.USER,
             "status": UserStatus.ACTIVE,
-            "created_at": datetime.now()
+            "created_at": datetime.now(),
         }
         for i in range(1, 6)
     ]
-    
-    return response.json({
-        "items": users,
-        "total": len(users),
-        "page": params.page,
-        "limit": params.limit
-    }) 
+
+    return response.json(
+        {
+            "items": users,
+            "total": len(users),
+            "page": params.page,
+            "limit": params.limit,
+        }
+    )

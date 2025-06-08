@@ -7,19 +7,23 @@ import humanize
 
 app = NexiosApp()
 
+
 def format_datetime(value, format="%Y-%m-%d %H:%M"):
     """Custom filter to format datetime objects."""
     if isinstance(value, str):
         value = datetime.fromisoformat(value)
     return value.strftime(format)
 
+
 def humanize_number(value):
     """Custom filter to humanize numbers."""
     return humanize.intcomma(value)
 
+
 def markdown_to_html(value):
     """Custom filter to convert markdown to HTML."""
     return markdown2.markdown(value)
+
 
 # Configure templating with custom filters and globals
 template_config = TemplateConfig(
@@ -27,16 +31,17 @@ template_config = TemplateConfig(
     custom_filters={
         "datetime": format_datetime,
         "humanize": humanize_number,
-        "markdown": markdown_to_html
+        "markdown": markdown_to_html,
     },
     custom_globals={
         "site_name": "Nexios Demo",
         "current_year": datetime.now().year,
-        "version": "1.0.0"
-    }
+        "version": "1.0.0",
+    },
 )
 
 app.config.templating = template_config
+
 
 @app.get("/blog")
 async def blog_list(request, response):
@@ -52,7 +57,7 @@ Nexios is a modern web framework that makes it easy to build web applications.
 - Easy to use
             """,
             "views": 12345,
-            "published": "2024-03-15T10:30:00"
+            "published": "2024-03-15T10:30:00",
         },
         {
             "title": "Advanced Templating",
@@ -64,17 +69,16 @@ Learn how to use advanced templating features:
 3. Markdown support
             """,
             "views": 5432,
-            "published": "2024-03-16T15:45:00"
-        }
+            "published": "2024-03-16T15:45:00",
+        },
     ]
-    
-    return await render(
-        "blog/list.html",
-        {"posts": posts}
-    )
+
+    return await render("blog/list.html", {"posts": posts})
+
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 """
@@ -102,4 +106,4 @@ Example template (blog/list.html):
         <p>{{ site_name }} v{{ version }} - © {{ current_year }}</p>
     </footer>
 {% endblock %}
-""" 
+"""

@@ -8,39 +8,36 @@ app = NexiosApp()
 # Store chat rooms and their connected clients
 chat_rooms: Dict[str, Set[WebSocket]] = {}
 
+
 @app.ws_route("/ws/chat/{room_id}")
 async def chat_room(websocket: WebSocket):
     room_id = websocket.path_params["room_id"]
     await websocket.accept()
-    
+
     # Create room if it doesn't exist
     if room_id not in chat_rooms:
         chat_rooms[room_id] = set()
-    
+
     # Add client to room
     chat_rooms[room_id].add(websocket)
-    
+
     try:
         # Announce new user
         for client in chat_rooms[room_id]:
             if client != websocket:
-                await client.send_json({
-                    "type": "system",
-                    "message": "New user joined the chat"
-                })
-        
+                await client.send_json(
+                    {"type": "system", "message": "New user joined the chat"}
+                )
+
         # Handle messages
         while True:
             data = await websocket.receive_json()
             message = data.get("message", "")
-            
+
             # Broadcast message to room
             for client in chat_rooms[room_id]:
                 if client != websocket:  # Don't send back to sender
-                    await client.send_json({
-                        "type": "message",
-                        "message": message
-                    })
+                    await client.send_json({"type": "message", "message": message})
     except Exception as e:
         print(f"WebSocket error in room {room_id}: {e}")
     finally:
@@ -49,6 +46,7 @@ async def chat_room(websocket: WebSocket):
         if not chat_rooms[room_id]:
             del chat_rooms[room_id]
         await websocket.close()
+
 
 @app.get("/")
 async def index(request, response):
@@ -100,4 +98,4 @@ async def index(request, response):
         </body>
     </html>
     """
-    return response.html(html) 
+    return response.html(html)

@@ -8,11 +8,12 @@ app = NexiosApp()
 # Configure templating with inheritance support
 template_config = TemplateConfig(
     template_dir=Path("templates"),
-    trim_blocks=True,      # Clean whitespace handling
-    lstrip_blocks=True,    # Clean whitespace handling
+    trim_blocks=True,  # Clean whitespace handling
+    lstrip_blocks=True,  # Clean whitespace handling
 )
 
 app.config.templating = template_config
+
 
 @app.get("/")
 async def home(request, response):
@@ -25,10 +26,11 @@ async def home(request, response):
             "features": [
                 {"name": "Fast", "description": "Built for speed"},
                 {"name": "Secure", "description": "Security first"},
-                {"name": "Modern", "description": "Using latest tech"}
-            ]
-        }
+                {"name": "Modern", "description": "Using latest tech"},
+            ],
+        },
     )
+
 
 @app.get("/blog/{post_id}")
 async def blog_post(request, response, post_id: int):
@@ -39,19 +41,15 @@ async def blog_post(request, response, post_id: int):
         "content": "This is a **markdown** post about templates.",
         "author": "nexios team",
         "published": "2024-03-15T10:30:00",
-        "tags": ["python", "web", "templates"]
+        "tags": ["python", "web", "templates"],
     }
-    
-    return await render(
-        "pages/blog_post.html",
-        {
-            "title": post["title"],
-            "post": post
-        }
-    )
+
+    return await render("pages/blog_post.html", {"title": post["title"], "post": post})
+
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 """
@@ -119,4 +117,4 @@ Example pages/blog_post.html:
         </div>
     </article>
 {% endblock %}
-""" 
+"""
