@@ -4,7 +4,7 @@ import inspect
 from typing_extensions import Annotated, Doc
 
 from .base import AuthenticationBackend, UnauthenticatedUser, BaseUser
-from nexios.middlewares.base import BaseMiddleware
+from nexios.middleware.base import BaseMiddleware
 from nexios.http import Request, Response
 import typing
 

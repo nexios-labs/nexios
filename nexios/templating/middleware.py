@@ -4,7 +4,7 @@ Template context middleware for Nexios.
 
 from typing import Any, Callable, Dict, Optional, Awaitable
 from nexios.types import Request, Response, MiddlewareType
-from nexios.middlewares import BaseMiddleware
+from nexios.middleware import BaseMiddleware
 
 
 class TemplateContextMiddleware(BaseMiddleware):

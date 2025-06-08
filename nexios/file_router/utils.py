@@ -12,7 +12,7 @@ def mark_as_route(
     description: Optional[str] = None,
     responses: Optional[Dict[int, Any]] = None,
     request_model: Optional[Type[BaseModel]] = None,
-    middlewares: List[Any] = [],
+    middleware: List[Any] = [],
     tags: Optional[List[str]] = None,
     security: Optional[List[Dict[str, List[str]]]] = None,
     operation_id: Optional[str] = None,
@@ -30,7 +30,7 @@ def mark_as_route(
         setattr(func, "_description", description or "")
         setattr(func, "_responses", responses or {})
         setattr(func, "_request_model", request_model)
-        setattr(func, "_middlewares", middlewares)
+        setattr(func, "_middleware", middleware)
         setattr(func, "_tags", tags or [])
         setattr(func, "_security", security or [])
         setattr(func, "_operation_id", operation_id or func.__name__)

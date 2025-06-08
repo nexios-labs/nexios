@@ -1,5 +1,5 @@
 from nexios import NexiosApp
-from nexios.middlewares.base import BaseMiddleware
+from nexios.middleware.base import BaseMiddleware
 
 
 async def logging_middleware(req, res, cnext):

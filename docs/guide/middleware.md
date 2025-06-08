@@ -98,7 +98,7 @@ Nexios supports class-based middleware for better organization and reusability. 
 ###  **Example: Class-Based Middleware**
 
 ```python
-from nexios.middlewares import BaseMiddleware
+from nexios.middleware import BaseMiddleware
 
 class ExampleMiddleware(BaseMiddleware):
     async def process_request(self, req, res, cnext):
@@ -135,7 +135,7 @@ async def auth_middleware(req, res, cnext):
         return res.json({"error": "Unauthorized"}, status_code=401)
     await cnext(req, res)
 
-@app.route("/profile", "GET", middlewares=[auth_middleware])
+@app.route("/profile", "GET", middleware=[auth_middleware])
 async def get_profile(req, res):
     return res.json({"message": "Welcome to your profile!"})
 ```

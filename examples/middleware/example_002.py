@@ -1,4 +1,4 @@
-from nexios.middlewares.base import BaseMiddleware
+from nexios.middleware.base import BaseMiddleware
 from nexios.http import Request, Response
 from datetime import datetime
 

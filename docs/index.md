@@ -103,7 +103,7 @@ async def websocket_endpoint(websocket):
 
 ### Middleware System
 ```python
-from nexios.middlewares import BaseMiddleware
+from nexios.middleware import BaseMiddleware
 
 class LoggingMiddleware(BaseMiddleware):
     async def __call__(self, request, response, call_next):

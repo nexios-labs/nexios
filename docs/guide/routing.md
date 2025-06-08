@@ -122,7 +122,7 @@ route = Routes(
         404: Error_404
     },
     request_model=UserUpdate,
-    middlewares=[auth_middleware, logging_middleware],
+    middleware=[auth_middleware, logging_middleware],
     tags=["users"],
     security=[{"bearerAuth": []}],
     operation_id="getUserDetail",
@@ -147,7 +147,7 @@ app.add_route(route)
 | `description`         | Detailed description for OpenAPI docs     | `Optional[str]`                        | `None`                                                 |
 | `responses`           | Response schemas or descriptions          | `Optional[Dict[int, Any]]`             | `None`                                                 |
 | `request_model`       | Pydantic model for request validation     | `Optional[Type[BaseModel]]`            | `None`                                                 |
-| `middlewares`         | Route-specific middleware                 | `List[Any]`                            | `[]`                                                   |
+| `middleware`         | Route-specific middleware                 | `List[Any]`                            | `[]`                                                   |
 | `tags`                | OpenAPI tags for grouping                 | `Optional[List[str]]`                  | `None`                                                 |
 | `security`            | Security requirements                     | `Optional[List[Dict[str, List[str]]]]` | `None`                                                 |
 | `operation_id`        | Unique identifier for OpenAPI             | `Optional[str]`                        | `None`                                                 |

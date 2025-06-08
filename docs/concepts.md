@@ -46,7 +46,7 @@ async def get_item(request, response):
 
 #### Middleware System
 ```python
-from nexios.middlewares import BaseMiddleware
+from nexios.middleware import BaseMiddleware
 
 class CustomMiddleware(BaseMiddleware):
     async def __call__(self, request, response, call_next):
@@ -151,7 +151,7 @@ app.add_middleware(SessionMiddleware,
 
 #### CSRF Protection
 ```python
-from nexios.middlewares import CSRFMiddleware
+from nexios.middleware import CSRFMiddleware
 
 app.add_middleware(CSRFMiddleware)
 ```

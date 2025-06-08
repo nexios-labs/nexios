@@ -63,7 +63,7 @@ class DefineMiddleware:
 class _CachedRequest(Request):
     """
     If the user calls Request.body() from their dispatch function
-    we cache the entire request body in memory and pass that to downstream middlewares,
+    we cache the entire request body in memory and pass that to downstream middleware,
     but if they call Request.stream() then all we do is send an
     empty body so that downstream things don't hang forever.
     """

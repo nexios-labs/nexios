@@ -12,7 +12,7 @@ class APIView:
     Enhanced class-based view that can be directly registered with the app or router.
     """
 
-    middlewares: List[MiddlewareType] = []
+    middleware: List[MiddlewareType] = []
 
     error_handlers: Dict[
         Type[Exception],
@@ -38,7 +38,7 @@ class APIView:
             return await instance.dispatch(req, res, **kwargs)
 
         return Route(
-            path, handler, methods=methods, middlewares=cls.middlewares, **kwargs
+            path, handler, methods=methods, middleware=cls.middleware, **kwargs
         )
 
     async def dispatch(self, req: Request, res: Response, **kwargs) -> Response:

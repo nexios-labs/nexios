@@ -1,7 +1,7 @@
 import re
 
 # from typing_extensions import Annotated, Doc
-from nexios.middlewares.base import BaseMiddleware
+from nexios.middleware.base import BaseMiddleware
 from nexios.http import Request, Response
 from nexios.config import get_config
 from typing import Callable, Optional, List, Dict, Any
