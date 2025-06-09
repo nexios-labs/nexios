@@ -31,6 +31,7 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
       { text: 'API Reference', link: '/api/application' },
+      { text: 'Examples', link: '/api-examples' },
       { text: 'Team', link: 'team' },
     ],
 
