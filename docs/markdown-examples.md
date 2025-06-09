@@ -1,234 +1,511 @@
 # Documentation Style Guide
 
-This guide demonstrates how to write documentation for Nexios using VitePress's markdown extensions.
+This guide provides comprehensive documentation standards and examples for the Nexios framework.
 
-## Code Examples
+## Writing Style
 
-### Syntax Highlighting
+### General Guidelines
 
-VitePress provides syntax highlighting with line numbers, line highlighting, and focus:
+1. Use clear, concise language
+2. Write in present tense
+3. Use active voice
+4. Be consistent with terminology
+5. Include practical examples
+6. Explain complex concepts simply
+7. Use proper formatting
+8. Keep documentation up-to-date
+
+### Code Examples
+
+Always include working code examples:
 
 ::: code-group
-```python{4-6} [Basic Route]
+```python [Basic]
 from nexios import NexiosApp
 
 app = NexiosApp()
+
 @app.get("/")
-async def index(request, response):
-    return response.json({"message": "Hello World"})
-
-if __name__ == "__main__":
-    app.run()
+async def hello(request, response):
+    return response.json({
+        "message": "Hello, World!"
+    })
 ```
 
-```python{3,7} [With Middleware]
+```python [With Types]
 from nexios import NexiosApp
-from nexios.middleware import CORSMiddleware
-app = NexiosApp(
-    title="My API",
-    version="1.0.0"
-)
-app.add_middleware(CORSMiddleware())
+from pydantic import BaseModel
+from typing import Optional
+
+class Item(BaseModel):
+    name: str
+    description: Optional[str] = None
+    price: float
+
+app = NexiosApp()
+
+@app.post("/items")
+async def create_item(request, response):
+    item = Item(**await request.json())
+    return response.json(item.dict())
 ```
 
-```python{3-5} [With Config]
-from nexios import NexiosApp, Config
+```python [With Error Handling]
+from nexios import NexiosApp
+from nexios.exceptions import HTTPException
 
-config = Config(
-    debug=True,
-    cors_enabled=True
+app = NexiosApp()
+
+@app.get("/items/{item_id:int}")
+async def get_item(request, response):
+    item_id = request.path_params.item_id
+    if item_id <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Item ID must be positive"
+        )
+    return response.json({"id": item_id})
+```
+:::
+
+## Formatting
+
+### Headers
+
+Use proper header hierarchy:
+
+```markdown
+# Main Title (H1)
+## Section (H2)
+### Subsection (H3)
+#### Detail (H4)
+##### Minor Detail (H5)
+###### Very Minor Detail (H6)
+```
+
+### Lists
+
+Use appropriate list types:
+
+```markdown
+1. First step
+2. Second step
+3. Third step
+
+- Unordered item
+- Another item
+  - Nested item
+  - Another nested item
+- Final item
+
+* Alternative bullet
+* Another bullet
+```
+
+### Code Blocks
+
+Use language-specific syntax highlighting:
+
+````markdown
+```python
+from nexios import NexiosApp
+
+app = NexiosApp()
+```
+
+```javascript
+fetch('/api/items')
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+```bash
+pip install nexios
+```
+````
+
+### Tables
+
+Use tables for structured data:
+
+```markdown
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /users | List users |
+| POST | /users | Create user |
+| GET | /users/{id} | Get user |
+| PUT | /users/{id} | Update user |
+| DELETE | /users/{id} | Delete user |
+```
+
+## VitePress Features
+
+### Custom Containers
+
+Use containers for special content:
+
+::: tip Best Practice
+Use tip containers for best practices and recommendations.
+:::
+
+::: warning Important
+Use warning containers for important information that requires attention.
+:::
+
+::: danger Critical
+Use danger containers for critical warnings or security-related information.
+:::
+
+::: details Implementation Details
+Use details containers for additional implementation details that can be expanded.
+```python
+from nexios.security import SecurityMiddleware
+
+app.add_middleware(SecurityMiddleware())
+```
+:::
+
+### Code Groups
+
+Use code groups for alternative implementations:
+
+::: code-group
+```python [Class Based]
+from nexios import NexiosApp
+
+class UserAPI:
+    def __init__(self, app: NexiosApp):
+        self.app = app
+        
+    @app.get("/users")
+    async def list_users(self, request, response):
+        return response.json([])
+```
+
+```python [Function Based]
+from nexios import NexiosApp
+
+app = NexiosApp()
+
+@app.get("/users")
+async def list_users(request, response):
+    return response.json([])
+```
+:::
+
+### Links
+
+Use proper linking:
+
+```markdown
+[Internal Link](/guide/getting-started)
+[External Link](https://example.com)
+[API Reference](/api/routing#parameters)
+```
+
+## API Documentation
+
+### Endpoint Documentation
+
+Document API endpoints consistently:
+
+```python
+@app.post(
+    "/users",
+    tags=["users"],
+    summary="Create user",
+    description="Create a new user account",
+    responses={
+        201: {"description": "User created"},
+        400: {"description": "Invalid input"},
+        409: {"description": "User exists"}
+    }
 )
+async def create_user(request, response):
+    """
+    Create a new user.
+    
+    Request body:
+    - username: str
+    - email: str
+    - password: str
+    
+    Returns:
+    - 201: Created user object
+    - 400: Validation error
+    - 409: Username taken
+    """
+    pass
+```
+
+### Type Documentation
+
+Document types and models clearly:
+
+```python
+from pydantic import BaseModel, Field
+from typing import Optional
+from datetime import datetime
+
+class User(BaseModel):
+    """
+    User model.
+    
+    Attributes:
+        id (int): Unique user ID
+        username (str): Unique username
+        email (str): User's email address
+        is_active (bool): Account status
+        created_at (datetime): Account creation time
+    """
+    id: int = Field(..., description="Unique user ID")
+    username: str = Field(..., description="Unique username")
+    email: str = Field(..., description="Email address")
+    is_active: bool = Field(True, description="Account status")
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="Creation timestamp"
+    )
+```
+
+## Examples
+
+### Configuration Examples
+
+Show different configuration options:
+
+::: code-group
+```python [Basic Config]
+from nexios import NexiosApp, MakeConfig
+
+config = MakeConfig(
+    debug=True,
+    secret_key="your-secret-key"
+)
+
+app = NexiosApp(config=config)
+```
+
+```python [Production Config]
+from nexios import NexiosApp, MakeConfig
+
+config = MakeConfig(
+    debug=False,
+    secret_key="${SECRET_KEY}",
+    allowed_hosts=["api.example.com"],
+    database_url="${DATABASE_URL}",
+    cors_enabled=True,
+    cors_origins=["https://example.com"],
+    rate_limit=100,
+    rate_limit_window=60
+)
+
+app = NexiosApp(config=config)
+```
+
+```python [Development Config]
+from nexios import NexiosApp, MakeConfig
+
+config = MakeConfig(
+    debug=True,
+    reload=True,
+    database_url="sqlite:///dev.db",
+    cors_enabled=True,
+    cors_origins=["*"],
+    logging_level="DEBUG"
+)
+
 app = NexiosApp(config=config)
 ```
 :::
 
-### Multi-language Examples
+### Error Handling Examples
+
+Show error handling patterns:
 
 ::: code-group
-```python [Python]
-@app.get("/users/{id}")
-async def get_user(request, response):
-    user_id = request.path_params.id
-    return response.json({"id": user_id})
+```python [Basic Errors]
+from nexios.exceptions import HTTPException
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc):
+    return response.json({
+        "error": exc.detail
+    }, status_code=exc.status_code)
 ```
 
-```javascript [JavaScript]
-// Client-side fetch
-async function getUser(id) {
-  const response = await fetch(`/users/${id}`);
-  return response.json();
-}
+```python [Custom Errors]
+class APIError(HTTPException):
+    def __init__(
+        self,
+        status_code: int,
+        detail: str,
+        code: str = None
+    ):
+        super().__init__(status_code, detail)
+        self.code = code
+
+@app.exception_handler(APIError)
+async def api_error_handler(request, exc):
+    return response.json({
+        "error": exc.detail,
+        "code": exc.code
+    }, status_code=exc.status_code)
 ```
 
-```typescript [TypeScript]
-// Type-safe client
-interface User {
-  id: number;
-  name: string;
-}
+```python [Database Errors]
+from sqlalchemy.exc import IntegrityError
 
-async function getUser(id: number): Promise<User> {
-  const response = await fetch(`/users/${id}`);
-  return response.json();
-}
-```
-:::
-
-## Documentation Components
-
-### Warning Boxes
-
-Use warning boxes to highlight important information:
-
-::: warning Version Requirements
-Nexios requires Python 3.9 or higher for async features.
-:::
-
-::: danger Security Notice
-Never expose debug mode in production environments.
-:::
-
-::: tip Performance
-Use connection pooling for database connections in production.
-:::
-
-::: info Note
-All Nexios routes are async by default.
-:::
-
-### Details Blocks
-
-Use details blocks for additional information:
-
-::: details Advanced Configuration
-```python
-app = NexiosApp(
-    config=Config(
-        debug=False,
-        cors_enabled=True,
-        allowed_hosts=["api.example.com"],
-        max_upload_size=10_000_000,
-        rate_limit={
-            "max_requests": 100,
-            "timeframe": 60
-        }
-    )
-)
+@app.exception_handler(IntegrityError)
+async def integrity_error_handler(request, exc):
+    return response.json({
+        "error": "Database error",
+        "detail": str(exc.orig)
+    }, status_code=409)
 ```
 :::
-
-::: details Database Setup
-```python
-from nexios.db import Database
-from sqlalchemy.ext.asyncio import create_async_engine
-
-# Create engine with connection pooling
-engine = create_async_engine(
-    "postgresql+asyncpg://user:pass@localhost/db",
-    pool_size=20,
-    max_overflow=30
-)
-
-# Initialize database
-db = Database(engine)
-
-# Register with app
-app.state.db = db
-```
-:::
-
-### Tables
-
-Use tables for comparing options:
-
-| Feature | Basic | Pro | Enterprise |
-|---------|-------|-----|------------|
-| Routes | ✓ | ✓ | ✓ |
-| WebSockets | ✓ | ✓ | ✓ |
-| Rate Limiting | | ✓ | ✓ |
-| Load Balancing | | | ✓ |
-| Priority Support | | | ✓ |
-
-### Diagrams
-
-Use Mermaid diagrams for visualizations:
-
-```mermaid
-sequenceDiagram
-    Client->>+Server: HTTP Request
-    Server->>+Middleware: Process Request
-    Middleware->>+Route Handler: Handle Request
-    Route Handler->>+Database: Query Data
-    Database-->>-Route Handler: Return Data
-    Route Handler-->>-Middleware: Return Response
-    Middleware-->>-Server: Process Response
-    Server-->>-Client: HTTP Response
-```
-
-### API Documentation
-
-Document API endpoints clearly:
-
-#### `GET /users/{id}`
-
-**Parameters:**
-- `id` (integer, required): The user ID
-
-**Response:**
-```json
-{
-  "id": 123,
-  "username": "john_doe",
-  "email": "john@example.com"
-}
-```
-
-**Example:**
-```python
-@app.get("/users/{id:int}")
-async def get_user(request, response):
-    """Get user by ID.
-    
-    Args:
-        request: The request object
-        response: The response object
-        
-    Returns:
-        JSON response with user data
-        
-    Raises:
-        HTTPException: If user not found
-    """
-    user_id = request.path_params.id
-    user = await db.fetch_one(
-        "SELECT * FROM users WHERE id = :id",
-        {"id": user_id}
-    )
-    if not user:
-        raise HTTPException(404, "User not found")
-    return response.json(dict(user))
-```
 
 ## Best Practices
 
-1. Always include type hints
-2. Document exceptions and error cases
-3. Provide working examples
-4. Use clear and consistent naming
-5. Include performance considerations
-6. Document security implications
+### Documentation Structure
 
-::: tip Writing Style
-- Use active voice
-- Be concise but complete
-- Include practical examples
-- Highlight important warnings
-- Link to related topics
+Organize documentation logically:
+
+1. Introduction
+   - Overview
+   - Quick start
+   - Installation
+2. Core Concepts
+   - Basic usage
+   - Configuration
+   - Architecture
+3. Guides
+   - Tutorials
+   - How-to guides
+   - Examples
+4. API Reference
+   - Endpoints
+   - Models
+   - Utilities
+5. Advanced Topics
+   - Best practices
+   - Performance
+   - Security
+6. Troubleshooting
+   - Common issues
+   - FAQ
+   - Support
+
+### Code Examples
+
+Follow these guidelines for code examples:
+
+1. Keep examples focused
+2. Include imports
+3. Use meaningful names
+4. Add comments
+5. Show error handling
+6. Include type hints
+7. Follow PEP 8
+8. Test examples
+9. Update regularly
+10. Show best practices
+
+### Versioning
+
+Document version-specific features:
+
+::: warning Version Compatibility
+This feature requires Nexios 2.0 or later.
 :::
 
-## More Resources
+```python
+# Nexios 1.x
+app.add_middleware(AuthMiddleware())
 
-- [API Reference](/api/)
-- [Examples](/examples/)
-- [Tutorials](/tutorials/)
-- [Contributing Guide](/contributing/)
+# Nexios 2.x
+app.add_middleware(
+    AuthenticationMiddleware(
+        backend=JWTAuthBackend()
+    )
+)
+```
+
+## Common Patterns
+
+### Authentication Examples
+
+Show authentication patterns:
+
+::: code-group
+```python [JWT Auth]
+from nexios.auth import JWTAuth
+
+auth = JWTAuth(secret_key="your-secret-key")
+
+@app.post("/login")
+async def login(request, response):
+    data = await request.json()
+    user = await authenticate_user(
+        data["username"],
+        data["password"]
+    )
+    token = auth.create_token({"sub": user.id})
+    return response.json({"token": token})
+```
+
+```python [Session Auth]
+from nexios.auth import SessionAuth
+
+auth = SessionAuth(secret_key="your-secret-key")
+
+@app.post("/login")
+async def login(request, response):
+    data = await request.json()
+    user = await authenticate_user(
+        data["username"],
+        data["password"]
+    )
+    request.session["user_id"] = user.id
+    return response.json({"message": "Logged in"})
+```
+:::
+
+### Database Examples
+
+Show database patterns:
+
+::: code-group
+```python [SQLAlchemy]
+from nexios.db import Database
+from sqlalchemy import select
+
+db = Database("postgresql://user:pass@localhost/db")
+
+@app.get("/users")
+async def list_users(request, response):
+    async with db.session() as session:
+        result = await session.execute(
+            select(User).order_by(User.id)
+        )
+        users = result.scalars().all()
+        return response.json(users)
+```
+
+```python [MongoDB]
+from nexios.db import MongoDB
+
+db = MongoDB("mongodb://localhost")
+
+@app.get("/users")
+async def list_users(request, response):
+    users = await db.users.find().to_list(100)
+    return response.json(users)
+```
+:::
+
+## More Information
+
+- [VitePress Guide](https://vitepress.dev/)
+- [Markdown Guide](https://www.markdownguide.org/)
+- [API Documentation Best Practices](https://swagger.io/resources/articles/best-practices-in-api-documentation/)

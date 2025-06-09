@@ -1,330 +1,467 @@
 # Routing 
 
-Routing of Nexios is flexible and intuitive. Let's take a look.
+Nexios provides a powerful and flexible routing system that supports path parameters, query parameters, and various HTTP methods.
 
+## Basic Routing
 
+### HTTP Methods
 
-##  The Basic Routing Example 
-
-```python
+::: code-group
+```python [Basic Routes]
 from nexios import NexiosApp
 
 app = NexiosApp()
-@app.get("/") 
-async def get_root(req, res):
-    return {"message": "Hello, world!"}
 
-```
-
-:::  details 🤔 How it Works 
-
-```python
-from nexios import NexiosApp
-app = NexiosApp() 
-@app.method("/path") 
-async def get_root(req, res): 
-    return {"message": "Hello, world!"}
-```
-:::
-
-Nexios provides flexible routing that supports both traditional decorators and alternative styles like direct route registration using functions or classes, giving developers full control over how they structure their APIs.
-
-
-## **Routing With Decorators** 
-
-```python
-from nexios import NexiosApp
-
-# HTTP Methods
 @app.get("/")
-async def get_root(req, res):
-    return {"message" : "Hello World"}
-@app.post("/")
-async def post_root(req, res):
-    return {"message" : "Hello World"}
+async def index(request, response):
+    return response.json({"message": "Hello"})
 
-@app.put("/")
-async def put_root(req, res):
-    return {"message" : "Hello World"}
+@app.post("/items")
+async def create_item(request, response):
+    data = await request.json()
+    return response.json(data, status_code=201)
 
-@app.delete("/")
-async def delete_root(req, res):
-    return res.text("DELETE /")
+@app.put("/items/{id}")
+async def update_item(request, response):
+    item_id = request.path_params.id
+    data = await request.json()
+    return response.json({"id": item_id, **data})
 
-# Wildcard Route
-@app.get("/wild/*/card")
-async def wildcard_route(req, res):
-    return {"message" : "Hello World"}
-
-# Any HTTP Method
-@app.route("/hello")
-async def any_method(req, res):
-    return {"message" : "Hello World"}
-
-# Custom HTTP Method
-@app.route("/cache", ["PURGE"])
-async def purge_cache(req, res):
-    return res.text("PURGE Method /cache")
-
-# Multiple Methods
-@app.route("/post", ["PUT", "DELETE"])
-async def multiple_methods(req, res):
-    return {"message" : "Hello World"}
-
+@app.delete("/items/{id}")
+async def delete_item(request, response):
+    item_id = request.path_params.id
+    return response.json(None, status_code=204)
 ```
-::: warning ⚠️ Warning
-oute conflicts can occur if you register the same path with multiple handlers for overlapping methods without clarity. Ensure each route-method pair is unique or handled intentionally.
+
+```python [Multiple Methods]
+@app.route("/items", methods=["GET", "POST"])
+async def handle_items(request, response):
+    if request.method == "GET":
+        return response.json({"items": []})
+    elif request.method == "POST":
+        data = await request.json()
+        return response.json(data, status_code=201)
+```
+
+```python [Head/Options]
+@app.head("/status")
+async def status(request, response):
+    response.headers["X-API-Version"] = "1.0"
+    return response.json(None)
+
+@app.options("/items")
+async def items_options(request, response):
+    response.headers["Allow"] = "GET, POST, PUT, DELETE"
+    return response.json(None)
+```
 :::
 
+## Path Parameters
 
-## Other Route Methods 
+### Parameter Types
 
-Nexios Provides `Routes` class for more complex routing needs. This Helps in grouping routes and makes the code more readable and maintainable.
+::: code-group
+```python [Basic Types]
+@app.get("/users/{user_id:int}")
+async def get_user(request, response):
+    user_id = request.path_params.user_id  # Automatically converted to int
+    return response.json({"id": user_id})
 
-```python
-from nexios.routing import Routes
-from nexios import NexiosApp
-app = NexiosApp()
+@app.get("/files/{filename:str}")
+async def get_file(request, response):
+    filename = request.path_params.filename
+    return response.json({"file": filename})
 
-async def dynamic_handler(req, res):
-    return {"message" : "Hello World"}
-
-app.add_route(Routes("/dynamic", dynamic_handler))  # Handles GET by default
-app.add_route(Routes("/dynamic-post", dynamic_handler, methods=["POST"]))  # Handles POST
-```
-::: tip Tip 💡
-you can also pass a list of `Routes` objects to `NexiosApp` to register multiple routes in a single call.
-
-```python
-
-app = NexiosApp(routes = [
-    Routes("/dynamic", dynamic_handler),  # Handles GET by default
-    Routes("/dynamic-post", dynamic_handler, methods=["POST"]),  # Handles POST
-])
+@app.get("/items/{item_id:uuid}")
+async def get_item(request, response):
+    item_id = request.path_params.item_id  # UUID object
+    return response.json({"id": str(item_id)})
 ```
 
-### The `Routes` Class in Detail
+```python [Custom Types]
+from nexios.types import PathParam
+from datetime import datetime
 
-The `Routes` class is the core building block of Nexios routing. It encapsulates all routing information for an API endpoint, including path handling, validation, OpenAPI documentation, and request processing.
+class DateParam(PathParam):
+    async def convert(self, value: str) -> datetime:
+        return datetime.strptime(value, "%Y-%m-%d")
+
+@app.get("/events/{date:date}")
+async def get_events(request, response):
+    date = request.path_params.date  # datetime object
+    return response.json({"date": date.isoformat()})
+```
+
+```python [Regex Patterns]
+@app.get("/users/{username:str(pattern=[a-zA-Z0-9_-]+)}")
+async def get_user_by_username(request, response):
+    username = request.path_params.username
+    return response.json({"username": username})
+
+@app.get("/products/{sku:str(pattern=[A-Z]{2}\d{6})}")
+async def get_product(request, response):
+    sku = request.path_params.sku
+    return response.json({"sku": sku})
+```
+:::
+
+### Available Parameter Types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `str` | String (default) | `{name:str}` |
+| `int` | Integer | `{id:int}` |
+| `float` | Floating point | `{price:float}` |
+| `bool` | Boolean | `{active:bool}` |
+| `uuid` | UUID | `{id:uuid}` |
+| `path` | Full path including slashes | `{path:path}` |
+| `date` | Date (custom type) | `{date:date}` |
+| `datetime` | DateTime (custom type) | `{dt:datetime}` |
+
+## Query Parameters
+
+### Basic Usage
+
+::: code-group
+```python [Optional Params]
+@app.get("/users")
+async def list_users(request, response):
+    page = request.query_params.get("page", 1)
+    limit = request.query_params.get("limit", 10)
+    sort = request.query_params.get("sort", "id")
+    return response.json({
+        "page": int(page),
+        "limit": int(limit),
+        "sort": sort
+    })
+```
+
+```python [Required Params]
+from nexios.exceptions import HTTPException
+
+@app.get("/search")
+async def search(request, response):
+    query = request.query_params.get("q")
+    if not query:
+        raise HTTPException(
+            status_code=400,
+            detail="Search query is required"
+        )
+    return response.json({"query": query})
+```
+
+```python [Multiple Values]
+@app.get("/filter")
+async def filter_items(request, response):
+    tags = request.query_params.getlist("tag")
+    return response.json({"tags": tags})
+```
+:::
+
+### Parameter Validation
 
 ```python
-from nexios.routing import Routes
+from nexios.validation import QueryParam, validate_params
 
-route = Routes(
-    path="/users/{user_id}",
-    handler=user_detail_handler,
-    methods=["GET", "PUT", "DELETE"],
-    name="user_detail",
-    summary="User Detail API",
-    description="Get, update or delete a user by ID",
-    responses={
-        200: UserResponse,
-        404: Error_404
-    },
-    request_model=UserUpdate,
-    middleware=[auth_middleware, logging_middleware],
-    tags=["users"],
-    security=[{"bearerAuth": []}],
-    operation_id="getUserDetail",
-    deprecated=False,
-    parameters=[
-        Parameter(name="include_details", in_="query", required=False, schema=Schema(type="boolean"))
-    ]
+class PaginationParams:
+    page: int = QueryParam(ge=1, default=1)
+    limit: int = QueryParam(ge=1, le=100, default=10)
+    sort: str = QueryParam(regex="^[a-zA-Z_]+$", default="id")
+
+@app.get("/items")
+@validate_params(PaginationParams)
+async def list_items(request, response, params: PaginationParams):
+    return response.json({
+        "page": params.page,
+        "limit": params.limit,
+        "sort": params.sort
+    })
+```
+
+## Route Groups
+
+### Using Routers
+
+::: code-group
+```python [Basic Router]
+from nexios import Router
+
+router = Router(prefix="/api/v1")
+
+@router.get("/users")
+async def list_users(request, response):
+    return response.json({"users": []})
+
+@router.post("/users")
+async def create_user(request, response):
+    data = await request.json()
+    return response.json(data, status_code=201)
+
+# In main.py
+app.mount_router(router)
+```
+
+```python [Nested Routers]
+users_router = Router(prefix="/users")
+posts_router = Router(prefix="/posts")
+
+@users_router.get("/{user_id}/posts")
+async def get_user_posts(request, response):
+    user_id = request.path_params.user_id
+    return response.json({"user_id": user_id, "posts": []})
+
+api_v1 = Router(prefix="/api/v1")
+api_v1.mount_router(users_router)
+api_v1.mount_router(posts_router)
+
+app.mount_router(api_v1)
+```
+
+```python [With Tags]
+router = Router(
+    prefix="/admin",
+    tags=["admin"],
+    responses={401: PyDanticModel}
 )
 
-app.add_route(route)
+@router.get("/stats")
+async def admin_stats(request, response):
+    return response.json({"stats": {}})
 ```
-
-#### Parameters
-
-| Parameter             | Description                               | Type                                   | Default                                                |
-| --------------------- | ----------------------------------------- | -------------------------------------- | ------------------------------------------------------ |
-| `path`                | URL path pattern with optional parameters | `str`                                  | Required                                               |
-| `handler`             | Request processing function/method        | `Callable`                             | Required                                               |
-| `methods`             | Allowed HTTP methods                      | `List[str]`                            | `["get", "post", "delete", "put", "patch", "options"]` |
-| `name`                | Route name (for URL generation)           | `Optional[str]`                        | `None`                                                 |
-| `summary`             | Brief description for OpenAPI docs        | `Optional[str]`                        | `None`                                                 |
-| `description`         | Detailed description for OpenAPI docs     | `Optional[str]`                        | `None`                                                 |
-| `responses`           | Response schemas or descriptions          | `Optional[Dict[int, Any]]`             | `None`                                                 |
-| `request_model`       | Pydantic model for request validation     | `Optional[Type[BaseModel]]`            | `None`                                                 |
-| `middleware`         | Route-specific middleware                 | `List[Any]`                            | `[]`                                                   |
-| `tags`                | OpenAPI tags for grouping                 | `Optional[List[str]]`                  | `None`                                                 |
-| `security`            | Security requirements                     | `Optional[List[Dict[str, List[str]]]]` | `None`                                                 |
-| `operation_id`        | Unique identifier for OpenAPI             | `Optional[str]`                        | `None`                                                 |
-| `deprecated`          | Mark route as deprecated                  | `bool`                                 | `False`                                                |
-| `parameters`          | Additional parameters for OpenAPI         | `List[Parameter]`                      | `[]`                                                   |
-| `exclude_from_schema` | Hide from OpenAPI docs                    | `bool`                                 | `False`  
-
-                                              |
-:::
-::: tip Quick Tip 💡
-
-the decorator and Routes takes the same arguments. 😁
-
-:::
-## Path Parameter 
-
-Path parameters allow you to capture dynamic segments of a URL. These parameters are extracted from the URL and made available to the route handler via the `req.path_params` object.
-
-```python{3}
-from nexios import NexiosApp
-app = NexiosApp()
-@app.get('/posts/{post_id}/comment/{comment_id}') 
-async def get_post_comment(req, res):
-   ...
-```
-
-This will match `/posts/123/comment/456` and extract `123` and `456` as `post_id` and `comment_id` respectively.
-
-You can access the path parameters using `req.path_params` object.
-
-```python{5,6}
-from nexios import NexiosApp
-app = NexiosApp()
-@app.get('/posts/{post_id}/comment/{comment_id}') 
-async def get_post_comment(req, res):
-   post_id = req.path_params.post_id
-   comment_id = req.path_params.comment_id
-   return {"message": f"post_id: {post_id}, comment_id: {comment_id}"}
-```
-
-Alternatively, you can use pass the path parameters to the handler directly using 
-
-```python{5,6}
-from nexios import NexiosApp
-app = NexiosApp()
-@app.get('/posts/{post_id}/comment/{comment_id}') 
-async def get_post_comment(req, res, post_id, comment_id):
-   return {"message": f"post_id: {post_id}, comment_id: {comment_id}"}
-```
-
-
-**Optional Route Parameters** 
-
-To use optional parameters in Nexios, you can define them in your route Double:
-
-```py{3,4}
-from nexios import NexiosApp
-app = NexiosApp()
-@app.get('/posts/{post_id}') 
-@app.get('/posts') 
-async def get_post_comment(req, res):
-   return {"message": f"post_id: {post_id}"}
-
-```
-
-## Route Converters 
-
-Route converters in Nexios allow you to enforce specific types or patterns on dynamic segments of your routes. This ensures that only valid data is processed, improving the reliability and predictability of your API.
-
-#### **Built-in Converters**
-
-**`int`** – Matches an integer (whole number).
-
-```python{1}
-@app.get("/items/{item_id:int}")
-async def get_item(req, res):
-    item_id = req.path_params.item_id
-    return res.text(f"Item ID: {item_id} (Integer)")
-```
-
-* **Matches:** `/items/42`
-* **Does Not Match:** `/items/apple`
-**`float`** – Matches a floating-point number.
-
-```python
-@app.get("/price/{amount:float}")
-async def get_price(req, res):
-    amount = req.path_params.amount
-    return res.text(f"Amount: {amount} (Float)")
-```
-
-* **Matches:** `/price/99.99`
-* **Does Not Match:** `/price/free`
-**`path`** – Matches any string, including slashes (`/`).
-
-```python
-@app.get("/files/{filepath:path}")
-async def read_file(req, res):
-    filepath = req.path_params.filepath
-    return res.text(f"File Path: {filepath}")
-```
-
-* **Matches:** `/files/documents/report.pdf`
-* **Does Not Match:** (Almost always matches)
-**`uuid`** – Matches a valid UUID string.
-
-```python
-@app.get("/users/{user_id:uuid}")
-async def get_user(req, res):
-    user_id = req.path_params.user_id
-    return res.text(f"User ID: {user_id} (UUID)")
-```
-
-* **Matches:** `/users/550e8400-e29b-41d4-a716-446655440000`
-* **Does Not Match:** `/users/12345`
-
-**`string`** – Matches any string (default behavior).
-
-```python
-@app.post("/person/{username:str}")
-async def get_person(req, res):
-    username = req.path_params.username
-    return res.text(f"Username: {username}")
-```
-
-* **Matches:** `/person/anyname`
-* **Does Not Match:** (Almost always matches)
-
-
-## Reverse Routing
-
-You can also reverse route a path using the `url_for` method of the `NexiosApp` and `Router` instance.
-
-```python
-from nexios import NexiosApp
-app = NexiosApp()
-@app.get('/posts/{post_id}/comment/{comment_id}', name='get_post_comment') 
-async def get_post_comment(req, res):
-    url = app.url_for('get_post_comment', post_id=123, comment_id=456)
-    return res.text(url)
-```
-This will generate the URL `/posts/123/comment/456`
-
-::: warning ⚠️ Warning
-To use the `url_for` method, you must have a `name` attribute set for your route.
 :::
 
-
-## Reverse Routing with Nested Routers
-
-Sometimes, you may want to reverse route a path from a nested router. In such cases, you can use the `url_for` method of the parent router to generate the URL.
+### Route Dependencies
 
 ```python
-from nexios import NexiosApp
-from nexios.routing import Router
-app = NexiosApp()
-v1_router = Router(prefix="/v1", name='v1') # Note the name attribute
-router.get('/posts/{post_id}/comment/{comment_id}', name='get_post_comment') 
-async def get_post_comment(req, res):
-    url = app.url_for('v1.get_post_comment', post_id=123, comment_id=456)
-    return res.text(url)
-```
-This will generate the URL `/posts/123/comment/456`
+from nexios import Depend
+from nexios.auth import requires_auth
 
-::: info 😎 Info
-To use the `url_for` method, you must have a `name` attribute set for your route.
+async def get_current_user(request):
+    token = request.headers.get("Authorization")
+    if not token:
+        raise HTTPException(401, "Not authenticated")
+    return await get_user_from_token(token)
+
+router = Router(
+    prefix="/admin",
+    dependencies=[Depend(get_current_user)]
+)
+
+@router.get("/dashboard")
+async def admin_dashboard(request, response):
+    return response.json({"dashboard": "data"})
+```
+
+## Advanced Routing
+
+### Route Metadata
+
+```python
+@app.get(
+    "/items/{id}",
+    name="get_item",
+    description="Get item by ID",
+    tags=["items"],
+    responses={
+        200: {"description": "Item found"},
+        404: {"description": "Item not found"}
+    },
+    deprecated=False
+)
+async def get_item(request, response):
+    return response.json({"id": request.path_params.id})
+```
+
+### Custom Route Classes
+
+```python
+from nexios.routing import Route
+
+class RateLimitedRoute(Route):
+    def __init__(self, path, handler, **kwargs):
+        super().__init__(path, handler, **kwargs)
+        self.rate_limit = kwargs.get("rate_limit", 100)
+
+    async def handle(self, request, response):
+        # Check rate limit
+        if await self.is_rate_limited(request):
+            raise HTTPException(429, "Too many requests")
+        return await super().handle(request, response)
+
+@app.route("/limited", route_class=RateLimitedRoute, rate_limit=50)
+async def limited_endpoint(request, response):
+    return response.json({"message": "Rate limited endpoint"})
+```
+
+### URL Generation
+
+```python
+@app.get("/users/{user_id}/posts/{post_id}", name="user_post")
+async def get_user_post(request, response):
+    return response.json({})
+
+# Generate URL
+url = app.url_for(
+    "user_post",
+    user_id=123,
+    post_id=456,
+    query={"version": "1"}
+)
+# Result: /users/123/posts/456?version=1
+```
+
+## Best Practices
+
+::: tip Route Organization
+1. Group related routes using Routers
+2. Use meaningful route names
+3. Document routes with metadata
+4. Keep route handlers focused
+5. Use type hints for parameters
 :::
-Using reverse in nested router is limited to only it children. You can use the request object for global reverse routing.
+
+### Route Structure
 
 ```python
-from nexios import NexiosApp
-from nexios.routing import Router
-app = NexiosApp()
-v1_router = Router(prefix="/v1", name='v1') # Note the name attribute
-router.get('/posts/{post_id}/comment/{comment_id}', name='get_post_comment') 
-async def get_post_comment(req, res):
-    url = req.app.url_for('v1.get_post_comment', post_id=123, comment_id=456)
-    return res.text(url)
+# routes/users.py
+from nexios import Router
+from .models import User
+from .schemas import UserCreate, UserUpdate
+from nexios.openapi import Query
+router = Router(prefix="/users", tags=["users"])
+
+@router.get("/",parameters = [Query(name = "page"),Query(name = "limit")])
+async def list_users(
+    request,
+    response
+):
+    """List users with pagination."""
+    page = request.query_params.get("page")
+    limit = request.query_params.get("limit")
+
+    users = await User.paginate(page, limit)
+    return response.json(users)
+
+@router.post("/")
+async def create_user(
+    request,
+    response,
+):
+    """Create a new user."""
+    data = await request.json
+    user = await User.create(**data)
+    return response.json(user, status_code=201)
+
+@router.get("/{user_id:int}")
+async def get_user(request, response):
+    """Get user by ID."""
+    user = await User.get_or_404(
+        request.path_params.user_id
+    )
+    return response.json(user)
+
+@router.put("/{user_id:int}")
+async def update_user(
+    request,
+    response,
+    data: UserUpdate = Body()
+):
+    """Update user by ID."""
+    user = await User.get_or_404(
+        request.path_params.user_id
+    )
+    await user.update(**data.dict())
+    return response.json(user)
+
+@router.delete("/{user_id:int}")
+async def delete_user(request, response):
+    """Delete user by ID."""
+    user = await User.get_or_404(
+        request.path_params.user_id
+    )
+    await user.delete()
+    return response.json(None, status_code=204)
 ```
-This will generate the URL `/v1/posts/123/comment/456`
+
+### Error Handling
+
+```python
+from nexios.exceptions import HTTPException
+
+@app.add_exception_handler(HTTPException)
+async def http_exception_handler(request,response, exc):
+    return response.json(
+        {
+            "error": exc.detail,
+            "code": exc.status_code
+        },
+        status_code=exc.status_code
+    )
+
+@app.add_exception_handler(Exception)
+async def generic_exception_handler(request,response, exc):
+    return response.json(
+        {
+            "error": "Internal server error",
+            "detail": str(exc) if app.debug else None
+        },
+        status_code=500
+    )
+```
+
+## Testing Routes
+
+::: tip Testing
+Use the test client for easy route testing:
+:::
+
+```python
+from nexios.testing import Client
+
+async def test_get_user():
+    client = Client(app)
+    
+    # Test successful request
+    response = await client.get("/users/123")
+    assert response.status_code == 200
+    assert response.json()["id"] == 123
+    
+    # Test not found
+    response = await client.get("/users/999")
+    assert response.status_code == 404
+    
+    # Test create user
+    response = await client.post(
+        "/users",
+        json={"name": "Test User"}
+    )
+    assert response.status_code == 201
+```
+
+## Performance Tips
+
+::: warning Route Performance
+1. Keep route handlers lightweight
+2. Use async database operations
+3. Implement caching where appropriate
+4. Use connection pooling
+5. Profile route performance
+:::
+
+```python
+from nexios.cache import cached
+
+@app.get("/expensive")
+@cached(ttl=300)  # Cache for 5 minutes
+async def expensive_operation(request, response):
+    result = await compute_expensive_result()
+    return response.json(result)
+```
+
+## More Information
+
+- [API Reference](/api/routing)
+- [Middleware Guide](/guide/middleware)
+- [Authentication](/guide/authentication)
+- [Database Integration](/guide/database)
+- [WebSockets](/guide/websockets/)
