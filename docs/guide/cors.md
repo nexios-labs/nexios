@@ -11,7 +11,7 @@ Before diving into individual settings, here’s a simple CORS setup using `Make
 
 ```python
 from nexios import MakeConfig
-from nexios.middlewares.cors import CORSMiddleware
+from nexios.middleware.cors import CORSMiddleware
 config = MakeConfig({
     "cors": {
         "allow_origins": ["https://example.com"],

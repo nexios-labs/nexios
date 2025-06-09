@@ -15,7 +15,7 @@ class BaseRouter(ABC):
     def __init__(self, prefix: Optional[str] = None):
         self.prefix = prefix or ""
         self.routes: List[Any] = []
-        self.middlewares: List[Any] = []
+        self.middleware: List[Any] = []
         self.sub_routers: Dict[str, ASGIApp] = {}
 
         if self.prefix and not self.prefix.startswith("/"):
@@ -27,10 +27,10 @@ class BaseRouter(ABC):
         raise NotImplementedError("Subclasses must implement this method")
 
     def add_middleware(self, middleware: Any) -> None:
-        self.middlewares.append(middleware)
+        self.middleware.append(middleware)
 
     def build_middleware_stack(self, app: ASGIApp) -> ASGIApp:
-        for mdw in reversed(self.middlewares):
+        for mdw in reversed(self.middleware):
             app = mdw(app)
         return app
 

@@ -141,7 +141,7 @@ class Routes(BaseRoute):
         operation_id: Optional[str] = None,
         deprecated: bool = False,
         parameters: List[Parameter] = [],
-        middlewares: List[Any] = [],
+        middleware: List[Any] = [],
         exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any],
     ):
@@ -177,7 +177,7 @@ class Routes(BaseRoute):
         self.pattern: Pattern[str] = self.route_info.pattern
         self.param_names = self.route_info.param_names
         self.route_type = self.route_info.route_type
-        self.middlewares: typing.List[MiddlewareType] = list(middlewares)
+        self.middleware: typing.List[MiddlewareType] = list(middleware)
         self.summary = summary
         self.description = description
         self.responses = responses
@@ -260,15 +260,15 @@ class Routes(BaseRoute):
             Response: The processed HTTP response object.
         """
 
-        async def apply_middlewares(app: ASGIApp) -> ASGIApp:
+        async def apply_middleware(app: ASGIApp) -> ASGIApp:
             middleware: typing.List[Middleware] = []
-            for mdw in self.middlewares:
+            for mdw in self.middleware:
                 middleware.append(wrap_middleware(mdw))  # type: ignore
             for cls, args, kwargs in reversed(middleware):
                 app = cls(app, *args, **kwargs)
             return app
 
-        app = await apply_middlewares(await request_response(self.handler))
+        app = await apply_middleware(await request_response(self.handler))
 
         await app(scope, receive, send)
 
@@ -294,7 +294,7 @@ class Router(BaseRouter):
         self.prefix = prefix or ""
         self.prefix.rstrip("/")
         self.routes = []
-        self.middlewares: typing.List[Middleware] = []
+        self.middleware: typing.List[Middleware] = []
         self.sub_routers: Dict[str, Union[Router, ASGIApp]] = {}
         self.route_class = Routes
         self.tags = tags or []
@@ -312,15 +312,15 @@ class Router(BaseRouter):
 
     def build_middleware_stack(self, app: ASGIApp) -> ASGIApp:
         """
-        Builds the middleware stack by applying all registered middlewares to the app.
+        Builds the middleware stack by applying all registered middleware to the app.
 
         Args:
             app: The base ASGI application.
 
         Returns:
-            ASGIApp: The application wrapped with all middlewares.
+            ASGIApp: The application wrapped with all middleware.
         """
-        for cls, args, kwargs in reversed(self.middlewares):
+        for cls, args, kwargs in reversed(self.middleware):
             app = cls(app, *args, **kwargs)
         return app
 
@@ -411,7 +411,7 @@ class Router(BaseRouter):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -515,7 +515,7 @@ class Router(BaseRouter):
                 description=description,
                 responses=responses,
                 request_model=request_model,
-                middlewares=middlewares,
+                middleware=middleware,
                 tags=tags,
                 security=security,
                 operation_id=operation_id,
@@ -562,7 +562,7 @@ class Router(BaseRouter):
         """Add middleware to the router"""
         if callable(middleware):
             mdw = Middleware(ASGIRequestResponseBridge, dispatch=middleware)  # type: ignore
-            self.middlewares.insert(0, mdw)
+            self.middleware.insert(0, mdw)
 
     def get(
         self,
@@ -643,7 +643,7 @@ class Router(BaseRouter):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -766,7 +766,7 @@ class Router(BaseRouter):
                 description=description,
                 responses=responses,
                 request_model=request_model,
-                middlewares=middlewares,
+                middleware=middleware,
                 tags=tags,
                 security=security,
                 operation_id=operation_id,
@@ -858,7 +858,7 @@ class Router(BaseRouter):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -972,7 +972,7 @@ class Router(BaseRouter):
             description=description,
             responses=responses,
             request_model=request_model,
-            middlewares=middlewares,
+            middleware=middleware,
             tags=tags,
             security=security,
             operation_id=operation_id,
@@ -1056,7 +1056,7 @@ class Router(BaseRouter):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -1168,7 +1168,7 @@ class Router(BaseRouter):
             description=description,
             responses=responses,
             request_model=request_model,
-            middlewares=middlewares,
+            middleware=middleware,
             tags=tags,
             security=security,
             operation_id=operation_id,
@@ -1253,7 +1253,7 @@ class Router(BaseRouter):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -1370,7 +1370,7 @@ class Router(BaseRouter):
             description=description,
             responses=responses,
             request_model=request_model,
-            middlewares=middlewares,
+            middleware=middleware,
             tags=tags,
             security=security,
             operation_id=operation_id,
@@ -1455,7 +1455,7 @@ class Router(BaseRouter):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -1570,7 +1570,7 @@ class Router(BaseRouter):
             description=description,
             responses=responses,
             request_model=request_model,
-            middlewares=middlewares,
+            middleware=middleware,
             tags=tags,
             security=security,
             operation_id=operation_id,
@@ -1653,7 +1653,7 @@ class Router(BaseRouter):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -1764,7 +1764,7 @@ class Router(BaseRouter):
             description=description,
             responses=responses,
             request_model=request_model,
-            middlewares=middlewares,
+            middleware=middleware,
             tags=tags,
             security=security,
             operation_id=operation_id,
@@ -1847,7 +1847,7 @@ class Router(BaseRouter):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -1957,7 +1957,7 @@ class Router(BaseRouter):
             description=description,
             responses=responses,
             request_model=request_model,
-            middlewares=middlewares,
+            middleware=middleware,
             tags=tags,
             security=security,
             operation_id=operation_id,
@@ -2030,7 +2030,7 @@ class Router(BaseRouter):
             Optional[Type[BaseModel]],
             Doc("Pydantic model for request body validation and OpenAPI docs"),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[MiddlewareType],
             Doc(
                 """
@@ -2120,7 +2120,7 @@ class Router(BaseRouter):
             description: Detailed route description
             responses: Response models by status code
             request_model: Request body validation model
-            middlewares: Route-specific middleware
+            middleware: Route-specific middleware
             tags: OpenAPI tags for grouping
             security: Security requirements
             operation_id: OpenAPI operation ID
@@ -2143,7 +2143,7 @@ class Router(BaseRouter):
                 description=description,
                 responses=responses,
                 request_model=request_model,
-                middlewares=middlewares,
+                middleware=middleware,
                 tags=tags,
                 security=security,
                 operation_id=operation_id,

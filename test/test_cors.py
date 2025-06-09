@@ -3,7 +3,7 @@ import pytest
 from nexios import get_application
 from nexios.testing import Client
 from nexios.config import MakeConfig
-from nexios.middlewares.cors import CORSMiddleware
+from nexios.middleware.cors import CORSMiddleware
 
 
 @pytest.fixture

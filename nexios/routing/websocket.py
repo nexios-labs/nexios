@@ -24,13 +24,13 @@ class WebsocketRoutes:
         self,
         path: str,
         handler: WsHandlerType,
-        middlewares: typing.List[WsMiddlewareType] = [],
+        middleware: typing.List[WsMiddlewareType] = [],
     ):
         assert callable(handler), "Route handler must be callable"
         assert asyncio.iscoroutinefunction(handler), "Route handler must be async"
         self.raw_path = path
         self.handler: WsHandlerType = inject_dependencies(handler)
-        self.middlewares = middlewares
+        self.middleware = middleware
         self.route_info = RouteBuilder.create_pattern(path)
         self.pattern = self.route_info.pattern
         self.param_names = self.route_info.param_names
@@ -82,7 +82,7 @@ class WSRouter(BaseRouter):
     ):
         self.prefix = prefix or ""
         self.routes: List[WebsocketRoutes] = routes or []
-        self.middlewares: List[Callable[[ASGIApp], ASGIApp]] = []
+        self.middleware: List[Callable[[ASGIApp], ASGIApp]] = []
         self.sub_routers: Dict[str, ASGIApp] = {}
         if self.prefix and not self.prefix.startswith("/"):
             warnings.warn("WSRouter prefix should start with '/'")
@@ -116,7 +116,7 @@ class WSRouter(BaseRouter):
 
     def add_ws_middleware(self, middleware: type[ASGIApp]) -> None:  # type: ignore[override]
         """Add middleware to the WebSocket router"""
-        self.middlewares.insert(0, middleware)  # type: ignore
+        self.middleware.insert(0, middleware)  # type: ignore
 
     def ws_route(
         self,
@@ -127,7 +127,7 @@ class WSRouter(BaseRouter):
             Optional[WsHandlerType],
             Doc("The WebSocket handler function. Must be an async function."),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[WsMiddlewareType],
             Doc("List of middleware to be executes before the router handler"),
         ] = [],
@@ -155,11 +155,11 @@ class WSRouter(BaseRouter):
         """
         if handler:
             return self.add_ws_route(
-                WebsocketRoutes(path, handler, middlewares=middlewares)
+                WebsocketRoutes(path, handler, middleware=middleware)
             )
 
         def decorator(handler: WsHandlerType) -> WsHandlerType:
-            self.add_ws_route(WebsocketRoutes(path, handler, middlewares=middlewares))
+            self.add_ws_route(WebsocketRoutes(path, handler, middleware=middleware))
             return handler
 
         return decorator
@@ -168,7 +168,7 @@ class WSRouter(BaseRouter):
         self, scope: Scope, receive: Receive, send: Send
     ) -> ASGIApp:  # type:ignore
         app = self.app
-        for mdw in reversed(self.middlewares):
+        for mdw in reversed(self.middleware):
             app = mdw(app)  # type:ignore[assignment]
         return app
 

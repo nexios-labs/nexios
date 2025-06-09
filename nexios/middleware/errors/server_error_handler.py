@@ -1,4 +1,4 @@
-from nexios.middlewares.base import BaseMiddleware
+from nexios.middleware.base import BaseMiddleware
 from nexios.http import Request, Response
 from nexios.config import get_config
 import traceback, html, sys, inspect, typing, platform, json, datetime, uuid, os

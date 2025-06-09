@@ -13,7 +13,7 @@ class Routes(
     description: Optional[str] = None,
     responses: Optional[Dict[int, Any]] = None,
     request_model: Optional[Type[BaseModel]] = None,
-    middlewares: List[Any] = [],
+    middleware: List[Any] = [],
     tags: Optional[List[str]] = None,
     security: Optional[List[Dict[str, List[str]]]] = None,
     operation_id: Optional[str] = None,
@@ -29,7 +29,7 @@ class Routes(
 class WebsocketRoutes(
     path: str,
     handler: WsHandlerType,
-    middlewares: List[WsMiddlewareType] = []
+    middleware: List[WsMiddlewareType] = []
 )
 ```
 

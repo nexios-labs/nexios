@@ -17,7 +17,7 @@ from nexios.config import DEFAULT_CONFIG, MakeConfig
 from nexios.events import AsyncEventEmitter
 from nexios.exception_handler import ExceptionHandlerType, ExceptionMiddleware
 from nexios.logging import create_logger
-from nexios.middlewares.errors.server_error_handler import (
+from nexios.middleware.errors.server_error_handler import (
     ServerErrorMiddleware,
     ServerErrHandlerType,
 )
@@ -89,10 +89,10 @@ class NexiosApp(object):
                     """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Middleware],
             Doc(
-                "A list of middlewares, where each middleware is either a class inherited from BaseMiddleware or an asynchronous callable function that accepts request, response, and callnext"
+                "A list of middleware, where each middleware is either a class inherited from BaseMiddleware or an asynchronous callable function that accepts request, response, and callnext"
             ),
         ] = [],
         server_error_handler: Annotated[
@@ -116,8 +116,8 @@ class NexiosApp(object):
         self.server_error_handler = None
         self.ws_router = WSRouter()
         self.ws_routes: List[WebsocketRoutes] = []
-        self.http_middlewares: List[Middleware] = middlewares or []
-        self.ws_middlewares: List[ASGIApp] = []
+        self.http_middleware: List[Middleware] = middleware or []
+        self.ws_middleware: List[ASGIApp] = []
         self.startup_handlers: List[Callable[[], Awaitable[None]]] = []
         self.shutdown_handlers: List[Callable[[], Awaitable[None]]] = []
         self.exceptions_handler = ExceptionMiddleware()
@@ -367,7 +367,7 @@ class NexiosApp(object):
             ```
         """
 
-        self.http_middlewares.insert(
+        self.http_middleware.insert(
             0, Middleware(ASGIRequestResponseBridge, dispatch=middleware)  # type:ignore
         )
 
@@ -461,7 +461,7 @@ class NexiosApp(object):
         self, scope: Scope, receive: Receive, send: Send
     ) -> None:
         app = self.ws_router
-        for mdw in reversed(self.ws_middlewares):
+        for mdw in reversed(self.ws_middleware):
             app = mdw(app)  # type:ignore
         await app(scope, receive, send)
 
@@ -497,7 +497,7 @@ class NexiosApp(object):
             app.add_ws_middleware(ws_auth_middleware)
             ```
         """
-        self.ws_middlewares.append(middleware)
+        self.ws_middleware.append(middleware)
 
     def handle_http_request(self, scope: Scope, receive: Receive, send: Send):
         app = self.app
@@ -508,7 +508,7 @@ class NexiosApp(object):
                     dispatch=ServerErrorMiddleware(handler=self.server_error_handler),
                 )
             ]
-            + self.http_middlewares
+            + self.http_middleware
             + [
                 Middleware(
                     ASGIRequestResponseBridge, dispatch=self.exceptions_handler
@@ -611,7 +611,7 @@ class NexiosApp(object):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -733,7 +733,7 @@ class NexiosApp(object):
             description=description,
             responses=responses,
             request_model=request_model,
-            middlewares=middlewares,
+            middleware=middleware,
             tags=tags,
             security=security,
             operation_id=operation_id,
@@ -819,7 +819,7 @@ class NexiosApp(object):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -933,7 +933,7 @@ class NexiosApp(object):
             description=description,
             responses=responses,
             request_model=request_model,
-            middlewares=middlewares,
+            middleware=middleware,
             tags=tags,
             security=security,
             operation_id=operation_id,
@@ -1017,7 +1017,7 @@ class NexiosApp(object):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -1129,7 +1129,7 @@ class NexiosApp(object):
             description=description,
             responses=responses,
             request_model=request_model,
-            middlewares=middlewares,
+            middleware=middleware,
             tags=tags,
             security=security,
             operation_id=operation_id,
@@ -1214,7 +1214,7 @@ class NexiosApp(object):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -1331,7 +1331,7 @@ class NexiosApp(object):
             description=description,
             responses=responses,
             request_model=request_model,
-            middlewares=middlewares,
+            middleware=middleware,
             tags=tags,
             security=security,
             operation_id=operation_id,
@@ -1416,7 +1416,7 @@ class NexiosApp(object):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -1531,7 +1531,7 @@ class NexiosApp(object):
             description=description,
             responses=responses,
             request_model=request_model,
-            middlewares=middlewares,
+            middleware=middleware,
             tags=tags,
             security=security,
             operation_id=operation_id,
@@ -1614,7 +1614,7 @@ class NexiosApp(object):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -1725,7 +1725,7 @@ class NexiosApp(object):
             description=description,
             responses=responses,
             request_model=request_model,
-            middlewares=middlewares,
+            middleware=middleware,
             tags=tags,
             security=security,
             operation_id=operation_id,
@@ -1808,7 +1808,7 @@ class NexiosApp(object):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -1918,7 +1918,7 @@ class NexiosApp(object):
             description=description,
             responses=responses,
             request_model=request_model,
-            middlewares=middlewares,
+            middleware=middleware,
             tags=tags,
             security=security,
             operation_id=operation_id,
@@ -2015,7 +2015,7 @@ class NexiosApp(object):
             """
             ),
         ] = None,
-        middlewares: Annotated[
+        middleware: Annotated[
             List[Any],
             Doc(
                 """
@@ -2119,7 +2119,7 @@ class NexiosApp(object):
                 description=description,
                 responses=responses,
                 request_model=request_model,
-                middlewares=middlewares,
+                middleware=middleware,
                 tags=tags,
                 security=security,
                 operation_id=operation_id,

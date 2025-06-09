@@ -110,7 +110,7 @@ class FileRouter:
                         description=getattr(handler_function, "_description", ""),
                         responses=getattr(handler_function, "_responses", {}),
                         request_model=getattr(handler_function, "_request_model", None),
-                        middlewares=getattr(handler_function, "_middlewares", []),
+                        middleware=getattr(handler_function, "_middleware", []),
                         tags=getattr(handler_function, "_tags", []),
                         security=getattr(handler_function, "_security", []),
                         operation_id=getattr(handler_function, "_operation_id", ""),

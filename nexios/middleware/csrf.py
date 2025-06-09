@@ -1,7 +1,7 @@
 import secrets, re, typing
 from nexios.config import get_config
 from itsdangerous import URLSafeSerializer, BadSignature  # type:ignore
-from nexios.middlewares.base import BaseMiddleware
+from nexios.middleware.base import BaseMiddleware
 from nexios.http import Request, Response
 
 

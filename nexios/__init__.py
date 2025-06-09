@@ -58,7 +58,7 @@ Common Patterns:
         return response.json(item)
 
 3. Custom Middleware:
-    from nexios.middlewares import BaseMiddleware
+    from nexios.middleware import BaseMiddleware
 
     class LoggingMiddleware(BaseMiddleware):
         async def __call__(self, request, response, call_next):
@@ -89,8 +89,8 @@ from typing_extensions import Doc, Annotated
 from .application import NexiosApp
 from .config import set_config, DEFAULT_CONFIG
 from .config.base import MakeConfig
-from .middlewares.cors import CORSMiddleware
-from .middlewares.csrf import CSRFMiddleware
+from .middleware.cors import CORSMiddleware
+from .middleware.csrf import CSRFMiddleware
 from .routing import Router, Routes
 from .session.middleware import SessionMiddleware
 from .types import ExceptionHandlerType
@@ -175,7 +175,7 @@ def get_application(
     )
     set_config(config)
     app = NexiosApp(
-        middlewares=[
+        middleware=[
             wrap_middleware(CORSMiddleware()),
             wrap_middleware(SessionMiddleware()),
             wrap_middleware(CSRFMiddleware()),

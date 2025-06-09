@@ -1,4 +1,4 @@
-from nexios.middlewares.base import BaseMiddleware
+from nexios.middleware.base import BaseMiddleware
 from .signed_cookies import SignedSessionManager
 from .base import BaseSessionInterface
 from nexios.http import Request, Response
