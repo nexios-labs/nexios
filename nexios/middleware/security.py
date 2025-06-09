@@ -2,6 +2,7 @@
 Security middleware for Nexios applications.
 Provides comprehensive security features and headers.
 """
+
 from typing import Dict, List, Optional, Union
 from nexios.middleware import BaseMiddleware
 from nexios.types import Request, Response
@@ -14,7 +15,6 @@ class SecurityMiddleware(BaseMiddleware):
         csp_enabled: bool = True,
         csp_policy: Optional[Dict[str, Union[str, List[str]]]] = None,
         csp_report_only: bool = False,
-        
         # CORS
         cors_enabled: bool = True,
         allowed_origins: Optional[List[str]] = None,
@@ -23,74 +23,57 @@ class SecurityMiddleware(BaseMiddleware):
         expose_headers: Optional[List[str]] = None,
         max_age: int = 600,
         allow_credentials: bool = False,
-        
         # HSTS
         hsts_enabled: bool = True,
         hsts_max_age: int = 31536000,
         hsts_include_subdomains: bool = True,
         hsts_preload: bool = False,
-        
         # XSS Protection
         xss_protection: bool = True,
         xss_mode: str = "block",
-        
         # Frame Options
         frame_options: str = "DENY",
         frame_options_allow_from: Optional[str] = None,
-        
         # Content Type Options
         content_type_options: bool = True,
-        
         # Referrer Policy
         referrer_policy: str = "strict-origin-when-cross-origin",
-        
         # Permissions Policy
         permissions_policy: Optional[Dict[str, Union[str, List[str]]]] = None,
-        
         # SSL/HTTPS
         ssl_redirect: bool = False,
         ssl_host: Optional[str] = None,
         ssl_permanent: bool = True,
-        
         # Cache Control
         cache_control: str = "no-store, no-cache, must-revalidate, proxy-revalidate",
-        
         # Clear Site Data
         clear_site_data: Optional[List[str]] = None,
-        
         # DNS Prefetch
         dns_prefetch_control: str = "off",
-        
         # Download Options
         download_options: str = "noopen",
-        
         # Cross-Origin Options
         cross_origin_opener_policy: str = "same-origin",
         cross_origin_embedder_policy: str = "require-corp",
         cross_origin_resource_policy: str = "same-origin",
-        
         # Expect-CT
         expect_ct: bool = False,
         expect_ct_max_age: int = 86400,
         expect_ct_enforce: bool = False,
         expect_ct_report_uri: Optional[str] = None,
-        
         # Report-To
         report_to: Optional[Dict[str, List[Dict]]] = None,
-        
         # NEL (Network Error Logging)
         nel: Optional[Dict] = None,
-        
         # Trusted Types
         trusted_types: bool = False,
         trusted_types_policies: Optional[List[str]] = None,
-        
         # Server
         hide_server: bool = True,
         server_header: Optional[str] = None,
     ):
         """Initialize SecurityMiddleware with various security options.
-        
+
         Args:
             csp_enabled: Enable Content Security Policy
             csp_policy: CSP directives
@@ -136,67 +119,73 @@ class SecurityMiddleware(BaseMiddleware):
         """
         self.csp_enabled = csp_enabled
         self.csp_policy = csp_policy or {
-            'default-src': ["'self'"],
-            'script-src': ["'self'"],
-            'style-src': ["'self'"],
-            'img-src': ["'self'"],
-            'connect-src': ["'self'"],
-            'font-src': ["'self'"],
-            'object-src': ["'none'"],
-            'media-src': ["'self'"],
-            'frame-src': ["'none'"],
-            'base-uri': ["'self'"],
-            'form-action': ["'self'"]
+            "default-src": ["'self'"],
+            "script-src": ["'self'"],
+            "style-src": ["'self'"],
+            "img-src": ["'self'"],
+            "connect-src": ["'self'"],
+            "font-src": ["'self'"],
+            "object-src": ["'none'"],
+            "media-src": ["'self'"],
+            "frame-src": ["'none'"],
+            "base-uri": ["'self'"],
+            "form-action": ["'self'"],
         }
         self.csp_report_only = csp_report_only
-        
+
         self.cors_enabled = cors_enabled
         self.allowed_origins = allowed_origins or ["*"]
-        self.allowed_methods = allowed_methods or ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+        self.allowed_methods = allowed_methods or [
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE",
+            "OPTIONS",
+        ]
         self.allowed_headers = allowed_headers or ["*"]
         self.expose_headers = expose_headers or []
         self.max_age = max_age
         self.allow_credentials = allow_credentials
-        
+
         self.hsts_enabled = hsts_enabled
         self.hsts_max_age = hsts_max_age
         self.hsts_include_subdomains = hsts_include_subdomains
         self.hsts_preload = hsts_preload
-        
+
         self.xss_protection = xss_protection
         self.xss_mode = xss_mode
-        
+
         self.frame_options = frame_options
         self.frame_options_allow_from = frame_options_allow_from
-        
+
         self.content_type_options = content_type_options
         self.referrer_policy = referrer_policy
         self.permissions_policy = permissions_policy or {}
-        
+
         self.ssl_redirect = ssl_redirect
         self.ssl_host = ssl_host
         self.ssl_permanent = ssl_permanent
-        
+
         self.cache_control = cache_control
         self.clear_site_data = clear_site_data
         self.dns_prefetch_control = dns_prefetch_control
         self.download_options = download_options
-        
+
         self.cross_origin_opener_policy = cross_origin_opener_policy
         self.cross_origin_embedder_policy = cross_origin_embedder_policy
         self.cross_origin_resource_policy = cross_origin_resource_policy
-        
+
         self.expect_ct = expect_ct
         self.expect_ct_max_age = expect_ct_max_age
         self.expect_ct_enforce = expect_ct_enforce
         self.expect_ct_report_uri = expect_ct_report_uri
-        
+
         self.report_to = report_to
         self.nel = nel
-        
+
         self.trusted_types = trusted_types
         self.trusted_types_policies = trusted_types_policies
-        
+
         self.hide_server = hide_server
         self.server_header = server_header
 
@@ -223,18 +212,26 @@ class SecurityMiddleware(BaseMiddleware):
         """Process the request and add security headers."""
         # Handle HTTPS redirect
         if self.ssl_redirect and not request.url.scheme == "https":
-            redirect_url = f"https://{self.ssl_host or request.url.hostname}{request.url.path}"
-            return response.redirect(url=redirect_url, status_code=301 if self.ssl_permanent else 302)
+            redirect_url = (
+                f"https://{self.ssl_host or request.url.hostname}{request.url.path}"
+            )
+            return response.redirect(
+                url=redirect_url, status_code=301 if self.ssl_permanent else 302
+            )
 
         # Call the next middleware/route handler
         await call_next()
 
         # Add security headers
-        headers  = dict(response.headers)
+        headers = dict(response.headers)
 
         # Content-Security-Policy
         if self.csp_enabled:
-            header_name = "Content-Security-Policy-Report-Only" if self.csp_report_only else "Content-Security-Policy"
+            header_name = (
+                "Content-Security-Policy-Report-Only"
+                if self.csp_report_only
+                else "Content-Security-Policy"
+            )
             headers[header_name] = self._build_csp_header()
 
         # CORS headers
@@ -243,7 +240,9 @@ class SecurityMiddleware(BaseMiddleware):
             headers["Access-Control-Allow-Methods"] = ", ".join(self.allowed_methods)
             headers["Access-Control-Allow-Headers"] = ", ".join(self.allowed_headers)
             if self.expose_headers:
-                headers["Access-Control-Expose-Headers"] = ", ".join(self.expose_headers)
+                headers["Access-Control-Expose-Headers"] = ", ".join(
+                    self.expose_headers
+                )
             headers["Access-Control-Max-Age"] = str(self.max_age)
             if self.allow_credentials:
                 headers["Access-Control-Allow-Credentials"] = "true"
@@ -283,7 +282,9 @@ class SecurityMiddleware(BaseMiddleware):
 
         # Clear Site Data
         if self.clear_site_data:
-            headers["Clear-Site-Data"] = ", ".join(f'"{x}"' for x in self.clear_site_data)
+            headers["Clear-Site-Data"] = ", ".join(
+                f'"{x}"' for x in self.clear_site_data
+            )
 
         # DNS Prefetch Control
         headers["X-DNS-Prefetch-Control"] = self.dns_prefetch_control
@@ -317,9 +318,11 @@ class SecurityMiddleware(BaseMiddleware):
         if self.trusted_types:
             policy_value = "require-trusted-types-for 'script'"
             if self.trusted_types_policies:
-                policy_value += f"; trusted-types {' '.join(self.trusted_types_policies)}"
+                policy_value += (
+                    f"; trusted-types {' '.join(self.trusted_types_policies)}"
+                )
             if "Content-Security-Policy" in headers:
-                headers["Content-Security-Policy"] += f"; {policy_value}" # type:ignore
+                headers["Content-Security-Policy"] += f"; {policy_value}"  # type:ignore
             else:
                 headers["Content-Security-Policy"] = policy_value
 
@@ -327,6 +330,6 @@ class SecurityMiddleware(BaseMiddleware):
         if self.hide_server:
             headers.pop("Server", None)
         elif self.server_header:
-            headers["Server"] = self.server_header 
-        response.set_headers(headers, overide_all=True) # type:ignore
-        return response 
+            headers["Server"] = self.server_header
+        response.set_headers(headers, overide_all=True)  # type:ignore
+        return response
