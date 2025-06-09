@@ -22,7 +22,13 @@ from nexios.exceptions import HTTPException
 import jwt
 import logging
 import os
-
+from nexios.config import MakeConfig
+config = MakeConfig(cors =  {
+     "allow_origins" : os.getenv("ALLOWED_ORIGINS", "").split(","),
+    "allow_methods":["GET", "POST", "PUT", "DELETE"],
+    "allow_headers":["Authorization", "Content-Type"],
+    "allow_credentials":True,
+})
 # Application setup
 app = NexiosApp()
 
@@ -37,12 +43,7 @@ logger = create_logger(
 
 # Security middleware
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=os.getenv("ALLOWED_ORIGINS", "").split(","),
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Authorization", "Content-Type"],
-    allow_credentials=True,
-    max_age=3600
+    CORSMiddleware()
 )
 ```
 
@@ -81,8 +82,7 @@ async def login(request: Request, response: Response):
         logger.error(f"Login failed: {str(e)}")
         raise AuthenticationError("Invalid credentials")
 
-@app.middleware("http")
-async def authenticate(request: Request, call_next):
+async def authenticate(request: Request, response, call_next):
     try:
         if "Authorization" in request.headers:
             token = request.headers["Authorization"].split(" ")[1]
@@ -96,6 +96,8 @@ async def authenticate(request: Request, call_next):
     except Exception as e:
         logger.error(f"Authentication failed: {str(e)}")
         raise AuthenticationError("Invalid token")
+
+app.add_middleware(authenticate)
 ```
 
 ## API Routes
@@ -200,8 +202,8 @@ app.add_route(
 Comprehensive error handling:
 
 ```python
-@app.exception_handler(Exception)
-async def handle_error(request: Request, exc: Exception):
+@app.add_exception_handler(Exception)
+async def handle_error(request: Request,response :Response,  exc: Exception):
     error_id = str(uuid.uuid4())
     
     # Log error details
@@ -221,7 +223,7 @@ async def handle_error(request: Request, exc: Exception):
             status_code=exc.status_code
         )
     
-    return Response(
+    return response.json(
         {
             "error": "Internal server error",
             "error_id": error_id
@@ -275,7 +277,7 @@ async def metrics(request: Request, response: Response):
 Managing application lifecycle:
 
 ```python
-@app.on_event("startup")
+@app.on_startup
 async def startup():
     # Initialize application state
     app.state.startup_time = time.time()
@@ -289,7 +291,7 @@ async def startup():
     
     logger.info("Application started")
 
-@app.on_event("shutdown")
+@app.on_shutdown
 async def shutdown():
     # Cancel background tasks
     if hasattr(app.state, "cleanup_task"):

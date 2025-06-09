@@ -141,14 +141,13 @@ async def readiness(request: Request, response: Response):
 Serving static files in production:
 
 ```python
-from nexios.staticfiles import StaticFiles
+from nexios.static import StaticFilesHandler
 import os
 
 # Configure static files
 static_dir = os.path.join(os.path.dirname(__file__), "static")
-app.mount("/static", StaticFiles(directory=static_dir))
+app.add_route("/static", StaticFilesHandler(directory=static_dir))
 
-# Add caching headers
 @app.middleware("http")
 async def add_cache_headers(request: Request, call_next):
     response = await call_next(request)

@@ -134,11 +134,11 @@ Adapting Nexios for containerization:
 
 ```python
 from nexios import NexiosApp
-from nexios.config import ServerConfigDict
+from nexios.config import MakeConfig
 import os
 
 # Server configuration
-server_config: ServerConfigDict = {
+server_config = MakeConfig({
     "host": os.getenv("HOST", "0.0.0.0"),
     "port": int(os.getenv("PORT", "8000")),
     "workers": int(os.getenv("WORKERS", "1")),
@@ -148,9 +148,9 @@ server_config: ServerConfigDict = {
     "threading": True,
     "access_log": True,
     "server": "uvicorn"
-}
+})
 
-app = NexiosApp(server_config=server_config)
+app = NexiosApp(config=server_config)
 
 # Health check for container orchestration
 @app.get("/health")
@@ -180,14 +180,14 @@ def handle_sigterm(signum, frame):
 signal.signal(signal.SIGTERM, handle_sigterm)
 
 # Startup handler
-@app.on_event("startup")
+@app.on_startup
 async def startup():
     print(f"Container {os.getenv('HOSTNAME')} starting up...")
     # Initialize container-specific resources
     app.state.container_id = os.getenv("HOSTNAME")
 
 # Shutdown handler
-@app.on_event("shutdown")
+@app.on_shutdown
 async def shutdown():
     print(f"Container {app.state.container_id} shutting down...")
     # Cleanup container-specific resources
