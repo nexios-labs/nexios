@@ -300,7 +300,7 @@ pip install nexios
   <div class="support-card">
     <h3>Discord Community</h3>
     <p>Join our active Discord community</p>
-    <a href="https://discord.gg/nexios" class="start-button">Join</a>
+    <a href="https://discord.gg/x3Jm6jsw" class="start-button">Join</a>
   </div>
   <div class="support-card">
     <h3>Stack Overflow</h3>
@@ -310,6 +310,6 @@ pip install nexios
   <div class="support-card">
     <h3>GitHub Issues</h3>
     <p>Report bugs and request features</p>
-    <a href="https://github.com/yourusername/nexios/issues" class="start-button">Report</a>
+    <a href="https://github.com/nexios-labs/nexios/issues" class="start-button">Report</a>
   </div>
 </div>
