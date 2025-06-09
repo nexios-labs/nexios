@@ -1,349 +1,162 @@
 # 🚀 Day 13: WebSocket Basics
 
+## Learning Objectives
+- Understand WebSocket fundamentals in Nexios
+- Learn basic WebSocket routing and handlers
+- Master message handling and connection lifecycle
+- Work with WebSocket channels
+
 ## WebSocket Setup
 
-Setting up WebSocket support:
+Basic WebSocket setup in Nexios:
 
 ```python
 from nexios import NexiosApp
-from nexios.websockets import WebSocket
-from typing import Dict, Set
-import json
+from nexios.websockets.base import WebSocket, WebSocketDisconnect
 
 app = NexiosApp()
 
-# Store active connections
-connections: Dict[str, Set[WebSocket]] = {
-    "default": set()
-}
-
 @app.ws_route("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    connections["default"].add(websocket)
+async def websocket_endpoint(ws: WebSocket):
+    await ws.accept()
     
     try:
         while True:
-            data = await websocket.receive_text()
-            await websocket.send_text(f"Message received: {data}")
-    except:
-        connections["default"].remove(websocket)
-        await websocket.close()
-
-# Room-based WebSocket
-@app.ws_route("/ws/{room_id}")
-async def room_websocket(websocket: WebSocket, room_id: str):
-    if room_id not in connections:
-        connections[room_id] = set()
-    
-    await websocket.accept()
-    connections[room_id].add(websocket)
-    
-    try:
-        while True:
-            data = await websocket.receive_text()
-            # Broadcast to all in room
-            for client in connections[room_id]:
-                await client.send_text(data)
-    except:
-        connections[room_id].remove(websocket)
-        if not connections[room_id]:
-            del connections[room_id]
-        await websocket.close()
+            data = await ws.receive_text()
+            await ws.send_text(f"Message received: {data}")
+    except WebSocketDisconnect:
+        print("Client disconnected")
 ```
 
-## Connection Handling
+## WebSocket Routing
 
-Managing WebSocket connections:
+Nexios provides multiple ways to handle WebSocket routing:
 
 ```python
-from nexios.websockets import WebSocketManager
-from nexios.security import requires_auth
-from datetime import datetime
+from nexios.routing import WSRouter, WebsocketRoutes
 
-class ConnectionManager(WebSocketManager):
-    def __init__(self):
-        self.active_connections: Dict[str, Dict[str, WebSocket]] = {}
-        self.user_rooms: Dict[str, Set[str]] = {}
-    
-    async def connect(
-        self,
-        websocket: WebSocket,
-        room_id: str,
-        user_id: str
-    ):
-        await websocket.accept()
-        
-        if room_id not in self.active_connections:
-            self.active_connections[room_id] = {}
-        
-        self.active_connections[room_id][user_id] = websocket
-        
-        if user_id not in self.user_rooms:
-            self.user_rooms[user_id] = set()
-        
-        self.user_rooms[user_id].add(room_id)
-    
-    async def disconnect(
-        self,
-        room_id: str,
-        user_id: str
-    ):
-        if room_id in self.active_connections:
-            if user_id in self.active_connections[room_id]:
-                del self.active_connections[room_id][user_id]
-            
-            if not self.active_connections[room_id]:
-                del self.active_connections[room_id]
-        
-        if user_id in self.user_rooms:
-            self.user_rooms[user_id].remove(room_id)
-            if not self.user_rooms[user_id]:
-                del self.user_rooms[user_id]
-    
-    async def broadcast(
-        self,
-        room_id: str,
-        message: str,
-        exclude_user: str = None
-    ):
-        if room_id in self.active_connections:
-            for user_id, websocket in self.active_connections[room_id].items():
-                if user_id != exclude_user:
-                    await websocket.send_text(message)
-    
-    async def send_personal_message(
-        self,
-        room_id: str,
-        user_id: str,
-        message: str
-    ):
-        if (room_id in self.active_connections and
-            user_id in self.active_connections[room_id]):
-            await self.active_connections[room_id][user_id].send_text(message)
+# Method 1: Direct route
+@app.ws_route("/chat")
+async def chat_handler(ws: WebSocket):
+    await ws.accept()
+    ...
 
-# Initialize manager
-manager = ConnectionManager()
+# Method 2: WebsocketRoutes
+chat_route = WebsocketRoutes("/chat", chat_handler)
+app.add_ws_route(chat_route)
 
-@app.websocket("/ws/{room_id}")
-@requires_auth
-async def websocket_endpoint(
-    websocket: WebSocket,
-    room_id: str
-):
-    user_id = websocket.user.id
-    await manager.connect(websocket, room_id, user_id)
+# Method 3: WSRouter for grouped routes
+router = WSRouter(prefix="/ws")
+router.add_ws_route("/chat", chat_handler)
+router.add_ws_route("/notifications", notification_handler)
+app.mount_ws_router(router)
+```
+
+## Message Types and Handling
+
+Nexios supports different message formats:
+
+```python
+from nexios.websockets.base import WebSocket
+
+@app.ws_route("/chat")
+async def chat_handler(ws: WebSocket):
+    await ws.accept()
     
     try:
         while True:
-            data = await websocket.receive_json()
+            # Text messages
+            text = await ws.receive_text()
+            await ws.send_text("Echo: " + text)
             
-            # Add timestamp and user info
-            message = {
-                "user_id": user_id,
-                "username": websocket.user.username,
-                "message": data["message"],
-                "timestamp": datetime.now().isoformat()
-            }
+            # JSON messages
+            data = await ws.receive_json()
+            await ws.send_json({"status": "received", "data": data})
             
-            # Broadcast to room
-            await manager.broadcast(
-                room_id,
-                json.dumps(message),
-                exclude_user=user_id
-            )
-    except:
-        await manager.disconnect(room_id, user_id)
+            # Binary messages
+            binary = await ws.receive_bytes()
+            await ws.send_bytes(binary)
+    except WebSocketDisconnect:
+        print("Connection closed")
 ```
 
-## Message Types
+## Channel System
 
-Handling different message types:
+Nexios provides a powerful Channel system for WebSocket management:
 
 ```python
-from enum import Enum
-from pydantic import BaseModel
-from typing import Optional, Any
+from nexios.websockets.channels import Channel, PayloadTypeEnum
 
-class MessageType(str, Enum):
-    CHAT = "chat"
-    JOIN = "join"
-    LEAVE = "leave"
-    SYSTEM = "system"
-    ERROR = "error"
-
-class WebSocketMessage(BaseModel):
-    type: MessageType
-    content: str
-    user_id: Optional[str] = None
-    room_id: Optional[str] = None
-    data: Optional[dict] = None
-
-@app.websocket("/ws/chat/{room_id}")
-async def chat_websocket(
-    websocket: WebSocket,
-    room_id: str
-):
-    user_id = websocket.user.id
-    await manager.connect(websocket, room_id, user_id)
-    
-    # Send join message
-    join_message = WebSocketMessage(
-        type=MessageType.JOIN,
-        content=f"{websocket.user.username} joined the room",
-        user_id=user_id,
-        room_id=room_id
-    )
-    
-    await manager.broadcast(
-        room_id,
-        join_message.json()
+@app.ws_route("/chat/{room_id}")
+async def chat_room(ws: WebSocket, room_id: str):
+    # Create a channel with JSON payload and 30-minute expiration
+    channel = Channel(
+        websocket=ws,
+        payload_type=PayloadTypeEnum.JSON.value,
+        expires=1800  # 30 minutes
     )
     
     try:
         while True:
-            data = await websocket.receive_json()
-            message = WebSocketMessage(**data)
-            
-            if message.type == MessageType.CHAT:
-                # Regular chat message
-                await manager.broadcast(
-                    room_id,
-                    message.json(),
-                    exclude_user=user_id
-                )
-            elif message.type == MessageType.SYSTEM:
-                # System message (e.g., user typing)
-                await manager.broadcast(
-                    room_id,
-                    message.json(),
-                    exclude_user=user_id
-                )
-    except:
-        # Send leave message
-        leave_message = WebSocketMessage(
-            type=MessageType.LEAVE,
-            content=f"{websocket.user.username} left the room",
-            user_id=user_id,
-            room_id=room_id
-        )
-        
-        await manager.broadcast(
-            room_id,
-            leave_message.json()
-        )
-        
-        await manager.disconnect(room_id, user_id)
+            data = await ws.receive_json()
+            await channel._send({"message": data})
+    except WebSocketDisconnect:
+        print(f"Client disconnected from room {room_id}")
 ```
 
 ## Error Handling
 
-Implementing WebSocket error handling:
+Implementing robust error handling:
 
 ```python
-from nexios.websockets import WebSocketException
-from nexios.exceptions import WebSocketDisconnect
+from nexios.websockets.base import WebSocket, WebSocketDisconnect
 import logging
 
 logger = logging.getLogger(__name__)
 
-class WebSocketErrorHandler:
-    @staticmethod
-    async def handle_error(
-        websocket: WebSocket,
-        error: Exception
-    ):
-        error_message = WebSocketMessage(
-            type=MessageType.ERROR,
-            content=str(error)
-        )
-        
-        try:
-            await websocket.send_json(error_message.dict())
-        except:
-            logger.error(f"Failed to send error message: {error}")
-        
-        await websocket.close()
-
-@app.websocket("/ws/protected/{room_id}")
-async def protected_websocket(
-    websocket: WebSocket,
-    room_id: str
-):
+@app.ws_route("/chat")
+async def chat_handler(ws: WebSocket):
     try:
-        # Validate authentication
-        if not websocket.user:
-            raise WebSocketException("Authentication required")
-        
-        # Validate room access
-        if not await can_access_room(websocket.user, room_id):
-            raise WebSocketException("Access denied")
-        
-        await manager.connect(websocket, room_id, websocket.user.id)
-        
+        await ws.accept()
         while True:
-            try:
-                data = await websocket.receive_json()
-                message = WebSocketMessage(**data)
-                
-                # Validate message
-                if not await validate_message(message):
-                    raise WebSocketException("Invalid message")
-                
-                await manager.broadcast(
-                    room_id,
-                    message.json()
-                )
-            
-            except WebSocketDisconnect:
-                raise
-            
-            except Exception as e:
-                await WebSocketErrorHandler.handle_error(
-                    websocket,
-                    e
-                )
-    
+            data = await ws.receive_json()
+            await ws.send_json({"status": "ok", "data": data})
     except WebSocketDisconnect:
-        await manager.disconnect(room_id, websocket.user.id)
-    
+        logger.info("Client disconnected normally")
+    except ValueError as e:
+        logger.error(f"Invalid JSON received: {e}")
+        await ws.send_json({"error": "Invalid JSON format"})
     except Exception as e:
-        logger.error(f"WebSocket error: {e}")
-        await WebSocketErrorHandler.handle_error(
-            websocket,
-            e
-        )
+        logger.error(f"Unexpected error: {e}")
+        await ws.close(code=1011)  # Internal error
 ```
 
 ## 📝 Practice Exercise
 
-1. Build a real-time chat application:
-   - User authentication
-   - Multiple chat rooms
-   - Private messaging
-   - Typing indicators
+1. Create a basic echo WebSocket server:
+   - Accept text and JSON messages
+   - Implement proper error handling
+   - Add connection logging
 
-2. Implement WebSocket features:
-   - Connection pooling
-   - Message queuing
-   - Reconnection handling
-   - Heartbeat system
+2. Build a simple notification system:
+   - Connect multiple clients
+   - Broadcast messages to all clients
+   - Handle client disconnections
 
-3. Create a notification system:
-   - Real-time alerts
-   - Event broadcasting
-   - User subscriptions
-   - Message persistence
+3. Implement a basic chat room:
+   - Use channels for message handling
+   - Add room-based message broadcasting
+   - Implement user presence tracking
 
 ## 📚 Additional Resources
-- [WebSocket Guide](https://nexios.dev/guide/websockets)
-- [Real-time Apps](https://nexios.dev/guide/realtime)
-- [Authentication](https://nexios.dev/guide/auth)
-- [Error Handling](https://nexios.dev/guide/errors)
+- [WebSocket Protocol](https://tools.ietf.org/html/rfc6455)
+- [Nexios WebSocket Guide](../../guide/websockets/index.md)
+- [Channel Documentation](../../guide/websockets/channels.md)
+- [Error Handling Guide](../../guide/error-handling.md)
 
 ## 🎯 Next Steps
 Tomorrow in [Day 14: Real-Time Chat App](../day14/index.md), we'll explore:
-- Chat room implementation
-- User presence
-- Message history
-- Real-time features
+- ChannelBox for group communication
+- Real-time events and broadcasting
+- Message history and persistence
+- Advanced WebSocket features

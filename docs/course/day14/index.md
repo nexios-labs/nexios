@@ -1,468 +1,224 @@
-# 🚀 Day 14: Real-Time Chat App
+# 🚀 Day 14: Real-Time Chat App with ChannelBox
 
-## Chat Room Implementation
+## Learning Objectives
+- Master ChannelBox for WebSocket group management
+- Implement real-time chat features
+- Handle message history and broadcasting
+- Build presence tracking and notifications
 
-Building a complete chat room system:
+## ChannelBox Setup
+
+The ChannelBox class provides powerful tools for organizing WebSocket channels:
 
 ```python
-from nexios import get_application
-from nexios.websockets import WebSocket, WebSocketManager
-from nexios.security import requires_auth
-from nexios.database import Database
+from nexios import NexiosApp
+from nexios.websockets.base import WebSocket, WebSocketDisconnect
+from nexios.websockets.channels import Channel, ChannelBox
+from nexios.auth import auth
 from datetime import datetime
-from typing import Dict, Set, Optional, List
 import json
 
-app = get_application()
-db = Database()
+app = NexiosApp()
 
-class ChatRoom:
-    def __init__(self, room_id: str, name: str):
-        self.id = room_id
-        self.name = name
-        self.users: Set[str] = set()
-        self.messages: List[dict] = []
-        self.typing_users: Set[str] = set()
-
-class ChatManager(WebSocketManager):
-    def __init__(self):
-        self.rooms: Dict[str, ChatRoom] = {}
-        self.connections: Dict[str, Dict[str, WebSocket]] = {}
+@app.ws_route("/chat/{room_id}")
+@auth(["jwt"])
+async def chat_room(ws: WebSocket, room_id: str):
+    await ws.accept()
+    user = ws.scope["user"]
+    channel = Channel(websocket=ws, payload_type="json")
     
-    async def create_room(self, room_id: str, name: str) -> ChatRoom:
-        if room_id not in self.rooms:
-            self.rooms[room_id] = ChatRoom(room_id, name)
-            self.connections[room_id] = {}
-        return self.rooms[room_id]
-    
-    async def join_room(
-        self,
-        websocket: WebSocket,
-        room_id: str,
-        user_id: str
-    ):
-        await websocket.accept()
-        
-        if room_id not in self.rooms:
-            await self.create_room(room_id, f"Room {room_id}")
-        
-        room = self.rooms[room_id]
-        room.users.add(user_id)
-        self.connections[room_id][user_id] = websocket
-        
-        # Send room history
-        await websocket.send_json({
-            "type": "history",
-            "messages": room.messages[-50:]  # Last 50 messages
-        })
-        
-        # Broadcast join message
-        await self.broadcast(room_id, {
-            "type": "system",
-            "content": f"User {user_id} joined the chat",
-            "user_id": user_id,
-            "timestamp": datetime.now().isoformat()
-        })
-    
-    async def leave_room(
-        self,
-        room_id: str,
-        user_id: str
-    ):
-        if room_id in self.rooms:
-            room = self.rooms[room_id]
-            room.users.remove(user_id)
-            room.typing_users.discard(user_id)
-            
-            if user_id in self.connections[room_id]:
-                del self.connections[room_id][user_id]
-            
-            # Remove empty room
-            if not room.users:
-                del self.rooms[room_id]
-                del self.connections[room_id]
-            else:
-                # Broadcast leave message
-                await self.broadcast(room_id, {
-                    "type": "system",
-                    "content": f"User {user_id} left the chat",
-                    "user_id": user_id,
-                    "timestamp": datetime.now().isoformat()
-                })
-    
-    async def broadcast(
-        self,
-        room_id: str,
-        message: dict,
-        exclude_user: Optional[str] = None
-    ):
-        if room_id in self.connections:
-            for user_id, websocket in self.connections[room_id].items():
-                if user_id != exclude_user:
-                    await websocket.send_json(message)
-    
-    async def store_message(
-        self,
-        room_id: str,
-        message: dict
-    ):
-        if room_id in self.rooms:
-            self.rooms[room_id].messages.append(message)
-            # Keep last 100 messages
-            self.rooms[room_id].messages = self.rooms[room_id].messages[-100:]
-            
-            # Store in database
-            await db.messages.insert_one({
-                **message,
-                "room_id": room_id
-            })
-
-# Initialize chat manager
-chat_manager = ChatManager()
-
-@app.websocket("/chat/{room_id}")
-@requires_auth
-async def chat_endpoint(
-    websocket: WebSocket,
-    room_id: str
-):
-    user = websocket.user
-    await chat_manager.join_room(websocket, room_id, str(user.id))
+    # Add channel to room group
+    await ChannelBox.add_channel_to_group(
+        channel, 
+        group_name=f"chat_{room_id}"
+    )
     
     try:
+        # Send join message
+        await ChannelBox.group_send(
+            group_name=f"chat_{room_id}",
+            payload={
+                "type": "system",
+                "message": f"{user.username} joined the chat",
+                "timestamp": datetime.now().isoformat()
+            },
+            save_history=True
+        )
+        
+        # Get and send chat history
+        history = await ChannelBox.show_history(f"chat_{room_id}")
+        if history:
+            await ws.send_json({
+                "type": "history",
+                "messages": history[-50:]  # Last 50 messages
+            })
+        
         while True:
-            data = await websocket.receive_json()
-            message_type = data.get("type", "message")
-            
-            if message_type == "message":
-                message = {
+            data = await ws.receive_json()
+            # Broadcast message to room
+            await ChannelBox.group_send(
+                group_name=f"chat_{room_id}",
+                payload={
                     "type": "message",
-                    "content": data["content"],
-                    "user_id": str(user.id),
-                    "username": user.username,
+                    "user": user.username,
+                    "content": data["message"],
                     "timestamp": datetime.now().isoformat()
-                }
-                
-                # Store and broadcast
-                await chat_manager.store_message(room_id, message)
-                await chat_manager.broadcast(room_id, message)
-            
-            elif message_type == "typing":
-                typing_status = data.get("typing", False)
-                room = chat_manager.rooms[room_id]
-                
-                if typing_status:
-                    room.typing_users.add(str(user.id))
-                else:
-                    room.typing_users.discard(str(user.id))
-                
-                # Broadcast typing status
-                await chat_manager.broadcast(
-                    room_id,
-                    {
-                        "type": "typing",
-                        "users": list(room.typing_users)
-                    },
-                    exclude_user=str(user.id)
-                )
-    
-    except:
-        await chat_manager.leave_room(room_id, str(user.id))
+                },
+                save_history=True
+            )
+    except WebSocketDisconnect:
+        # Send leave message
+        await ChannelBox.group_send(
+            group_name=f"chat_{room_id}",
+            payload={
+                "type": "system",
+                "message": f"{user.username} left the chat",
+                "timestamp": datetime.now().isoformat()
+            },
+            save_history=True
+        )
+    finally:
+        # Remove channel from group
+        await ChannelBox.remove_channel_from_group(
+            channel, 
+            group_name=f"chat_{room_id}"
+        )
 ```
 
-## User Presence
+## Presence Tracking
 
-Implementing user presence features:
+Implementing user presence with ChannelBox:
 
 ```python
-from nexios.cache import RedisCache
-import time
-
-class PresenceManager:
-    def __init__(self):
-        self.cache = RedisCache()
-        self.presence_timeout = 30  # seconds
+@app.ws_route("/presence")
+@auth(["jwt"])
+async def presence_handler(ws: WebSocket):
+    await ws.accept()
+    user = ws.scope["user"]
+    channel = Channel(websocket=ws, payload_type="json")
     
-    async def mark_online(
-        self,
-        user_id: str,
-        room_id: str
-    ):
-        key = f"presence:{room_id}:{user_id}"
-        await self.cache.set(
-            key,
-            time.time(),
-            expire=self.presence_timeout * 2
-        )
-    
-    async def get_online_users(
-        self,
-        room_id: str
-    ) -> Set[str]:
-        pattern = f"presence:{room_id}:*"
-        keys = await self.cache.keys(pattern)
-        online_users = set()
-        
-        for key in keys:
-            user_id = key.split(":")[-1]
-            timestamp = float(await self.cache.get(key) or 0)
-            
-            if time.time() - timestamp <= self.presence_timeout:
-                online_users.add(user_id)
-        
-        return online_users
-
-# Initialize presence manager
-presence = PresenceManager()
-
-@app.websocket("/chat/{room_id}")
-@requires_auth
-async def chat_with_presence(
-    websocket: WebSocket,
-    room_id: str
-):
-    user = websocket.user
-    user_id = str(user.id)
-    
-    await chat_manager.join_room(websocket, room_id, user_id)
+    # Add to presence group
+    await ChannelBox.add_channel_to_group(
+        channel, 
+        group_name="presence"
+    )
     
     try:
-        # Start presence heartbeat
+        # Send online status
+        await ChannelBox.group_send(
+            group_name="presence",
+            payload={
+                "type": "status",
+                "user": user.username,
+                "status": "online",
+                "timestamp": datetime.now().isoformat()
+            }
+        )
+        
+        # Show active users
+        groups = await ChannelBox.show_groups()
+        presence_channels = groups.get("presence", {})
+        online_users = len(presence_channels)
+        
+        await ws.send_json({
+            "type": "users",
+            "count": online_users
+        })
+        
         while True:
-            # Update presence
-            await presence.mark_online(user_id, room_id)
-            
-            # Get online users
-            online_users = await presence.get_online_users(room_id)
-            
-            # Broadcast presence update
-            await chat_manager.broadcast(
-                room_id,
-                {
-                    "type": "presence",
-                    "online_users": list(online_users)
-                }
-            )
-            
-            try:
-                # Wait for message or timeout
-                data = await websocket.receive_json(timeout=10)
-                
-                # Handle regular messages
-                if data["type"] == "message":
-                    message = {
-                        "type": "message",
-                        "content": data["content"],
-                        "user_id": user_id,
-                        "username": user.username,
+            # Keep connection alive and handle status updates
+            data = await ws.receive_json()
+            if data.get("type") == "status":
+                await ChannelBox.group_send(
+                    group_name="presence",
+                    payload={
+                        "type": "status",
+                        "user": user.username,
+                        "status": data["status"],
                         "timestamp": datetime.now().isoformat()
                     }
-                    
-                    await chat_manager.store_message(room_id, message)
-                    await chat_manager.broadcast(room_id, message)
-            
-            except TimeoutError:
-                # Just update presence
-                continue
-    
-    except:
-        await chat_manager.leave_room(room_id, user_id)
+                )
+    finally:
+        # Remove from presence group
+        await ChannelBox.remove_channel_from_group(
+            channel, 
+            group_name="presence"
+        )
+        
+        # Broadcast offline status
+        await ChannelBox.group_send(
+            group_name="presence",
+            payload={
+                "type": "status",
+                "user": user.username,
+                "status": "offline",
+                "timestamp": datetime.now().isoformat()
+            }
+        )
 ```
 
-## Message History
+## Private Messaging
 
-Managing chat history:
-
-```python
-from motor.motor_asyncio import AsyncIOMotorClient
-from bson import ObjectId
-
-class MessageStore:
-    def __init__(self):
-        self.client = AsyncIOMotorClient()
-        self.db = self.client.chat_db
-    
-    async def store_message(self, message: dict):
-        await self.db.messages.insert_one(message)
-    
-    async def get_room_history(
-        self,
-        room_id: str,
-        limit: int = 50,
-        before_id: Optional[str] = None
-    ) -> List[dict]:
-        query = {"room_id": room_id}
-        
-        if before_id:
-            query["_id"] = {"$lt": ObjectId(before_id)}
-        
-        messages = await self.db.messages.find(
-            query,
-            sort=[("_id", -1)],
-            limit=limit
-        ).to_list(None)
-        
-        return list(reversed(messages))
-    
-    async def search_messages(
-        self,
-        room_id: str,
-        query: str,
-        limit: int = 20
-    ) -> List[dict]:
-        return await self.db.messages.find({
-            "room_id": room_id,
-            "content": {"$regex": query, "$options": "i"}
-        }).limit(limit).to_list(None)
-
-# Initialize message store
-message_store = MessageStore()
-
-@app.get("/chat/{room_id}/history")
-@requires_auth
-async def get_chat_history(
-    room_id: str,
-    before_id: Optional[str] = None,
-    limit: int = 50
-):
-    messages = await message_store.get_room_history(
-        room_id,
-        limit,
-        before_id
-    )
-    return {"messages": messages}
-
-@app.get("/chat/{room_id}/search")
-@requires_auth
-async def search_chat(
-    room_id: str,
-    q: str,
-    limit: int = 20
-):
-    messages = await message_store.search_messages(
-        room_id,
-        q,
-        limit
-    )
-    return {"messages": messages}
-```
-
-## Real-Time Features
-
-Adding advanced real-time features:
+Implementing direct messages with ChannelBox:
 
 ```python
-from asyncio import Queue
-from dataclasses import dataclass
-from typing import Any
-
-@dataclass
-class ChatEvent:
-    type: str
-    room_id: str
-    data: Any
-
-class EventManager:
-    def __init__(self):
-        self.queues: Dict[str, Queue[ChatEvent]] = {}
+@app.ws_route("/dm/{user_id}")
+@auth(["jwt"])
+async def direct_message(ws: WebSocket, user_id: str):
+    await ws.accept()
+    sender = ws.scope["user"]
+    channel = Channel(websocket=ws, payload_type="json")
     
-    def add_subscriber(self, room_id: str) -> Queue[ChatEvent]:
-        queue = Queue()
-        if room_id not in self.queues:
-            self.queues[room_id] = set()
-        self.queues[room_id].add(queue)
-        return queue
-    
-    def remove_subscriber(self, room_id: str, queue: Queue):
-        if room_id in self.queues:
-            self.queues[room_id].discard(queue)
-            if not self.queues[room_id]:
-                del self.queues[room_id]
-    
-    async def publish(self, event: ChatEvent):
-        if event.room_id in self.queues:
-            for queue in self.queues[event.room_id]:
-                await queue.put(event)
-
-# Initialize event manager
-events = EventManager()
-
-@app.websocket("/chat/{room_id}/events")
-@requires_auth
-async def chat_events(
-    websocket: WebSocket,
-    room_id: str
-):
-    await websocket.accept()
-    queue = events.add_subscriber(room_id)
+    # Add to user's DM group
+    dm_group = f"dm_{sender.id}"
+    await ChannelBox.add_channel_to_group(channel, dm_group)
     
     try:
         while True:
-            event = await queue.get()
-            await websocket.send_json({
-                "type": event.type,
-                "data": event.data
-            })
+            data = await ws.receive_json()
+            # Send private message
+            await ChannelBox.group_send(
+                group_name=f"dm_{user_id}",
+                payload={
+                    "type": "direct_message",
+                    "from": sender.username,
+                    "content": data["message"],
+                    "timestamp": datetime.now().isoformat()
+                },
+                save_history=True
+            )
     finally:
-        events.remove_subscriber(room_id, queue)
-
-# Publish events
-async def notify_typing(
-    room_id: str,
-    user_id: str,
-    is_typing: bool
-):
-    await events.publish(ChatEvent(
-        type="typing",
-        room_id=room_id,
-        data={
-            "user_id": user_id,
-            "typing": is_typing
-        }
-    ))
-
-async def notify_reaction(
-    room_id: str,
-    message_id: str,
-    user_id: str,
-    reaction: str
-):
-    await events.publish(ChatEvent(
-        type="reaction",
-        room_id=room_id,
-        data={
-            "message_id": message_id,
-            "user_id": user_id,
-            "reaction": reaction
-        }
-    ))
+        await ChannelBox.remove_channel_from_group(
+            channel, 
+            dm_group
+        )
 ```
 
 ## 📝 Practice Exercise
 
 1. Enhance the chat application:
-   - File sharing
-   - Message reactions
-   - Read receipts
-   - User mentions
+   - Add typing indicators
+   - Implement message reactions
+   - Add file sharing support
+   - Create private chat rooms
 
-2. Add advanced features:
-   - Voice messages
+2. Implement advanced features:
    - Message threading
-   - User status
-   - Typing indicators
+   - User mentions
+   - Message search
+   - Read receipts
 
-3. Implement chat rooms:
-   - Private rooms
-   - Group management
-   - Room settings
-   - Moderation tools
+3. Add admin features:
+   - User moderation
+   - Message deletion
+   - Room management
+   - Usage analytics
 
 ## 📚 Additional Resources
-- [WebSocket Guide](https://nexios.dev/guide/websockets)
-- [Real-time Features](https://nexios.dev/guide/realtime)
-- [MongoDB Integration](https://nexios.dev/guide/mongodb)
-- [Redis Pub/Sub](https://nexios.dev/guide/redis)
+- [ChannelBox Guide](../../guide/websockets/groups.md)
+- [WebSocket Events](../../guide/websockets/events.md)
+- [WebSocket Consumer](../../guide/websockets/consumer.md)
+- [Error Handling](../../guide/error-handling.md)
 
 ## 🎯 Next Steps
 Tomorrow in [Day 15: Background Tasks](../day15/index.md), we'll explore:
