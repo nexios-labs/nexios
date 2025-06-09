@@ -1,281 +1,294 @@
-# Day 27: CI/CD and DevOps Best Practices
-
-## Overview
-Today we'll explore continuous integration, continuous deployment, and DevOps best practices for Nexios applications.
+# Day 27: Docker & Containers
 
 ## Learning Objectives
-- Master CI/CD pipelines
-- Implement automated deployments
-- Understand DevOps practices
-- Configure deployment strategies
-- Implement infrastructure as code
+- Containerize Nexios applications
+- Configure Docker for development and production
+- Manage container lifecycle
+- Implement container best practices
 
-## Topics
+## Basic Dockerfile
 
-### 1. CI/CD Pipeline Architecture
+Creating a Dockerfile for Nexios:
 
-```mermaid
-graph TD
-    A[Source Code] --> B[Build]
-    B --> C[Test]
-    C --> D[Security Scan]
-    D --> E[Quality Gates]
-    E --> F[Staging Deploy]
-    F --> G[Integration Tests]
-    G --> H[Production Deploy]
-    H --> I[Monitoring]
+```dockerfile
+# Use Python 3.8 or later
+FROM python:3.8-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Set environment variables
+ENV NEXIOS_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=8000
+
+# Expose port
+EXPOSE 8000
+
+# Start the application
+CMD ["python", "-m", "nexios", "run", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-### 2. GitHub Actions Pipeline
+## Development Setup
+
+Docker Compose for development:
 
 ```yaml
-# .github/workflows/nexios-pipeline.yml
-name: Nexios CI/CD Pipeline
+# docker-compose.yml
+version: '3.8'
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+services:
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - NEXIOS_ENV=development
+      - DEBUG=1
+      - HOST=0.0.0.0
+      - PORT=8000
+    command: python -m nexios run --reload
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry
-          poetry install
-          
-      - name: Run tests
-        run: |
-          poetry run pytest tests/
-          poetry run coverage report
-          
-      - name: Build package
-        run: poetry build
-        
-  security:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Security scan
-        uses: snyk/actions/python@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-          
-  deploy-staging:
-    needs: security
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to staging
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: 'nexios-staging'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
 ```
 
-### 3. Automated Deployment Configuration
+Development Dockerfile:
+
+```dockerfile
+# Dockerfile.dev
+FROM python:3.8-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Don't copy code - will be mounted as volume
+```
+
+## Production Setup
+
+Production Docker Compose:
+
+```yaml
+# docker-compose.prod.yml
+version: '3.8'
+
+services:
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - NEXIOS_ENV=production
+      - HOST=0.0.0.0
+      - PORT=8000
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:alpine
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+volumes:
+  redis_data:
+```
+
+## Application Configuration
+
+Adapting Nexios for containerization:
 
 ```python
-from nexios.deploy import DeploymentManager
-from nexios.config import ConfigManager
+from nexios import NexiosApp
+from nexios.config import ServerConfigDict
+import os
 
-# Deployment configuration
-deploy_manager = DeploymentManager(
-    environments={
-        "staging": {
-            "url": "https://staging.nexios.io",
-            "replicas": 2,
-            "resources": {
-                "cpu": "1",
-                "memory": "2Gi"
-            }
-        },
-        "production": {
-            "url": "https://nexios.io",
-            "replicas": 4,
-            "resources": {
-                "cpu": "2",
-                "memory": "4Gi"
-            }
-        }
-    }
-)
+# Server configuration
+server_config: ServerConfigDict = {
+    "host": os.getenv("HOST", "0.0.0.0"),
+    "port": int(os.getenv("PORT", "8000")),
+    "workers": int(os.getenv("WORKERS", "1")),
+    "interface": "asgi",
+    "http_protocol": "h2",
+    "log_level": os.getenv("LOG_LEVEL", "info"),
+    "threading": True,
+    "access_log": True,
+    "server": "uvicorn"
+}
 
-# Configuration management
-config_manager = ConfigManager(
-    sources=[
-        "env_vars",
-        "config_files",
-        "secrets_manager"
-    ],
-    environments=[
-        "development",
-        "staging",
-        "production"
-    ]
-)
+app = NexiosApp(server_config=server_config)
 
-@deploy_manager.deployment("staging")
-async def deploy_staging():
-    # Load configuration
-    config = await config_manager.load("staging")
-    
-    # Apply database migrations
-    await run_migrations()
-    
-    # Deploy application
-    deployment = await deploy_manager.deploy(
-        image="nexios:latest",
-        config=config,
-        strategy="rolling"
-    )
-    
-    # Run smoke tests
-    await run_smoke_tests(deployment)
+# Health check for container orchestration
+@app.get("/health")
+async def health_check(request, response):
+    return response.json({
+        "status": "healthy",
+        "container_id": os.getenv("HOSTNAME", "unknown")
+    })
 ```
 
-### 4. Infrastructure as Code
+## Container Lifecycle
+
+Managing container lifecycle:
 
 ```python
-from nexios.infrastructure import Infrastructure
-from nexios.providers import AzureProvider
+from nexios.websockets.channels import ChannelBox
+import signal
+import sys
 
-# Infrastructure configuration
-infra = Infrastructure(
-    provider=AzureProvider(
-        subscription_id="your-subscription-id",
-        tenant_id="your-tenant-id"
-    )
-)
+# Graceful shutdown handler
+def handle_sigterm(signum, frame):
+    print("Received SIGTERM. Performing graceful shutdown...")
+    # Close WebSocket connections
+    asyncio.run(ChannelBox.close_all_connections())
+    sys.exit(0)
 
-# Resource group
-resource_group = infra.resource_group(
-    name="nexios-production",
-    location="eastus2"
-)
+signal.signal(signal.SIGTERM, handle_sigterm)
 
-# Virtual network
-vnet = infra.virtual_network(
-    name="nexios-vnet",
-    address_space=["10.0.0.0/16"],
-    subnets=[
-        {
-            "name": "app-subnet",
-            "address_prefix": "10.0.1.0/24"
-        },
-        {
-            "name": "db-subnet",
-            "address_prefix": "10.0.2.0/24"
-        }
-    ]
-)
+# Startup handler
+@app.on_event("startup")
+async def startup():
+    print(f"Container {os.getenv('HOSTNAME')} starting up...")
+    # Initialize container-specific resources
+    app.state.container_id = os.getenv("HOSTNAME")
 
-# Database
-database = infra.database(
-    name="nexios-db",
-    engine="postgresql",
-    version="13",
-    size="Standard_D2s_v3",
-    storage_gb=100,
-    backup_retention_days=7
-)
-
-# Application service
-app_service = infra.app_service(
-    name="nexios-app",
-    sku="P1v2",
-    runtime="python|3.11",
-    app_settings={
-        "WEBSITE_HTTPLOGGING_RETENTION_DAYS": "7",
-        "APPLICATIONINSIGHTS_CONNECTION_STRING": "..."
-    }
-)
+# Shutdown handler
+@app.on_event("shutdown")
+async def shutdown():
+    print(f"Container {app.state.container_id} shutting down...")
+    # Cleanup container-specific resources
+    await ChannelBox.close_all_connections()
 ```
 
-### 5. Monitoring and Alerts
+## Logging Configuration
+
+Container-friendly logging:
 
 ```python
-from nexios.monitoring import MonitoringManager
-from nexios.alerts import AlertManager
+from nexios.logging import create_logger
+import sys
+import json
 
-# Monitoring configuration
-monitoring = MonitoringManager(
-    providers=[
-        "azure_monitor",
-        "prometheus",
-        "grafana"
-    ],
-    metrics=[
-        "http_requests",
-        "response_time",
-        "error_rate",
-        "cpu_usage",
-        "memory_usage"
-    ]
+# Configure logging for containers
+logger = create_logger(
+    logger_name="container",
+    log_level="info"
 )
 
-# Alert configuration
-alerts = AlertManager(
-    channels=[
-        "email",
-        "slack",
-        "pagerduty"
-    ],
-    rules=[
-        {
-            "name": "high_error_rate",
-            "condition": "error_rate > 5%",
-            "window": "5m",
-            "severity": "critical"
-        },
-        {
-            "name": "high_latency",
-            "condition": "p95_response_time > 500ms",
-            "window": "10m",
-            "severity": "warning"
-        }
-    ]
-)
+# JSON formatter for container logs
+class ContainerLogFormatter(logging.Formatter):
+    def format(self, record):
+        return json.dumps({
+            "timestamp": self.formatTime(record),
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "container_id": os.getenv("HOSTNAME", "unknown"),
+            "service": "nexios"
+        })
+
+# Configure container logging
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(ContainerLogFormatter())
+logger.addHandler(handler)
 ```
 
-## Practical Exercises
+## Multi-stage Build
 
-1. Set up CI/CD pipeline
-2. Implement automated deployments
-3. Configure infrastructure as code
-4. Set up monitoring and alerts
-5. Implement deployment strategies
+Optimized production Dockerfile:
+
+```dockerfile
+# Build stage
+FROM python:3.8-slim as builder
+
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Runtime stage
+FROM python:3.8-slim
+
+WORKDIR /app
+COPY --from=builder /usr/local/lib/python3.8/site-packages /usr/local/lib/python3.8/site-packages
+COPY . .
+
+ENV NEXIOS_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=8000
+
+EXPOSE 8000
+CMD ["python", "-m", "nexios", "run"]
+```
 
 ## Best Practices
 
-1. Automate everything
-2. Use infrastructure as code
-3. Implement proper monitoring
-4. Use deployment strategies
-5. Maintain security standards
-6. Document processes
+1. Container Configuration:
+   - Use environment variables
+   - Implement health checks
+   - Handle signals properly
+   - Configure logging
 
-## Homework Assignment
+2. Development Workflow:
+   - Use volumes for code mounting
+   - Enable hot reload
+   - Share development services
+   - Use development-specific settings
 
-1. Create complete CI/CD pipeline
-2. Implement infrastructure as code
-3. Set up monitoring
-4. Configure alerts
-5. Document deployment process
+3. Production Deployment:
+   - Use multi-stage builds
+   - Implement proper scaling
+   - Configure health checks
+   - Set up monitoring
 
-## Additional Resources
+4. Security:
+   - Use non-root users
+   - Scan for vulnerabilities
+   - Minimize container size
+   - Secure sensitive data
 
-- [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [Azure DevOps Guide](https://learn.microsoft.com/en-us/azure/devops/)
-- [Infrastructure as Code](https://nexios.io/infrastructure)
-- [DevOps Best Practices](https://nexios.io/devops) 
+## 📝 Practice Exercise
+
+1. Create Docker configurations:
+   - Development environment
+   - Production environment
+   - Multi-container setup
+   - Health monitoring
+
+2. Implement container features:
+   - Graceful shutdown
+   - Log aggregation
+   - Resource monitoring
+   - Container orchestration 

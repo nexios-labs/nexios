@@ -1,171 +1,263 @@
-# Day 23: Advanced WebSocket and Real-time Communication
-
-## Overview
-Today we'll explore advanced WebSocket patterns, real-time communication strategies, and scaling WebSocket applications in Nexios.
+# Day 23: Logging & Monitoring
 
 ## Learning Objectives
-- Master WebSocket implementation patterns
-- Implement real-time communication strategies
-- Understand WebSocket scaling
-- Configure WebSocket security
-- Implement pub/sub patterns
+- Master Nexios's logging system
+- Implement custom logging handlers
+- Configure logging levels and formats
+- Add request/response logging
+- Monitor WebSocket connections
 
-## Topics
+## Logging Setup
 
-### 1. WebSocket Architecture Patterns
-
-```mermaid
-graph TD
-    A[Client] --> B[Load Balancer]
-    B --> C[WebSocket Server 1]
-    B --> D[WebSocket Server 2]
-    C --> E[Redis PubSub]
-    D --> E
-    E --> F[Message Queue]
-    F --> G[Event Processors]
-```
-
-### 2. Advanced WebSocket Implementation
+Configuring Nexios's logging system:
 
 ```python
-from nexios.websocket import WebSocketManager
-from nexios.pubsub import PubSubHandler
+from nexios import NexiosApp
+from nexios.logging import create_logger, DEBUG, INFO, ERROR
+import logging.handlers
+import sys
 
-# WebSocket manager configuration
-ws_manager = WebSocketManager(
-    heartbeat_interval=30,
-    reconnect_strategy="exponential",
-    compression_enabled=True
+# Create application logger
+logger = create_logger(
+    logger_name="myapp",
+    log_level=DEBUG,
+    log_file="app.log",
+    max_bytes=10 * 1024 * 1024,  # 10MB
+    backup_count=5
 )
 
-@ws_manager.on_connect
-async def handle_connection(socket):
-    user = await authenticate_socket(socket)
-    await socket.subscribe(f"user:{user.id}")
-    await socket.send_json({
-        "type": "connected",
-        "user_id": user.id
-    })
+app = NexiosApp()
 
-@ws_manager.on_message
-async def handle_message(socket, message):
-    # Handle incoming messages
-    event = await validate_message(message)
-    await process_event(socket, event)
+# Add console handler with custom format
+console_handler = logging.StreamHandler(sys.stderr)
+console_handler.setFormatter(
+    logging.Formatter(
+        "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
+    )
+)
+logger.addHandler(console_handler)
 ```
 
-### 3. Real-time Communication Patterns
+## Request Logging
+
+Implementing request logging middleware:
 
 ```python
-from nexios.realtime import RoomManager, Presence
+from nexios.middleware import Middleware
+from nexios.types import ASGIApp, Receive, Scope, Send
+import time
 
-# Room management for group communication
-rooms = RoomManager()
+class RequestLoggingMiddleware:
+    def __init__(self, app: ASGIApp, logger=None):
+        self.app = app
+        self.logger = logger or create_logger("request_logger")
 
-@rooms.on_join
-async def handle_room_join(socket, room_id):
-    # Track user presence
-    await Presence.track(socket.user_id, room_id)
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] == "http":
+            start_time = time.time()
+            
+            # Log request
+            self.logger.info(
+                f"Request: {scope['method']} {scope['path']} "
+                f"[{scope.get('client', ('Unknown', 0))[0]}]"
+            )
+            
+            # Wrap send to capture response
+            async def wrapped_send(message):
+                if message["type"] == "http.response.start":
+                    duration = time.time() - start_time
+                    status = message["status"]
+                    self.logger.info(
+                        f"Response: {status} - {duration:.2f}s"
+                    )
+                await send(message)
+            
+            await self.app(scope, receive, wrapped_send)
+        else:
+            await self.app(scope, receive, send)
+
+# Add middleware to app
+app.add_middleware(RequestLoggingMiddleware)
+```
+
+## WebSocket Logging
+
+Logging WebSocket events:
+
+```python
+from nexios.websockets import WebSocketConsumer
+from nexios.websockets.channels import Channel, ChannelBox
+
+class LoggedWebSocketConsumer(WebSocketConsumer):
+    def __init__(self):
+        super().__init__(logging_enabled=True)
     
-    # Notify room members
-    await rooms.broadcast(room_id, {
-        "type": "user_joined",
-        "user_id": socket.user_id
-    })
+    async def on_connect(self, websocket):
+        """Log connection events"""
+        client = websocket.scope.get("client", ("Unknown", 0))[0]
+        self.logger.info(f"WebSocket connected: {client}")
+        await websocket.accept()
+        
+        # Create and log channel
+        self.channel = Channel(
+            websocket=websocket,
+            payload_type="json",
+            expires=3600
+        )
+        self.logger.info(
+            f"Channel created: {self.channel.uuid} "
+            f"[expires={self.channel.expires}s]"
+        )
+    
+    async def on_receive(self, websocket, data):
+        """Log received messages"""
+        self.logger.debug(
+            f"Message received on channel {self.channel.uuid}: "
+            f"{str(data)[:100]}..."
+        )
+        await self.handle_message(data)
+    
+    async def on_disconnect(self, websocket, close_code):
+        """Log disconnection"""
+        self.logger.info(
+            f"WebSocket disconnected: {close_code} "
+            f"[channel={self.channel.uuid}]"
+        )
 
-# Presence system implementation
-presence = Presence(
-    heartbeat_interval=60,
-    stale_threshold=180
-)
-
-@presence.on_status_change
-async def handle_status_change(user_id, status):
-    await notify_status_subscribers(user_id, status)
+# Register consumer
+app.add_route("/ws", LoggedWebSocketConsumer.as_route("/ws"))
 ```
 
-### 4. WebSocket Security and Authentication
+## Error Logging
+
+Configuring error logging:
 
 ```python
-from nexios.security import WSAuthenticator
-from nexios.crypto import TokenManager
+from nexios.exceptions import HTTPException
+from nexios.http import Request, Response
+import traceback
 
-# WebSocket authentication
-ws_auth = WSAuthenticator(
-    token_manager=TokenManager(),
-    allowed_origins=["https://app.example.com"],
-    rate_limit=100  # messages per minute
-)
-
-@ws_auth.authenticate
-async def authenticate_socket(socket):
-    token = socket.query_params.get("token")
-    user = await ws_auth.validate_token(token)
+@app.exception_handler(Exception)
+async def log_exception(request: Request, exc: Exception):
+    """Log unhandled exceptions"""
+    error_id = str(uuid.uuid4())
+    logger.error(
+        f"Unhandled exception [{error_id}]: {str(exc)}\n"
+        f"Path: {request.url.path}\n"
+        f"Method: {request.method}\n"
+        f"Traceback:\n{traceback.format_exc()}"
+    )
     
-    if not user:
-        raise WSAuthError("Invalid token")
+    if isinstance(exc, HTTPException):
+        return Response(
+            {"error": str(exc), "id": error_id},
+            status_code=exc.status_code
+        )
     
-    socket.user = user
-    return user
+    return Response(
+        {"error": "Internal Server Error", "id": error_id},
+        status_code=500
+    )
 ```
 
-### 5. Scaling WebSocket Applications
+## Performance Monitoring
+
+Using hooks for performance monitoring:
 
 ```python
-from nexios.scaling import WSScaler
-from nexios.cluster import ClusterManager
+from nexios.hooks import before_request, after_request
+from statistics import mean
+import time
 
-# WebSocket scaling configuration
-scaler = WSScaler(
-    sticky_sessions=True,
-    max_connections_per_node=10000,
-    cluster_strategy="least_connections"
-)
+# Store request timings
+request_times = []
 
-# Cluster management
-cluster = ClusterManager(
-    nodes=[
-        "ws-node-1:8000",
-        "ws-node-2:8000",
-        "ws-node-3:8000"
-    ],
-    sync_strategy="redis"
-)
+@before_request(None, log_level="DEBUG")
+async def start_timer(request: Request, response: Response):
+    request.state.start_time = time.time()
 
-@cluster.on_node_change
-async def handle_node_change(node, status):
-    if status == "down":
-        await redistribute_connections(node)
+@after_request(None, log_level="DEBUG")
+async def log_timing(request: Request, response: Response):
+    duration = time.time() - request.state.start_time
+    request_times.append(duration)
+    
+    # Log performance metrics
+    logger.debug(
+        f"Request completed in {duration:.3f}s "
+        f"[avg={mean(request_times[-100:]):.3f}s]"
+    )
 ```
 
-## Practical Exercises
+## Channel Monitoring
 
-1. Build a real-time chat application
-2. Implement presence tracking
-3. Set up WebSocket clustering
-4. Configure security measures
-5. Implement pub/sub patterns
+Monitoring WebSocket channels:
+
+```python
+async def monitor_channels():
+    """Monitor active channels and groups"""
+    while True:
+        groups = await ChannelBox.show_groups()
+        
+        for group_name, channels in groups.items():
+            # Log group statistics
+            logger.info(
+                f"Channel group '{group_name}': "
+                f"{len(channels)} active channels"
+            )
+            
+            # Check for expired channels
+            for channel in channels:
+                if await channel._is_expired():
+                    logger.warning(
+                        f"Expired channel detected: {channel.uuid} "
+                        f"in group '{group_name}'"
+                    )
+        
+        # Log history stats
+        history = await ChannelBox.show_history()
+        logger.info(
+            f"Message history size: "
+            f"{sum(len(h) for h in history.values())} messages"
+        )
+        
+        await asyncio.sleep(60)  # Check every minute
+
+# Start monitoring task
+@app.on_event("startup")
+async def start_monitoring():
+    asyncio.create_task(monitor_channels())
+```
 
 ## Best Practices
 
-1. Use heartbeat mechanisms
-2. Implement reconnection strategies
-3. Handle connection state properly
-4. Scale horizontally
-5. Monitor connection health
-6. Implement proper error handling
+1. Logging Configuration:
+   - Use appropriate log levels
+   - Implement log rotation
+   - Include contextual information
+   - Format logs for readability
 
-## Homework Assignment
+2. Performance Monitoring:
+   - Track request durations
+   - Monitor resource usage
+   - Set up alerts for anomalies
+   - Keep historical metrics
 
-1. Create a scalable chat system
-2. Implement presence features
-3. Add security measures
-4. Set up monitoring
-5. Document scaling strategy
+3. Security Logging:
+   - Log authentication attempts
+   - Track suspicious activities
+   - Maintain audit trails
+   - Protect sensitive data
 
-## Additional Resources
+## 📝 Practice Exercise
 
-- [WebSocket Protocol RFC](https://tools.ietf.org/html/rfc6455)
-- [Nexios WebSocket Guide](https://nexios.io/websocket)
-- [Real-time Patterns](https://nexios.io/realtime)
-- [Scaling WebSocket Applications](https://nexios.io/scaling-websockets) 
+1. Implement advanced logging:
+   - Custom log formatters
+   - Multiple log handlers
+   - Structured logging
+   - Log aggregation
+
+2. Create monitoring tools:
+   - Request timing dashboard
+   - WebSocket connection monitor
+   - Error rate tracker
+   - Performance metrics collector 

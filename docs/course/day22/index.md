@@ -1,178 +1,213 @@
-# Day 22: Advanced Database Patterns and Optimization
-
-## Overview
-Today we'll explore advanced database patterns, optimization techniques, and scaling strategies in Nexios applications.
+# Day 22: Testing Strategies
 
 ## Learning Objectives
-- Master database optimization techniques
-- Implement advanced query patterns
-- Understand database scaling strategies
-- Configure database monitoring
-- Implement data migration patterns
+- Master Nexios's testing utilities
+- Write effective test cases using pytest
+- Implement test fixtures for Nexios apps
+- Test WebSocket and HTTP endpoints
 
-## Topics
+## Testing Setup
 
-### 1. Database Architecture Patterns
-
-```mermaid
-graph TD
-    A[Application] --> B[Connection Pool]
-    B --> C[Primary DB]
-    B --> D[Read Replica 1]
-    B --> E[Read Replica 2]
-    C --> F[Backup]
-    C --> G[Archive]
-```
-
-### 2. Advanced Query Optimization
+Setting up your testing environment:
 
 ```python
-from nexios.db import QueryOptimizer, IndexManager
-from nexios.models import User, Order
+from nexios import NexiosApp, NexiosApp
+from nexios.testing import Client
+from nexios.http import Request, Response
+import pytest
 
-# Query optimization
-optimizer = QueryOptimizer()
+app = NexiosApp()
 
-@optimizer.optimize
-async def get_user_orders(user_id: int):
-    return await Order.select(
-        Order.id,
-        Order.status,
-        Order.total
-    ).join(
-        User,
-        on=(Order.user_id == User.id)
-    ).where(
-        User.id == user_id
-    ).order_by(
-        Order.created_at.desc()
-    ).limit(100)
+@app.get("/hello")
+async def hello(request: Request, response: Response):
+    return response.text("Hello, World!")
 
-# Index management
-index_manager = IndexManager()
-index_manager.create_index(
-    table="orders",
-    columns=["user_id", "created_at"],
-    index_type="btree"
-)
+@pytest.fixture
+async def async_client():
+    async with Client(app) as client:
+        yield client
 ```
 
-### 3. Database Scaling Patterns
+## Testing HTTP Endpoints
+
+Testing basic HTTP endpoints:
 
 ```python
-from nexios.db import ShardManager, ReplicaManager
+async def test_hello_endpoint(async_client: Client):
+    response = await async_client.get("/hello")
+    assert response.status_code == 200
+    assert response.text == "Hello, World!"
 
-# Sharding configuration
-shard_manager = ShardManager(
-    shard_key="user_id",
-    shard_function="hash",
-    num_shards=4,
-    shard_map={
-        0: "db-shard-1",
-        1: "db-shard-2",
-        2: "db-shard-3",
-        3: "db-shard-4"
-    }
-)
+async def test_not_found(async_client: Client):
+    response = await async_client.get("/nonexistent")
+    assert response.status_code == 404
 
-# Replica management
-replica_manager = ReplicaManager(
-    primary="db-primary",
-    replicas=[
-        "db-replica-1",
-        "db-replica-2"
-    ],
-    read_preference="nearest"
-)
+async def test_method_not_allowed(async_client: Client):
+    response = await async_client.post("/hello")
+    assert response.status_code == 405
 ```
 
-### 4. Database Monitoring and Performance
+## Testing Route Parameters
+
+Testing routes with parameters:
 
 ```python
-from nexios.monitoring import DBMonitor
-from nexios.metrics import MetricsCollector
+@app.get("/users/{user_id}")
+async def get_user(request: Request, response: Response):
+    user_id = request.path_params.user_id
+    return response.json({"id": user_id, "name": f"User {user_id}"})
 
-# Database monitoring
-monitor = DBMonitor(
-    watch_metrics=[
-        "query_duration",
-        "connection_count",
-        "cache_hit_ratio",
-        "deadlock_count"
-    ],
-    alert_thresholds={
-        "query_duration": 1000,  # ms
-        "connection_count": 100,
-        "deadlock_count": 5
-    }
-)
-
-# Metrics collection
-metrics = MetricsCollector(
-    storage="prometheus",
-    export_interval=60,  # seconds
-    labels={
-        "environment": "production",
-        "service": "user-api"
-    }
-)
+async def test_route_params(async_client: Client):
+    response = await async_client.get("/users/123")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == "123"
+    assert data["name"] == "User 123"
 ```
 
-### 5. Data Migration and Versioning
+## Testing Authentication
+
+Testing authenticated endpoints:
 
 ```python
-from nexios.db import MigrationManager
-from nexios.schema import SchemaVersion
+from nexios.auth import auth
 
-# Migration management
-migrations = MigrationManager()
+@app.get("/protected")
+@auth(["jwt"])
+async def protected_route(request: Request, response: Response):
+    return response.json({"message": "Access granted"})
 
-@migrations.version("1.0.0")
-async def create_users_table():
-    await db.execute("""
-        CREATE TABLE users (
-            id SERIAL PRIMARY KEY,
-            email VARCHAR(255) UNIQUE,
-            created_at TIMESTAMP DEFAULT NOW()
-        )
-    """)
+async def test_protected_route_unauthorized(async_client: Client):
+    response = await async_client.get("/protected")
+    assert response.status_code == 401
 
-@migrations.version("1.1.0")
-async def add_user_status():
-    await db.execute("""
-        ALTER TABLE users
-        ADD COLUMN status VARCHAR(50) DEFAULT 'active'
-    """)
+async def test_protected_route_authorized(async_client: Client):
+    # Add auth token to headers
+    headers = {"Authorization": "Bearer test_token"}
+    response = await async_client.get("/protected", headers=headers)
+    assert response.status_code == 200
 ```
 
-## Practical Exercises
+## Testing WebSockets
 
-1. Optimize complex queries
-2. Set up database replication
-3. Implement sharding strategy
-4. Configure monitoring
-5. Create data migrations
+Testing WebSocket endpoints:
+
+```python
+from nexios.websockets import WebSocket
+
+@app.ws_route("/ws/echo")
+async def websocket_echo(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            message = await websocket.receive_text()
+            await websocket.send_text(f"Echo: {message}")
+    except Exception:
+        await websocket.close()
+
+async def test_websocket_echo(async_client: Client):
+    async with async_client.websocket_connect("/ws/echo") as websocket:
+        await websocket.send_text("Hello")
+        response = await websocket.receive_text()
+        assert response == "Echo: Hello"
+```
+
+## Testing Middleware
+
+Testing custom middleware:
+
+```python
+from nexios.middleware import Middleware
+from nexios.types import ASGIApp, Receive, Scope, Send
+
+class CustomHeaderMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] == "http":
+            scope["custom_header"] = "test_value"
+        await self.app(scope, receive, send)
+
+app.add_middleware(CustomHeaderMiddleware)
+
+async def test_middleware(async_client: Client):
+    response = await async_client.get("/hello")
+    assert response.status_code == 200
+    assert "custom_header" in response.headers
+```
+
+## Testing Error Handling
+
+Testing error handlers:
+
+```python
+from nexios.exceptions import HTTPException
+
+class CustomError(HTTPException):
+    status_code = 418
+
+@app.exception_handler(CustomError)
+async def custom_error_handler(request: Request, exc: CustomError):
+    return Response(
+        {"error": "I'm a teapot"},
+        status_code=418
+    )
+
+@app.get("/error")
+async def trigger_error(request: Request, response: Response):
+    raise CustomError()
+
+async def test_error_handler(async_client: Client):
+    response = await async_client.get("/error")
+    assert response.status_code == 418
+    data = response.json()
+    assert data["error"] == "I'm a teapot"
+```
 
 ## Best Practices
 
-1. Always use connection pooling
-2. Implement proper indexing
-3. Regular performance monitoring
-4. Maintain data consistency
-5. Plan for scalability
-6. Regular backups and testing
+1. Test Organization:
+   - Group related tests in classes
+   - Use descriptive test names
+   - Separate fixtures by scope
 
-## Homework Assignment
+```python
+class TestUserAPI:
+    @pytest.fixture
+    async def user_data(self):
+        return {"username": "testuser", "email": "test@example.com"}
+    
+    async def test_create_user(self, async_client: Client, user_data: dict):
+        response = await async_client.post("/users", json=user_data)
+        assert response.status_code == 201
+    
+    async def test_get_user(self, async_client: Client, user_data: dict):
+        response = await async_client.get("/users/testuser")
+        assert response.status_code == 200
+```
 
-1. Optimize a complex database query
-2. Implement read replicas
-3. Set up monitoring and alerts
-4. Create migration scripts
-5. Document optimization strategies
+2. Async Testing:
+   - Use async fixtures
+   - Handle cleanup properly
+   - Test both success and failure cases
 
-## Additional Resources
+3. Mocking:
+   - Mock external services
+   - Use dependency injection
+   - Test edge cases
 
-- [Database Optimization Guide](https://nexios.io/db-optimization)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Database Scaling Patterns](https://nexios.io/scaling)
-- [Migration Best Practices](https://nexios.io/migrations) 
+## 📝 Practice Exercise
+
+1. Create a test suite for:
+   - User registration and authentication
+   - File upload endpoints
+   - WebSocket chat room
+   - Custom middleware
+   - Error handlers
+
+2. Implement test fixtures for:
+   - Database connections
+   - Authentication tokens
+   - Test data setup and cleanup
+   - WebSocket connections 

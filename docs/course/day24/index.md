@@ -1,198 +1,236 @@
-# Day 24: Advanced Caching and Performance Optimization
-
-## Overview
-Today we'll explore advanced caching strategies, performance optimization techniques, and how to implement them effectively in Nexios applications.
+# Day 24: Performance Optimization
 
 ## Learning Objectives
-- Master caching strategies
-- Implement performance optimizations
-- Understand cache invalidation
-- Configure distributed caching
-- Implement content delivery optimization
+- Optimize Nexios application performance
+- Implement efficient request handling
+- Manage WebSocket connections effectively
+- Use Nexios's concurrency utilities
+- Configure server settings for performance
 
-## Topics
 
-### 1. Caching Architecture Patterns
 
-```mermaid
-graph TD
-    A[Client Request] --> B[CDN Cache]
-    B --> C[Load Balancer]
-    C --> D[Application Cache]
-    D --> E[Redis Cache]
-    D --> F[Memory Cache]
-    D --> G[Database]
-    E --> H[Cache Invalidator]
-    F --> H
-```
+## Concurrency Optimization
 
-### 2. Multi-level Caching Implementation
+Using Nexios's concurrency utilities:
 
 ```python
-from nexios.cache import CacheManager, RedisCache, MemoryCache
-from nexios.cache.strategies import LRU, TTL
-
-# Configure multi-level cache
-cache_manager = CacheManager(
-    layers=[
-        MemoryCache(
-            max_size=1000,
-            strategy=LRU(),
-            ttl=300  # 5 minutes
-        ),
-        RedisCache(
-            url="redis://cache:6379",
-            strategy=TTL(3600)  # 1 hour
-        )
-    ],
-    write_strategy="write-through"
+from nexios.utils.concurrency import (
+    TaskGroup,
+    create_background_task,
+    run_in_threadpool,
+    AsyncEvent,
+    AsyncLazy
 )
+import asyncio
 
-@cache_manager.cached(key_prefix="user")
-async def get_user_profile(user_id: int):
-    return await db.fetch_one(
-        "SELECT * FROM users WHERE id = :id",
-        {"id": user_id}
+# Task group for managing multiple operations
+async def process_data(items: list):
+    async with TaskGroup() as group:
+        for item in items:
+            await group.spawn(process_item(item))
+
+# Background task for long-running operations
+async def cleanup_expired_data():
+    while True:
+        await delete_old_records()
+        await asyncio.sleep(3600)  # Run hourly
+
+cleanup_task = create_background_task(cleanup_expired_data())
+
+# CPU-bound operations in thread pool
+async def process_image(image_data: bytes):
+    return await run_in_threadpool(
+        cpu_intensive_image_processing,
+        image_data
+    )
+
+# Event coordination
+data_ready = AsyncEvent()
+async def wait_for_data():
+    await data_ready.wait()
+    return "Data available"
+
+# Lazy computation
+heavy_computation = AsyncLazy(
+    lambda: perform_expensive_calculation()
+)
+```
+
+## WebSocket Optimization
+
+Efficient WebSocket handling:
+
+```python
+from nexios.websockets import WebSocketConsumer
+from nexios.websockets.channels import Channel, ChannelBox
+
+class OptimizedWebSocketConsumer(WebSocketConsumer):
+    encoding = "json"
+    
+    async def on_connect(self, websocket):
+        await websocket.accept()
+        
+        # Configure channel with appropriate TTL
+        self.channel = Channel(
+            websocket=websocket,
+            expires=3600,
+            payload_type="json"
+        )
+        
+        # Join channel group efficiently
+        await ChannelBox.add_channel_to_group(
+            self.channel,
+            group_name="active_users"
+        )
+    
+    async def on_receive(self, websocket, data):
+        # Use broadcast for efficient message distribution
+        await self.broadcast(
+            payload=data,
+            group_name="active_users",
+            save_history=False  # Don't save transient messages
+        )
+    
+    async def on_disconnect(self, websocket, close_code):
+        # Clean up resources
+        if self.channel:
+            await ChannelBox.remove_channel_from_group(
+                self.channel,
+                "active_users"
+            )
+```
+
+## Request Handling Optimization
+
+Optimizing request processing:
+
+```python
+from nexios.http import Request, Response
+from nexios.middleware import Middleware
+from nexios.types import ASGIApp, Receive, Scope, Send
+import gzip
+import json
+
+class CompressionMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
+    
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] == "http":
+            headers = dict(scope.get("headers", []))
+            accepts_gzip = b"gzip" in headers.get(b"accept-encoding", b"")
+            
+            async def compressed_send(message):
+                if (
+                    message["type"] == "http.response.body" and
+                    accepts_gzip and
+                    message.get("body")
+                ):
+                    # Compress response body
+                    compressed = gzip.compress(message["body"])
+                    await send({
+                        "type": "http.response.body",
+                        "body": compressed,
+                        "headers": [
+                            (b"content-encoding", b"gzip"),
+                            (b"content-length", str(len(compressed)).encode())
+                        ]
+                    })
+                else:
+                    await send(message)
+            
+            await self.app(scope, receive, compressed_send)
+        else:
+            await self.app(scope, receive, send)
+
+# Add compression middleware
+app.add_middleware(CompressionMiddleware)
+
+# Optimize response streaming
+@app.get("/stream")
+async def stream_data(request: Request, response: Response):
+    async def generate():
+        for i in range(1000):
+            yield json.dumps({"count": i}) + "\n"
+    
+    return response.stream(
+        generate(),
+        media_type="application/x-ndjson"
     )
 ```
 
-### 3. Cache Invalidation Patterns
+## Memory Management
+
+Efficient memory usage:
 
 ```python
-from nexios.cache import InvalidationManager
-from nexios.events import EventBus
+from nexios.websockets.channels import ChannelBox
+import gc
+import asyncio
 
-# Cache invalidation configuration
-invalidator = InvalidationManager(
-    strategy="pattern-based",
-    patterns={
-        "user:*": 3600,      # User data expires in 1 hour
-        "product:*": 7200,   # Product data expires in 2 hours
-        "config:*": 300      # Config expires in 5 minutes
-    }
-)
+# Periodic cleanup of expired channels
+async def cleanup_channels():
+    while True:
+        # Remove expired channels
+        groups = await ChannelBox.show_groups()
+        for group_name, channels in groups.items():
+            for channel in channels:
+                if await channel._is_expired():
+                    await ChannelBox.remove_channel_from_group(
+                        channel,
+                        group_name
+                    )
+        
+        # Clear message history
+        if sys.getsizeof(ChannelBox.CHANNEL_GROUPS_HISTORY) > ChannelBox.HISTORY_SIZE:
+            ChannelBox.CHANNEL_GROUPS_HISTORY = {}
+        
+        # Force garbage collection
+        gc.collect()
+        await asyncio.sleep(300)  # Run every 5 minutes
 
-# Event-based invalidation
-event_bus = EventBus()
-
-@event_bus.on("user_updated")
-async def invalidate_user_cache(user_id: int):
-    patterns = [
-        f"user:{user_id}",
-        f"user:{user_id}:profile",
-        f"user:{user_id}:settings"
-    ]
-    await invalidator.invalidate_patterns(patterns)
+# Start cleanup task
+@app.on_startup
+async def start_cleanup():
+    asyncio.create_task(cleanup_channels())
 ```
-
-### 4. Performance Monitoring and Optimization
-
-```python
-from nexios.monitoring import PerformanceMonitor
-from nexios.optimization import QueryOptimizer
-
-# Performance monitoring
-monitor = PerformanceMonitor(
-    metrics=[
-        "response_time",
-        "cache_hit_ratio",
-        "memory_usage",
-        "cpu_usage"
-    ],
-    alert_thresholds={
-        "response_time": 500,  # ms
-        "cache_hit_ratio": 0.8,
-        "memory_usage": 0.9    # 90% usage
-    }
-)
-
-# Query optimization
-optimizer = QueryOptimizer(
-    cache_enabled=True,
-    prepared_statements=True,
-    connection_pool=True
-)
-
-@optimizer.optimize
-async def get_user_orders(user_id: int):
-    cache_key = f"user:{user_id}:orders"
-    
-    # Try cache first
-    if cached := await cache_manager.get(cache_key):
-        return cached
-    
-    # Query with optimization
-    result = await db.fetch_all("""
-        SELECT o.* 
-        FROM orders o
-        WHERE o.user_id = :user_id
-        ORDER BY o.created_at DESC
-        LIMIT 100
-    """, {"user_id": user_id})
-    
-    # Cache the result
-    await cache_manager.set(cache_key, result, ttl=300)
-    return result
-```
-
-### 5. Content Delivery Optimization
-
-```python
-from nexios.cdn import CDNManager
-from nexios.compression import CompressionHandler
-
-# CDN configuration
-cdn = CDNManager(
-    providers=["cloudfront", "fastly"],
-    regions=["us-east", "eu-west", "asia-east"],
-    cache_control={
-        "images": 86400,      # 1 day
-        "static": 604800,     # 1 week
-        "dynamic": 300        # 5 minutes
-    }
-)
-
-# Compression handling
-compression = CompressionHandler(
-    algorithms=["gzip", "brotli"],
-    min_size=1024,  # Only compress responses larger than 1KB
-    content_types=[
-        "text/html",
-        "application/json",
-        "text/css",
-        "application/javascript"
-    ]
-)
-```
-
-## Practical Exercises
-
-1. Implement multi-level caching
-2. Set up cache invalidation
-3. Configure CDN integration
-4. Optimize database queries
-5. Implement performance monitoring
 
 ## Best Practices
 
-1. Use appropriate cache strategies
-2. Implement proper cache invalidation
-3. Monitor cache performance
-4. Optimize database queries
-5. Use content compression
-6. Implement CDN properly
+1. Server Configuration:
+   - Use multiple workers
+   - Enable HTTP/2
+   - Configure appropriate timeouts
+   - Monitor resource usage
 
-## Homework Assignment
+2. WebSocket Optimization:
+   - Implement channel expiration
+   - Use efficient message broadcasting
+   - Clean up unused channels
+   - Limit message history size
 
-1. Design a caching strategy
-2. Implement cache invalidation
-3. Set up performance monitoring
-4. Optimize slow queries
-5. Document optimization results
+3. Request Handling:
+   - Enable compression
+   - Use streaming responses
+   - Implement caching
+   - Optimize payload sizes
 
-## Additional Resources
+4. Memory Management:
+   - Regular cleanup tasks
+   - Monitor memory usage
+   - Implement resource limits
+   - Use garbage collection
 
-- [Caching Best Practices](https://nexios.io/caching)
-- [Redis Documentation](https://redis.io/documentation)
-- [CDN Implementation Guide](https://nexios.io/cdn)
-- [Performance Optimization Guide](https://nexios.io/performance)
+## 📝 Practice Exercise
+
+1. Optimize a Nexios application:
+   - Configure for maximum performance
+   - Implement efficient WebSocket handling
+   - Add response compression
+   - Monitor and optimize memory usage
+
+2. Create performance tests:
+   - Measure request latency
+   - Test WebSocket throughput
+   - Monitor memory consumption
+   - Profile CPU usage

@@ -1,278 +1,454 @@
-# Day 30: Advanced Performance Optimization
-
-## Overview
-Today we'll explore advanced performance optimization techniques, profiling, and scaling strategies for Nexios applications.
+# Day 30: Final Project
 
 ## Learning Objectives
-- Master performance optimization
-- Implement caching strategies
-- Understand profiling tools
-- Configure load balancing
-- Implement scaling patterns
+- Build a complete Nexios application
+- Integrate all major features
+- Implement best practices
+- Deploy production-ready code
 
-## Topics
+## Project: Real-time Collaboration Platform
 
-### 1. Performance Architecture
+We'll build a real-time collaboration platform that demonstrates Nexios's capabilities:
 
-```mermaid
-graph TD
-    A[Client] --> B[CDN]
-    B --> C[Load Balancer]
-    C --> D[Cache Layer]
-    D --> E[App Server 1]
-    D --> F[App Server 2]
-    D --> G[App Server 3]
-    E --> H[Database]
-    F --> H
-    G --> H
-    I[Monitoring] --> E
-    I --> F
-    I --> G
-    I --> H
+- Authentication and authorization
+- Real-time WebSocket communication
+- Channel-based messaging
+- File handling
+- API endpoints
+- Production deployment
+
+## Project Structure
+
+```
+collaboration_platform/
+├── app/
+│   ├── __init__.py
+│   ├── auth.py
+│   ├── websockets.py
+│   ├── api.py
+│   ├── models.py
+│   └── utils.py
+├── static/
+│   ├── css/
+│   └── js/
+├── templates/
+├── tests/
+├── config/
+│   ├── development.json
+│   └── production.json
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+└── README.md
 ```
 
-### 2. Caching Implementation
+## Core Application
+
+Main application setup:
 
 ```python
-from nexios.cache import CacheManager
-from nexios.performance import PerformanceOptimizer
+from nexios import NexiosApp
+from nexios.auth import auth
+from nexios.websockets import WebSocketConsumer
+from nexios.websockets.channels import Channel, ChannelBox
+from nexios.http import Request, Response
+from nexios.logging import create_logger
+import jwt
+import os
 
-# Cache configuration
-cache = CacheManager(
-    providers=[
-        {
-            "type": "redis",
-            "url": "redis://cache:6379",
-            "db": 0
-        },
-        {
-            "type": "memcached",
-            "hosts": ["cache1:11211", "cache2:11211"]
-        }
-    ],
-    default_ttl=3600
+# Application setup
+app = NexiosApp()
+
+# Configure logging
+logger = create_logger(
+    logger_name="collaboration_platform",
+    log_level="info",
+    log_file="app.log"
 )
 
-# Performance optimization
-optimizer = PerformanceOptimizer(
-    cache=cache,
-    compression_enabled=True,
-    query_optimization=True
-)
-
-@optimizer.cache(ttl=300)
-async def get_user_data(user_id: int):
-    # Check cache first
-    cache_key = f"user:{user_id}"
-    if cached := await cache.get(cache_key):
-        return cached
-    
-    # Get from database
-    user = await db.fetch_user(user_id)
-    
-    # Cache the result
-    await cache.set(cache_key, user)
-    return user
-
-@optimizer.optimize_query
-async def get_user_orders(user_id: int):
-    return await db.fetch_all("""
-        SELECT o.*, p.name as product_name
-        FROM orders o
-        JOIN products p ON o.product_id = p.id
-        WHERE o.user_id = :user_id
-        ORDER BY o.created_at DESC
-        LIMIT 100
-    """, {"user_id": user_id})
+# Load configuration
+with open(f"config/{os.getenv('NEXIOS_ENV', 'development')}.json") as f:
+    config = json.load(f)
+app.config.update(config)
 ```
 
-### 3. Load Testing and Profiling
+## Authentication System
 
 ```python
-from nexios.testing import LoadTester
-from nexios.profiling import Profiler
+# auth.py
+from nexios.exceptions import HTTPException
+import bcrypt
+import jwt
 
-# Load testing configuration
-load_tester = LoadTester(
-    target_url="https://api.nexios.io",
-    scenarios=[
-        {
-            "name": "list_users",
-            "weight": 30,
-            "endpoint": "/users"
-        },
-        {
-            "name": "get_user",
-            "weight": 40,
-            "endpoint": "/users/{user_id}"
-        },
-        {
-            "name": "create_order",
-            "weight": 30,
-            "endpoint": "/orders",
-            "method": "POST"
-        }
-    ]
-)
-
-# Application profiling
-profiler = Profiler(
-    enabled=True,
-    sample_rate=0.1,
-    trace_sql=True,
-    trace_http=True
-)
-
-@profiler.profile
-async def profile_endpoint():
-    results = await load_tester.run(
-        duration=300,  # 5 minutes
-        users=100,
-        ramp_up=30
-    )
+class User:
+    def __init__(self, username: str, password: str):
+        self.username = username
+        self.password = self._hash_password(password)
     
-    # Analyze results
-    analysis = await profiler.analyze(
-        metrics=[
-            "response_time",
-            "throughput",
-            "error_rate",
-            "cpu_usage",
-            "memory_usage"
-        ]
-    )
+    def _hash_password(self, password: str) -> str:
+        return bcrypt.hashpw(
+            password.encode(),
+            bcrypt.gensalt()
+        ).decode()
     
-    return analysis
-```
-
-### 4. Database Optimization
-
-```python
-from nexios.db import DatabaseOptimizer
-from nexios.query import QueryAnalyzer
-
-# Database optimization
-db_optimizer = DatabaseOptimizer(
-    indexes_enabled=True,
-    query_cache_size="1GB",
-    connection_pool={
-        "min_size": 10,
-        "max_size": 100,
-        "max_idle": 300
-    }
-)
-
-# Query analysis
-query_analyzer = QueryAnalyzer(
-    explain_enabled=True,
-    slow_query_threshold=1000,  # ms
-    log_queries=True
-)
-
-@query_analyzer.analyze
-async def optimize_queries():
-    # Get slow queries
-    slow_queries = await query_analyzer.get_slow_queries()
-    
-    # Optimize each query
-    for query in slow_queries:
-        optimization = await db_optimizer.optimize_query(
-            query,
-            suggestions=True
+    def verify_password(self, password: str) -> bool:
+        return bcrypt.checkpw(
+            password.encode(),
+            self.password.encode()
         )
-        
-        if optimization.requires_index:
-            await db_optimizer.create_index(
-                table=optimization.table,
-                columns=optimization.columns
+
+@app.post("/auth/register")
+async def register(request: Request, response: Response):
+    data = await request.json
+    
+    # Create user
+    user = User(
+        data["username"],
+        data["password"]
+    )
+    # Save user...
+    
+    return Response(
+        {"message": "User registered"},
+        status_code=201
+    )
+
+@app.post("/auth/login")
+async def login(request: Request, response: Response):
+    data = await request.json
+    
+    # Verify credentials
+    user = await get_user(data["username"])
+    if not user or not user.verify_password(data["password"]):
+        raise HTTPException(401, "Invalid credentials")
+    
+    # Generate token
+    token = jwt.encode(
+        {"username": user.username},
+        app.config["jwt_secret"],
+        algorithm="HS256"
+    )
+    
+    return response.json({"token": token})
+```
+
+## Real-time Collaboration
+
+```python
+# websockets.py
+class CollaborationConsumer(WebSocketConsumer):
+    encoding = "json"
+    
+    async def on_connect(self, websocket):
+        # Verify authentication
+        try:
+            token = websocket.headers["Authorization"].split(" ")[1]
+            payload = jwt.decode(
+                token,
+                app.config["jwt_secret"],
+                algorithms=["HS256"]
             )
+            websocket.scope["user"] = payload
+        except Exception:
+            await websocket.close(code=4001)
+            return
+        
+        await websocket.accept()
+        
+        # Set up channel
+        self.channel = Channel(
+            websocket=websocket,
+            payload_type="json",
+            expires=3600
+        )
+    
+    async def on_receive(self, websocket, data):
+        action = data.get("action")
+        room_id = data.get("room")
+        
+        if action == "join":
+            # Join collaboration room
+            await ChannelBox.add_channel_to_group(
+                self.channel,
+                f"room_{room_id}"
+            )
+            await self.broadcast(
+                {
+                    "type": "user_joined",
+                    "user": websocket.scope["user"]["username"]
+                },
+                group_name=f"room_{room_id}",
+                save_history=True
+            )
+        
+        elif action == "update":
+            # Broadcast updates
+            await self.broadcast(
+                {
+                    "type": "content_update",
+                    "content": data["content"],
+                    "user": websocket.scope["user"]["username"]
+                },
+                group_name=f"room_{room_id}",
+                save_history=True
+            )
+    
+    async def on_disconnect(self, websocket, close_code):
+        if self.channel:
+            # Clean up channel
+            groups = await ChannelBox.show_groups()
+            for group_name in groups:
+                if self.channel in groups[group_name]:
+                    await ChannelBox.remove_channel_from_group(
+                        self.channel,
+                        group_name
+                    )
+
+# Register WebSocket consumer
+app.add_route(
+    "/ws/collaborate",
+    CollaborationConsumer.as_route("/ws/collaborate")
+)
 ```
 
-### 5. Scaling Implementation
+## API Endpoints
 
 ```python
-from nexios.scaling import AutoScaler
-from nexios.metrics import MetricsCollector
+# api.py
+@app.get("/api/rooms")
+@auth(["jwt"])
+async def list_rooms(request: Request, response: Response):
+    rooms = await get_rooms()
+    return response.json({
+        "rooms": [room.to_dict() for room in rooms]
+    })
 
-# Auto scaling configuration
-scaler = AutoScaler(
-    min_instances=3,
-    max_instances=10,
-    target_cpu_utilization=70,
-    scale_up_cooldown=300,
-    scale_down_cooldown=600
-)
-
-# Metrics collection
-metrics = MetricsCollector(
-    metrics=[
-        "requests_per_second",
-        "response_time_p95",
-        "cpu_usage",
-        "memory_usage",
-        "error_rate"
-    ],
-    interval=60
-)
-
-async def scale_application():
-    # Collect current metrics
-    current_metrics = await metrics.collect()
+@app.post("/api/rooms")
+@auth(["jwt"])
+async def create_room(request: Request, response: Response):
+    data = await request.json
     
-    # Determine if scaling is needed
-    scaling_decision = await scaler.evaluate(
-        metrics=current_metrics,
-        rules=[
-            {
-                "metric": "cpu_usage",
-                "threshold": 80,
-                "duration": "5m",
-                "action": "scale_up"
-            },
-            {
-                "metric": "response_time_p95",
-                "threshold": 500,
-                "duration": "5m",
-                "action": "scale_up"
-            }
-        ]
+    room = await create_new_room(
+        name=data["name"],
+        owner=request.scope["user"]["username"]
     )
     
-    if scaling_decision.should_scale:
-        await scaler.scale(
-            direction=scaling_decision.direction,
-            instances=scaling_decision.instances
-        )
+    return Response(
+        room.to_dict(),
+        status_code=201
+    )
+
+@app.get("/api/rooms/{room_id}/history")
+@auth(["jwt"])
+async def room_history(request: Request, response: Response):
+    room_id = request.path_params.room_id
+    history = await ChannelBox.show_history(f"room_{room_id}")
+    
+    return response.json({
+        "history": history
+    })
 ```
 
-## Practical Exercises
+## File Handling
 
-1. Implement caching strategy
-2. Optimize database queries
-3. Set up load testing
-4. Configure auto-scaling
-5. Profile application
+```python
+@app.post("/api/rooms/{room_id}/files")
+@auth(["jwt"])
+async def upload_file(request: Request, response: Response):
+    room_id = request.path_params.room_id
+    
+    # Handle file upload
+    form = await request.form
+    file = form["file"]
+    
+    # Save file
+    filename = file.filename
+    content = await file.read()
+    await save_file(room_id, filename, content)
+    
+    # Notify room members
+    await broadcast_to_room(
+        room_id,
+        {
+            "type": "file_uploaded",
+            "filename": filename,
+            "user": request.scope["user"]["username"]
+        }
+    )
+    
+    return Response(
+        {"message": "File uploaded"},
+        status_code=201
+    )
+
+@app.get("/api/rooms/{room_id}/files/{filename}")
+@auth(["jwt"])
+async def download_file(request: Request, response: Response):
+    room_id = request.path_params.room_id
+    filename = request.path_params.filename
+    
+    content = await get_file(room_id, filename)
+    
+    return Response(
+        content,
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        }
+    )
+```
+
+## Production Configuration
+
+```python
+# config/production.json
+{
+    "jwt_secret": "your-secret-key",
+    "allowed_origins": [
+        "https://your-domain.com"
+    ],
+    "file_storage": {
+        "type": "s3",
+        "bucket": "your-bucket",
+        "region": "your-region"
+    },
+    "redis_url": "redis://redis:6379",
+    "log_level": "info"
+}
+```
+
+## Docker Setup
+
+```dockerfile
+# Dockerfile
+FROM python:3.8-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+ENV NEXIOS_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=8000
+
+EXPOSE 8000
+CMD ["python", "-m", "nexios", "run"]
+```
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - NEXIOS_ENV=production
+    depends_on:
+      - redis
+    volumes:
+      - ./logs:/app/logs
+    deploy:
+      replicas: 2
+  
+  redis:
+    image: redis:alpine
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
+```
+
+## Testing
+
+```python
+# tests/test_collaboration.py
+import pytest
+from nexios.testing import Client
+
+@pytest.fixture
+async def auth_headers():
+    # Create test user and get token
+    token = create_test_token()
+    return {"Authorization": f"Bearer {token}"}
+
+async def test_create_room(async_client: Client, auth_headers):
+    response = await async_client.post(
+        "/api/rooms",
+        json={"name": "Test Room"},
+        headers=auth_headers
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert "id" in data
+    assert data["name"] == "Test Room"
+
+async def test_websocket_collaboration(async_client: Client, auth_headers):
+    async with async_client.websocket_connect(
+        "/ws/collaborate",
+        headers=auth_headers
+    ) as websocket:
+        # Join room
+        await websocket.send_json({
+            "action": "join",
+            "room": "test-room"
+        })
+        
+        # Send update
+        await websocket.send_json({
+            "action": "update",
+            "room": "test-room",
+            "content": "Hello, World!"
+        })
+        
+        # Verify response
+        response = await websocket.receive_json()
+        assert response["type"] == "content_update"
+        assert response["content"] == "Hello, World!"
+```
 
 ## Best Practices
 
-1. Cache effectively
-2. Optimize database queries
-3. Use proper indexes
-4. Monitor performance
-5. Scale horizontally
-6. Profile regularly
+1. Security:
+   - Implement proper authentication
+   - Validate all input
+   - Secure file handling
+   - Use HTTPS in production
 
-## Homework Assignment
+2. Real-time Features:
+   - Manage WebSocket connections
+   - Handle disconnections gracefully
+   - Implement proper error handling
+   - Use channel groups effectively
 
-1. Implement caching
-2. Optimize queries
-3. Set up profiling
-4. Configure scaling
-5. Document optimizations
+3. Performance:
+   - Configure caching
+   - Optimize file handling
+   - Use connection pooling
+   - Monitor resource usage
 
-## Additional Resources
+4. Deployment:
+   - Use container orchestration
+   - Implement health checks
+   - Set up monitoring
+   - Configure logging
 
-- [Performance Guide](https://nexios.io/performance)
-- [Caching Strategies](https://nexios.io/caching)
-- [Database Optimization](https://nexios.io/db-optimization)
-- [Scaling Guide](https://nexios.io/scaling) 
+## 📝 Final Exercise
+
+1. Extend the platform:
+   - Add user profiles
+   - Implement file versioning
+   - Add real-time cursors
+   - Create admin dashboard
+
+2. Enhance features:
+   - Add video chat
+   - Implement drawing tools
+   - Add file preview
+   - Create mobile interface 

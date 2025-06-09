@@ -1,298 +1,346 @@
-# Day 28: Production Deployment and Monitoring
-
-## Overview
-Today we'll explore production deployment strategies, monitoring systems, and maintaining high-availability Nexios applications.
+# Day 28: Project: Production-Ready API
 
 ## Learning Objectives
-- Master deployment strategies
-- Implement monitoring systems
-- Understand high availability
-- Configure logging systems
-- Implement disaster recovery
+- Build a complete production-ready API
+- Implement all Nexios best practices
+- Set up comprehensive monitoring
+- Handle errors and edge cases
+- Secure the application
 
-## Topics
+## Project Structure
 
-### 1. Production Architecture
-
-```mermaid
-graph TD
-    A[Load Balancer] --> B[App Server 1]
-    A --> C[App Server 2]
-    A --> D[App Server 3]
-    B --> E[Cache Layer]
-    C --> E
-    D --> E
-    E --> F[Database Primary]
-    F --> G[Database Replica 1]
-    F --> H[Database Replica 2]
-    I[Monitoring] --> B
-    I --> C
-    I --> D
-    I --> F
-    I --> G
-    I --> H
-```
-
-### 2. Deployment Strategy Implementation
+Setting up a production API:
 
 ```python
-from nexios.deploy import DeploymentManager
-from nexios.rollout import RolloutStrategy
+from nexios import NexiosApp
+from nexios.auth import auth
+from nexios.http import Request, Response
+from nexios.websockets import WebSocketConsumer
+from nexios.logging import create_logger
+from nexios.middleware import CORSMiddleware
+from nexios.exceptions import HTTPException
+import jwt
+import logging
+import os
 
-# Deployment configuration
-deploy = DeploymentManager(
-    app_name="nexios-production",
-    regions=["us-east", "eu-west", "asia-east"]
+# Application setup
+app = NexiosApp()
+
+# Configure logging
+logger = create_logger(
+    logger_name="production_api",
+    log_level=logging.INFO,
+    log_file="api.log",
+    max_bytes=10 * 1024 * 1024,
+    backup_count=5
 )
 
-# Blue-Green deployment
-async def blue_green_deployment():
-    # Prepare new environment
-    green = await deploy.prepare_environment(
-        version="2.0.0",
-        config={
-            "instances": 3,
-            "memory": "4Gi",
-            "cpu": "2"
-        }
-    )
-    
-    # Run health checks
-    health = await green.check_health(
-        endpoints=["/health", "/ready"],
-        timeout=300
-    )
-    
-    if health.is_healthy:
-        # Switch traffic
-        await deploy.switch_traffic(
-            from_env="blue",
-            to_env="green",
-            strategy="gradual",
-            duration=600  # 10 minutes
-        )
-    else:
-        await green.rollback()
-
-# Canary deployment
-async def canary_deployment():
-    canary = await deploy.create_canary(
-        version="2.0.0",
-        traffic_percentage=10,
-        metrics=[
-            "error_rate",
-            "response_time",
-            "cpu_usage"
-        ]
-    )
-    
-    # Monitor canary
-    result = await canary.monitor(
-        duration=1800,  # 30 minutes
-        thresholds={
-            "error_rate": 1.0,  # 1%
-            "response_time": 200,  # ms
-            "cpu_usage": 70  # percent
-        }
-    )
-    
-    if result.is_successful:
-        await canary.promote_to_production()
-    else:
-        await canary.rollback()
+# Security middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.getenv("ALLOWED_ORIGINS", "").split(","),
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
+    allow_credentials=True,
+    max_age=3600
+)
 ```
 
-### 3. Monitoring and Observability
+## Authentication System
+
+Implementing secure authentication:
 
 ```python
-from nexios.monitoring import MonitoringSystem
-from nexios.metrics import MetricsCollector
-from nexios.tracing import DistributedTracer
+# JWT configuration
+JWT_SECRET = os.getenv("JWT_SECRET")
+JWT_ALGORITHM = "HS256"
 
-# Monitoring setup
-monitoring = MonitoringSystem(
-    collectors=[
-        "prometheus",
-        "grafana",
-        "datadog"
-    ],
-    retention_days=30,
-    alert_channels=[
-        "email",
-        "slack",
-        "pagerduty"
-    ]
-)
+class AuthenticationError(HTTPException):
+    status_code = 401
 
-# Metrics collection
-metrics = MetricsCollector(
-    metrics=[
-        "http_requests_total",
-        "http_request_duration_ms",
-        "database_connections",
-        "cache_hit_ratio",
-        "error_rate"
-    ],
-    labels={
-        "environment": "production",
-        "region": "us-east",
-        "version": "2.0.0"
-    }
-)
-
-# Distributed tracing
-tracer = DistributedTracer(
-    service_name="nexios-api",
-    sample_rate=0.1,
-    exporters=[
-        "jaeger",
-        "zipkin"
-    ]
-)
-
-@tracer.trace
-async def process_request(request):
-    with tracer.span("validate_request"):
-        await validate_request(request)
+@app.post("/auth/login")
+async def login(request: Request, response: Response):
+    data = await request.json
     
-    with tracer.span("process_data"):
-        result = await process_data(request.data)
-    
-    with tracer.span("store_result"):
-        await store_result(result)
-    
-    return result
-```
-
-### 4. Logging and Error Tracking
-
-```python
-from nexios.logging import LogManager
-from nexios.errors import ErrorTracker
-
-# Logging configuration
-logs = LogManager(
-    sinks=[
-        "elasticsearch",
-        "cloudwatch",
-        "stackdriver"
-    ],
-    format="json",
-    retention_days=90,
-    index_pattern="nexios-logs-{YYYY.MM.DD}"
-)
-
-# Error tracking
-error_tracker = ErrorTracker(
-    service="sentry",
-    environment="production",
-    release="2.0.0",
-    sample_rate=1.0
-)
-
-@error_tracker.capture
-async def handle_request(request):
     try:
-        return await process_request(request)
-    except Exception as e:
-        error_tracker.capture_exception(
-            e,
-            level="error",
-            tags={
-                "endpoint": request.path,
-                "method": request.method
-            },
-            extra={
-                "request_id": request.id,
-                "user_id": request.user.id
-            }
+        # Validate credentials
+        user = await validate_credentials(
+            data.get("username"),
+            data.get("password")
         )
-        raise
+        
+        # Generate token
+        token = jwt.encode(
+            {"user_id": user.id, "username": user.username},
+            JWT_SECRET,
+            algorithm=JWT_ALGORITHM
+        )
+        
+        return response.json({"token": token})
+    except Exception as e:
+        logger.error(f"Login failed: {str(e)}")
+        raise AuthenticationError("Invalid credentials")
+
+@app.middleware("http")
+async def authenticate(request: Request, call_next):
+    try:
+        if "Authorization" in request.headers:
+            token = request.headers["Authorization"].split(" ")[1]
+            payload = jwt.decode(
+                token,
+                JWT_SECRET,
+                algorithms=[JWT_ALGORITHM]
+            )
+            request.scope["user"] = payload
+        return await call_next(request)
+    except Exception as e:
+        logger.error(f"Authentication failed: {str(e)}")
+        raise AuthenticationError("Invalid token")
 ```
 
-### 5. High Availability and Disaster Recovery
+## API Routes
+
+Implementing secure API endpoints:
 
 ```python
-from nexios.ha import HighAvailability
-from nexios.backup import BackupManager
-
-# High availability configuration
-ha = HighAvailability(
-    regions=["us-east", "eu-west"],
-    failover_strategy="automatic",
-    health_check_interval=30,
-    min_replicas=3
-)
-
-# Backup management
-backup = BackupManager(
-    schedule={
-        "full": "0 0 * * *",      # Daily full backup
-        "incremental": "0 */6 * * *"  # Every 6 hours
-    },
-    retention={
-        "daily": 7,
-        "weekly": 4,
-        "monthly": 3
-    },
-    storage={
-        "type": "azure_blob",
-        "container": "nexios-backups",
-        "encryption": True
-    }
-)
-
-# Disaster recovery
-async def disaster_recovery():
-    # Detect failure
-    if await ha.detect_failure("primary"):
-        # Initiate failover
-        await ha.failover_to_secondary(
-            wait_for_sync=True,
-            timeout=300
+@app.get("/api/users")
+@auth(["jwt"])
+async def list_users(request: Request, response: Response):
+    try:
+        users = await get_users()
+        return response.json({
+            "users": [user.to_dict() for user in users]
+        })
+    except Exception as e:
+        logger.error(f"Error listing users: {str(e)}")
+        return Response(
+            {"error": "Failed to fetch users"},
+            status_code=500
         )
+
+@app.post("/api/users")
+@auth(["jwt"])
+async def create_user(request: Request, response: Response):
+    try:
+        data = await request.json
+        user = await create_new_user(data)
         
-        # Restore from backup if needed
-        if await ha.needs_restore():
-            await backup.restore_latest(
-                target="secondary",
-                validate=True
-            )
-        
-        # Update DNS
-        await ha.update_dns_records(
-            ttl=300  # 5 minutes
+        logger.info(f"User created: {user.id}")
+        return Response(
+            user.to_dict(),
+            status_code=201
+        )
+    except ValidationError as e:
+        logger.warning(f"Validation error: {str(e)}")
+        return Response(
+            {"error": str(e)},
+            status_code=400
+        )
+    except Exception as e:
+        logger.error(f"Error creating user: {str(e)}")
+        return Response(
+            {"error": "Failed to create user"},
+            status_code=500
         )
 ```
 
-## Practical Exercises
+## WebSocket Integration
 
-1. Implement deployment strategies
-2. Set up monitoring systems
-3. Configure logging
-4. Implement high availability
-5. Test disaster recovery
+Real-time updates with WebSockets:
+
+```python
+class NotificationConsumer(WebSocketConsumer):
+    encoding = "json"
+    
+    async def on_connect(self, websocket):
+        # Verify authentication
+        try:
+            token = websocket.headers.get("Authorization", "").split(" ")[1]
+            payload = jwt.decode(
+                token,
+                JWT_SECRET,
+                algorithms=[JWT_ALGORITHM]
+            )
+            websocket.scope["user"] = payload
+        except Exception:
+            await websocket.close(code=4001)
+            return
+        
+        await websocket.accept()
+        
+        # Set up notification channel
+        user_id = payload["user_id"]
+        self.channel = Channel(
+            websocket=websocket,
+            payload_type="json",
+            expires=3600
+        )
+        await ChannelBox.add_channel_to_group(
+            self.channel,
+            f"notifications_{user_id}"
+        )
+    
+    async def on_disconnect(self, websocket, close_code):
+        if self.channel:
+            user_id = websocket.scope["user"]["user_id"]
+            await ChannelBox.remove_channel_from_group(
+                self.channel,
+                f"notifications_{user_id}"
+            )
+
+# Register WebSocket route
+app.add_route(
+    "/ws/notifications",
+    NotificationConsumer.as_route("/ws/notifications")
+)
+```
+
+## Error Handling
+
+Comprehensive error handling:
+
+```python
+@app.exception_handler(Exception)
+async def handle_error(request: Request, exc: Exception):
+    error_id = str(uuid.uuid4())
+    
+    # Log error details
+    logger.error(
+        f"Error ID: {error_id}\n"
+        f"Type: {type(exc).__name__}\n"
+        f"Message: {str(exc)}\n"
+        f"Path: {request.url.path}\n"
+        f"Method: {request.method}\n"
+        f"Traceback:\n{traceback.format_exc()}"
+    )
+    
+    # Return appropriate response
+    if isinstance(exc, HTTPException):
+        return Response(
+            {"error": str(exc), "error_id": error_id},
+            status_code=exc.status_code
+        )
+    
+    return Response(
+        {
+            "error": "Internal server error",
+            "error_id": error_id
+        },
+        status_code=500
+    )
+```
+
+## Monitoring
+
+Health and monitoring endpoints:
+
+```python
+@app.get("/health")
+async def health_check(request: Request, response: Response):
+    # Check system health
+    uptime = time.time() - app.state.startup_time
+    
+    # Check WebSocket connections
+    groups = await ChannelBox.show_groups()
+    total_connections = sum(
+        len(channels) for channels in groups.values()
+    )
+    
+    return response.json({
+        "status": "healthy",
+        "uptime": uptime,
+        "connections": total_connections,
+        "version": "1.0.0"
+    })
+
+@app.get("/metrics")
+@auth(["jwt"])
+async def metrics(request: Request, response: Response):
+    # Collect system metrics
+    metrics = {
+        "requests": app.state.request_count,
+        "errors": app.state.error_count,
+        "websocket_connections": len(
+            await ChannelBox.show_groups()
+        ),
+        "memory_usage": psutil.Process().memory_info().rss,
+        "cpu_usage": psutil.Process().cpu_percent()
+    }
+    
+    return response.json(metrics)
+```
+
+## Application Lifecycle
+
+Managing application lifecycle:
+
+```python
+@app.on_event("startup")
+async def startup():
+    # Initialize application state
+    app.state.startup_time = time.time()
+    app.state.request_count = 0
+    app.state.error_count = 0
+    
+    # Start background tasks
+    app.state.cleanup_task = asyncio.create_task(
+        cleanup_expired_sessions()
+    )
+    
+    logger.info("Application started")
+
+@app.on_event("shutdown")
+async def shutdown():
+    # Cancel background tasks
+    if hasattr(app.state, "cleanup_task"):
+        app.state.cleanup_task.cancel()
+        try:
+            await app.state.cleanup_task
+        except asyncio.CancelledError:
+            pass
+    
+    # Close WebSocket connections
+    await ChannelBox.close_all_connections()
+    
+    logger.info("Application shutdown complete")
+```
 
 ## Best Practices
 
-1. Use gradual deployments
-2. Monitor everything
-3. Implement proper logging
-4. Plan for failures
-5. Regular backup testing
-6. Document procedures
+1. Security:
+   - Implement proper authentication
+   - Validate all input
+   - Use secure headers
+   - Handle errors safely
 
-## Homework Assignment
+2. Monitoring:
+   - Implement health checks
+   - Track metrics
+   - Set up comprehensive logging
+   - Monitor WebSocket connections
 
-1. Create deployment strategy
-2. Set up monitoring
-3. Implement logging
-4. Configure backups
-5. Test disaster recovery
+3. Performance:
+   - Use connection pooling
+   - Implement caching
+   - Handle cleanup tasks
+   - Manage resources efficiently
 
-## Additional Resources
+4. Reliability:
+   - Handle all edge cases
+   - Implement proper validation
+   - Manage application lifecycle
+   - Set up proper error handling
 
-- [Production Deployment Guide](https://nexios.io/deployment)
-- [Monitoring Best Practices](https://nexios.io/monitoring)
-- [High Availability Guide](https://nexios.io/ha)
-- [Disaster Recovery](https://nexios.io/disaster-recovery) 
+## 📝 Practice Exercise
+
+1. Extend the API:
+   - Add more endpoints
+   - Implement rate limiting
+   - Add data validation
+   - Set up caching
+
+2. Enhance monitoring:
+   - Add custom metrics
+   - Implement logging
+   - Set up alerts
+   - Create admin dashboard 
