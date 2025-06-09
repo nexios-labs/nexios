@@ -89,6 +89,7 @@ export default defineConfig({
             { text: 'Cors', link: '/guide/cors' },
             { text: 'File Router', link: '/guide/file-router' },
             { text: 'Concurrency Utilities', link: '/guide/concurrency' },
+            { text: 'Security', link: '/guide/security' },
 
           ]
         },
