@@ -4,14 +4,14 @@ export default defineConfig({
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/./icon.svg' }],
     ['meta', { name: 'theme-color', content: '#ff7e17' }],
-    ['meta', { property: 'og:title', content: "Nexios" }],
-    ['meta', { property: 'og:description', content: "Nexios - Async web framework for Python" }],
+    ['meta', { property: 'og:title', content: "28 Days of Nexios" }],
+    ['meta', { property: 'og:description', content: "Master Nexios in 28 Days - Comprehensive Web Development Course" }],
     ['meta', { property: 'og:image', content: "./icon.svg" }],
     ['meta', { property: 'og:type', content: 'website' }],
   ],
 
   title: 'Nexios',
-  description: 'Async web framework for Python',
+  description: 'Nexios is a modern, fast, and secure web framework for Python. It is designed to be easy to use and understand, while also being powerful and flexible.',
 
   themeConfig: {
     siteTitle: 'Nexios',
@@ -31,7 +31,9 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
       { text: 'API Reference', link: '/api/application' },
+      { text: 'Examples', link: '/api-examples' },
       { text: 'Team', link: 'team' },
+      { text: 'Course', link: '/course/index' },
     ],
 
     sidebar: {
@@ -89,6 +91,7 @@ export default defineConfig({
             { text: 'Cors', link: '/guide/cors' },
             { text: 'File Router', link: '/guide/file-router' },
             { text: 'Concurrency Utilities', link: '/guide/concurrency' },
+            { text: 'Security', link: '/guide/security' },
 
           ]
         },
@@ -140,6 +143,41 @@ export default defineConfig({
           ]
         }
       ],
+      '/course/': [
+        {
+          text: 'Course',
+          items: [
+            { text: 'Day 1: Introduction to Nexios', link: '/course/day01' },
+            { text: 'Day 2: First Application & Routing', link: '/course/day02' },
+            { text: 'Day 3: Async, Request, and Response', link: '/course/day03' },
+            { text: 'Day 4: Path & Query Parameters', link: '/course/day04' },
+            { text: 'Day 5: Basic Middleware', link: '/course/day05' },
+            { text: 'Day 6: Error Handling', link: '/course/day06' },
+            { text: 'Day 7: RESTful API Project', link: '/course/day07' },
+            { text: 'Day 8: Database Integration', link: '/course/day08' },
+            { text: 'Day 9: Data Validation', link: '/course/day09' },
+            { text: 'Day 10: Forms & File Uploads', link: '/course/day10' },
+            { text: 'Day 11: Session Management', link: '/course/day11' },
+            { text: 'Day 12: Authentication Basics', link: '/course/day12' },
+            { text: 'Day 13: JWT & OAuth', link: '/course/day13' },
+            { text: 'Day 14: User Management System', link: '/course/day14' },
+            { text: 'Day 15: WebSockets Basics', link: '/course/day15' },
+            { text: 'Day 16: Real-time Applications', link: '/course/day16' },
+            { text: 'Day 17: Advanced Middleware', link: '/course/day17' },
+            { text: 'Day 18: Custom Decorators', link: '/course/day18' },
+            { text: 'Day 19: Dependency Injection', link: '/course/day19' },
+            { text: 'Day 20: Background Tasks', link: '/course/day20' },
+            { text: 'Day 21: Chat Application Project', link: '/course/day21' },
+            { text: 'Day 22: Testing Strategies', link: '/course/day22' },
+            { text: 'Day 23: Logging & Monitoring', link: '/course/day23' },
+            { text: 'Day 24: Performance Optimization', link: '/course/day24' },
+            { text: 'Day 25: Security Best Practices', link: '/course/day25' },
+            { text: 'Day 26: Deployment Strategies', link: '/course/day26' },
+            { text: 'Day 27: Docker & Containers', link: '/course/day27' },
+            { text: 'Day 28: Production-Ready API Project', link: '/course/day28' },
+          ]
+        }
+      ]
     }
   },
 

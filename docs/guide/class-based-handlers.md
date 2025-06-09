@@ -37,7 +37,7 @@ class UserView(APIHandler):
         user_id = request.state.user_id  # Retrieve stored state
         return response.json({"user_id": user_id})
 
-    middleware = [auth_middleware, logging_middleware]  # Pass middleware as a list
+    middlewares = [auth_middleware, logging_middleware]  # Pass middleware as a list
 
 app.add_route(UserView.as_route("/user"))
 ```
