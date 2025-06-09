@@ -1,304 +1,178 @@
-# Day 2: First Application & Routing
+# Day 2: Routing in Nexios
 
-Welcome to Day 2 of our Nexios journey! Today, we'll dive deep into routing patterns and request handling.
+## Route Decorators
 
-## Advanced Routing Concepts
-
-### 1. Route Parameters
-
-Nexios supports various types of route parameters:
+Nexios provides intuitive decorators for handling different HTTP methods:
 
 ```python
 from nexios import NexiosApp
-from nexios.http import Request, Response
-
+from nexios.http import Reqeust, Response
 app = NexiosApp()
 
-# Basic string parameter
-@app.get("/users/{username}")
-async def get_user(request: Request, response: Response):
-    username = request.path_params.username
-    return response.json({"username": username})
-
-# Integer parameter with type hint
-@app.get("/posts/{post_id:int}")
-async def get_post(request: Request, response: Response):
-    post_id = request.path_params.post_id  # Automatically converted to int
-    return response.json({"post_id": post_id})
-
-# Path parameter (matches entire remaining path)
-@app.get("/files/{filepath:path}")
-async def serve_file(request: Request, response: Response):
-    filepath = request.path_params.filepath
-    return response.json({"file": filepath})
-```
-
-### 2. HTTP Methods
-
-Nexios supports all standard HTTP methods:
-
-```python
-# GET request
-@app.get("/items")
-async def list_items(request: Request, response: Response):
-    return response.json({"items": []})
-
-# POST request
-@app.post("/items")
-async def create_item(request: Request, response: Response):
-    data = await request.json()
-    return response.json(data, status_code=201)
-
-# PUT request
-@app.put("/items/{item_id}")
-async def update_item(request: Request, response: Response):
-    item_id = request.path_params.item_id
-    data = await request.json()
-    return response.json({"id": item_id, **data})
-
-# DELETE request
-@app.delete("/items/{item_id}")
-async def delete_item(request: Request, response: Response):
-    item_id = request.path_params.item_id
-    return response.status(204)
-```
-
-### 3. Route Groups
-
-Organize your routes using the Router class:
-
-```python
-from nexios.routing import Router
-
-# Create a router with prefix
-api_v1 = Router(prefix="/api/v1")
-
-@api_v1.get("/users")
+@app.get("/users")
 async def get_users(request: Request, response: Response):
-    return response.json({"users": []})
+    return {"users": ["user1", "user2"]}
 
-@api_v1.post("/users")
-async def create_user(request: Request, response: Response):
-    data = await request.json()
-    return response.json(data, status_code=201)
-
-# Add router to application
-app.include_router(api_v1)
-```
-
-## Request Handling
-
-### 1. Query Parameters
-
-```python
-@app.get("/search")
-async def search(request: Request, response: Response):
-    query = request.query_params.get("q", "")
-    limit = int(request.query_params.get("limit", "10"))
-    return response.json({
-        "query": query,
-        "limit": limit,
-        "results": []
-    })
-```
-
-### 2. Request Body
-
-```python
 @app.post("/users")
 async def create_user(request: Request, response: Response):
-    # JSON data
-    data = await request.json()
-    
-    # Form data
-    form = await request.form()
-    
-    # Files
-    files = await request.files()
-    
-    return response.json({"status": "created"}, status_code=201)
+    return {"message": "User created"}
+
+@app.put("/users/{user_id}")
+async def update_user(request: Request, response: Response, user_id: int):
+    return {"message": f"User {user_id} updated"}
+
+@app.delete("/users/{user_id}")
+async def delete_user(request: Request, response: Response, user_id: int):
+    return {"message": f"User {user_id} deleted"}
 ```
 
-### 3. Headers
+## Path Parameters
+
+Nexios supports various types of path parameters:
 
 ```python
-@app.get("/protected")
-async def protected_route(request: Request, response: Response):
-    auth_token = request.headers.get("Authorization")
-    if not auth_token:
-        return response.json(
-            {"error": "Unauthorized"}, 
-            status_code=401
-        )
-    return response.json({"status": "authenticated"})
+# String parameter
+@app.get("/users/{username}")
+async def get_user_by_name(request: Request, response: Response, username: str):
+    return {"username": username}
+
+# Integer parameter
+@app.get("/posts/{post_id:int}")
+async def get_post(request: Request, response: Response, post_id: int):
+    return {"post_id": post_id}
+
+# Path parameter (matches full path)
+@app.get("/files/{file_path:path}")
+async def serve_file(request: Request, response: Response,file_path: str):
+    return {"file": file_path}
+
+# Multiple parameters
+@app.get("/users/{user_id}/posts/{post_id}")
+async def get_user_post(request: Request, response: Response,user_id: int, post_id: int):
+    return {
+        "user_id": user_id,
+        "post_id": post_id
+    }
 ```
 
-## Class-Based Views
+## Query Parameters
 
-Nexios supports class-based views for organizing related endpoints:
+Handle URL query parameters easily:
 
 ```python
-from nexios.views import APIView
+from typing import Optional
 
-class UserView(APIView):
-    async def get(self, request: Request, response: Response):
-        return response.json({"users": []})
-    
-    async def post(self, request: Request, response: Response):
-        data = await request.json()
-        return response.json(data, status_code=201)
-    
-    async def put(self, request: Request, response: Response):
-        data = await request.json()
-        return response.json(data)
-    
-    async def delete(self, request: Request, response: Response):
-        return response.status(204)
+@app.get("/search")
+async def search_items(
+    request: Request, response: Response
+):
+    query = request.query_params.get("query")
+    category = request.query_params.get("category")
+    limit = request.query_params.get("limit")
 
-# Register the view
-app.add_route("/users", UserView.as_route())
+    return {
+        "query": query,
+        "category": category,
+        "limit": limit
+    }
+
+# Example URL: /search?query=nexios&category=framework&limit=5
 ```
 
-## Exercises
+## Modular Route Organization
 
-1. **Basic Routing**:
-   Create routes for a blog API with the following endpoints:
-   - GET `/posts` - List all posts
-   - GET `/posts/{post_id}` - Get a specific post
-   - POST `/posts` - Create a new post
-   - PUT `/posts/{post_id}` - Update a post
-   - DELETE `/posts/{post_id}` - Delete a post
+### Using Router Classes
 
-2. **Query Parameters**:
-   Implement a search endpoint that accepts:
-   - `q` - Search query
-   - `category` - Filter by category
-   - `sort` - Sort direction (asc/desc)
-   - `limit` - Number of results
-   - `page` - Page number
+```python
+from nexios import Router
 
-3. **Route Groups**:
-   Create an API with versioned endpoints:
-   - `/api/v1/users`
-   - `/api/v1/posts`
-   - `/api/v2/users`
-   - `/api/v2/posts`
+# Create a router instance
+user_router = Router(prefix="/users")
 
-## Mini-Project: Task Manager API
+@user_router.get("/")
+async def list_users(request: Request, response: Response):
+    return {"users": ["user1", "user2"]}
 
-Create a simple task manager API with the following features:
+@user_router.get("/{user_id}")
+async def get_user(request: Request, response: Response,user_id: int):
+    return {"user_id": user_id}
 
+# Include router in main app
+app = NexiosApp()
+app.mount_router(user_router)
+```
+
+### Organizing Routes by Feature
+
+```
+my-project/
+├── app/
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── users.py
+│   │   ├── posts.py
+│   │   └── auth.py
+│   └── main.py
+```
+
+Example `routes/users.py`:
+```python
+from nexios import Router
+
+router = Router(prefix="/users")
+
+@router.get("/")
+async def list_users():
+    return {"users": ["user1", "user2"]}
+
+@router.post("/")
+async def create_user():
+    return {"message": "User created"}
+```
+
+Example `main.py`:
 ```python
 from nexios import NexiosApp
-from nexios.http import Request, Response
-from nexios.routing import Router
+from .routes import users, posts, auth
 
 app = NexiosApp()
-api = Router(prefix="/api")
 
-# In-memory storage
-tasks = []
-
-@api.get("/tasks")
-async def list_tasks(request: Request, response: Response):
-    status = request.query_params.get("status")
-    if status:
-        filtered = [t for t in tasks if t["status"] == status]
-        return response.json(filtered)
-    return response.json(tasks)
-
-@api.post("/tasks")
-async def create_task(request: Request, response: Response):
-    data = await request.json()
-    task = {
-        "id": len(tasks) + 1,
-        "title": data["title"],
-        "description": data.get("description", ""),
-        "status": "pending"
-    }
-    tasks.append(task)
-    return response.json(task, status_code=201)
-
-@api.get("/tasks/{task_id:int}")
-async def get_task(request: Request, response: Response):
-    task_id = request.path_params.task_id
-    task = next((t for t in tasks if t["id"] == task_id), None)
-    if not task:
-        return response.json(
-            {"error": "Task not found"}, 
-            status_code=404
-        )
-    return response.json(task)
-
-@api.put("/tasks/{task_id:int}")
-async def update_task(request: Request, response: Response):
-    task_id = request.path_params.task_id
-    data = await request.json()
-    task = next((t for t in tasks if t["id"] == task_id), None)
-    if not task:
-        return response.json(
-            {"error": "Task not found"}, 
-            status_code=404
-        )
-    task.update(data)
-    return response.json(task)
-
-@api.delete("/tasks/{task_id:int}")
-async def delete_task(request: Request, response: Response):
-    task_id = request.path_params.task_id
-    task = next((t for t in tasks if t["id"] == task_id), None)
-    if not task:
-        return response.json(
-            {"error": "Task not found"}, 
-            status_code=404
-        )
-    tasks.remove(task)
-    return response.status(204)
-
-app.include_router(api)
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=5000, reload=True)
+# Include all routers
+app.mount_router(users.router)
+app.mount_router(posts.router)
+app.mount_router(auth.router)
 ```
 
-## Key Concepts Learned
+##  Practice Exercise
 
-- Route parameters and types
-- HTTP methods and handlers
-- Query parameters
-- Request body handling
-- Headers management
-- Class-based views
-- Route grouping
-- API versioning
+Create a simple blog API with these routes:
+
+1. Posts endpoints:
+   ```python
+   # GET /posts - List all posts
+   # GET /posts/{post_id} - Get single post
+   # POST /posts - Create new post
+   # PUT /posts/{post_id} - Update post
+   # DELETE /posts/{post_id} - Delete post
+   ```
+
+2. Comments endpoints:
+   ```python
+   # GET /posts/{post_id}/comments - List comments
+   # POST /posts/{post_id}/comments - Add comment
+   # DELETE /posts/{post_id}/comments/{comment_id} - Delete comment
+   ```
 
 ## Additional Resources
+- [Nexios Routing Guide](../../guide/routing.md)
+- [Path Parameters](../../guide/request-info.md)
+- [Query Parameters](../../guide/request-info.md)
+- [Router Class](../../guide/routers-and-subapps.md)
 
-- [Nexios Routing Documentation](https://nexios.dev/guide/routing)
-- [Request Handling Guide](https://nexios.dev/guide/request)
-- [Response Types](https://nexios.dev/guide/response)
-- [API Examples](https://nexios.dev/examples)
-
-## Homework
-
-1. Extend the Task Manager API:
-   - Add task categories
-   - Implement task priorities
-   - Add due dates
-   - Create task comments
-
-2. Create a simple blog API with:
-   - Posts
-   - Categories
-   - Tags
-   - Comments
-
-3. Read about:
-   - Request validation
-   - Error handling
-   - Middleware
-   
 ## Next Steps
-
-Tomorrow, we'll explore request handling and responses in more detail in [Day 3: Request Handling & Responses](../day03/index.md). 
+Tomorrow in [Day 3: Async, Request, and Response](../day03/index.md), we'll explore:
+- Async function support
+- Working with Request objects
+- Response handling
+- Headers and status codes
+- JSON responses 

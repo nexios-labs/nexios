@@ -33,6 +33,7 @@ export default defineConfig({
       { text: 'API Reference', link: '/api/application' },
       { text: 'Examples', link: '/api-examples' },
       { text: 'Team', link: 'team' },
+      { text: 'Course', link: '/course/index' },
     ],
 
     sidebar: {
@@ -142,6 +143,43 @@ export default defineConfig({
           ]
         }
       ],
+      '/course/': [
+        {
+          text: 'Course',
+          items: [
+            { text: 'Day 1 (Introduction to Nexios)', link: '/course/day01' },
+            { text: 'Day 2 (Routing in Nexios)', link: '/course/day02' },
+            { text: 'Day 3 (Async, Request, and Response)', link: '/course/day03' },
+            { text: 'Day 4 (Class-Based Views with APIHandler)', link: '/course/day04' },
+            { text: 'Day 5 (Middleware in Nexios)', link: '/course/day05' },
+            { text: 'Day 6 (Configuration in Nexios)', link: '/course/day06' },
+            { text: 'Day 7', link: '/course/day07' },
+            { text: 'Day 8', link: '/course/day08' },
+            { text: 'Day 9', link: '/course/day09' },
+            { text: 'Day 10', link: '/course/day10' },
+            { text: 'Day 11', link: '/course/day11' },
+            { text: 'Day 12', link: '/course/day12' },
+            { text: 'Day 13', link: '/course/day13' },
+            { text: 'Day 14', link: '/course/day14' },
+            { text: 'Day 15', link: '/course/day15' },
+            { text: 'Day 16', link: '/course/day16' },
+            { text: 'Day 17', link: '/course/day17' },
+            { text: 'Day 18', link: '/course/day18' },
+            { text: 'Day 19', link: '/course/day19' },
+            { text: 'Day 20', link: '/course/day20' },
+            { text: 'Day 21', link: '/course/day21' },
+            { text: 'Day 22', link: '/course/day22' },
+            { text: 'Day 23', link: '/course/day23' },
+            { text: 'Day 24', link: '/course/day24' },
+            { text: 'Day 25', link: '/course/day25' },
+            { text: 'Day 26', link: '/course/day26' },
+            { text: 'Day 27', link: '/course/day27' },
+            { text: 'Day 28', link: '/course/day28' },
+            { text: 'Day 29', link: '/course/day29' },
+            { text: 'Day 30', link: '/course/day30' },
+          ]
+        }
+      ]
     }
   },
 

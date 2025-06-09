@@ -18,7 +18,7 @@ Testing covers:
 import pytest
 from nexios import NexiosApp
 from nexios.http import Request, Response
-from nexios.testing import TestClient
+from nexios.testing import Client
 
 @pytest.fixture
 def app():
@@ -32,7 +32,7 @@ def app():
 
 @pytest.fixture
 def client(app):
-    return TestClient(app)
+    return Client(app)
 
 def test_hello_endpoint(client):
     response = client.get("/")
@@ -46,7 +46,7 @@ def test_hello_endpoint(client):
 from nexios import NexiosApp
 from nexios.http import Request, Response
 import pytest
-from nexios.testing import TestClient
+from nexios.testing import Client
 
 # Sample application
 app = NexiosApp()
@@ -79,7 +79,7 @@ async def create_user(request: Request, response: Response):
 # Tests
 @pytest.fixture
 def client():
-    return TestClient(app)
+    return Client(app)
 
 def test_get_user_success(client):
     response = client.get("/users/1")
@@ -118,7 +118,7 @@ import pytest
 from databases import Database
 import sqlalchemy
 from nexios import NexiosApp
-from nexios.testing import TestClient
+from nexios.testing import Client
 
 # Test database
 TEST_DATABASE_URL = "sqlite:///./test.db"
@@ -173,7 +173,7 @@ async def test_database():
 
 @pytest.fixture
 def client(test_database):
-    return TestClient(app)
+    return Client(app)
 
 async def test_create_user(client):
     response = client.post(
@@ -200,7 +200,7 @@ async def test_create_user(client):
 ```python
 import pytest
 from nexios import NexiosApp, WebSocket
-from nexios.testing import TestClient
+from nexios.testing import Client
 
 app = NexiosApp()
 
@@ -213,7 +213,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    return Client(app)
 
 async def test_websocket(client):
     with client.websocket_connect("/ws") as websocket:
@@ -262,7 +262,7 @@ async def protected_route(request: Request, response: Response):
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    return Client(app)
 
 @pytest.fixture
 def auth_token():
@@ -317,7 +317,7 @@ async def test_route(request: Request, response: Response):
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    return Client(app)
 
 def test_timing_middleware(client):
     response = client.get("/test")
@@ -350,7 +350,7 @@ async def slow_route(request: Request, response: Response):
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    return Client(app)
 
 def test_route_performance(client):
     # Test fast route
@@ -390,7 +390,7 @@ def test_concurrent_requests(client):
 import pytest
 from nexios import NexiosApp
 from nexios.http import Request, Response
-from nexios.testing import TestClient
+from nexios.testing import Client
 from databases import Database
 import sqlalchemy
 from datetime import datetime
@@ -511,7 +511,7 @@ async def test_database():
 
 @pytest.fixture
 def client(test_database):
-    return TestClient(app)
+    return Client(app)
 
 @pytest.fixture
 async def test_user(client):
@@ -649,4 +649,298 @@ if __name__ == "__main__":
 
 ## Next Steps
 
-Tomorrow, we'll explore deployment in [Day 11: Deployment](../day11/index.md). 
+Tomorrow, we'll explore deployment in [Day 11: Deployment](../day11/index.md).
+
+# 🚀 Day 10: API Key Authentication
+
+## Creating API Keys
+
+Implementing API key generation and management:
+
+```python
+from nexios import get_application
+from nexios.security import APIKeyAuth, generate_api_key
+from nexios.http import Request, Response
+from datetime import datetime, timedelta
+import uuid
+
+app = get_application()
+
+# Configure API Key authentication
+api_auth = APIKeyAuth(
+    prefix="nx",  # API keys will start with "nx_"
+    key_length=32  # Length of the random part
+)
+
+app.auth_backend = api_auth
+
+class APIKeyManager:
+    def __init__(self):
+        self.db = app.db  # Your database connection
+    
+    async def create_api_key(
+        self,
+        user_id: str,
+        name: str,
+        expires_in: timedelta = None
+    ) -> dict:
+        # Generate new API key
+        api_key = await generate_api_key()
+        key_id = str(uuid.uuid4())
+        
+        # Calculate expiration
+        expires_at = None
+        if expires_in:
+            expires_at = datetime.now() + expires_in
+        
+        # Store key details (store hash, not the key itself)
+        key_hash = await api_auth.hash_key(api_key)
+        await self.db.api_keys.insert_one({
+            "id": key_id,
+            "user_id": user_id,
+            "name": name,
+            "key_hash": key_hash,
+            "created_at": datetime.now(),
+            "expires_at": expires_at,
+            "last_used": None
+        })
+        
+        # Return the key (only time it's visible)
+        return {
+            "id": key_id,
+            "key": api_key,
+            "name": name,
+            "expires_at": expires_at
+        }
+    
+    async def list_api_keys(self, user_id: str) -> list:
+        keys = await self.db.api_keys.find(
+            {"user_id": user_id}
+        ).to_list(None)
+        
+        return [{
+            "id": key["id"],
+            "name": key["name"],
+            "created_at": key["created_at"],
+            "expires_at": key["expires_at"],
+            "last_used": key["last_used"]
+        } for key in keys]
+    
+    async def revoke_api_key(
+        self,
+        user_id: str,
+        key_id: str
+    ) -> bool:
+        result = await self.db.api_keys.delete_one({
+            "id": key_id,
+            "user_id": user_id
+        })
+        return result.deleted_count > 0
+
+# Initialize manager
+key_manager = APIKeyManager()
+
+@app.post("/api-keys")
+@requires_auth  # Regular user authentication
+async def create_key(request: Request):
+    data = await request.json()
+    user_id = request.user.id
+    
+    # Create new API key
+    key = await key_manager.create_api_key(
+        user_id=user_id,
+        name=data["name"],
+        expires_in=timedelta(days=data.get("expires_in_days", 365))
+    )
+    
+    return key
+
+@app.get("/api-keys")
+@requires_auth
+async def list_keys(request: Request):
+    keys = await key_manager.list_api_keys(request.user.id)
+    return {"api_keys": keys}
+
+@app.delete("/api-keys/{key_id}")
+@requires_auth
+async def revoke_key(request: Request, key_id: str):
+    success = await key_manager.revoke_api_key(
+        request.user.id,
+        key_id
+    )
+    
+    if not success:
+        return Response(
+            content={"error": "API key not found"},
+            status_code=404
+        )
+    
+    return {"message": "API key revoked"}
+```
+
+## Validating API Keys
+
+Implementing API key validation:
+
+```python
+from nexios.security import APIKeyValidator
+from typing import Optional
+
+class APIKeyValidator:
+    def __init__(self):
+        self.db = app.db
+    
+    async def validate_key(self, api_key: str) -> Optional[dict]:
+        # Hash the provided key
+        key_hash = await api_auth.hash_key(api_key)
+        
+        # Find key in database
+        key = await self.db.api_keys.find_one({
+            "key_hash": key_hash
+        })
+        
+        if not key:
+            return None
+        
+        # Check expiration
+        if key["expires_at"] and datetime.now() > key["expires_at"]:
+            return None
+        
+        # Update last used timestamp
+        await self.db.api_keys.update_one(
+            {"id": key["id"]},
+            {"$set": {"last_used": datetime.now()}}
+        )
+        
+        # Get associated user
+        user = await self.db.users.find_one({
+            "id": key["user_id"]
+        })
+        
+        return {
+            "key_id": key["id"],
+            "user": user,
+            "name": key["name"]
+        }
+
+# Initialize validator
+key_validator = APIKeyValidator()
+
+@app.middleware("http")
+async def validate_api_key(request: Request, call_next):
+    # Skip validation for auth routes
+    if request.url.path.startswith("/auth"):
+        return await call_next(request)
+    
+    # Check header first
+    api_key = request.headers.get("X-API-Key")
+    
+    # Then check query parameter
+    if not api_key:
+        api_key = request.query_params.get("api_key")
+    
+    if not api_key:
+        return Response(
+            content={"error": "API key required"},
+            status_code=401
+        )
+    
+    # Validate key
+    key_info = await key_validator.validate_key(api_key)
+    if not key_info:
+        return Response(
+            content={"error": "Invalid API key"},
+            status_code=401
+        )
+    
+    # Add key info to request
+    request.state.api_key = key_info
+    request.user = key_info["user"]
+    
+    return await call_next(request)
+```
+
+## Using API Keys
+
+Examples of using API keys in requests:
+
+```python
+# Using in header
+@app.get("/api/data")
+async def get_data(request: Request):
+    # API key already validated by middleware
+    user = request.user
+    key_info = request.state.api_key
+    
+    return {
+        "data": "Your protected data",
+        "user": user.username,
+        "key_name": key_info["name"]
+    }
+
+# Rate limiting by API key
+from nexios.cache import RedisCache
+from nexios.exceptions import RateLimitExceeded
+
+class APIKeyRateLimiter:
+    def __init__(self, requests_per_minute: int = 60):
+        self.cache = RedisCache()
+        self.rate_limit = requests_per_minute
+    
+    async def check_rate_limit(self, key_id: str) -> bool:
+        current = await self.cache.incr(f"rate:{key_id}")
+        
+        if current == 1:
+            await self.cache.expire(f"rate:{key_id}", 60)
+        
+        return current <= self.rate_limit
+
+# Rate limiting middleware
+rate_limiter = APIKeyRateLimiter(requests_per_minute=60)
+
+@app.middleware("http")
+async def rate_limit_by_key(request: Request, call_next):
+    if hasattr(request.state, "api_key"):
+        key_id = request.state.api_key["key_id"]
+        
+        if not await rate_limiter.check_rate_limit(key_id):
+            return Response(
+                content={"error": "Rate limit exceeded"},
+                status_code=429
+            )
+    
+    return await call_next(request)
+```
+
+## 📝 Practice Exercise
+
+1. Build an API key management system:
+   - Key generation with custom prefixes
+   - Expiration dates
+   - Usage tracking
+   - Rate limiting
+
+2. Implement security features:
+   - Key rotation
+   - Permissions per key
+   - IP restrictions
+   - Usage analytics
+
+3. Create a key management UI:
+   - List active keys
+   - Create/revoke keys
+   - View usage stats
+   - Set permissions
+
+## 📚 Additional Resources
+- [API Key Best Practices](https://nexios.dev/guide/api-keys)
+- [Rate Limiting](https://nexios.dev/guide/rate-limiting)
+- [Security Guidelines](https://nexios.dev/guide/security)
+- [Redis Integration](https://nexios.dev/guide/redis)
+
+## 🎯 Next Steps
+Tomorrow in [Day 11: Request Validation](../day11/index.md), we'll explore:
+- Input validation
+- Schema validation
+- Custom validators
+- Error handling 

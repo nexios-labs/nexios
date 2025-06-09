@@ -1,522 +1,292 @@
-# Day 9: WebSockets
+# 🚀 Day 9: JWT Auth (Part 2)
 
-Welcome to Day 9! Today we'll learn how to implement real-time communication using WebSockets in Nexios.
+## Token Rotation
 
-## Understanding WebSockets
-
-WebSockets provide:
-- Full-duplex communication
-- Real-time data transfer
-- Persistent connections
-- Low latency
-- Reduced overhead
-
-## Basic WebSocket Setup
+Implementing token rotation for enhanced security:
 
 ```python
-from nexios import NexiosApp, WebSocket
-from typing import Dict, Set
-import json
-
-app = NexiosApp()
-
-# Store connected clients
-connected_clients: Set[WebSocket] = set()
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    connected_clients.add(websocket)
-    
-    try:
-        while True:
-            data = await websocket.receive_json()
-            # Echo message back
-            await websocket.send_json({
-                "message": f"Server received: {data['message']}"
-            })
-    except:
-        pass
-    finally:
-        connected_clients.remove(websocket)
-```
-
-## Broadcasting Messages
-
-```python
-async def broadcast(message: dict):
-    """Send message to all connected clients"""
-    for client in connected_clients:
-        try:
-            await client.send_json(message)
-        except:
-            connected_clients.remove(client)
-
-@app.websocket("/chat")
-async def chat_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    connected_clients.add(websocket)
-    
-    try:
-        while True:
-            data = await websocket.receive_json()
-            # Broadcast message to all clients
-            await broadcast({
-                "type": "message",
-                "user": data.get("user", "Anonymous"),
-                "message": data["message"]
-            })
-    except:
-        pass
-    finally:
-        connected_clients.remove(websocket)
-```
-
-## WebSocket Authentication
-
-```python
+from nexios import get_application
+from nexios.security import JWTAuthBackend, create_access_token
+from datetime import datetime, timedelta
 import jwt
-from nexios.exceptions import WebSocketException
 
-async def verify_token(token: str) -> dict:
-    try:
-        return jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-    except:
-        raise WebSocketException(code=4001, reason="Invalid token")
+app = get_application()
 
-@app.websocket("/ws/auth")
-async def authenticated_websocket(websocket: WebSocket):
-    # Get token from query params
-    token = websocket.query_params.get("token")
-    if not token:
-        await websocket.close(code=4001, reason="Missing token")
-        return
-    
-    try:
-        # Verify token
-        payload = await verify_token(token)
-        user_id = payload["sub"]
-        
-        # Accept connection
-        await websocket.accept()
-        websocket.state.user_id = user_id
-        
-        while True:
-            data = await websocket.receive_json()
-            await websocket.send_json({
-                "user_id": user_id,
-                "message": data["message"]
-            })
-    except WebSocketException as e:
-        await websocket.close(code=e.code, reason=e.reason)
-    except:
-        await websocket.close(code=1011)
-```
+# Configure JWT with refresh token support
+auth = JWTAuthBackend(
+    secret_key="your-secret-key",
+    algorithm="HS256",
+    access_token_expiration=timedelta(minutes=15),
+    refresh_token_expiration=timedelta(days=7)
+)
 
-## Room Management
+app.auth_backend = auth
 
-```python
-from dataclasses import dataclass, field
-from typing import Dict, Set
-
-@dataclass
-class ChatRoom:
-    name: str
-    clients: Set[WebSocket] = field(default_factory=set)
-    
-    async def broadcast(self, message: dict):
-        for client in self.clients.copy():
-            try:
-                await client.send_json(message)
-            except:
-                self.clients.remove(client)
-
-class ChatManager:
-    def __init__(self):
-        self.rooms: Dict[str, ChatRoom] = {}
-    
-    def get_or_create_room(self, name: str) -> ChatRoom:
-        if name not in self.rooms:
-            self.rooms[name] = ChatRoom(name)
-        return self.rooms[name]
-    
-    def remove_client(self, client: WebSocket):
-        for room in self.rooms.values():
-            room.clients.discard(client)
-
-chat_manager = ChatManager()
-
-@app.websocket("/chat/{room_name}")
-async def room_chat(websocket: WebSocket, room_name: str):
-    await websocket.accept()
-    
-    room = chat_manager.get_or_create_room(room_name)
-    room.clients.add(websocket)
-    
-    try:
-        # Notify room join
-        await room.broadcast({
-            "type": "system",
-            "message": f"User joined room {room_name}"
-        })
-        
-        while True:
-            data = await websocket.receive_json()
-            await room.broadcast({
-                "type": "message",
-                "room": room_name,
-                "user": data.get("user", "Anonymous"),
-                "message": data["message"]
-            })
-    except:
-        pass
-    finally:
-        chat_manager.remove_client(websocket)
-        await room.broadcast({
-            "type": "system",
-            "message": f"User left room {room_name}"
-        })
-```
-
-## Real-time Updates
-
-```python
-from asyncio import Queue
-from datetime import datetime
-
-class UpdateManager:
-    def __init__(self):
-        self.subscribers: Dict[str, Set[WebSocket]] = {}
-    
-    def subscribe(self, topic: str, client: WebSocket):
-        if topic not in self.subscribers:
-            self.subscribers[topic] = set()
-        self.subscribers[topic].add(client)
-    
-    def unsubscribe(self, topic: str, client: WebSocket):
-        if topic in self.subscribers:
-            self.subscribers[topic].discard(client)
-    
-    async def publish(self, topic: str, message: dict):
-        if topic in self.subscribers:
-            for client in self.subscribers[topic].copy():
-                try:
-                    await client.send_json({
-                        "topic": topic,
-                        "data": message,
-                        "timestamp": datetime.utcnow().isoformat()
-                    })
-                except:
-                    self.subscribers[topic].discard(client)
-
-update_manager = UpdateManager()
-
-# Subscribe to updates
-@app.websocket("/updates/{topic}")
-async def updates_endpoint(websocket: WebSocket, topic: str):
-    await websocket.accept()
-    update_manager.subscribe(topic, websocket)
-    
-    try:
-        while True:
-            # Keep connection alive
-            await websocket.receive_text()
-    except:
-        pass
-    finally:
-        update_manager.unsubscribe(topic, websocket)
-
-# Publish updates
-@app.post("/publish/{topic}")
-async def publish_update(request: Request, response: Response, topic: str):
+@app.post("/auth/login")
+async def login(request: Request):
     data = await request.json()
-    await update_manager.publish(topic, data)
-    return response.json({"message": "Update published"})
-```
-
-## Mini-Project: Real-time Chat Application
-
-```python
-from nexios import NexiosApp, WebSocket
-from typing import Dict, Set, Optional
-from dataclasses import dataclass, field
-from datetime import datetime
-import json
-import asyncio
-from enum import Enum
-
-# Message types
-class MessageType(str, Enum):
-    CHAT = "chat"
-    JOIN = "join"
-    LEAVE = "leave"
-    TYPING = "typing"
-    SYSTEM = "system"
-
-@dataclass
-class ChatMessage:
-    type: MessageType
-    room: str
-    user: str
-    content: Optional[str] = None
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
-
-@dataclass
-class ChatUser:
-    id: str
-    name: str
-    room: str
-    websocket: WebSocket
-    is_typing: bool = False
-    last_typed: datetime = field(default_factory=datetime.utcnow)
-
-class ChatRoom:
-    def __init__(self, name: str):
-        self.name = name
-        self.users: Dict[str, ChatUser] = {}
-        self.messages: List[ChatMessage] = []
-        self.max_messages = 100
+    user = await validate_user(data["username"], data["password"])
     
-    def add_message(self, message: ChatMessage):
-        self.messages.append(message)
-        if len(self.messages) > self.max_messages:
-            self.messages.pop(0)
+    if not user:
+        return Response(
+            content={"error": "Invalid credentials"},
+            status_code=401
+        )
     
-    async def broadcast(self, message: ChatMessage):
-        for user in self.users.values():
-            try:
-                await user.websocket.send_json(message.__dict__)
-            except:
-                await self.remove_user(user.id)
-    
-    async def remove_user(self, user_id: str):
-        if user_id in self.users:
-            user = self.users.pop(user_id)
-            await self.broadcast(ChatMessage(
-                type=MessageType.LEAVE,
-                room=self.name,
-                user=user.name
-            ))
-
-class ChatServer:
-    def __init__(self):
-        self.rooms: Dict[str, ChatRoom] = {}
-    
-    def get_or_create_room(self, name: str) -> ChatRoom:
-        if name not in self.rooms:
-            self.rooms[name] = ChatRoom(name)
-        return self.rooms[name]
-    
-    async def handle_typing(self, user: ChatUser):
-        """Handle user typing status"""
-        if not user.is_typing:
-            user.is_typing = True
-            await self.rooms[user.room].broadcast(ChatMessage(
-                type=MessageType.TYPING,
-                room=user.room,
-                user=user.name,
-                content="is typing..."
-            ))
-        
-        user.last_typed = datetime.utcnow()
-        
-        # Reset typing status after 2 seconds
-        await asyncio.sleep(2)
-        
-        if (datetime.utcnow() - user.last_typed).total_seconds() >= 2:
-            user.is_typing = False
-            await self.rooms[user.room].broadcast(ChatMessage(
-                type=MessageType.TYPING,
-                room=user.room,
-                user=user.name,
-                content="stopped typing"
-            ))
-
-app = NexiosApp()
-chat_server = ChatServer()
-
-@app.websocket("/chat/{room_name}/{user_name}")
-async def chat_endpoint(
-    websocket: WebSocket,
-    room_name: str,
-    user_name: str
-):
-    await websocket.accept()
-    
-    # Setup user and room
-    user = ChatUser(
-        id=str(id(websocket)),
-        name=user_name,
-        room=room_name,
-        websocket=websocket
+    # Create both access and refresh tokens
+    access_token = await create_access_token(
+        data={"sub": str(user.id)},
+        expires_delta=auth.access_token_expiration
     )
     
-    room = chat_server.get_or_create_room(room_name)
-    room.users[user.id] = user
-    
-    # Send room history
-    for message in room.messages:
-        await websocket.send_json(message.__dict__)
-    
-    # Announce join
-    join_message = ChatMessage(
-        type=MessageType.JOIN,
-        room=room_name,
-        user=user_name
+    refresh_token = await create_access_token(
+        data={
+            "sub": str(user.id),
+            "type": "refresh"
+        },
+        expires_delta=auth.refresh_token_expiration
     )
-    room.add_message(join_message)
-    await room.broadcast(join_message)
+    
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer"
+    }
+
+@app.post("/auth/refresh")
+async def refresh_token(request: Request):
+    data = await request.json()
+    refresh_token = data.get("refresh_token")
+    
+    if not refresh_token:
+        return Response(
+            content={"error": "Refresh token required"},
+            status_code=400
+        )
     
     try:
-        while True:
-            data = await websocket.receive_json()
-            
-            if data["type"] == "typing":
-                asyncio.create_task(
-                    chat_server.handle_typing(user)
-                )
-            else:
-                message = ChatMessage(
-                    type=MessageType.CHAT,
-                    room=room_name,
-                    user=user_name,
-                    content=data["content"]
-                )
-                room.add_message(message)
-                await room.broadcast(message)
-    except:
-        pass
-    finally:
-        await room.remove_user(user.id)
-
-# HTML client
-@app.get("/chat-client")
-async def chat_client(request: Request, response: Response):
-    return response.html("""
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Nexios Chat</title>
-    <style>
-        body { margin: 0; padding: 20px; font-family: Arial; }
-        #messages { height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
-        #typing { height: 20px; color: #666; }
-        .message { margin: 5px 0; }
-        .system { color: #666; font-style: italic; }
-        .join { color: green; }
-        .leave { color: red; }
-    </style>
-</head>
-<body>
-    <div id="messages"></div>
-    <div id="typing"></div>
-    <input type="text" id="messageInput" placeholder="Type a message...">
-    <button onclick="sendMessage()">Send</button>
-
-    <script>
-        const room = prompt('Enter room name:') || 'general';
-        const username = prompt('Enter username:') || 'anonymous';
-        const ws = new WebSocket(`ws://localhost:5000/chat/${room}/${username}`);
-        let typingTimeout;
-
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            const messages = document.getElementById('messages');
-            const typing = document.getElementById('typing');
-
-            if (data.type === 'typing') {
-                if (data.user !== username) {
-                    typing.textContent = data.content === 'is typing...' 
-                        ? `${data.user} is typing...`
-                        : '';
-                }
-            } else {
-                const div = document.createElement('div');
-                div.className = `message ${data.type}`;
-                
-                if (data.type === 'chat') {
-                    div.textContent = `${data.user}: ${data.content}`;
-                } else {
-                    div.textContent = `${data.user} ${data.type === 'join' ? 'joined' : 'left'} the room`;
-                }
-                
-                messages.appendChild(div);
-                messages.scrollTop = messages.scrollHeight;
-            }
-        };
-
-        document.getElementById('messageInput').onkeyup = (e) => {
-            if (typingTimeout) clearTimeout(typingTimeout);
-            
-            ws.send(JSON.stringify({
-                type: 'typing'
-            }));
-            
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        };
-
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-            
-            if (message) {
-                ws.send(JSON.stringify({
-                    type: 'chat',
-                    content: message
-                }));
-                input.value = '';
-            }
-        }
-    </script>
-</body>
-</html>
-    """)
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=5000)
+        # Verify refresh token
+        payload = await auth.verify_token(refresh_token)
+        
+        # Check if it's a refresh token
+        if payload.get("type") != "refresh":
+            raise jwt.InvalidTokenError("Invalid token type")
+        
+        # Create new access token
+        access_token = await create_access_token(
+            data={"sub": payload["sub"]},
+            expires_delta=auth.access_token_expiration
+        )
+        
+        return {"access_token": access_token}
+        
+    except jwt.InvalidTokenError:
+        return Response(
+            content={"error": "Invalid refresh token"},
+            status_code=401
+        )
 ```
 
-## Key Concepts Learned
+## Token Expiration
 
-- WebSocket basics
-- Connection management
-- Broadcasting messages
-- Room management
-- Real-time updates
-- Authentication
-- Error handling
-- Client implementation
+Managing token expiration and validation:
 
-## Additional Resources
+```python
+from nexios.security import TokenValidator
+from datetime import datetime, timezone
 
-- [WebSocket Protocol](https://tools.ietf.org/html/rfc6455)
-- [MDN WebSocket Guide](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
-- [ASGI WebSocket Spec](https://asgi.readthedocs.io/en/latest/specs/www.html#websocket)
-- [Real-time Patterns](https://www.nginx.com/blog/websocket-nginx/)
+class TokenExpirationHandler:
+    def __init__(self, max_token_age: timedelta):
+        self.max_token_age = max_token_age
+    
+    async def validate_token(self, token: str) -> bool:
+        try:
+            payload = await auth.verify_token(token)
+            
+            # Check expiration
+            exp = datetime.fromtimestamp(
+                payload["exp"],
+                tz=timezone.utc
+            )
+            
+            if datetime.now(timezone.utc) >= exp:
+                return False
+            
+            # Check token age
+            iat = datetime.fromtimestamp(
+                payload["iat"],
+                tz=timezone.utc
+            )
+            
+            age = datetime.now(timezone.utc) - iat
+            if age > self.max_token_age:
+                return False
+            
+            return True
+            
+        except jwt.InvalidTokenError:
+            return False
 
-## Homework
+# Use in middleware
+expiration_handler = TokenExpirationHandler(
+    max_token_age=timedelta(days=1)
+)
 
-1. Implement a real-time dashboard:
-   - System metrics
-   - User activity
-   - Error monitoring
-   - Performance stats
+@app.middleware("http")
+async def validate_token_age(request: Request, call_next):
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        
+        if not await expiration_handler.validate_token(token):
+            return Response(
+                content={"error": "Token expired"},
+                status_code=401
+            )
+    
+    return await call_next(request)
+```
 
-2. Create a collaborative editor:
-   - Operational transforms
-   - Cursor tracking
-   - User presence
-   - Document sync
+## Custom Claims
 
-3. Build a multiplayer game:
-   - Game state sync
-   - Player movements
-   - Collision detection
-   - Score tracking
+Adding custom claims to tokens:
 
-## Next Steps
+```python
+from typing import Dict, Any
 
-Tomorrow, we'll explore testing in [Day 10: Testing](../day10/index.md). 
+class CustomClaimsHandler:
+    @staticmethod
+    async def add_custom_claims(user: User) -> Dict[str, Any]:
+        return {
+            "username": user.username,
+            "email": user.email,
+            "roles": user.roles,
+            "permissions": await get_user_permissions(user),
+            "org_id": str(user.organization_id),
+            "is_premium": user.is_premium,
+            "last_login": datetime.now(timezone.utc).isoformat()
+        }
+
+@app.post("/auth/login")
+async def login_with_claims(request: Request):
+    data = await request.json()
+    user = await validate_user(data["username"], data["password"])
+    
+    if not user:
+        return Response(
+            content={"error": "Invalid credentials"},
+            status_code=401
+        )
+    
+    # Add custom claims
+    claims = await CustomClaimsHandler.add_custom_claims(user)
+    claims["sub"] = str(user.id)
+    
+    # Create token with claims
+    token = await create_access_token(data=claims)
+    
+    return {"access_token": token, "token_type": "bearer"}
+```
+
+## JTI Blacklisting
+
+Implementing token blacklisting:
+
+```python
+from nexios.cache import RedisCache
+import uuid
+
+class TokenBlacklist:
+    def __init__(self):
+        self.cache = RedisCache()
+    
+    async def add_to_blacklist(
+        self,
+        token: str,
+        reason: str = "logout",
+        expires_in: int = 86400  # 24 hours
+    ):
+        jti = str(uuid.uuid4())
+        await self.cache.set(
+            f"blacklist:{jti}",
+            {
+                "token": token,
+                "reason": reason,
+                "blacklisted_at": datetime.now(timezone.utc).isoformat()
+            },
+            expire=expires_in
+        )
+        return jti
+    
+    async def is_blacklisted(self, jti: str) -> bool:
+        return await self.cache.exists(f"blacklist:{jti}")
+    
+    async def get_blacklist_info(self, jti: str) -> dict:
+        return await self.cache.get(f"blacklist:{jti}")
+
+# Initialize blacklist
+blacklist = TokenBlacklist()
+
+@app.post("/auth/logout")
+async def logout(request: Request):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return Response(
+            content={"error": "No token provided"},
+            status_code=400
+        )
+    
+    token = auth_header.split(" ")[1]
+    jti = await blacklist.add_to_blacklist(token, reason="logout")
+    
+    return {
+        "message": "Successfully logged out",
+        "jti": jti
+    }
+
+# Middleware to check blacklist
+@app.middleware("http")
+async def check_blacklist(request: Request, call_next):
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        payload = await auth.verify_token(token)
+        
+        if "jti" in payload:
+            if await blacklist.is_blacklisted(payload["jti"]):
+                return Response(
+                    content={"error": "Token has been revoked"},
+                    status_code=401
+                )
+    
+    return await call_next(request)
+```
+
+## 📝 Practice Exercise
+
+1. Implement token rotation system:
+   - Access token refresh
+   - Sliding session expiration
+   - Token revocation
+
+2. Add custom claims:
+   - User permissions
+   - Organization data
+   - Device information
+
+3. Create token management system:
+   - Token blacklisting
+   - Active sessions tracking
+   - Token usage analytics
+
+## 📚 Additional Resources
+- [JWT Claims](https://auth0.com/docs/tokens/json-web-tokens/json-web-token-claims)
+- [Token Security](https://nexios.dev/guide/token-security)
+- [Redis Integration](https://nexios.dev/guide/redis)
+- [Session Management](https://nexios.dev/guide/sessions)
+
+## 🎯 Next Steps
+Tomorrow in [Day 10: API Key Authentication](../day10/index.md), we'll explore:
+- Creating API keys
+- Validating API keys
+- Using keys in headers or query params

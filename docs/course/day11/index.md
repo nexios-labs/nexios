@@ -1,3 +1,316 @@
+# 🚀 Day 11: Request Validation
+
+## Input Validation Basics
+
+Implementing basic input validation:
+
+```python
+from nexios import get_application
+from nexios.validation import (
+    Validator,
+    Field,
+    ValidationError
+)
+from typing import Optional, List
+from pydantic import BaseModel, EmailStr
+
+app = get_application()
+
+# Basic field validation
+class UserCreate(BaseModel):
+    username: str = Field(
+        min_length=3,
+        max_length=50,
+        pattern="^[a-zA-Z0-9_-]+$"
+    )
+    email: EmailStr
+    password: str = Field(min_length=8)
+    age: Optional[int] = Field(ge=0, lt=150)
+    interests: List[str] = Field(max_items=10)
+
+@app.post("/users")
+async def create_user(data: UserCreate):
+    # Data is already validated
+    return {
+        "username": data.username,
+        "email": data.email,
+        "age": data.age,
+        "interests": data.interests
+    }
+
+# Nested validation
+class Address(BaseModel):
+    street: str
+    city: str
+    country: str
+    postal_code: str = Field(pattern="^[0-9A-Z-]+$")
+
+class Profile(BaseModel):
+    bio: Optional[str] = Field(max_length=500)
+    website: Optional[str] = Field(pattern="^https?://.*")
+    address: Address
+
+class UserProfile(BaseModel):
+    user_id: str
+    profile: Profile
+
+@app.put("/users/{user_id}/profile")
+async def update_profile(
+    user_id: str,
+    data: UserProfile
+):
+    if data.user_id != user_id:
+        raise ValidationError("User ID mismatch")
+    
+    return data.dict()
+```
+
+## Schema Validation
+
+Advanced schema validation:
+
+```python
+from datetime import datetime
+from uuid import UUID
+from decimal import Decimal
+from enum import Enum
+
+# Custom types
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    MODERATOR = "mod"
+    USER = "user"
+
+class PaymentStatus(str, Enum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+# Complex schema
+class Product(BaseModel):
+    id: UUID
+    name: str = Field(min_length=1, max_length=100)
+    description: Optional[str]
+    price: Decimal = Field(ge=0)
+    stock: int = Field(ge=0)
+    categories: List[str] = Field(min_items=1)
+    created_at: datetime
+    updated_at: Optional[datetime]
+
+class OrderItem(BaseModel):
+    product_id: UUID
+    quantity: int = Field(gt=0)
+    unit_price: Decimal
+
+class Order(BaseModel):
+    id: UUID
+    user_id: UUID
+    items: List[OrderItem] = Field(min_items=1)
+    total: Decimal = Field(ge=0)
+    status: PaymentStatus
+    created_at: datetime
+
+@app.post("/orders")
+async def create_order(order: Order):
+    # Validate total matches items
+    calculated_total = sum(
+        item.quantity * item.unit_price
+        for item in order.items
+    )
+    
+    if calculated_total != order.total:
+        raise ValidationError(
+            "Order total doesn't match items"
+        )
+    
+    return order.dict()
+```
+
+## Custom Validators
+
+Creating custom validation logic:
+
+```python
+from nexios.validation import validator
+from typing import Any
+
+class PasswordValidator(BaseModel):
+    password: str
+    
+    @validator("password")
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password too short")
+        
+        if not any(c.isupper() for c in v):
+            raise ValueError(
+                "Password must contain uppercase letter"
+            )
+        
+        if not any(c.islower() for c in v):
+            raise ValueError(
+                "Password must contain lowercase letter"
+            )
+        
+        if not any(c.isdigit() for c in v):
+            raise ValueError(
+                "Password must contain number"
+            )
+        
+        return v
+
+class UserRegistration(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+    confirm_password: str
+    
+    @validator("confirm_password")
+    def passwords_match(cls, v: str, values: dict[str, Any]) -> str:
+        if "password" in values and v != values["password"]:
+            raise ValueError("Passwords do not match")
+        return v
+    
+    @validator("password")
+    def strong_password(cls, v: str) -> str:
+        PasswordValidator(password=v)
+        return v
+
+@app.post("/register")
+async def register(data: UserRegistration):
+    # All validation passed
+    return {"message": "Registration successful"}
+
+# Custom field validator
+def validate_phone(v: str) -> str:
+    if not v.startswith("+"):
+        raise ValueError("Phone must start with +")
+    
+    digits = v[1:]
+    if not digits.isdigit():
+        raise ValueError("Invalid phone number")
+    
+    if not 10 <= len(digits) <= 15:
+        raise ValueError("Invalid phone length")
+    
+    return v
+
+class Contact(BaseModel):
+    name: str
+    phone: str
+    
+    _validate_phone = validator("phone", allow_reuse=True)(
+        validate_phone
+    )
+```
+
+## Error Handling
+
+Handling validation errors:
+
+```python
+from nexios.exceptions import RequestValidationError
+from nexios.responses import JSONResponse
+from typing import Any
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(
+    request: Request,
+    exc: RequestValidationError
+) -> JSONResponse:
+    errors = []
+    
+    for error in exc.errors():
+        errors.append({
+            "field": " -> ".join(str(x) for x in error["loc"]),
+            "message": error["msg"],
+            "type": error["type"]
+        })
+    
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": "Validation error",
+            "errors": errors
+        }
+    )
+
+# Custom error messages
+class Item(BaseModel):
+    name: str = Field(
+        min_length=3,
+        max_length=50,
+        description="Item name",
+        error_messages={
+            "min_length": "Name too short",
+            "max_length": "Name too long"
+        }
+    )
+    price: Decimal = Field(
+        ge=0,
+        description="Item price",
+        error_messages={
+            "ge": "Price must be positive"
+        }
+    )
+
+# Conditional validation
+class Discount(BaseModel):
+    type: str  # "percentage" or "fixed"
+    value: Decimal
+    
+    @validator("value")
+    def validate_discount(cls, v: Decimal, values: dict[str, Any]) -> Decimal:
+        if "type" not in values:
+            raise ValueError("Discount type required")
+        
+        if values["type"] == "percentage":
+            if not 0 <= v <= 100:
+                raise ValueError(
+                    "Percentage must be between 0 and 100"
+                )
+        else:  # fixed
+            if v < 0:
+                raise ValueError(
+                    "Fixed discount must be positive"
+                )
+        
+        return v
+```
+
+## 📝 Practice Exercise
+
+1. Create a validation system for:
+   - User registration
+   - Product creation
+   - Order processing
+   - Payment validation
+
+2. Implement custom validators for:
+   - Complex passwords
+   - Phone numbers
+   - Credit cards
+   - Date ranges
+
+3. Build error handling for:
+   - Field validation
+   - Business rules
+   - Custom error messages
+   - Error logging
+
+## 📚 Additional Resources
+- [Validation Guide](https://nexios.dev/guide/validation)
+- [Pydantic Documentation](https://pydantic-docs.helpmanual.io/)
+- [Error Handling](https://nexios.dev/guide/errors)
+- [Best Practices](https://nexios.dev/guide/best-practices)
+
+## 🎯 Next Steps
+Tomorrow in [Day 12: File Uploads](../day12/index.md), we'll explore:
+- File upload handling
+- Multipart form data
+- File validation
+- Storage options
+
 # Day 11: Deployment
 
 Welcome to Day 11! Today we'll learn how to deploy Nexios applications to production environments.

@@ -1,395 +1,193 @@
-# Day 3: Request Handling & Responses
+# Day 3: Async, Request, and Response
 
-Welcome to Day 3! Today we'll dive deep into handling different types of requests and crafting various responses in Nexios.
+## Async Function Support
 
-## Request Handling
-
-### 1. Request Properties
+Nexios is built on Python's async/await syntax for high performance:
 
 ```python
 from nexios import NexiosApp
 from nexios.http import Request, Response
+import asyncio
 
 app = NexiosApp()
 
-@app.get("/request-info")
-async def request_info(request: Request, response: Response):
-    return response.json({
+# Basic async route
+@app.get("/")
+async def hello(request: Request, response: Response):
+    return {"message": "Hello, World!"}
+
+# Async with delay
+@app.get("/delayed")
+async def delayed_response(request: Request, response: Response):
+    await asyncio.sleep(1)  # Simulate delay
+    return {"message": "Delayed response"}
+
+# Multiple async operations
+@app.get("/parallel")
+async def parallel_tasksrequest: Request, response: Response():
+    task1 = asyncio.create_task(async_operation1())
+    task2 = asyncio.create_task(async_operation2())
+    
+    results = await asyncio.gather(task1, task2)
+    return {"results": results}
+
+async def async_operation1():
+    await asyncio.sleep(1)
+    return "Operation 1 complete"
+
+async def async_operation2():
+    await asyncio.sleep(2)
+    return "Operation 2 complete"
+```
+
+## Working with Request Objects
+
+The Request object provides access to all request data:
+
+```python
+from nexios import NexiosApp
+from nexios.http import Request
+
+app = NexiosApp()
+
+@app.get("/request-demo")
+async def request_demo(request: Request, response: Response):
+    return {
         "method": request.method,
         "url": str(request.url),
         "headers": dict(request.headers),
         "query_params": dict(request.query_params),
-        "client": {
-            "host": request.client.host,
-            "port": request.client.port
-        }
-    })
-```
+        "client": request.client.host
+    }
 
-### 2. JSON Data
-
-```python
-@app.post("/api/json")
-async def handle_json(request: Request, response: Response):
-    data = await request.json()
-    return response.json({
-        "received": data,
-        "type": "json"
-    })
-```
-
-### 3. Form Data
-
-```python
-@app.post("/api/form")
-async def handle_form(request: Request, response: Response):
-    form = await request.form()
-    return response.json({
-        "form_data": dict(form),
-        "type": "form"
-    })
-```
-
-### 4. File Uploads
-
-```python
-import uuid
-from pathlib import Path
-
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
-
-@app.post("/api/upload")
-async def handle_upload(request: Request, response: Response):
-    files = await request.files()
-    if not files:
-        return response.json(
-            {"error": "No files uploaded"}, 
-            status_code=400
-        )
+@app.post("/data-demo")
+async def data_demo(request: Request, response: Response):
+    # Get JSON data
+    json_data = await request.json
     
-    results = []
-    for file_field, file in files.items():
-        # Generate safe filename
-        ext = Path(file.filename).suffix
-        safe_filename = f"{uuid.uuid4()}{ext}"
-        
-        # Save file
-        file_path = UPLOAD_DIR / safe_filename
-        content = await file.read()
-        
-        with open(file_path, "wb") as f:
-            f.write(content)
-        
-        results.append({
-            "original_name": file.filename,
-            "saved_as": safe_filename,
-            "content_type": file.content_type,
-            "size": len(content)
-        })
+    # Get form data
+    form_data = await request.form
     
-    return response.json({
-        "message": f"Successfully uploaded {len(results)} files",
-        "files": results
-    })
+    # Get raw body
+    body = await request.body
+    
+    return {
+        "json": json_data,
+        "form": dict(form_data),
+        "body_size": len(body)
+    }
 ```
 
-### 5. Streaming Request Data
+## Response Handling
+
+Nexios offers flexible response options:
 
 ```python
-@app.post("/api/stream")
-async def handle_stream(request: Request, response: Response):
-    total_bytes = 0
-    async for chunk in request.stream():
-        # Process each chunk
-        total_bytes += len(chunk)
-    
-    return response.json({
-        "bytes_received": total_bytes,
-        "type": "stream"
-    })
-```
+from nexios import NexiosApp
+from nexios.http import Response
 
-## Response Types
+app = NexiosApp()
 
-### 1. JSON Response
-
-```python
-@app.get("/responses/json")
+# JSON Response
+@app.get("/json")
 async def json_response(request: Request, response: Response):
-    return response.json({
-        "message": "Hello, World!",
-        "numbers": [1, 2, 3],
-        "nested": {
-            "key": "value"
-        }
-    })
-```
-
-### 2. Text Response
-
-```python
-@app.get("/responses/text")
-async def text_response(request: Request, response: Response):
-    return response.text("Hello, World!")
-```
-
-### 3. HTML Response
-
-```python
-@app.get("/responses/html")
-async def html_response(request: Request, response: Response):
-    html = """
-    <!DOCTYPE html>
-    <html>
-        <head>
-            <title>Nexios Example</title>
-        </head>
-        <body>
-            <h1>Hello from Nexios!</h1>
-            <p>This is a HTML response.</p>
-        </body>
-    </html>
-    """
-    return response.html(html)
-```
-
-### 4. File Response
-
-```python
-@app.get("/responses/file/{filename}")
-async def file_response(request: Request, response: Response):
-    filename = request.path_params["filename"]
-    file_path = UPLOAD_DIR / filename
-    
-    if not file_path.exists():
-        return response.json(
-            {"error": "File not found"}, 
-            status_code=404
-        )
-    
-    return response.file(
-        file_path,
-        filename=filename,
-        content_disposition_type="attachment"
+    return response.json(
+        {"message": "Hello"},
+        status_code=200
     )
-```
 
-### 5. Streaming Response
+# HTML Response
+@app.get("/html")
+async def html_response(request: Request, response: Response):
+    return response.json(
+        "<h1>Hello, World!</h1>",
+        status_code=200
+    )
 
-```python
-import asyncio
+# Custom Headers
+@app.get("/custom-headers")
+async def custom_headers(request: Request, response: Response):
+    return response.json(
+        "Custom response",
+        headers={
+            "X-Custom-Header": "value",
+            "Server-Timing": "db;dur=53",
+            "Cache-Control": "max-age=3600"
+        }
+    )
 
-@app.get("/responses/stream")
+# Streaming Response
+@app.get("/stream")
 async def stream_response(request: Request, response: Response):
     async def number_generator():
         for i in range(10):
-            yield f"Number: {i}\n"
+            yield f"data: {i}\n\n"
             await asyncio.sleep(1)
     
     return response.stream(
         number_generator(),
-        content_type="text/plain"
+        media_type="text/event-stream"
     )
 ```
 
-## Custom Response Headers
+## Headers and Status Codes
 
-```python
-@app.get("/responses/custom-headers")
-async def custom_headers(request: Request, response: Response):
-    return response.json(
-        {"message": "Hello"},
-        headers={
-            "X-Custom-Header": "Custom Value",
-            "X-Response-Time": "1ms"
-        }
-    )
-```
-
-## Status Codes
-
-```python
-@app.get("/responses/status")
-async def status_codes(request: Request, response: Response):
-    status = request.query_params.get("code", "200")
-    
-    return response.json(
-        {"message": f"Status code: {status}"},
-        status_code=int(status)
-    )
-```
-
-## Exercises
-
-1. **File Upload System**:
-   Create a complete file upload system with:
-   - Multiple file upload support
-   - File type validation
-   - Size limits
-   - Progress tracking
-   - File listing and management
-
-2. **Streaming Data Handler**:
-   Implement a streaming data handler that:
-   - Accepts large data streams
-   - Processes data in chunks
-   - Provides progress updates
-   - Handles errors gracefully
-
-3. **Response Types**:
-   Create endpoints that demonstrate:
-   - CSV file generation
-   - PDF file generation
-   - Image manipulation
-   - ZIP file creation
-
-## Mini-Project: File Sharing API
-
-Create a simple file sharing API with the following features:
+Working with HTTP headers and status codes:
 
 ```python
 from nexios import NexiosApp
-from nexios.http import Request, Response
-from pathlib import Path
-import uuid
-import shutil
-import mimetypes
+from nexios import status
 
 app = NexiosApp()
 
-# Configure storage
-STORAGE_DIR = Path("storage")
-STORAGE_DIR.mkdir(exist_ok=True)
-
-# Store file metadata
-files_db = {}
-
-@app.post("/files/upload")
-async def upload_file(request: Request, response: Response):
-    files = await request.files
-    if not files:
-        return response.json(
-            {"error": "No file uploaded"}, 
-            status_code=400
-        )
-    
-    results = []
-    for file_field, file in files.items():
-        # Generate unique ID and safe filename
-        file_id = str(uuid.uuid4())
-        ext = Path(file.filename).suffix
-        safe_filename = f"{file_id}{ext}"
-        
-        # Save file
-        file_path = STORAGE_DIR / safe_filename
-        content = await file.read()
-        
-        with open(file_path, "wb") as f:
-            f.write(content)
-        
-        # Store metadata
-        files_db[file_id] = {
-            "id": file_id,
-            "original_name": file.filename,
-            "saved_as": safe_filename,
-            "content_type": file.content_type,
-            "size": len(content)
-        }
-        
-        results.append(files_db[file_id])
-    
-    return response.json({
-        "message": "Files uploaded successfully",
-        "files": results
-    })
-
-@app.get("/files")
-async def list_files(request: Request, response: Response):
-    return response.json({
-        "files": list(files_db.values())
-    })
-
-@app.get("/files/{file_id}")
-async def get_file(request: Request, response: Response):
-    file_id = request.path_params["file_id"]
-    file_info = files_db.get(file_id)
-    
-    if not file_info:
-        return response.json(
-            {"error": "File not found"}, 
-            status_code=404
-        )
-    
-    file_path = STORAGE_DIR / file_info["saved_as"]
-    return response.file(
-        file_path,
-        filename=file_info["original_name"],
-        content_disposition_type="attachment"
+# Status codes
+@app.post("/items")
+async def create_item(request: Request, response: Response):
+    return response.json(
+      {"id": 1},
+        status_code=status.HTTP_201_CREATED
     )
 
-@app.delete("/files/{file_id}")
-async def delete_file(request: Request, response: Response):
-    file_id = request.path_params["file_id"]
-    file_info = files_db.get(file_id)
-    
-    if not file_info:
-        return response.json(
-            {"error": "File not found"}, 
-            status_code=404
-        )
-    
-    file_path = STORAGE_DIR / file_info["saved_as"]
-    file_path.unlink(missing_ok=True)
-    del files_db[file_id]
-    
-    return response.json({
-        "message": "File deleted successfully"
-    })
+@app.get("/not-found")
+async def not_found(request: Request, response: Response):
+    return response.json(
+        content={"error": "Resource not found"},
+        status_code=status.HTTP_404_NOT_FOUND
+    )
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=5000, reload=True)
+# Security headers
+@app.get("/secure")
+async def secure_response(request: Request, response: Response):
+    return response.json(
+        {"data": "secure content"},
+        headers={
+            "X-Frame-Options": "DENY",
+            "X-Content-Type-Options": "nosniff",
+            "X-XSS-Protection": "1; mode=block",
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains"
+        }
+    )
 ```
 
-## Key Concepts Learned
+## Practice Exercise
 
-- Request properties and methods
-- Handling different request types
-- File upload handling
-- Streaming data
-- Various response types
-- Custom headers
-- Status codes
-- File handling and storage
+Create an API with these features:
+
+1. Async data processing endpoint
+2. File upload with progress
+3. Streaming response
+4. Custom error handling
+5. Security headers middleware
 
 ## Additional Resources
-
-- [Request Handling Guide](https://nexios.dev/guide/request)
-- [Response Types Documentation](https://nexios.dev/guide/response)
-- [File Upload Tutorial](https://nexios.dev/guide/file-upload)
-- [Streaming Data Guide](https://nexios.dev/guide/streaming)
-
-## Homework
-
-1. Add features to the File Sharing API:
-   - File expiration
-   - Access controls
-   - File sharing links
-   - File preview
-
-2. Create a real-time file upload progress tracker:
-   - Upload progress
-   - Cancel upload
-   - Resume upload
-   - Chunk upload
-
-3. Read about:
-   - WebSocket responses
-   - Server-Sent Events
-   - File compression
-   - Content negotiation
+- [Async/Await in Python](https://docs.python.org/3/library/asyncio.html)
+- [HTTP Status Codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
+- [Security Headers](https://owasp.org/www-project-secure-headers/)
+- [Event Stream Spec](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)
 
 ## Next Steps
-
-Tomorrow, we'll explore path and query parameters in detail in [Day 4: Path & Query Parameters](../day04/index.md). 
+Tomorrow in [Day 4: Class-Based Views with APIHandler](../day04/index.md), we'll explore:
+- Using `APIHandler`
+- HTTP method handlers
+- Structured responses
+- Class-based organization

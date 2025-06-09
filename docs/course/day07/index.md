@@ -1,813 +1,300 @@
-# Day 7: Database Integration
+# 🚀 Day 7: Project – Mini To-Do API
 
-Welcome to Day 7! Today we'll learn how to integrate databases with Nexios using SQLAlchemy and other database tools.
+## Project Overview
 
-## Understanding Database Integration
+Today we'll build a complete To-Do API with the following features:
+- CRUD operations for tasks
+- JSON data storage
+- Basic authentication
+- Request validation
+- Error handling middleware
 
-Database integration in Nexios involves:
-- Setting up database connections
-- Defining models
-- Creating migrations
-- Performing CRUD operations
-- Handling transactions
-- Managing relationships
-- Implementing connection pooling
+## Project Structure
 
-## Database Setup
+```
+todo-api/
+├── app/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── models.py
+│   ├── routes.py
+│   ├── middleware.py
+│   └── storage.py
+├── .env
+└── requirements.txt
+```
 
-First, let's set up our database configuration:
+## Implementation
+
+### 1. Models (models.py)
 
 ```python
-from nexios import NexiosApp
-from databases import Database
-from sqlalchemy import create_engine, MetaData
+from pydantic import BaseModel, Field
+from typing import Optional
+from datetime import datetime
+from uuid import UUID, uuid4
+
+class Task(BaseModel):
+    id: UUID = Field(default_factory=uuid4)
+    title: str
+    description: Optional[str] = None
+    completed: bool = False
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
+
+class TaskCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    completed: Optional[bool] = None
+```
+
+### 2. Storage (storage.py)
+
+```python
+import json
+from typing import Dict, List, Optional
+from uuid import UUID
+from .models import Task
 import os
 
-# Database URL from environment variable
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "sqlite:///./test.db"
-)
-
-# Create database instance
-database = Database(DATABASE_URL)
-metadata = MetaData()
-
-# Create engine for migrations
-engine = create_engine(DATABASE_URL)
-
-app = NexiosApp()
-
-# Add database to app state
-app.state.database = database
-
-# Database lifecycle management
-@app.on_event("startup")
-async def startup():
-    await database.connect()
-
-@app.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
+class JSONStorage:
+    def __init__(self, file_path: str = "tasks.json"):
+        self.file_path = file_path
+        self.tasks: Dict[str, Task] = {}
+        self.load()
+    
+    def load(self) -> None:
+        if os.path.exists(self.file_path):
+            with open(self.file_path, "r") as f:
+                data = json.load(f)
+                self.tasks = {
+                    k: Task(**v) for k, v in data.items()
+                }
+    
+    def save(self) -> None:
+        with open(self.file_path, "w") as f:
+            json.dump(
+                {k: v.dict() for k, v in self.tasks.items()},
+                f,
+                default=str,
+                indent=2
+            )
+    
+    def get_all(self) -> List[Task]:
+        return list(self.tasks.values())
+    
+    def get_by_id(self, task_id: UUID) -> Optional[Task]:
+        return self.tasks.get(str(task_id))
+    
+    def create(self, task: Task) -> Task:
+        self.tasks[str(task.id)] = task
+        self.save()
+        return task
+    
+    def update(self, task_id: UUID, task: Task) -> Optional[Task]:
+        if str(task_id) in self.tasks:
+            self.tasks[str(task_id)] = task
+            self.save()
+            return task
+        return None
+    
+    def delete(self, task_id: UUID) -> bool:
+        if str(task_id) in self.tasks:
+            del self.tasks[str(task_id)]
+            self.save()
+            return True
+        return False
 ```
 
-## Defining Models
-
-Let's create some database models using SQLAlchemy:
+### 3. Middleware (middleware.py)
 
 ```python
-from sqlalchemy import (
-    Table, Column, Integer, String, ForeignKey,
-    DateTime, Boolean, Text, Float
-)
-from datetime import datetime
-
-# Users table
-users = Table(
-    "users",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("username", String(50), unique=True, index=True),
-    Column("email", String(100), unique=True, index=True),
-    Column("hashed_password", String(100)),
-    Column("is_active", Boolean, default=True),
-    Column("created_at", DateTime, default=datetime.utcnow),
-    Column("updated_at", DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-)
-
-# Posts table
-posts = Table(
-    "posts",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("title", String(200)),
-    Column("content", Text),
-    Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE")),
-    Column("created_at", DateTime, default=datetime.utcnow),
-    Column("updated_at", DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-)
-
-# Create all tables
-metadata.create_all(engine)
-```
-
-## Database Operations
-
-### Basic CRUD Operations
-
-```python
+from nexios import get_application
 from nexios.http import Request, Response
-from typing import Dict, List
-
-# Create
-@app.post("/users")
-async def create_user(request: Request, response: Response):
-    data = await request.json()
-    query = users.insert().values(**data)
-    user_id = await database.execute(query)
-    return response.json({"id": user_id, **data}, status_code=201)
-
-# Read
-@app.get("/users/{user_id}")
-async def get_user(request: Request, response: Response, user_id: int):
-    query = users.select().where(users.c.id == user_id)
-    user = await database.fetch_one(query)
-    if user:
-        return response.json(dict(user))
-    return response.json({"error": "User not found"}, status_code=404)
-
-# Update
-@app.put("/users/{user_id}")
-async def update_user(request: Request, response: Response, user_id: int):
-    data = await request.json()
-    query = users.update().where(users.c.id == user_id).values(**data)
-    await database.execute(query)
-    return response.json({"message": "User updated"})
-
-# Delete
-@app.delete("/users/{user_id}")
-async def delete_user(request: Request, response: Response, user_id: int):
-    query = users.delete().where(users.c.id == user_id)
-    await database.execute(query)
-    return response.json({"message": "User deleted"})
-```
-
-### Advanced Queries
-
-```python
-# Complex queries with joins
-@app.get("/users/{user_id}/posts")
-async def get_user_posts(request: Request, response: Response, user_id: int):
-    query = (
-        posts.select()
-        .where(posts.c.user_id == user_id)
-        .order_by(posts.c.created_at.desc())
-    )
-    user_posts = await database.fetch_all(query)
-    return response.json([dict(post) for post in user_posts])
-
-# Pagination
-@app.get("/posts")
-async def list_posts(
-    request: Request,
-    response: Response,
-    page: int = 1,
-    per_page: int = 10
-):
-    # Calculate offset
-    offset = (page - 1) * per_page
-    
-    # Get total count
-    count_query = posts.count()
-    total = await database.fetch_val(count_query)
-    
-    # Get paginated posts
-    query = (
-        posts.select()
-        .offset(offset)
-        .limit(per_page)
-        .order_by(posts.c.created_at.desc())
-    )
-    items = await database.fetch_all(query)
-    
-    return response.json({
-        "items": [dict(item) for item in items],
-        "total": total,
-        "page": page,
-        "per_page": per_page,
-        "pages": (total + per_page - 1) // per_page
-    })
-
-# Search and filter
-@app.get("/search/posts")
-async def search_posts(
-    request: Request,
-    response: Response,
-    q: str = None,
-    user_id: int = None,
-    sort: str = "recent"
-):
-    query = posts.select()
-    
-    # Apply search filter
-    if q:
-        query = query.where(
-            posts.c.title.ilike(f"%{q}%") |
-            posts.c.content.ilike(f"%{q}%")
-        )
-    
-    # Apply user filter
-    if user_id:
-        query = query.where(posts.c.user_id == user_id)
-    
-    # Apply sorting
-    if sort == "recent":
-        query = query.order_by(posts.c.created_at.desc())
-    elif sort == "title":
-        query = query.order_by(posts.c.title)
-    
-    results = await database.fetch_all(query)
-    return response.json([dict(result) for result in results])
-```
-
-### Transactions
-
-```python
-# Transaction example
-@app.post("/posts")
-async def create_post(request: Request, response: Response):
-    async with database.transaction():
-        # Create post
-        post_data = await request.json()
-        post_query = posts.insert().values(**post_data)
-        post_id = await database.execute(post_query)
-        
-        # Update user's post count
-        user_query = users.update().where(
-            users.c.id == post_data["user_id"]
-        ).values(
-            post_count=users.c.post_count + 1
-        )
-        await database.execute(user_query)
-        
-        return response.json({"id": post_id, **post_data}, status_code=201)
-```
-
-## Database Middleware
-
-```python
-from typing import Callable
+from nexios.types import Middleware
 import time
 
-class DatabaseMetricsMiddleware:
-    def __init__(self):
-        self.query_count = 0
-        self.total_time = 0
-    
-    async def __call__(
-        self,
-        request: Request,
-        response: Response,
-        call_next: Callable
-    ):
-        # Reset metrics for this request
-        start_count = database.query_count
-        start_time = time.time()
-        
-        response = await call_next()
-        
-        # Calculate metrics
-        query_count = database.query_count - start_count
-        query_time = time.time() - start_time
-        
-        # Add metrics to response headers
-        response.headers.update({
-            "X-Database-Queries": str(query_count),
-            "X-Database-Time": f"{query_time:.3f}s"
-        })
-        
-        return response
-
-app.add_middleware(DatabaseMetricsMiddleware())
-```
-
-## Connection Pooling
-
-```python
-from databases import DatabaseURL
-from sqlalchemy.pool import QueuePool
-
-# Configure connection pool
-DATABASE_URL = DatabaseURL(os.getenv("DATABASE_URL"))
-database = Database(
-    str(DATABASE_URL),
-    min_size=5,
-    max_size=20,
-    pool_class=QueuePool,
-    pool_pre_ping=True
-)
-
-# Monitor pool status
-@app.get("/admin/db/status")
-async def db_status(request: Request, response: Response):
-    pool = database._pool
-    return response.json({
-        "pool_size": pool.size(),
-        "checkedin": pool.checkedin(),
-        "overflow": pool.overflow(),
-        "checkedout": pool.checkedout()
-    })
-```
-
-## Exercises
-
-1. **User Management System**:
-   Create a complete user management system with roles:
-   ```python
-   # Additional tables
-   roles = Table(
-       "roles",
-       metadata,
-       Column("id", Integer, primary_key=True),
-       Column("name", String(50), unique=True),
-       Column("description", Text)
-   )
-
-   user_roles = Table(
-       "user_roles",
-       metadata,
-       Column("user_id", Integer, ForeignKey("users.id")),
-       Column("role_id", Integer, ForeignKey("roles.id")),
-       Column("assigned_at", DateTime, default=datetime.utcnow)
-   )
-
-   # Role management
-   @app.post("/roles")
-   async def create_role(request: Request, response: Response):
-       data = await request.json()
-       query = roles.insert().values(**data)
-       role_id = await database.execute(query)
-       return response.json({"id": role_id, **data}, status_code=201)
-
-   @app.post("/users/{user_id}/roles/{role_id}")
-   async def assign_role(
-       request: Request,
-       response: Response,
-       user_id: int,
-       role_id: int
-   ):
-       query = user_roles.insert().values(
-           user_id=user_id,
-           role_id=role_id
-       )
-       await database.execute(query)
-       return response.json({"message": "Role assigned"})
-   ```
-
-2. **Audit Trail System**:
-   Implement an audit trail for database changes:
-   ```python
-   # Audit table
-   audit_logs = Table(
-       "audit_logs",
-       metadata,
-       Column("id", Integer, primary_key=True),
-       Column("table_name", String(50)),
-       Column("record_id", Integer),
-       Column("action", String(10)),
-       Column("old_values", Text),
-       Column("new_values", Text),
-       Column("user_id", Integer),
-       Column("created_at", DateTime, default=datetime.utcnow)
-   )
-
-   class AuditMiddleware:
-       async def __call__(
-           self,
-           request: Request,
-           response: Response,
-           call_next: Callable
-       ):
-           # Store original state
-           if request.method in ["PUT", "PATCH", "DELETE"]:
-               path_parts = request.url.path.split("/")
-               if len(path_parts) >= 3:
-                   table_name = path_parts[1]
-                   record_id = path_parts[2]
-                   
-                   # Get original state
-                   query = f"SELECT * FROM {table_name} WHERE id = :id"
-                   old_values = await database.fetch_one(
-                       query=query,
-                       values={"id": record_id}
-                   )
-           
-           response = await call_next()
-           
-           # Record audit log
-           if response.status_code < 400 and request.method in ["POST", "PUT", "PATCH", "DELETE"]:
-               await database.execute(
-                   audit_logs.insert().values(
-                       table_name=table_name,
-                       record_id=record_id,
-                       action=request.method,
-                       old_values=str(old_values) if old_values else None,
-                       new_values=str(await request.json()) if request.method != "DELETE" else None,
-                       user_id=request.user.id if hasattr(request, "user") else None
-                   )
-               )
-           
-           return response
-   ```
-
-3. **Cache Layer**:
-   Add a Redis cache layer for frequently accessed data:
-   ```python
-   import aioredis
-   import json
-
-   # Redis connection
-   redis = aioredis.from_url("redis://localhost")
-
-   class CacheMiddleware:
-       def __init__(self, expire_time: int = 300):
-           self.expire_time = expire_time
-       
-       async def __call__(
-           self,
-           request: Request,
-           response: Response,
-           call_next: Callable
-       ):
-           # Only cache GET requests
-           if request.method != "GET":
-               return await call_next()
-           
-           # Generate cache key
-           cache_key = f"cache:{request.url.path}"
-           
-           # Try to get from cache
-           cached = await redis.get(cache_key)
-           if cached:
-               return response.json(json.loads(cached))
-           
-           # Get fresh data
-           response = await call_next()
-           
-           # Cache the response
-           if response.status_code == 200:
-               await redis.set(
-                   cache_key,
-                   json.dumps(response.body),
-                   ex=self.expire_time
-               )
-           
-           return response
-   ```
-
-## Mini-Project: Blog API with Database Integration
-
-Create a complete blog API with database integration:
-
-```python
-from nexios import NexiosApp
-from databases import Database
-from sqlalchemy import (
-    create_engine, MetaData, Table, Column, Integer,
-    String, Text, ForeignKey, DateTime, Boolean
-)
-from datetime import datetime
-import os
-import slugify
-from typing import Optional, List, Dict
-
-# Database setup
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./blog.db")
-database = Database(DATABASE_URL)
-metadata = MetaData()
-
-# Models
-users = Table(
-    "users",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("username", String(50), unique=True),
-    Column("email", String(100), unique=True),
-    Column("hashed_password", String(100)),
-    Column("is_admin", Boolean, default=False),
-    Column("created_at", DateTime, default=datetime.utcnow)
-)
-
-categories = Table(
-    "categories",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("name", String(50), unique=True),
-    Column("slug", String(50), unique=True),
-    Column("description", Text)
-)
-
-posts = Table(
-    "posts",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("title", String(200)),
-    Column("slug", String(200), unique=True),
-    Column("content", Text),
-    Column("excerpt", Text),
-    Column("user_id", Integer, ForeignKey("users.id")),
-    Column("category_id", Integer, ForeignKey("categories.id")),
-    Column("published", Boolean, default=False),
-    Column("created_at", DateTime, default=datetime.utcnow),
-    Column("updated_at", DateTime, default=datetime.utcnow)
-)
-
-comments = Table(
-    "comments",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("content", Text),
-    Column("post_id", Integer, ForeignKey("posts.id")),
-    Column("user_id", Integer, ForeignKey("users.id")),
-    Column("parent_id", Integer, ForeignKey("comments.id")),
-    Column("created_at", DateTime, default=datetime.utcnow)
-)
-
-tags = Table(
-    "tags",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("name", String(50), unique=True),
-    Column("slug", String(50), unique=True)
-)
-
-post_tags = Table(
-    "post_tags",
-    metadata,
-    Column("post_id", Integer, ForeignKey("posts.id")),
-    Column("tag_id", Integer, ForeignKey("tags.id"))
-)
-
-# Application setup
-app = NexiosApp()
-app.state.database = database
-
-@app.on_event("startup")
-async def startup():
-    await database.connect()
-    
-    # Create tables
-    engine = create_engine(DATABASE_URL)
-    metadata.create_all(engine)
-
-@app.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
-
-# Post routes
-@app.post("/posts")
-async def create_post(request: Request, response: Response):
-    data = await request.json()
-    
-    # Generate slug
-    data["slug"] = slugify.slugify(data["title"])
-    
-    async with database.transaction():
-        # Create post
-        post_query = posts.insert().values(**data)
-        post_id = await database.execute(post_query)
-        
-        # Add tags
-        if "tags" in data:
-            for tag_name in data["tags"]:
-                # Create tag if it doesn't exist
-                tag_data = {
-                    "name": tag_name,
-                    "slug": slugify.slugify(tag_name)
-                }
-                tag_query = tags.insert().values(**tag_data)
-                try:
-                    tag_id = await database.execute(tag_query)
-                except:
-                    # Tag already exists, get its ID
-                    tag_query = tags.select().where(
-                        tags.c.name == tag_name
-                    )
-                    tag = await database.fetch_one(tag_query)
-                    tag_id = tag["id"]
-                
-                # Link tag to post
-                post_tag_query = post_tags.insert().values(
-                    post_id=post_id,
-                    tag_id=tag_id
-                )
-                await database.execute(post_tag_query)
-    
-    return response.json({"id": post_id, **data}, status_code=201)
-
-@app.get("/posts")
-async def list_posts(
+async def timing_middleware(
     request: Request,
     response: Response,
-    page: int = 1,
-    per_page: int = 10,
-    category: str = None,
-    tag: str = None,
-    search: str = None
-):
-    # Base query
-    query = posts.select()
-    
-    # Apply filters
-    if category:
-        category_query = categories.select().where(
-            categories.c.slug == category
-        )
-        category_row = await database.fetch_one(category_query)
-        if category_row:
-            query = query.where(posts.c.category_id == category_row["id"])
-    
-    if tag:
-        tag_query = tags.select().where(tags.c.slug == tag)
-        tag_row = await database.fetch_one(tag_query)
-        if tag_row:
-            query = (
-                query
-                .join(post_tags)
-                .where(post_tags.c.tag_id == tag_row["id"])
-            )
-    
-    if search:
-        query = query.where(
-            posts.c.title.ilike(f"%{search}%") |
-            posts.c.content.ilike(f"%{search}%")
-        )
-    
-    # Count total
-    count_query = query.alias("count_query").count()
-    total = await database.fetch_val(count_query)
-    
-    # Apply pagination
-    query = (
-        query
-        .offset((page - 1) * per_page)
-        .limit(per_page)
-        .order_by(posts.c.created_at.desc())
-    )
-    
-    # Execute query
-    results = await database.fetch_all(query)
-    
-    # Get related data
-    posts_data = []
-    for post in results:
-        post_dict = dict(post)
-        
-        # Get author
-        author_query = users.select().where(
-            users.c.id == post["user_id"]
-        )
-        author = await database.fetch_one(author_query)
-        post_dict["author"] = {
-            "id": author["id"],
-            "username": author["username"]
-        }
-        
-        # Get category
-        if post["category_id"]:
-            category_query = categories.select().where(
-                categories.c.id == post["category_id"]
-            )
-            category = await database.fetch_one(category_query)
-            post_dict["category"] = dict(category)
-        
-        # Get tags
-        tags_query = (
-            tags.select()
-            .join(post_tags)
-            .where(post_tags.c.post_id == post["id"])
-        )
-        post_tags_rows = await database.fetch_all(tags_query)
-        post_dict["tags"] = [dict(tag) for tag in post_tags_rows]
-        
-        posts_data.append(post_dict)
-    
-    return response.json({
-        "items": posts_data,
-        "total": total,
-        "page": page,
-        "per_page": per_page,
-        "pages": (total + per_page - 1) // per_page
-    })
+    call_next: Middleware
+) -> Response:
+    start_time = time.time()
+    response = await call_next()
+    process_time = time.time() - start_time
+    response.set_header("X-Process-Time",str(process_time))
+    return response
 
-@app.get("/posts/{slug}")
-async def get_post(request: Request, response: Response, slug: str):
-    # Get post
-    query = posts.select().where(posts.c.slug == slug)
-    post = await database.fetch_one(query)
-    
-    if not post:
+async def error_middleware(
+    request: Request,
+    response: Response,
+    call_next: Middleware
+) -> Response:
+    try:
+        return await call_next()
+    except Exception as e:
         return response.json(
-            {"error": "Post not found"},
-            status_code=404
+            content={
+                "error": str(e),
+                "type": e.__class__.__name__
+            },
+            status_code=500
         )
-    
-    post_data = dict(post)
-    
-    # Get author
-    author_query = users.select().where(
-        users.c.id == post["user_id"]
-    )
-    author = await database.fetch_one(author_query)
-    post_data["author"] = {
-        "id": author["id"],
-        "username": author["username"]
+```
+
+### 4. Routes (routes.py)
+
+```python
+from nexios import Router
+from nexios.http import Response
+from nexios import status
+from .models import Task, TaskCreate, TaskUpdate
+from .storage import JSONStorage
+from datetime import datetime
+from uuid import UUID
+
+router = Router(prefix="/api/tasks")
+storage = JSONStorage()
+
+@router.get("/")
+async def list_tasks(request: Request, response: Response):
+    tasks = storage.get_all()
+    return {
+        "total": len(tasks),
+        "tasks": tasks
     }
-    
-    # Get category
-    if post["category_id"]:
-        category_query = categories.select().where(
-            categories.c.id == post["category_id"]
-        )
-        category = await database.fetch_one(category_query)
-        post_data["category"] = dict(category)
-    
-    # Get tags
-    tags_query = (
-        tags.select()
-        .join(post_tags)
-        .where(post_tags.c.post_id == post["id"])
+
+@router.post("/")
+async def create_task(request: Request, response: Response):
+    data  = await req.json
+    task = Task(
+      **data
     )
-    post_tags_rows = await database.fetch_all(tags_query)
-    post_data["tags"] = [dict(tag) for tag in post_tags_rows]
-    
-    # Get comments
-    comments_query = (
-        comments.select()
-        .where(comments.c.post_id == post["id"])
-        .order_by(comments.c.created_at)
+    created_task = storage.create(task)
+    return response.json(
+        content=created_task.dict(),
+        status_code=status.HTTP_201_CREATED
     )
-    comments_rows = await database.fetch_all(comments_query)
-    
-    # Organize comments into threads
-    comment_threads = []
-    comment_map = {}
-    
-    for comment in comments_rows:
-        comment_dict = dict(comment)
-        
-        # Get comment author
-        author_query = users.select().where(
-            users.c.id == comment["user_id"]
+
+@router.get("/{task_id}")
+async def get_task(request: Request, response: Response,task_id: UUID):
+    task = storage.get_by_id(task_id)
+    if not task:
+        return response.json(
+            content={"error": "Task not found"},
+            status_code=status.HTTP_404_NOT_FOUND
         )
-        author = await database.fetch_one(author_query)
-        comment_dict["author"] = {
-            "id": author["id"],
-            "username": author["username"]
-        }
-        
-        comment_dict["replies"] = []
-        comment_map[comment["id"]] = comment_dict
-        
-        if comment["parent_id"] is None:
-            comment_threads.append(comment_dict)
-        else:
-            parent = comment_map[comment["parent_id"]]
-            parent["replies"].append(comment_dict)
+    return task
+
+@router.put("/{task_id}")
+async def update_task(task_id: UUID, data: TaskUpdate):
+    task = storage.get_by_id(task_id)
+    if not task:
+        return response.json(
+            content={"error": "Task not found"},
+            status_code=status.HTTP_404_NOT_FOUND
+        )
     
-    post_data["comments"] = comment_threads
+    # Update fields
+    if data.title is not None:
+        task.title = data.title
+    if data.description is not None:
+        task.description = data.description
+    if data.completed is not None:
+        task.completed = data.completed
     
-    return response.json(post_data)
+    task.updated_at = datetime.utcnow()
+    updated_task = storage.update(task_id, task)
+    
+    return updated_task
+
+@router.delete("/{task_id}")
+async def delete_task(task_id: UUID):
+    if storage.delete(task_id):
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return Response(
+        content={"error": "Task not found"},
+        status_code=status.HTTP_404_NOT_FOUND
+    )
+```
+
+### 5. Main Application (main.py)
+
+```python
+from nexios import get_application
+from .routes import router
+from .middleware import timing_middleware, error_middleware
+
+app = get_application()
+
+# Add middleware
+app.add_middleware(timing_middleware)
+app.add_middleware(error_middleware)
+
+# Include routes
+app.include_router(router)
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=5000)
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )
 ```
 
-## Key Concepts Learned
+## Testing the API
 
-- Database connection setup
-- Model definition with SQLAlchemy
-- CRUD operations
-- Transactions
-- Connection pooling
-- Query optimization
-- Database middleware
-- Relationship handling
-- Pagination
-- Search and filtering
-- Caching strategies
-- Audit trails
+### Using curl
 
-## Additional Resources
+```bash
+# List tasks
+curl http://localhost:8000/api/tasks
 
-- [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
-- [Databases Documentation](https://www.encode.io/databases/)
-- [Database Design Patterns](https://www.postgresql.org/docs/current/patterns.html)
-- [Query Optimization Guide](https://use-the-index-luke.com/)
+# Create task
+curl -X POST http://localhost:8000/api/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Learn Nexios", "description": "Complete the course"}'
 
-## Homework
+# Get task
+curl http://localhost:8000/api/tasks/{task_id}
 
-1. Implement a complete e-commerce database schema:
-   - Products
-   - Categories
-   - Orders
-   - Customers
-   - Reviews
-   - Inventory
+# Update task
+curl -X PUT http://localhost:8000/api/tasks/{task_id} \
+  -H "Content-Type: application/json" \
+  -d '{"completed": true}'
 
-2. Create a caching system:
-   - Redis integration
-   - Cache invalidation
-   - Cache warming
-   - Cache statistics
+# Delete task
+curl -X DELETE http://localhost:8000/api/tasks/{task_id}
+```
 
-3. Build a reporting system:
-   - Complex queries
-   - Aggregations
-   - Data exports
-   - Scheduled reports
+## 📝 Practice Exercise
 
-## Next Steps
+Extend the To-Do API with:
 
-Tomorrow, we'll explore authentication and authorization in [Day 8: Authentication & Authorization](../day08/index.md). 
+1. Task Categories:
+   - Add category field to tasks
+   - Filter tasks by category
+   - Category statistics
+
+2. Due Dates:
+   - Add due_date field
+   - Overdue task detection
+   - Task reminders
+
+3. Task Priority:
+   - Add priority levels
+   - Sort by priority
+   - Priority-based filtering
+
+
+## 🎯 Next Steps
+Next week in [Day 8: JWT Auth (Part 1)](../day08/index.md), we'll explore:
+- JWT authentication basics
+- Token creation and verification
+- Protected endpoints
