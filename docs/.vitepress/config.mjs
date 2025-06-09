@@ -44,6 +44,8 @@ export default defineConfig({
             { text: 'CLI', link: '/guide/cli' },
             { text: "What is Asgi?", link: '/guide/asgi' },
             { text : "Async Python", link: '/guide/async-python' },
+            { text : "Why Nexios?", link: '/guide/why-nexios' },
+            { text : "Core Concepts", link: '/guide/concepts' },
           ]
         },
         {
