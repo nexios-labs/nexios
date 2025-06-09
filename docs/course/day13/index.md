@@ -5,19 +5,19 @@
 Setting up WebSocket support:
 
 ```python
-from nexios import get_application
+from nexios import NexiosApp
 from nexios.websockets import WebSocket
 from typing import Dict, Set
 import json
 
-app = get_application()
+app = NexiosApp()
 
 # Store active connections
 connections: Dict[str, Set[WebSocket]] = {
     "default": set()
 }
 
-@app.websocket("/ws")
+@app.ws_route("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     connections["default"].add(websocket)
@@ -31,7 +31,7 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
 
 # Room-based WebSocket
-@app.websocket("/ws/{room_id}")
+@app.ws_route("/ws/{room_id}")
 async def room_websocket(websocket: WebSocket, room_id: str):
     if room_id not in connections:
         connections[room_id] = set()

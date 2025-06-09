@@ -1,20 +1,15 @@
-# 🚀 Day 11: Request Validation
+# Day 11: Request Validation with Pydantic
 
 ## Input Validation Basics
 
 Implementing basic input validation:
 
 ```python
-from nexios import get_application
-from nexios.validation import (
-    Validator,
-    Field,
-    ValidationError
-)
+from nexios import NexiosApp
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr,ValidationError
 
-app = get_application()
+app = NexiosApp()
 
 # Basic field validation
 class UserCreate(BaseModel):
@@ -29,8 +24,13 @@ class UserCreate(BaseModel):
     interests: List[str] = Field(max_items=10)
 
 @app.post("/users")
-async def create_user(data: UserCreate):
-    # Data is already validated
+async def create_user(request: Request, response: Response):
+    request_data = await request.json
+    try:
+      data =  UserCreate(**request_data)
+    except as err:
+      return response.json(err.data)
+
     return {
         "username": data.username,
         "email": data.email,
@@ -38,93 +38,8 @@ async def create_user(data: UserCreate):
         "interests": data.interests
     }
 
-# Nested validation
-class Address(BaseModel):
-    street: str
-    city: str
-    country: str
-    postal_code: str = Field(pattern="^[0-9A-Z-]+$")
-
-class Profile(BaseModel):
-    bio: Optional[str] = Field(max_length=500)
-    website: Optional[str] = Field(pattern="^https?://.*")
-    address: Address
-
-class UserProfile(BaseModel):
-    user_id: str
-    profile: Profile
-
-@app.put("/users/{user_id}/profile")
-async def update_profile(
-    user_id: str,
-    data: UserProfile
-):
-    if data.user_id != user_id:
-        raise ValidationError("User ID mismatch")
-    
-    return data.dict()
 ```
 
-## Schema Validation
-
-Advanced schema validation:
-
-```python
-from datetime import datetime
-from uuid import UUID
-from decimal import Decimal
-from enum import Enum
-
-# Custom types
-class UserRole(str, Enum):
-    ADMIN = "admin"
-    MODERATOR = "mod"
-    USER = "user"
-
-class PaymentStatus(str, Enum):
-    PENDING = "pending"
-    COMPLETED = "completed"
-    FAILED = "failed"
-
-# Complex schema
-class Product(BaseModel):
-    id: UUID
-    name: str = Field(min_length=1, max_length=100)
-    description: Optional[str]
-    price: Decimal = Field(ge=0)
-    stock: int = Field(ge=0)
-    categories: List[str] = Field(min_items=1)
-    created_at: datetime
-    updated_at: Optional[datetime]
-
-class OrderItem(BaseModel):
-    product_id: UUID
-    quantity: int = Field(gt=0)
-    unit_price: Decimal
-
-class Order(BaseModel):
-    id: UUID
-    user_id: UUID
-    items: List[OrderItem] = Field(min_items=1)
-    total: Decimal = Field(ge=0)
-    status: PaymentStatus
-    created_at: datetime
-
-@app.post("/orders")
-async def create_order(order: Order):
-    # Validate total matches items
-    calculated_total = sum(
-        item.quantity * item.unit_price
-        for item in order.items
-    )
-    
-    if calculated_total != order.total:
-        raise ValidationError(
-            "Order total doesn't match items"
-        )
-    
-    return order.dict()
-```
 
 ## Custom Validators
 
@@ -209,15 +124,15 @@ class Contact(BaseModel):
 Handling validation errors:
 
 ```python
-from nexios.exceptions import RequestValidationError
-from nexios.responses import JSONResponse
 from typing import Any
-
-@app.exception_handler(RequestValidationError)
+from pydantic imprt ValidationError
+from nexios.http import Request, Response
+@app.add_exception_handler(ValidationError)
 async def validation_error_handler(
     request: Request,
-    exc: RequestValidationError
-) -> JSONResponse:
+    response:Response,
+    exc: ValidationError
+) :
     errors = []
     
     for error in exc.errors():
@@ -227,12 +142,12 @@ async def validation_error_handler(
             "type": error["type"]
         })
     
-    return JSONResponse(
-        status_code=422,
+    return response.json(
         content={
             "detail": "Validation error",
             "errors": errors
         }
+        status_code=422,
     )
 
 # Custom error messages
@@ -299,10 +214,9 @@ class Discount(BaseModel):
    - Error logging
 
 ## 📚 Additional Resources
-- [Validation Guide](https://nexios.dev/guide/validation)
 - [Pydantic Documentation](https://pydantic-docs.helpmanual.io/)
-- [Error Handling](https://nexios.dev/guide/errors)
-- [Best Practices](https://nexios.dev/guide/best-practices)
+- [Error Handling](../../guide/error-handling.md)
+
 
 ## 🎯 Next Steps
 Tomorrow in [Day 12: File Uploads](../day12/index.md), we'll explore:
