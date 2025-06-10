@@ -14,7 +14,7 @@ hero:
       link: /course/day01/
     - theme: alt
       text: View on GitHub
-      link: https://github.com/yourusername/nexios
+      link: https://github.com/nexios-labs/nexios
 features:
   - icon: 🚀
     title: Fundamentals First
