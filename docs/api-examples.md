@@ -6,13 +6,33 @@ outline: deep
 
 This guide provides comprehensive examples of building APIs with Nexios, covering common use cases and best practices.
 
+::: warning API Design Best Practices
+Before starting, consider these important aspects:
+- Use consistent URL patterns
+- Implement proper error handling
+- Follow REST principles
+- Consider API versioning
+- Plan for scalability
+- Document all endpoints
+:::
+
 ## RESTful API
 
 ### Basic CRUD Operations
 
+::: tip Model Design
+When designing models:
+- Use appropriate field types
+- Add indexes for frequently queried fields
+- Implement proper validation
+- Consider relationships carefully
+- Add timestamps for auditing
+:::
+
 ::: code-group
 ```python [Models]
 from nexios.db import Model, Column, types
+from datetime import datetime
 
 class User(Model):
     id = Column(types.Integer, primary_key=True)
@@ -21,6 +41,13 @@ class User(Model):
     password = Column(types.String)
     is_active = Column(types.Boolean, default=True)
     created_at = Column(types.DateTime, default=datetime.utcnow)
+    updated_at = Column(types.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    class Meta:
+        indexes = [
+            ('username',),
+            ('email',)
+        ]
 
 class Post(Model):
     id = Column(types.Integer, primary_key=True)
@@ -29,10 +56,17 @@ class Post(Model):
     user_id = Column(types.Integer, foreign_key="users.id")
     published = Column(types.Boolean, default=False)
     created_at = Column(types.DateTime, default=datetime.utcnow)
+    updated_at = Column(types.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    class Meta:
+        indexes = [
+            ('user_id',),
+            ('published',)
+        ]
 ```
 
 ```python [Schemas]
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 from datetime import datetime
 from typing import Optional
 
@@ -40,6 +74,18 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
+
+    @validator('password')
+    def password_strength(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters')
+        if not any(c.isupper() for c in v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not any(c.islower() for c in v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not any(c.isdigit() for c in v):
+            raise ValueError('Password must contain at least one number')
+        return v
 
 class UserUpdate(BaseModel):
     username: Optional[str] = None
@@ -52,11 +98,21 @@ class UserResponse(BaseModel):
     email: str
     is_active: bool
     created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
 
 class PostCreate(BaseModel):
     title: str
     content: str
     published: bool = False
+
+    @validator('title')
+    def title_length(cls, v):
+        if len(v) < 3:
+            raise ValueError('Title must be at least 3 characters')
+        return v
 
 class PostResponse(BaseModel):
     id: int
@@ -65,41 +121,110 @@ class PostResponse(BaseModel):
     user_id: int
     published: bool
     created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
 ```
 
 ```python [Routes]
 from nexios import Router
 from nexios.responses import JSONResponse
 from nexios.exceptions import HTTPException
+from nexios.middleware import RateLimitMiddleware
+from typing import List
 
 router = Router(prefix="/api/v1")
 
+# Add rate limiting middleware
+router.add_middleware(
+    RateLimitMiddleware,
+    rate_limit=100,  # requests
+    time_window=60   # seconds
+)
+
 @router.get("/users")
 async def list_users(request, response):
-    """List all users with pagination."""
+    """List all users with pagination.
+    
+    Query Parameters:
+        page (int): Page number (default: 1)
+        limit (int): Items per page (default: 10)
+        search (str): Search term for username/email
+        sort (str): Sort field (default: created_at)
+        order (str): Sort order (asc/desc, default: desc)
+    
+    Returns:
+        dict: Paginated list of users with metadata
+    """
     page = int(request.query_params.get("page", 1))
     limit = int(request.query_params.get("limit", 10))
+    search = request.query_params.get("search", "")
+    sort = request.query_params.get("sort", "created_at")
+    order = request.query_params.get("order", "desc")
     
-    users = await User.query.paginate(page, limit)
-    total = await User.query.count()
+    # Validate pagination parameters
+    if page < 1 or limit < 1 or limit > 100:
+        raise HTTPException(400, "Invalid pagination parameters")
+    
+    # Build query
+    query = User.query
+    if search:
+        query = query.filter(
+            (User.username.ilike(f"%{search}%")) |
+            (User.email.ilike(f"%{search}%"))
+        )
+    
+    # Apply sorting
+    if hasattr(User, sort):
+        sort_field = getattr(User, sort)
+        if order == "desc":
+            sort_field = sort_field.desc()
+        query = query.order_by(sort_field)
+    
+    # Execute query with pagination
+    users = await query.paginate(page, limit)
+    total = await query.count()
     
     return response.json({
         "items": [UserResponse.from_orm(u) for u in users],
         "total": total,
         "page": page,
-        "pages": (total + limit - 1) // limit
+        "pages": (total + limit - 1) // limit,
+        "has_next": page * limit < total,
+        "has_prev": page > 1
     })
 
 @router.post("/users")
 async def create_user(request, response):
-    """Create a new user."""
-    data = UserCreate(**await request.json())
+    """Create a new user.
+    
+    Request Body:
+        username (str): Unique username
+        email (str): Valid email address
+        password (str): Secure password
+    
+    Returns:
+        UserResponse: Created user data
+    
+    Raises:
+        HTTPException: If username/email exists or validation fails
+    """
+    try:
+        data = UserCreate(**await request.json())
+    except ValueError as e:
+        raise HTTPException(400, str(e))
     
     # Check if user exists
     if await User.query.filter_by(
         username=data.username
     ).exists():
         raise HTTPException(400, "Username taken")
+    
+    if await User.query.filter_by(
+        email=data.email
+    ).exists():
+        raise HTTPException(400, "Email already registered")
     
     # Hash password
     data.password = hash_password(data.password)
@@ -113,7 +238,17 @@ async def create_user(request, response):
 
 @router.get("/users/{user_id:int}")
 async def get_user(request, response):
-    """Get user by ID."""
+    """Get user by ID.
+    
+    Path Parameters:
+        user_id (int): User ID
+    
+    Returns:
+        UserResponse: User data
+    
+    Raises:
+        HTTPException: If user not found
+    """
     user = await User.get_or_404(
         request.path_params.user_id
     )
@@ -121,11 +256,43 @@ async def get_user(request, response):
 
 @router.put("/users/{user_id:int}")
 async def update_user(request, response):
-    """Update user by ID."""
+    """Update user by ID.
+    
+    Path Parameters:
+        user_id (int): User ID
+    
+    Request Body:
+        username (str, optional): New username
+        email (str, optional): New email
+        is_active (bool, optional): Active status
+    
+    Returns:
+        UserResponse: Updated user data
+    
+    Raises:
+        HTTPException: If user not found or validation fails
+    """
     user = await User.get_or_404(
         request.path_params.user_id
     )
-    data = UserUpdate(**await request.json())
+    
+    try:
+        data = UserUpdate(**await request.json())
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    
+    # Check unique constraints
+    if data.username and data.username != user.username:
+        if await User.query.filter_by(
+            username=data.username
+        ).exists():
+            raise HTTPException(400, "Username taken")
+    
+    if data.email and data.email != user.email:
+        if await User.query.filter_by(
+            email=data.email
+        ).exists():
+            raise HTTPException(400, "Email already registered")
     
     # Update user
     await user.update(**data.dict(exclude_unset=True))
@@ -133,7 +300,17 @@ async def update_user(request, response):
 
 @router.delete("/users/{user_id:int}")
 async def delete_user(request, response):
-    """Delete user by ID."""
+    """Delete user by ID.
+    
+    Path Parameters:
+        user_id (int): User ID
+    
+    Returns:
+        None
+    
+    Raises:
+        HTTPException: If user not found
+    """
     user = await User.get_or_404(
         request.path_params.user_id
     )
@@ -142,120 +319,286 @@ async def delete_user(request, response):
 ```
 :::
 
+::: warning Database Operations
+When working with databases:
+- Always use transactions for multiple operations
+- Implement proper error handling
+- Use appropriate indexes
+- Consider query performance
+- Handle concurrent access
+:::
+
 ## Authentication
 
 ### JWT Authentication
+
+::: tip Security Best Practices
+For JWT authentication:
+- Use strong secret keys
+- Implement token rotation
+- Set appropriate expiration times
+- Validate token claims
+- Use secure cookie settings
+:::
 
 ::: code-group
 ```python [Auth Handler]
 from nexios.auth import JWTAuth
 from nexios.exceptions import HTTPException
 from datetime import datetime, timedelta
+from typing import Optional
+
+class AuthConfig:
+    SECRET_KEY: str = "your-secret-key"  # Use environment variable in production
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE: timedelta = timedelta(minutes=30)
+    REFRESH_TOKEN_EXPIRE: timedelta = timedelta(days=7)
+    TOKEN_ROTATION_THRESHOLD: timedelta = timedelta(minutes=5)
 
 auth = JWTAuth(
-    secret_key="your-secret-key",
-    algorithm="HS256",
-    access_token_expire=timedelta(minutes=30),
-    refresh_token_expire=timedelta(days=7)
+    secret_key=AuthConfig.SECRET_KEY,
+    algorithm=AuthConfig.ALGORITHM,
+    access_token_expire=AuthConfig.ACCESS_TOKEN_EXPIRE,
+    refresh_token_expire=AuthConfig.REFRESH_TOKEN_EXPIRE
 )
 
 @router.post("/auth/login")
 async def login(request, response):
-    data = await request.json()
-    username = data.get("username")
-    password = data.get("password")
+    """Authenticate user and return tokens.
     
-    # Validate credentials
-    user = await User.query.filter_by(
-        username=username
-    ).first()
+    Request Body:
+        username (str): Username
+        password (str): Password
     
-    if not user or not verify_password(
-        password, user.password
-    ):
-        raise HTTPException(
-            401, "Invalid credentials"
+    Returns:
+        dict: Access and refresh tokens
+    
+    Raises:
+        HTTPException: If credentials are invalid
+    """
+    try:
+        data = await request.json()
+        username = data.get("username")
+        password = data.get("password")
+        
+        if not username or not password:
+            raise HTTPException(400, "Username and password required")
+        
+        # Validate credentials
+        user = await User.query.filter_by(
+            username=username
+        ).first()
+        
+        if not user or not verify_password(
+            password, user.password
+        ):
+            raise HTTPException(
+                401, "Invalid credentials"
+            )
+        
+        # Generate tokens
+        access_token = auth.create_access_token({
+            "sub": str(user.id),
+            "username": user.username,
+            "exp": datetime.utcnow() + AuthConfig.ACCESS_TOKEN_EXPIRE
+        })
+        
+        refresh_token = auth.create_refresh_token({
+            "sub": str(user.id),
+            "exp": datetime.utcnow() + AuthConfig.REFRESH_TOKEN_EXPIRE
+        })
+        
+        # Set secure cookie for refresh token
+        response.set_cookie(
+            "refresh_token",
+            refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="strict",
+            max_age=AuthConfig.REFRESH_TOKEN_EXPIRE.seconds
         )
-    
-    # Generate tokens
-    access_token = auth.create_access_token({
-        "sub": str(user.id),
-        "username": user.username
-    })
-    
-    refresh_token = auth.create_refresh_token({
-        "sub": str(user.id)
-    })
-    
-    return response.json({
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
-    })
+        
+        return response.json({
+            "access_token": access_token,
+            "token_type": "bearer"
+        })
+    except Exception as e:
+        raise HTTPException(500, f"Authentication failed: {str(e)}")
 
 @router.post("/auth/refresh")
 async def refresh_token(request, response):
+    """Refresh access token using refresh token.
+    
+    Headers:
+        Authorization: Bearer <refresh_token>
+    
+    Returns:
+        dict: New access token
+    
+    Raises:
+        HTTPException: If token is invalid or expired
+    """
     refresh_token = request.headers.get("Authorization")
     if not refresh_token:
         raise HTTPException(401, "Missing token")
     
     try:
-        payload = auth.decode_refresh_token(
-            refresh_token.split(" ")[1]
-        )
+        # Extract token from Bearer
+        token = refresh_token.split(" ")[1]
+        
+        # Decode and validate token
+        payload = auth.decode_refresh_token(token)
+        
+        # Check if token is about to expire
+        exp = datetime.fromtimestamp(payload["exp"])
+        if exp - datetime.utcnow() < AuthConfig.TOKEN_ROTATION_THRESHOLD:
+            # Generate new refresh token
+            new_refresh_token = auth.create_refresh_token({
+                "sub": payload["sub"],
+                "exp": datetime.utcnow() + AuthConfig.REFRESH_TOKEN_EXPIRE
+            })
+            response.set_cookie(
+                "refresh_token",
+                new_refresh_token,
+                httponly=True,
+                secure=True,
+                samesite="strict",
+                max_age=AuthConfig.REFRESH_TOKEN_EXPIRE.seconds
+            )
+        
+        # Generate new access token
         access_token = auth.create_access_token({
-            "sub": payload["sub"]
+            "sub": payload["sub"],
+            "exp": datetime.utcnow() + AuthConfig.ACCESS_TOKEN_EXPIRE
         })
+        
         return response.json({
             "access_token": access_token,
             "token_type": "bearer"
         })
-    except Exception:
-        raise HTTPException(401, "Invalid token")
+    except Exception as e:
+        raise HTTPException(401, f"Invalid token: {str(e)}")
+
+@router.post("/auth/logout")
+async def logout(request, response):
+    """Logout user by invalidating refresh token.
+    
+    Returns:
+        dict: Success message
+    """
+    response.delete_cookie("refresh_token")
+    return response.json({"message": "Successfully logged out"})
 ```
 
 ```python [Protected Routes]
 from nexios import Depend
+from typing import Optional
 
 async def get_current_user(
     request,
-    token=Depend(auth.get_token)
-):
+    token: str = Depend(auth.get_token)
+) -> User:
+    """Get current user from token.
+    
+    Args:
+        request: Request object
+        token: JWT token from Authorization header
+    
+    Returns:
+        User: Current user object
+    
+    Raises:
+        HTTPException: If token is invalid or user not found
+    """
     try:
         payload = auth.decode_access_token(token)
         user = await User.get(int(payload["sub"]))
         if not user:
             raise HTTPException(401, "User not found")
+        if not user.is_active:
+            raise HTTPException(401, "User is inactive")
         return user
-    except Exception:
-        raise HTTPException(401, "Invalid token")
+    except Exception as e:
+        raise HTTPException(401, f"Invalid token: {str(e)}")
 
 @router.get("/users/me")
 async def get_current_user_info(
     request,
     response,
-    user=Depend(get_current_user)
+    user: User = Depend(get_current_user)
 ):
+    """Get current user information.
+    
+    Returns:
+        UserResponse: Current user data
+    """
     return response.json(UserResponse.from_orm(user))
 
 @router.post("/users/me/change-password")
 async def change_password(
     request,
     response,
-    user=Depend(get_current_user)
+    user: User = Depend(get_current_user)
 ):
-    data = await request.json()
-    old_password = data.get("old_password")
-    new_password = data.get("new_password")
+    """Change user password.
     
-    if not verify_password(old_password, user.password):
-        raise HTTPException(400, "Invalid password")
+    Request Body:
+        old_password (str): Current password
+        new_password (str): New password
     
-    user.password = hash_password(new_password)
-    await user.save()
+    Returns:
+        dict: Success message
     
-    return response.json({"message": "Password updated"})
+    Raises:
+        HTTPException: If old password is incorrect or new password is invalid
+    """
+    try:
+        data = await request.json()
+        old_password = data.get("old_password")
+        new_password = data.get("new_password")
+        
+        if not old_password or not new_password:
+            raise HTTPException(400, "Both old and new passwords are required")
+        
+        # Verify old password
+        if not verify_password(old_password, user.password):
+            raise HTTPException(400, "Incorrect password")
+        
+        # Validate new password
+        if len(new_password) < 8:
+            raise HTTPException(400, "New password must be at least 8 characters")
+        
+        # Update password
+        user.password = hash_password(new_password)
+        await user.save()
+        
+        # Invalidate all sessions
+        await user.invalidate_sessions()
+        
+        return response.json({"message": "Password changed successfully"})
+    except Exception as e:
+        raise HTTPException(400, str(e))
 ```
+:::
+
+::: warning Security Considerations
+When implementing authentication:
+- Never store plain-text passwords
+- Use secure password hashing (bcrypt, Argon2)
+- Implement rate limiting for auth endpoints
+- Use secure cookie settings
+- Implement proper session management
+- Consider 2FA for sensitive operations
+:::
+
+::: tip Error Handling
+Implement proper error handling for:
+- Invalid credentials
+- Expired tokens
+- Rate limiting
+- Account lockout
+- Session management
+- Password policies
 :::
 
 ## File Handling

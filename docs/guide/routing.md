@@ -60,6 +60,8 @@ async def items_options(request, response):
 
 ### Parameter Types
 
+Nexios provides several built-in path converters for validating and converting URL parameters:
+
 ::: code-group
 ```python [Basic Types]
 @app.get("/users/{user_id:int}")
@@ -78,45 +80,143 @@ async def get_item(request, response):
     return response.json({"id": str(item_id)})
 ```
 
-```python [Custom Types]
-from nexios.types import PathParam
-from datetime import datetime
+```python [Path and Slug]
+@app.get("/static/{filepath:path}")
+async def get_static_file(request, response):
+    filepath = request.path_params.filepath  # Can contain slashes
+    return response.json({"path": filepath})
 
-class DateParam(PathParam):
-    async def convert(self, value: str) -> datetime:
-        return datetime.strptime(value, "%Y-%m-%d")
-
-@app.get("/events/{date:date}")
-async def get_events(request, response):
-    date = request.path_params.date  # datetime object
-    return response.json({"date": date.isoformat()})
+@app.get("/posts/{slug:slug}")
+async def get_post(request, response):
+    slug = request.path_params.slug  # URL-friendly string
+    return response.json({"slug": slug})
 ```
 
-```python [Regex Patterns]
-@app.get("/users/{username:str(pattern=[a-zA-Z0-9_-]+)}")
-async def get_user_by_username(request, response):
-    username = request.path_params.username
-    return response.json({"username": username})
-
-@app.get("/products/{sku:str(pattern=[A-Z]{2}\d{6})}")
+```python [Numeric Types]
+@app.get("/products/{price:float}")
 async def get_product(request, response):
-    sku = request.path_params.sku
-    return response.json({"sku": sku})
+    price = request.path_params.price  # Float value
+    return response.json({"price": price})
+
+@app.get("/orders/{order_id:int}")
+async def get_order(request, response):
+    order_id = request.path_params.order_id  # Integer value
+    return response.json({"order_id": order_id})
 ```
 :::
 
-### Available Parameter Types
+#### Available Converters
 
-| Type | Description | Example |
-|------|-------------|---------|
-| `str` | String (default) | `{name:str}` |
-| `int` | Integer | `{id:int}` |
-| `float` | Floating point | `{price:float}` |
-| `bool` | Boolean | `{active:bool}` |
-| `uuid` | UUID | `{id:uuid}` |
-| `path` | Full path including slashes | `{path:path}` |
-| `date` | Date (custom type) | `{date:date}` |
-| `datetime` | DateTime (custom type) | `{dt:datetime}` |
+| Converter | Type | Pattern | Description |
+|-----------|------|---------|-------------|
+| `str` | String | `[^/]+` | Any string without slashes |
+| `path` | String | `.*` | Any string including slashes |
+| `int` | Integer | `[0-9]+` | Positive integers |
+| `float` | Float | `[0-9]+(\.[0-9]+)?` | Positive floats |
+| `uuid` | UUID | `[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}` | UUID format |
+| `slug` | String | `[a-z0-9]+(?:-[a-z0-9]+)*` | URL-friendly strings |
+
+### Custom Path Converters
+
+You can create and register custom path converters by subclassing the `Convertor` class:
+
+```python
+from nexios.converters import Convertor, register_url_convertor
+import re
+
+class EmailConvertor(Convertor[str]):
+    regex = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+
+    def convert(self, value: str) -> str:
+        if not re.fullmatch(self.regex, value):
+            raise ValueError(f"Invalid email format: {value}")
+        return value
+
+    def to_string(self, value: str) -> str:
+        if not re.fullmatch(self.regex, value):
+            raise ValueError(f"Invalid email format: {value}")
+        return value
+
+# Register the custom converter
+register_url_convertor("email", EmailConvertor())
+
+# Use the custom converter in routes
+@app.get("/users/{email:email}")
+async def get_user_by_email(request, response):
+    email = request.path_params.email
+    return response.json({"email": email})
+```
+
+#### Creating Custom Converters
+
+To create a custom converter:
+
+1. Subclass `Convertor` with the desired type:
+```python
+class MyConvertor(Convertor[YourType]):
+    regex = "your-regex-pattern"
+```
+
+2. Implement the required methods:
+   - `convert(self, value: str) -> YourType`: Converts string to your type
+   - `to_string(self, value: YourType) -> str`: Converts your type to string
+
+3. Register the converter:
+```python
+register_url_convertor("converter_name", MyConvertor())
+```
+
+#### Example: Version Converter
+
+```python
+class VersionConvertor(Convertor[str]):
+    regex = r"v[0-9]+(\.[0-9]+)*"
+
+    def convert(self, value: str) -> str:
+        if not re.fullmatch(self.regex, value):
+            raise ValueError(f"Invalid version format: {value}")
+        return value
+
+    def to_string(self, value: str) -> str:
+        if not re.fullmatch(self.regex, value):
+            raise ValueError(f"Invalid version format: {value}")
+        return value
+
+register_url_convertor("version", VersionConvertor())
+
+@app.get("/api/{version:version}/users")
+async def get_users(request, response):
+    version = request.path_params.version
+    return response.json({"version": version})
+```
+
+::: warning Converter Registration
+Custom converters must be registered before they can be used in routes. It's recommended to register them during application startup.
+:::
+
+::: tip Best Practices
+When creating custom converters:
+1. Use clear and efficient regex patterns
+2. Validate input in both `convert` and `to_string` methods
+3. Handle edge cases and invalid inputs
+4. Keep the converter focused on a single type of validation
+5. Document the expected format and any constraints
+:::
+
+::: warning Path Parameter Validation
+Path converters only validate the format of parameters. Always add additional validation in your route handlers for business logic.
+:::
+
+::: tip Multiple Parameters
+You can use multiple parameters in a single route:
+```python
+@app.get("/users/{user_id:int}/posts/{post_id:int}")
+async def get_user_post(request, response):
+    user_id = request.path_params.user_id
+    post_id = request.path_params.post_id
+    return response.json({"user_id": user_id, "post_id": post_id})
+```
+:::
 
 ## Query Parameters
 

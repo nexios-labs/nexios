@@ -183,8 +183,7 @@ class APIDocumentation:
                         }
                     )
 
-            # self.config.openapi_spec.components.schemas[request_body.__name__] = request_body
-            # Prepare responses specification
+           
             responses_spec = {}
             if responses:
                 if isinstance(responses, type) and issubclass(responses, BaseModel):
