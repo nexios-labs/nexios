@@ -183,7 +183,6 @@ class APIDocumentation:
                         }
                     )
 
-           
             responses_spec = {}
             if responses:
                 if isinstance(responses, type) and issubclass(responses, BaseModel):
