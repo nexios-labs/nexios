@@ -36,4 +36,4 @@ jobs:
         run: uv pip install tox
 
       - name: Run Tox
-        run: tox
+        run: uv run tox
