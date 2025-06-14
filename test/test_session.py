@@ -13,6 +13,7 @@ from nexios.config import MakeConfig, get_config, set_config
 from typing import Tuple, Dict, Any
 from nexios.session.middleware import SessionMiddleware
 
+
 # Fixtures for different session configurations
 @pytest.fixture
 async def file_session_client(tmp_path) -> Tuple[Client, NexiosApp]:
