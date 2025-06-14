@@ -22,14 +22,16 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies from project.toml
+      - name: Install uv
         run: |
-          # Assuming you're using poetry for project management
-          pip install poetry
-          poetry install
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: uv pip install -e ".[dev]"
 
       - name: Install Tox
-        run: pip install tox
+        run: uv pip install tox
 
       - name: Run Tox
         run: tox
