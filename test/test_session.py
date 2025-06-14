@@ -11,6 +11,7 @@ from nexios.session.signed_cookies import SignedSessionManager
 from nexios.testing import Client
 from nexios.config import MakeConfig, get_config, set_config
 from typing import Tuple, Dict, Any
+from nexios.session.middleware import SessionMiddleware
 
 
 # Fixtures for different session configurations
@@ -32,6 +33,7 @@ async def file_session_client(tmp_path) -> Tuple[Client, NexiosApp]:
             }
         )
     )
+    app.add_middleware(SessionMiddleware())
     async with Client(app) as client:
         yield client, app
 

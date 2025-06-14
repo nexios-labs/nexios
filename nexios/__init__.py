@@ -175,11 +175,6 @@ def get_application(
     )
     set_config(config)
     app = NexiosApp(
-        middleware=[
-            wrap_middleware(CORSMiddleware()),
-            wrap_middleware(SessionMiddleware()),
-            wrap_middleware(CSRFMiddleware()),
-        ],
         server_error_handler=server_error_handler,
         config=config,
         title=title,

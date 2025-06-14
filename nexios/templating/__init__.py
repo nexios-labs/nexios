@@ -96,7 +96,7 @@ async def render(
     context: Optional[Dict[str, Any]] = None,
     status_code: int = 200,
     headers: Optional[Dict[str, str]] = None,
-    **kwargs
+    **kwargs,
 ) -> HTMLResponse:
     """Render template to response."""
     if not engine:
