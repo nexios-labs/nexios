@@ -110,7 +110,7 @@ class NexiosApp(object):
         self.server_error_handler = None
         self.ws_router = WSRouter()
         self.ws_routes: List[WebsocketRoutes] = []
-        self.http_middleware: List[Middleware] =  []
+        self.http_middleware: List[Middleware] = []
         self.ws_middleware: List[ASGIApp] = []
         self.startup_handlers: List[Callable[[], Awaitable[None]]] = []
         self.shutdown_handlers: List[Callable[[], Awaitable[None]]] = []

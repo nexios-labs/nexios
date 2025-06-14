@@ -7,7 +7,6 @@ from nexios.routing import BaseRouter
 from nexios.types import Scope, Receive, Send
 
 
-
 class StaticFilesHandler:
     def __init__(
         self,
@@ -21,7 +20,7 @@ class StaticFilesHandler:
             "static_files = StaticFiles(directory='path/to/static')\n"
             "app.register(static_files, prefix='/static')",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
         if directory is not None and directories is not None:
             raise ValueError("Cannot specify both 'directory' and 'directories'")
@@ -73,7 +72,7 @@ class StaticFilesHandler:
                 continue
 
         return response.json("Resource not found", status_code=404)
-    
+
 
 class StaticFiles(BaseRouter):
     def __init__(
@@ -82,6 +81,7 @@ class StaticFiles(BaseRouter):
         directories: Optional[List[Union[str, Path]]] = None,
     ):
         self.directories = [self._ensure_directory(d) for d in directories or []]
+
     def _ensure_directory(self, path: Union[str, Path]) -> Path:
         """Ensure directory exists and return resolved Path"""
         directory = Path(path).resolve()
@@ -98,7 +98,7 @@ class StaticFiles(BaseRouter):
             return any(
                 str(full_path).startswith(str(directory))
                 for directory in self.directories
-        )
+            )
         except (ValueError, RuntimeError):
             return False
 
@@ -121,10 +121,3 @@ class StaticFiles(BaseRouter):
         request = Request(scope, receive)
         response = Response(request)
         await self._handle(request, response)
-
-
-
-        
-        
-
-
