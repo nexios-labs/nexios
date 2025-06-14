@@ -37,7 +37,7 @@ class Loader(BaseLoader):
 def configure_templates(
     template_dir: Optional[str] = None,
     env: Optional[Environment] = None,
-    **env_options: Dict[str, Any]
+    **env_options: Dict[str, Any],
 ) -> None:
     """
     Configure global template settings.
@@ -58,7 +58,7 @@ def configure_templates(
             loader=Loader(template_dir),
             autoescape=select_autoescape(),
             auto_reload=True,
-            **env_options  # type:ignore
+            **env_options,  # type:ignore
         )
     else:
         DEFAULT_TEMPLATE_ENV = None
