@@ -89,12 +89,6 @@ class NexiosApp(object):
                     """
             ),
         ] = None,
-        middleware: Annotated[
-            List[Middleware],
-            Doc(
-                "A list of middleware, where each middleware is either a class inherited from BaseMiddleware or an asynchronous callable function that accepts request, response, and callnext"
-            ),
-        ] = [],
         server_error_handler: Annotated[
             Optional[ServerErrHandlerType],
             Doc(
@@ -116,7 +110,7 @@ class NexiosApp(object):
         self.server_error_handler = None
         self.ws_router = WSRouter()
         self.ws_routes: List[WebsocketRoutes] = []
-        self.http_middleware: List[Middleware] = middleware or []
+        self.http_middleware: List[Middleware] =  []
         self.ws_middleware: List[ASGIApp] = []
         self.startup_handlers: List[Callable[[], Awaitable[None]]] = []
         self.shutdown_handlers: List[Callable[[], Awaitable[None]]] = []
