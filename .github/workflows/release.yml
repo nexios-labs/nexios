@@ -28,6 +28,8 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
+      
+
       - name: Setup Virtual Environment
         run: uv venv
 
@@ -46,4 +48,4 @@ jobs:
           files: dist/*
 
       - name: Publish to PyPI
-        run: uv pip install twine && twine upload --username __token__ --password ${{ secrets.POETRY_PYPI_TOKEN_PYPI }} dist/*
+        run: uv publish --token ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
