@@ -28,7 +28,8 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      
+      - name: Clean Old Builds
+        run: rm -rf dist build *.egg-info
 
       - name: Setup Virtual Environment
         run: uv venv
