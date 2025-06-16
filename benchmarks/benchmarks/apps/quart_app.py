@@ -5,9 +5,11 @@ import hypercorn.config
 
 app = Quart(__name__)
 
+
 @app.route("/")
 async def root():
     return {"message": "Hello World"}
+
 
 @app.route("/json")
 async def json_endpoint():
@@ -16,18 +18,21 @@ async def json_endpoint():
         "number": 42,
         "boolean": True,
         "array": [1, 2, 3],
-        "object": {"key": "value"}
+        "object": {"key": "value"},
     }
+
 
 @app.route("/echo", methods=["POST"])
 async def echo():
     data = await request.get_json()
     return data
 
+
 @app.route("/delay/<float:seconds>")
 async def delay(seconds):
     await asyncio.sleep(seconds)
     return {"message": f"Delayed for {seconds} seconds"}
+
 
 if __name__ == "__main__":
     config = hypercorn.config.Config()
@@ -35,4 +40,4 @@ if __name__ == "__main__":
     config.worker_class = "asyncio"
     config.workers = 4
     config.use_reloader = False
-    asyncio.run(hypercorn.asyncio.serve(app, config)) 
+    asyncio.run(hypercorn.asyncio.serve(app, config))
