@@ -1,10 +1,11 @@
 from calendar import c
+
 from nexios import NexiosApp
 from nexios.auth.backends.jwt import JWTAuthBackend, create_jwt
+from nexios.auth.base import BaseUser
 from nexios.auth.middleware import AuthenticationMiddleware
 from nexios.http import Request, Response
 from nexios.structs import URL
-from nexios.auth.base import BaseUser
 
 
 class User(BaseUser):

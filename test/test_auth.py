@@ -1,11 +1,12 @@
 import pytest
+
 from nexios import get_application
 from nexios.auth.backends.jwt import create_jwt, decode_jwt
+from nexios.auth.base import AuthenticationBackend, SimpleUser, UnauthenticatedUser
 from nexios.auth.decorator import auth
 from nexios.config.base import MakeConfig
 from nexios.http import Request, Response
 from nexios.testing import Client
-from nexios.auth.base import AuthenticationBackend, SimpleUser, UnauthenticatedUser
 
 
 @pytest.fixture
@@ -176,8 +177,8 @@ async def test_jwt_auth_with_auth_decorator(test_client, mock_user, valid_token)
         return mock_user
 
     from nexios.auth.backends import JWTAuthBackend
-    from nexios.auth.middleware import AuthenticationMiddleware
     from nexios.auth.decorator import auth
+    from nexios.auth.middleware import AuthenticationMiddleware
 
     app.add_middleware(
         AuthenticationMiddleware(
@@ -203,8 +204,8 @@ async def test_jwt_auth_with_auth_decorator(test_client, mock_user, valid_token)
 
 
 def test_create_jwt():
-    from jwt import decode as jwt_decode
     from jwt import PyJWT
+    from jwt import decode as jwt_decode
 
     payload = {"user_id": 1, "username": "test"}
     token = create_jwt(payload, "test_secret")

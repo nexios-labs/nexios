@@ -1,9 +1,10 @@
 # test_grouping.py
 import pytest
-from nexios.http import Request, Response
-from nexios.testing import Client
-from nexios.routing import Router, Group, Routes
+
 from nexios import get_application
+from nexios.http import Request, Response
+from nexios.routing import Group, Router, Routes
+from nexios.testing import Client
 
 
 @pytest.fixture

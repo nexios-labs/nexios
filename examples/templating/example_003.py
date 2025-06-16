@@ -1,9 +1,11 @@
-from nexios import NexiosApp
-from nexios.templating import TemplateConfig, render
-from nexios.http.response import HTMLResponse
 from datetime import datetime
-import markdown2
+
 import humanize
+import markdown2
+
+from nexios import NexiosApp
+from nexios.http.response import HTMLResponse
+from nexios.templating import TemplateConfig, render
 
 app = NexiosApp()
 

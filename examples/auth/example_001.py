@@ -1,6 +1,6 @@
 from nexios import NexiosApp
-from nexios.auth.middleware import AuthenticationMiddleware
 from nexios.auth.backends.session import SessionAuthBackend
+from nexios.auth.middleware import AuthenticationMiddleware
 
 app = NexiosApp()
 

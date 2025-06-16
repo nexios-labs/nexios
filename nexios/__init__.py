@@ -82,21 +82,21 @@ Note: This framework builds upon concepts from Starlette and other ASGI framewor
 while providing additional features and a more intuitive API design.
 """
 
-from typing import List, Optional, Callable, AsyncContextManager
+import warnings
+from typing import AsyncContextManager, Callable, List, Optional
 
-from typing_extensions import Doc, Annotated
+from typing_extensions import Annotated, Doc
 
+from ._internals._middleware import wrap_middleware
 from .application import NexiosApp
-from .config import set_config, DEFAULT_CONFIG
+from .config import DEFAULT_CONFIG, set_config
 from .config.base import MakeConfig
+from .dependencies import Depend
 from .middleware.cors import CORSMiddleware
 from .middleware.csrf import CSRFMiddleware
 from .routing import Router, Routes
 from .session.middleware import SessionMiddleware
 from .types import ExceptionHandlerType
-from .dependencies import Depend
-from ._internals._middleware import wrap_middleware
-import warnings
 
 
 def get_application(

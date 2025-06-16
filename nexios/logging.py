@@ -1,15 +1,16 @@
 from __future__ import annotations
+
 import logging
 import sys
 from logging import (
     DEBUG,
     ERROR,
+    INFO,
+    NOTSET,
     Formatter,
     Handler,
-    INFO,
     Logger,
     LogRecord,
-    NOTSET,
     StreamHandler,
     getLogger,
 )

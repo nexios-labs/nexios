@@ -1,6 +1,8 @@
 from __future__ import annotations
-from typing import Callable, Type, Awaitable, Any
+
 import typing
+from typing import Any, Awaitable, Callable, Type
+
 from .http.request import Request
 from .http.response import NexiosResponse as Response
 from .websockets import WebSocket

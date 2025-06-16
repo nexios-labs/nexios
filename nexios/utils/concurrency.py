@@ -7,6 +7,7 @@ from typing import (
     AsyncGenerator,
     Awaitable,
     Callable,
+    Coroutine,
     Generic,
     List,
     Optional,
@@ -15,7 +16,6 @@ from typing import (
     TypeVar,
     Union,
     overload,
-    Coroutine,
 )
 
 T = TypeVar("T")

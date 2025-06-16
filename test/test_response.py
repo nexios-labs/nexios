@@ -1,10 +1,12 @@
-from nexios import get_application, NexiosApp
-import pytest
-from nexios.http import Request, Response
-from nexios.testing import Client
 import datetime as dt
 import time
 from pathlib import Path
+
+import pytest
+
+from nexios import NexiosApp, get_application
+from nexios.http import Request, Response
+from nexios.testing import Client
 
 app: NexiosApp = get_application()
 

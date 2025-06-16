@@ -1,9 +1,10 @@
+import glob
 import json
 import os
-import glob
 from datetime import datetime
-import pandas as pd
+
 import matplotlib.pyplot as plt
+import pandas as pd
 
 
 def calculate_avg_rps(num_reqs_per_sec):

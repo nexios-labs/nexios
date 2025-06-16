@@ -1,7 +1,9 @@
 # test_config.py
+from typing import Any, Callable, Dict
+
 import pytest
-from nexios.config import MakeConfig, set_config, get_config, DEFAULT_CONFIG
-from typing import Dict, Any, Callable
+
+from nexios.config import DEFAULT_CONFIG, MakeConfig, get_config, set_config
 
 
 # Test MakeConfig class

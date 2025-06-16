@@ -1,9 +1,11 @@
-from nexios.decorators import RouteDecorator
-import typing
-from .exceptions import AuthenticationFailed
-from nexios.http import Request, Response
-from functools import wraps
 import inspect
+import typing
+from functools import wraps
+
+from nexios.decorators import RouteDecorator
+from nexios.http import Request, Response
+
+from .exceptions import AuthenticationFailed
 
 
 class auth(RouteDecorator):

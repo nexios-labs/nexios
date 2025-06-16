@@ -1,14 +1,16 @@
 # type: ignore
 
-import httpx
 import typing
 import uuid
-from typing import Any, Dict, AsyncIterable, Iterable, Union, Optional, List
+from typing import Any, AsyncIterable, Dict, Iterable, List, Optional, Union
+
+import httpx
+
 from .transport import (
     NexiosAsyncTransport,
     WebSocketConnection,
-    WebSocketState,
     WebSocketDisconnect,
+    WebSocketState,
 )
 
 _RequestData = typing.Mapping[str, typing.Union[str, typing.Iterable[str], bytes]]

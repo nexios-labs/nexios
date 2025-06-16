@@ -2,7 +2,7 @@ import abc
 import base64
 import json
 import urllib.parse
-from typing import Any, Optional, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 
 class PaginationError(Exception):

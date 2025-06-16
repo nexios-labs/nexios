@@ -1,5 +1,6 @@
-from nexios import get_application
 from pydantic import BaseModel, EmailStr, ValidationError
+
+from nexios import get_application
 
 app = get_application()
 

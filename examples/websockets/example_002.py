@@ -1,7 +1,8 @@
+import json
+from typing import Dict, Set
+
 from nexios import NexiosApp
 from nexios.websockets import WebSocket
-from typing import Set, Dict
-import json
 
 app = NexiosApp()
 

@@ -1,6 +1,6 @@
 from nexios import NexiosApp
-from nexios.auth.middleware import AuthenticationMiddleware
 from nexios.auth.base import AuthenticationBackend, UnauthenticatedUser
+from nexios.auth.middleware import AuthenticationMiddleware
 
 
 class CustomUser:

@@ -1,9 +1,11 @@
-from nexios.middleware.base import BaseMiddleware
-from nexios.http import Request, Response
-from typing_extensions import Annotated, Doc
 import typing
 from typing import Any
+
+from typing_extensions import Annotated, Doc
+
 from nexios.config import get_config
+from nexios.http import Request, Response
+from nexios.middleware.base import BaseMiddleware
 
 
 class CommonMiddleware(BaseMiddleware):

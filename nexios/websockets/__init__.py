@@ -1,7 +1,8 @@
+import typing
+
 from .base import WebSocket, WebSocketDisconnect  # type:ignore
 from .channels import Channel, ChannelBox
 from .consumers import WebSocketConsumer
-import typing
 
 Scope = typing.MutableMapping[str, typing.Any]
 Message = typing.MutableMapping[str, typing.Any]

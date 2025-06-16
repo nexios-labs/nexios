@@ -1,9 +1,12 @@
-from nexios.middleware.base import BaseMiddleware
-from .signed_cookies import SignedSessionManager
-from .base import BaseSessionInterface
-from nexios.http import Request, Response
+import typing
+import warnings
+
 from nexios.config import get_config
-import warnings, typing
+from nexios.http import Request, Response
+from nexios.middleware.base import BaseMiddleware
+
+from .base import BaseSessionInterface
+from .signed_cookies import SignedSessionManager
 
 
 class SessionMiddleware(BaseMiddleware):

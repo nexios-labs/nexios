@@ -2,14 +2,14 @@
 Nexios templating system with Jinja2 integration.
 """
 
-from typing import Any, Dict, Optional, Union, Callable
 from pathlib import Path
+from typing import Any, Callable, Dict, Optional, Union
+
 import jinja2
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from nexios.config import MakeConfig, get_config
 from nexios.http.response import HTMLResponse
-
 
 engine: Union["TemplateEngine", None] = None
 

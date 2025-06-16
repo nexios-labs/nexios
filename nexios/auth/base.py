@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 import typing
+
 from typing_extensions import Annotated, Doc
+
 from nexios.http import Request, Response
 
 

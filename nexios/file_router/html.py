@@ -2,7 +2,7 @@ import functools
 import inspect
 import os
 from os.path import exists, getmtime, join
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 try:
     from jinja2 import BaseLoader, Environment, TemplateNotFound, select_autoescape

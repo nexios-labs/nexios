@@ -5,9 +5,10 @@ implemented from  starlatte,
 from __future__ import annotations
 
 import math
+import re
 import typing
 import uuid
-import re
+
 from nexios.types import Scope
 
 T = typing.TypeVar("T")

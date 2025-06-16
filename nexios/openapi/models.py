@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.networks import AnyUrl
 
 try:

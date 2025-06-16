@@ -1,5 +1,6 @@
-from .models import Contact, License, Server, OpenAPI, Info, SecurityScheme, Components
 from typing import Dict, List, Optional
+
+from .models import Components, Contact, Info, License, OpenAPI, SecurityScheme, Server
 
 
 class OpenAPIConfig:

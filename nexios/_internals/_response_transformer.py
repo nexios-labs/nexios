@@ -1,10 +1,11 @@
+import asyncio
+import typing
+
 from nexios.http import Request, Response
 from nexios.http.response import BaseResponse
 from nexios.types import ASGIApp, Receive, Scope, Send
-from nexios.utils.concurrency import run_in_threadpool
 from nexios.utils.async_helpers import is_async_callable
-import typing
-import asyncio
+from nexios.utils.concurrency import run_in_threadpool
 
 
 async def request_response(

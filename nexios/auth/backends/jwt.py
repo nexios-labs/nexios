@@ -2,11 +2,11 @@ try:
     import jwt
 except ImportError:
     jwt = None
-from typing import Optional, Dict, Any, List
-from nexios.auth.base import AuthenticationBackend
-from nexios.http import Request, Response
-from nexios.auth.base import UnauthenticatedUser
+from typing import Any, Dict, List, Optional
+
+from nexios.auth.base import AuthenticationBackend, UnauthenticatedUser
 from nexios.config import get_config
+from nexios.http import Request, Response
 
 
 def create_jwt(

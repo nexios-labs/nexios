@@ -1,19 +1,24 @@
 from functools import wraps
-from typing import Optional, Dict, List, Type, Union
+from typing import Dict, List, Optional, Type, Union
 from uuid import uuid4
+
 from pydantic import BaseModel
+
 from nexios.http import Request, Response
+
 from .config import OpenAPIConfig
 from .models import (
     Components,
-    Parameter,
     ExternalDocumentation,
-    RequestBody,
     MediaType,
-    Response as OpenAPIResponse,
     Operation,
-    Schema,
+    Parameter,
     PathItem,
+    RequestBody,
+)
+from .models import Response as OpenAPIResponse
+from .models import (
+    Schema,
 )
 
 

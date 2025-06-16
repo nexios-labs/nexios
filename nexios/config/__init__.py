@@ -1,5 +1,6 @@
-from .base import MakeConfig, DEFAULT_SERVER_CONFIG, SERVER_VALIDATION
-from typing import Dict, Any
+from typing import Any, Dict
+
+from .base import DEFAULT_SERVER_CONFIG, SERVER_VALIDATION, MakeConfig
 
 _global_config = None
 

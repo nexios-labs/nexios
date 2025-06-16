@@ -1,6 +1,9 @@
-from itsdangerous import URLSafeTimedSerializer, BadSignature  # type:ignore
 import typing
+
+from itsdangerous import BadSignature, URLSafeTimedSerializer  # type:ignore
+
 from nexios.config import get_config
+
 from .base import BaseSessionInterface
 
 

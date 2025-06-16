@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from tempfile import SpooledTemporaryFile
 
-
 from nexios.structs import FormData, Headers, UploadedFile
 
 if typing.TYPE_CHECKING:

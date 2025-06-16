@@ -1,22 +1,25 @@
-import typing
 import asyncio
+import typing
 import warnings
-from nexios.dependencies import inject_dependencies
+from typing import Any, Callable, Dict, List, Optional
+
+from typing_extensions import Annotated, Doc, Literal
+
 from nexios._internals._route_builder import RouteBuilder
-from typing import Any, Callable, List, Optional, Dict
-from typing_extensions import Annotated, Literal, Doc
-from nexios.websockets.errors import WebSocketErrorMiddleware
-from .base import BaseRouter
-from ._utils import get_route_path
+from nexios.dependencies import inject_dependencies
 from nexios.types import (
     ASGIApp,
-    Scope,
     Receive,
+    Scope,
     Send,
     WsHandlerType,
     WsMiddlewareType,
 )
 from nexios.websockets import WebSocket
+from nexios.websockets.errors import WebSocketErrorMiddleware
+
+from ._utils import get_route_path
+from .base import BaseRouter
 
 
 class WebsocketRoutes:

@@ -1,5 +1,6 @@
+from typing import Any, Dict, Optional
+
 from nexios.exceptions import HTTPException
-from typing import Dict, Any, Optional
 from nexios.http import Request
 from nexios.http.response import NexiosResponse
 

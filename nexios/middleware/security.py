@@ -4,6 +4,7 @@ Provides comprehensive security features and headers.
 """
 
 from typing import Dict, List, Optional, Union
+
 from nexios.middleware import BaseMiddleware
 from nexios.types import Request, Response
 

@@ -6,13 +6,15 @@ This module provides CLI commands for bootstrapping and running Nexios projects.
 """
 
 import os
-import sys
-import click
 import re
-import subprocess
 import socket
+import subprocess
+import sys
 from pathlib import Path
 from typing import Optional
+
+import click
+
 from nexios.__main__ import __version__
 
 CONTEXT_SETTINGS = {

@@ -1,7 +1,8 @@
-from typing import Optional, Dict, List, Any, Type
+from typing import Any, Dict, List, Optional, Type
+
+from pydantic import BaseModel
 
 from nexios.openapi.models import Parameter
-from pydantic import BaseModel
 
 
 def mark_as_route(

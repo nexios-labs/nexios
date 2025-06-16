@@ -1,9 +1,10 @@
+import http
 import traceback
 import typing
-import http
-from nexios.http import Request, Response
+
 from nexios.config import get_config
 from nexios.exceptions import NotFoundException
+from nexios.http import Request, Response
 
 
 def generate_html_page(title: str, message: str) -> str:
