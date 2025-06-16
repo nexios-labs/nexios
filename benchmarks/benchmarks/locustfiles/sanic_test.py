@@ -1,6 +1,7 @@
 from locust import HttpUser, task, between
 import json
 
+
 class SanicUser(HttpUser):
     wait_time = between(1, 3)
     host = "http://127.0.0.1:8002"
@@ -20,10 +21,10 @@ class SanicUser(HttpUser):
             "number": 42,
             "boolean": True,
             "array": [1, 2, 3],
-            "object": {"key": "value"}
+            "object": {"key": "value"},
         }
         self.client.post("/echo", json=payload)
 
     @task(1)
     def get_delay(self):
-        self.client.get("/delay/0.1") 
+        self.client.get("/delay/0.1")
