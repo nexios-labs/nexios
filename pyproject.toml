@@ -67,6 +67,8 @@ nexios = "nexios.cli:cli"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_fixture_scope = "function"
+addopts = "--ignore=benchmarks"
+
 
 [tool.mypy]
 python_version = "3.13"
