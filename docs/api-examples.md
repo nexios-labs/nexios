@@ -343,23 +343,16 @@ For JWT authentication:
 
 ::: code-group
 ```python [Auth Handler]
-from nexios.auth import JWTAuth
+from nexios.auth import JWTAuthBackend
 from nexios.exceptions import HTTPException
 from datetime import datetime, timedelta
 from typing import Optional
 
-class AuthConfig:
-    SECRET_KEY: str = "your-secret-key"  # Use environment variable in production
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE: timedelta = timedelta(minutes=30)
-    REFRESH_TOKEN_EXPIRE: timedelta = timedelta(days=7)
-    TOKEN_ROTATION_THRESHOLD: timedelta = timedelta(minutes=5)
 
-auth = JWTAuth(
-    secret_key=AuthConfig.SECRET_KEY,
-    algorithm=AuthConfig.ALGORITHM,
-    access_token_expire=AuthConfig.ACCESS_TOKEN_EXPIRE,
-    refresh_token_expire=AuthConfig.REFRESH_TOKEN_EXPIRE
+async def get_user_from_token(**payload):
+    ...
+auth = JWTAuthBackend(
+   get_user_from_token
 )
 
 @router.post("/auth/login")
@@ -615,7 +608,7 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 @router.post("/files/upload")
 async def upload_file(request, response):
     """Upload a file."""
-    files = await request.files()
+    files = await request.files
     if not files:
         raise HTTPException(400, "No file uploaded")
     
@@ -865,13 +858,13 @@ async def generic_exception_handler(request, exc):
 ### API Testing
 
 ```python
-from nexios.testing import TestClient
+from nexios.testing import Client
 import pytest
 
 @pytest.fixture
 async def client():
     app = create_test_app()
-    async with TestClient(app) as client:
+    async with Client(app) as client:
         yield client
 
 async def test_create_user(client):
