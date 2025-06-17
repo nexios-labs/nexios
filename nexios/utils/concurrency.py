@@ -15,7 +15,6 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    overload,
 )
 
 T = TypeVar("T")

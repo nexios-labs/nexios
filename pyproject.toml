@@ -41,8 +41,6 @@ dependencies = [
     "typing-extensions==4.12.2",
     "pydantic>=2.0,<3.0",
     "click>=8.1.3",
-    "setuptools>=42.0.0",
-    "seaborn>=0.13.2",
 ]
 
 [project.optional-dependencies]
@@ -59,6 +57,14 @@ dev = [
     "typing-extensions==4.12.2",
     "pytest-asyncio>=0.25.3,<0.27.0",
     "pyjwt>=2.7.0",
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "flake8-pyproject"
 ]
 
 [project.scripts]
@@ -80,4 +86,45 @@ disallow_untyped_calls = false
 disallow_untyped_defs = false
 files = ["nexios"]
 exclude = "(nexios/templates/.*)"
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88
+skip = [".git", "__pycache__", "build", "dist", ".venv", ".pytest_cache", "htmlcov", "node_modules", "templates", "docs"]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503", "E402", "E741"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    ".pytest_cache",
+    "htmlcov",
+    "node_modules",
+    "templates",
+    "docs",
+    "test/",
+    "sandbox.py"
+
+]
+per-file-ignores = [
+    "__init__.py: F401",
+    "test/*: F401",
+    "examples/*: F401",
+    "benchmarks/*: F401"
+]
+max-complexity = 15
 
