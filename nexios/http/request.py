@@ -104,7 +104,7 @@ class HTTPConnection(object):
         return self.scope["app"]
 
     @property
-    def base_app(self) -> "NexiosApp":  # type: ignore
+    def base_app(self) -> "NexiosApp":   # noqa: F821
         return self.scope["base_app"]
 
     @property

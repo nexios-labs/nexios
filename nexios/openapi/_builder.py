@@ -32,7 +32,7 @@ class APIDocumentation:
 
     def __init__(
         self,
-        app: Optional["NexiosApp"] = None,
+        app: Optional["NexiosApp"] = None, # noqa: F821
         config: Optional[OpenAPIConfig] = None,
         swagger_url: str = "/docs",
         redoc_url: str = "/redoc",

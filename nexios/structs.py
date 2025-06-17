@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any, Dict, ItemsView, Iterator, KeysView, Sequence, ValuesView
 
 import typing
 from urllib.parse import SplitResult, parse_qsl, urlencode, urlsplit
@@ -631,7 +632,6 @@ class State:
         del self._state[key]
 
 
-from typing import Any, Dict, ItemsView, Iterator, KeysView, Sequence, ValuesView
 
 
 class RouteParam:

@@ -1,5 +1,5 @@
-# type: ignore
 
+from nexios.application import NexiosApp
 import typing
 from typing import Any, AsyncIterable, Dict, Iterable, Union
 
@@ -10,7 +10,6 @@ from .transport import (
 )
 
 _RequestData = typing.Mapping[str, typing.Union[str, typing.Iterable[str], bytes]]
-from nexios.application import NexiosApp
 
 
 class Client(httpx.AsyncClient):

@@ -1,1 +1,1 @@
-from .models import *
+from .models import *  # noqa: F403

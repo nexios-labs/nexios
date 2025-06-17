@@ -607,7 +607,7 @@ class ServerErrorMiddleware(BaseMiddleware):
 
         try:
             return json.dumps(error_data, indent=2)
-        except:
+        except Exception as _:
             # If JSON serialization fails, provide a simplified version
             return json.dumps(
                 {

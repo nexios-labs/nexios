@@ -360,14 +360,15 @@ class Event(EventSerializationMixin):
         with self._lock:
             for priority in EventPriority:
                 self._listeners[priority] = [
-                    l
-                    for l in self._listeners[priority]
-                    if not self._listeners_equal(l, listener)
+                    registered_listener
+                    for registered_listener in self._listeners[priority]
+                    if not self._listeners_equal(registered_listener, listener)
                 ]
+
                 self._once_listeners[priority] = [
-                    l
-                    for l in self._once_listeners[priority]
-                    if not self._listeners_equal(l, listener)
+                    registered_listener
+                    for registered_listener in self._once_listeners[priority]
+                    if not self._listeners_equal(registered_listener, listener)
                 ]
 
     def _listeners_equal(
@@ -403,13 +404,13 @@ class Event(EventSerializationMixin):
         with self._lock:
             for priority in EventPriority:
                 if any(
-                    self._listeners_equal(l, listener)
-                    for l in self._listeners[priority]
+                    self._listeners_equal(_, listener)
+                    for _ in self._listeners[priority]
                 ):
                     return True
                 if any(
-                    self._listeners_equal(l, listener)
-                    for l in self._once_listeners[priority]
+                    self._listeners_equal(_, listener)
+                    for _ in self._once_listeners[priority]
                 ):
                     return True
             return False
