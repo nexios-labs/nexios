@@ -2,11 +2,11 @@
 Template utility functions.
 """
 
-from typing import Any, Dict, Optional, Union
-from pathlib import Path
-import os
 import hashlib
+import os
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Optional, Union
 
 
 def static_hash(filepath: str) -> str:

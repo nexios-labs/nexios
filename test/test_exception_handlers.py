@@ -1,9 +1,11 @@
+from typing import Tuple
+
 import pytest
-from nexios import get_application, NexiosApp
+
+from nexios import NexiosApp, get_application
 from nexios.exceptions import HTTPException, NotFoundException
 from nexios.http import Request, Response
 from nexios.testing import Client
-from typing import Tuple
 
 
 @pytest.fixture

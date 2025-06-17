@@ -1,13 +1,13 @@
 import re
+import typing
+from typing import Any, Callable, Dict, List, Optional
+
+from nexios.config import get_config
+from nexios.http import Request, Response
+from nexios.logging import getLogger
 
 # from typing_extensions import Annotated, Doc
 from nexios.middleware.base import BaseMiddleware
-from nexios.http import Request, Response
-from nexios.config import get_config
-from typing import Callable, Optional, List, Dict, Any
-import typing
-from nexios.logging import getLogger
-
 
 logger = getLogger()
 

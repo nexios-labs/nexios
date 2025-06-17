@@ -1,8 +1,8 @@
-from nexios import NexiosApp
-from nexios.http import Request, Response
-from nexios import get_application
-from nexios.testing import Client
 import pytest
+
+from nexios import NexiosApp, get_application
+from nexios.http import Request, Response
+from nexios.testing import Client
 
 app: NexiosApp = get_application()
 

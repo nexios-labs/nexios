@@ -1,12 +1,14 @@
-from nexios import NexiosApp
-from nexios.middleware.base import BaseMiddleware
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+import datetime
+from contextlib import asynccontextmanager
+from typing import List, Optional
+
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
-import datetime
-from typing import Optional, List
-from contextlib import asynccontextmanager
+
+from nexios import NexiosApp
+from nexios.middleware.base import BaseMiddleware
 
 # Database configuration
 DATABASE_URL = "sqlite+aiosqlite:///./example_async.db"

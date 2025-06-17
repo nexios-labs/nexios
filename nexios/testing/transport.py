@@ -1,9 +1,10 @@
-import httpx
-import anyio
 import io
-from typing import Any, Tuple, Optional, List, Dict, AsyncGenerator, Union
-from urllib.parse import unquote
 from enum import Enum
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union
+from urllib.parse import unquote
+
+import anyio
+import httpx
 
 ASGIScope = Dict[str, Any]
 Message = Dict[str, Any]

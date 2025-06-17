@@ -1,8 +1,9 @@
-from nexios.websockets import WebSocket
-from nexios.exceptions import WebSocketException
-from nexios.types import ASGIApp, Send, Receive, Scope
-from nexios.logging import getLogger
 import traceback
+
+from nexios.exceptions import WebSocketException
+from nexios.logging import getLogger
+from nexios.types import ASGIApp, Receive, Scope, Send
+from nexios.websockets import WebSocket
 
 logger = getLogger("nexios")
 

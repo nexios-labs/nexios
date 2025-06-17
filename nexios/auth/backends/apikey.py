@@ -1,5 +1,7 @@
-from typing import Any, Callable, Awaitable
+from typing import Any, Awaitable, Callable
+
 from typing_extensions import Annotated, Doc
+
 from nexios.auth.base import AuthenticationBackend, UnauthenticatedUser
 from nexios.http import Request, Response
 

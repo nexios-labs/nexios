@@ -1,9 +1,9 @@
-from typing import List, Dict, Any, TypeVar, Union, Callable, Type, Tuple
-from .http.request import Request
-from .http.response import NexiosResponse
-from .http.request import Request
 import typing
 from functools import wraps
+from typing import Any, Callable, Dict, List, Tuple, Type, TypeVar, Union
+
+from .http.request import Request
+from .http.response import NexiosResponse
 from .types import HandlerType
 
 F = TypeVar("F", bound=HandlerType)

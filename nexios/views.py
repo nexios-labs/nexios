@@ -1,7 +1,8 @@
-from typing import Any, Dict, List, Optional, Type, Callable, Coroutine
+import logging
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Type
+
 from nexios.http import Request, Response
 from nexios.routing import Routes as Route
-import logging
 from nexios.types import MiddlewareType
 
 logger = logging.getLogger(__name__)

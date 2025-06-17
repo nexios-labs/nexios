@@ -1,7 +1,9 @@
+import asyncio
+
+import uvicorn
+
 from nexios import NexiosApp
 from nexios.http import Request, Response
-import asyncio
-import uvicorn
 
 app = NexiosApp()
 

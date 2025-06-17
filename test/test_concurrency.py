@@ -1,12 +1,14 @@
-import pytest
 import asyncio
 import time
+
+import pytest
+
 from nexios.utils.concurrency import (
+    AsyncLazy,
     TaskGroup,
+    create_background_task,
     run_in_threadpool,
     run_until_first_complete,
-    create_background_task,
-    AsyncLazy,
 )
 
 

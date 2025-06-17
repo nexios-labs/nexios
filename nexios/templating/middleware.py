@@ -2,9 +2,10 @@
 Template context middleware for Nexios.
 """
 
-from typing import Any, Callable, Dict, Optional, Awaitable
-from nexios.types import Request, Response, MiddlewareType
+from typing import Any, Awaitable, Callable, Dict, Optional
+
 from nexios.middleware import BaseMiddleware
+from nexios.types import MiddlewareType, Request, Response
 
 
 class TemplateContextMiddleware(BaseMiddleware):

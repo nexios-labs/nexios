@@ -1,8 +1,10 @@
-from nexios import NexiosApp
-from pydantic import BaseModel, Field, EmailStr, constr, ValidationError
-from typing import Optional, List
 from datetime import date, datetime
 from enum import Enum
+from typing import List, Optional
+
+from pydantic import BaseModel, EmailStr, Field, ValidationError, constr
+
+from nexios import NexiosApp
 
 app = NexiosApp()
 

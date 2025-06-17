@@ -1,4 +1,5 @@
 from typing import Any, Callable
+
 from nexios.auth.base import AuthenticationBackend, UnauthenticatedUser
 from nexios.http import Request, Response
 

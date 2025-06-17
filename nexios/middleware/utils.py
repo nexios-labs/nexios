@@ -1,8 +1,9 @@
-from typing import Callable, Awaitable, Any
-from nexios.http import Request, Response
-from nexios.types import HandlerType
 import re
 from functools import wraps
+from typing import Any, Awaitable, Callable
+
+from nexios.http import Request, Response
+from nexios.types import HandlerType
 
 
 def use_for_route(route: str) -> None:

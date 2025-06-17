@@ -1,5 +1,6 @@
-from sanic import Sanic, response
 import asyncio
+
+from sanic import Sanic, response
 
 app = Sanic("sanic_app")
 

@@ -1,5 +1,6 @@
 from typing import (
     Any,
+    AsyncContextManager,
     Awaitable,
     Callable,
     Dict,
@@ -7,26 +8,33 @@ from typing import (
     Optional,
     Type,
     Union,
-    AsyncContextManager,
 )
 
 from pydantic import BaseModel
 from typing_extensions import Annotated, Doc
 
+from nexios._internals._middleware import (
+    ASGIRequestResponseBridge,
+)
+from nexios._internals._middleware import DefineMiddleware as Middleware
+from nexios._internals._middleware import (
+    wrap_middleware,
+)
 from nexios.config import DEFAULT_CONFIG, MakeConfig
 from nexios.events import AsyncEventEmitter
 from nexios.exception_handler import ExceptionHandlerType, ExceptionMiddleware
 from nexios.logging import create_logger
 from nexios.middleware.errors.server_error_handler import (
-    ServerErrorMiddleware,
     ServerErrHandlerType,
+    ServerErrorMiddleware,
 )
 from nexios.openapi._builder import APIDocumentation
 from nexios.openapi.config import OpenAPIConfig
 from nexios.openapi.models import HTTPBearer, Parameter, Path, Schema
 from nexios.routing.base import BaseRoute
 from nexios.structs import URLPath
-from .routing import Router, Routes, WSRouter, WebsocketRoutes
+
+from .routing import Router, Routes, WebsocketRoutes, WSRouter
 from .types import (
     ASGIApp,
     HandlerType,
@@ -36,11 +44,6 @@ from .types import (
     Scope,
     Send,
     WsHandlerType,
-)
-from nexios._internals._middleware import (
-    wrap_middleware,
-    ASGIRequestResponseBridge,
-    DefineMiddleware as Middleware,
 )
 
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
@@ -101,7 +104,7 @@ class NexiosApp(object):
     ):
 
         self.config = config or DEFAULT_CONFIG
-        from nexios.config import set_config, get_config
+        from nexios.config import get_config, set_config
 
         try:
             get_config()

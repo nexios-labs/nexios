@@ -1,10 +1,11 @@
-from pathlib import Path
 import os
 import warnings
-from typing import Union, List, Optional
+from pathlib import Path
+from typing import List, Optional, Union
+
 from nexios.http import Request, Response
 from nexios.routing import BaseRouter
-from nexios.types import Scope, Receive, Send
+from nexios.types import Receive, Scope, Send
 
 
 class StaticFilesHandler:

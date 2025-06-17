@@ -1,8 +1,10 @@
-from nexios import NexiosApp
-from tortoise import fields, Model
+import datetime
+
+from tortoise import Model, fields
 from tortoise.contrib.pydantic import pydantic_model_creator
 from tortoise.expressions import Q
-import datetime
+
+from nexios import NexiosApp
 
 app = NexiosApp()
 

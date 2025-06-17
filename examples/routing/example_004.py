@@ -1,4 +1,4 @@
-from nexios import get_application, NexiosApp
+from nexios import NexiosApp, get_application
 from nexios.routing import Router
 
 app = NexiosApp()

@@ -1,9 +1,19 @@
-from nexios.middleware.base import BaseMiddleware
-from nexios.http import Request, Response
-from nexios.config import get_config
-import traceback, html, sys, inspect, typing, platform, json, datetime, uuid, os
-from nexios.logging import DEBUG, create_logger
+import datetime
+import html
+import inspect
+import json
+import os
+import platform
+import sys
+import traceback
+import typing
+import uuid
+
 from nexios.__main__ import __version__ as nexios_version
+from nexios.config import get_config
+from nexios.http import Request, Response
+from nexios.logging import DEBUG, create_logger
+from nexios.middleware.base import BaseMiddleware
 
 logger = create_logger(__name__, log_level=DEBUG)
 STYLES = """

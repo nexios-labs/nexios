@@ -1,9 +1,11 @@
-import pytest
 from pathlib import Path
-from nexios.templating import TemplateEngine, TemplateConfig, render
-from nexios.testing import Client as TestClient
+
+import pytest
+
 from nexios import NexiosApp
+from nexios.templating import TemplateConfig, TemplateEngine, render
 from nexios.templating.middleware import TemplateContextMiddleware
+from nexios.testing import Client as TestClient
 
 
 @pytest.fixture

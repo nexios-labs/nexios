@@ -1,6 +1,8 @@
-from nexios.http import Request, Response
 import typing
-from typing_extensions import Annotated, Doc, Any
+
+from typing_extensions import Annotated, Any, Doc
+
+from nexios.http import Request, Response
 
 
 class BaseMiddleware:

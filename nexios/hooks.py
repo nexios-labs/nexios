@@ -1,7 +1,8 @@
-from functools import wraps
 import asyncio
 import time
-from typing import Callable, Optional, Awaitable, List, Any, Dict
+from functools import wraps
+from typing import Any, Awaitable, Callable, Dict, List, Optional
+
 from nexios.http import Request, Response
 from nexios.logging import getLogger
 

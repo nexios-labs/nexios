@@ -1,8 +1,12 @@
-import secrets, re, typing
+import re
+import secrets
+import typing
+
+from itsdangerous import BadSignature, URLSafeSerializer  # type:ignore
+
 from nexios.config import get_config
-from itsdangerous import URLSafeSerializer, BadSignature  # type:ignore
-from nexios.middleware.base import BaseMiddleware
 from nexios.http import Request, Response
+from nexios.middleware.base import BaseMiddleware
 
 
 class CSRFMiddleware(BaseMiddleware):

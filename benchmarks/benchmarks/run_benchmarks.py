@@ -1,10 +1,11 @@
+import json
+import os
+import shutil
 import subprocess
 import time
-import os
-import json
-import shutil
-import requests
 from datetime import datetime
+
+import requests
 
 
 def clean_previous_results():

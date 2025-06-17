@@ -1,10 +1,11 @@
-from nexios import get_application
+from typing import Optional
+
 import pytest
+from pydantic import BaseModel
+
+from nexios import Depend, get_application
 from nexios.http import Request, Response
 from nexios.testing import Client
-from nexios import Depend
-from typing import Optional
-from pydantic import BaseModel
 
 
 @pytest.fixture

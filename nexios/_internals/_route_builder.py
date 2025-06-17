@@ -1,9 +1,10 @@
-import typing
-from nexios.converters import Convertor, CONVERTOR_TYPES
-from dataclasses import dataclass
 import re
+import typing
+from dataclasses import dataclass
 from enum import Enum
-from typing import Pattern, List, Dict
+from typing import Dict, List, Pattern, Set
+
+from nexios.converters import CONVERTOR_TYPES, Convertor
 
 PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z_][a-zA-Z0-9_]*)?}")
 

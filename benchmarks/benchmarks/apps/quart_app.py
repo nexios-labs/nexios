@@ -1,7 +1,8 @@
-from quart import Quart, request
 import asyncio
+
 import hypercorn.asyncio
 import hypercorn.config
+from quart import Quart, request
 
 app = Quart(__name__)
 

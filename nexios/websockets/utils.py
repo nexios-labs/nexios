@@ -1,9 +1,9 @@
+import typing
+import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
-from dataclasses import dataclass
-import uuid
 from uuid import UUID
-import typing
 
 
 class ChannelAddStatusEnum(Enum):
