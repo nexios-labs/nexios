@@ -62,9 +62,7 @@ dev = [
     "pytest-cov>=4.0.0",
     "black>=23.0.0",
     "isort>=5.12.0",
-    "flake8>=6.0.0",
-    "mypy>=1.0.0",
-    "flake8-pyproject"
+    "ruff"
 ]
 
 [project.scripts]
