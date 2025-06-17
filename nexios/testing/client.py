@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 from nexios.application import NexiosApp
-=======
->>>>>>> 84cc99752c61e2a177ac269c16988731e2960ec2
 import typing
 from typing import Any, AsyncIterable, Dict, Iterable, Union
 
