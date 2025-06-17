@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 from typing import List, Optional, TypedDict
 
-
 from nexios.application import NexiosApp
 from nexios.logging import create_logger
 from nexios.routing import Routes

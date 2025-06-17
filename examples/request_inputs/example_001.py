@@ -2,7 +2,6 @@
 Example of getting and processing JSON data
 """
 
-
 from pydantic import BaseModel, ValidationError
 
 from nexios import NexiosApp

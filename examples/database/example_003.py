@@ -1,4 +1,3 @@
-
 from tortoise import Model, fields
 from tortoise.contrib.pydantic import pydantic_model_creator
 from tortoise.expressions import Q

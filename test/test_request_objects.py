@@ -1,4 +1,3 @@
-
 import pytest
 
 from nexios import get_application

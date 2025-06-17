@@ -1,4 +1,3 @@
-
 from nexios import NexiosApp
 from nexios.auth.backends.jwt import JWTAuthBackend, create_jwt
 from nexios.auth.base import BaseUser
