@@ -122,7 +122,7 @@ class FileRouter:
                             handler_function,
                             "_exclude_from_schema",
                             self.config.get("exclude_from_schema", False),
-                        ), # type: ignore
+                        ),  # type: ignore
                     )
                 )
 
