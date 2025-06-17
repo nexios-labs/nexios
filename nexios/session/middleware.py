@@ -25,7 +25,6 @@ class SessionMiddleware(BaseMiddleware):
 
         self.config = get_config().session
         if not self.secret:
-
             return await call_next()
 
         if self.config:

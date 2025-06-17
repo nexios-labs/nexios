@@ -183,7 +183,6 @@ class WSRouter(BaseRouter):
         await app(scope, receive, send)
 
     async def app(self, scope: Scope, receive: Receive, send: Send) -> None:
-
         url = get_route_path(scope)
         for mount_path, sub_app in self.sub_routers.items():
             if url.startswith(mount_path):
@@ -193,7 +192,6 @@ class WSRouter(BaseRouter):
         for route in self.routes:
             match, params = route.match(url)
             if match:
-
                 scope["route_params"] = params
                 await route.handle(scope, receive, send)
                 return

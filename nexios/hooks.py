@@ -30,7 +30,6 @@ def before_request(
         async def wrapper(
             req: Request, res: Response, *args: List[Any], **kwargs: Dict[str, Any]
         ):
-
             if only_methods and req.method.upper() not in map(str.upper, only_methods):
                 return await handler(*args, **kwargs)
             if for_routes and req.url.path not in for_routes:
@@ -67,7 +66,6 @@ def after_request(
         async def wrapper(
             req: Request, res: Response, *args: List[Any], **kwargs: Dict[str, Any]
         ):
-
             response: Response = await handler(req, res, *args, **kwargs)
             if only_methods and req.method.upper() not in map(str.upper, only_methods):
                 return response

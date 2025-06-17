@@ -29,7 +29,6 @@ class TemplateConfig(MakeConfig):
         custom_filters: Dict[str, Callable[[Any], Any]] = {},
         custom_globals: Dict[str, Any] = {},
     ):
-
         super().__init__(
             {
                 "template_dir": template_dir,

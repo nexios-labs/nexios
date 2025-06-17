@@ -11,7 +11,6 @@ Message = typing.MutableMapping[str, typing.Any]
 
 
 class WebSocketConsumer:
-
     channel: typing.Optional[Channel] = None
     middleware: typing.List[typing.Any] = []
 
@@ -102,9 +101,9 @@ class WebSocketConsumer:
                 await websocket.close(code=status.WS_1003_UNSUPPORTED_DATA)
                 raise RuntimeError("Malformed JSON data received.")
 
-        assert (
-            self.encoding is None
-        ), f"Unsupported 'encoding' attribute {self.encoding}"
+        assert self.encoding is None, (
+            f"Unsupported 'encoding' attribute {self.encoding}"
+        )
         return message["text"] if message.get("text") else message["bytes"]
 
     async def on_connect(self, websocket: WebSocket) -> None:
@@ -184,7 +183,6 @@ class WebSocketConsumer:
             group_name: The name of the group to join.
         """
         if self.channel:
-
             await ChannelBox.add_channel_to_group(self.channel, group_name=group_name)
             if self.logging_enabled:
                 self.logger.info(f"Channel joined group '{group_name}'")

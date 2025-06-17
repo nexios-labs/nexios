@@ -18,7 +18,6 @@ def _lookup_exception_handler(
     exc_handlers: typing.Dict[typing.Any[int, Exception], ExceptionHandlerType],
     exc: Exception,
 ):
-
     for cls in type(exc).__mro__:
         if cls in exc_handlers:  # type: ignore
             return exc_handlers[cls]
@@ -32,7 +31,6 @@ async def wrap_http_exceptions(
     exception_handlers: typing.Dict[type[Exception], ExceptionHandlerType],
     status_handlers: typing.Dict[int, ExceptionHandlerType],
 ) -> typing.Any:
-
     try:
         exception_handlers, status_handlers = exception_handlers, status_handlers
     except KeyError:
@@ -44,7 +42,9 @@ async def wrap_http_exceptions(
         handler: typing.Any[ExceptionHandlerType, None] = None  # type: ignore
 
         if isinstance(exc, HTTPException):
-            handler: typing.Optional[ExceptionHandlerType] = status_handlers.get(exc.status_code)  # type: ignore
+            handler: typing.Optional[ExceptionHandlerType] = status_handlers.get(
+                exc.status_code
+            )  # type: ignore
 
             if handler:
                 return await handler(request, response, exc)  # type: ignore
@@ -89,7 +89,6 @@ class ExceptionMiddleware:
         response: Response,
         call_next: typing.Callable[[], typing.Awaitable[Response]],
     ):
-
         return await wrap_http_exceptions(
             request=request,
             response=response,

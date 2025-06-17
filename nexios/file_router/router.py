@@ -78,9 +78,7 @@ class FileRouter:
         # Convert file path to a valid module import path
         module_path = (
             Path(route_file_path).with_suffix("").as_posix().replace("/", ".")
-        ).lstrip(
-            "."
-        )  # Remove leading dot if present
+        ).lstrip(".")  # Remove leading dot if present
 
         module = importlib.import_module(module_path)  # Import dynamically
 

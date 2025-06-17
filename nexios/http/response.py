@@ -136,7 +136,6 @@ class BaseResponse:
             cookie[key]["max-age"] = max_age
         if expires is not None:
             if isinstance(expires, datetime):
-
                 cookie[key]["expires"] = format_datetime(expires, usegmt=True)
             else:
                 cookie[key]["expires"] = expires
@@ -214,12 +213,10 @@ class BaseResponse:
 
     @property
     def body(self):
-
         return self._body
 
     @property
     def raw_headers(self):
-
         return self._headers
 
     def _generate_etag(self) -> str:
@@ -399,7 +396,6 @@ class FileResponse(BaseResponse):
                 self.set_header("content-length", str(content_length), overide=True)
                 self.status_code = 206
             elif len(self._ranges) > 1:
-
                 self._multipart_boundary = self._generate_multipart_boundary()
                 self.set_header(
                     "content-type",
@@ -408,7 +404,6 @@ class FileResponse(BaseResponse):
                 self.status_code = 206
 
         except ValueError as _:
-
             self.set_header("content-range", f"bytes */{file_size}")
             self.status_code = 416
 
@@ -433,7 +428,6 @@ class FileResponse(BaseResponse):
             return
 
         async with await anyio.open_file(self.path, "rb") as file:
-
             if self._multipart_boundary:
                 for start, end in self._ranges:
                     await self._send_multipart_chunk(file, start, end, send)
@@ -626,7 +620,6 @@ class RedirectResponse(BaseResponse):
 
 
 class NexiosResponse:
-
     _instance = None
 
     def __new__(cls, *args, **kwargs):  # type:ignore

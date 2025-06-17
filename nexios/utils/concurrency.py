@@ -82,7 +82,7 @@ async def run_until_first_complete(
     *args: Union[
         Tuple[Callable[[], Coroutine[Any, Any, T]], dict],
         Callable[[], Coroutine[Any, Any, T]],
-    ]
+    ],
 ) -> T:
     """Run multiple coroutines and return when the first one completes."""
     tasks: List[asyncio.Task] = []

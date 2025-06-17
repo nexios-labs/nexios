@@ -132,7 +132,6 @@ class CORSMiddleware(BaseMiddleware):
             return False
 
         if "*" in self.allow_origins:
-
             return True
 
         if self.allow_origin_regex and self.allow_origin_regex.fullmatch(origin):
@@ -147,7 +146,6 @@ class CORSMiddleware(BaseMiddleware):
         if "*" in self.allow_methods:
             return True
         if (method or str()).lower() not in [x.lower() for x in self.allow_methods]:
-
             return False
         return True
 
@@ -159,7 +157,6 @@ class CORSMiddleware(BaseMiddleware):
         headers = self.preflight_headers.copy()
 
         if not self.is_allowed_origin(origin):
-
             if self.debug:
                 logger.error(
                     f"Preflight request denied: Origin '{origin}' is not allowed."

@@ -59,9 +59,9 @@ class FormParser:
     def __init__(
         self, headers: Headers, stream: typing.AsyncGenerator[bytes, None]
     ) -> None:
-        assert (
-            multipart is not None
-        ), "The `python-multipart` library must be installed to use form parsing."
+        assert multipart is not None, (
+            "The `python-multipart` library must be installed to use form parsing."
+        )
         self.headers = headers
         self.stream = stream
         self.messages: list[tuple[FormMessage, bytes]] = []
@@ -149,9 +149,9 @@ class MultiPartParser:
         max_fields: typing.Optional[int] = None,
         max_files: typing.Optional[int] = None,
     ) -> None:
-        assert (
-            multipart is not None
-        ), "The `python-multipart` library must be installed to use form parsing."
+        assert multipart is not None, (
+            "The `python-multipart` library must be installed to use form parsing."
+        )
         self.headers = headers
         self.stream = stream
         self.max_files = max_files if max_files is not None else self.max_files
@@ -194,7 +194,8 @@ class MultiPartParser:
                 (
                     self._current_part.field_name,
                     _user_safe_decode(
-                        self._current_part.data, self._charset  # type: ignore
+                        self._current_part.data,
+                        self._charset,  # type: ignore
                     ),
                 )
             )
@@ -225,7 +226,8 @@ class MultiPartParser:
         _, options = parse_options_header(self._current_part.content_disposition)
         try:
             self._current_part.field_name = _user_safe_decode(
-                options[b"name"], self._charset  # type: ignore
+                options[b"name"],
+                self._charset,  # type: ignore
             )
         except KeyError:
             raise MultiPartException(
@@ -238,7 +240,8 @@ class MultiPartParser:
                     f"Too many files. Maximum number of files is {self.max_files}."
                 )
             filename = _user_safe_decode(
-                options[b"filename"], self._charset  # type: ignore
+                options[b"filename"],
+                self._charset,  # type: ignore
             )  # type:ignore
             tempfile = SpooledTemporaryFile(max_size=self.max_file_size)
             self._files_to_close_on_error.append(tempfile)

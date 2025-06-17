@@ -38,7 +38,6 @@ class SignedSessionManager(BaseSessionInterface):
 
             return session_data  # type:ignore
         except BadSignature:
-
             return {}
 
     def get_session_cookie(self) -> str:

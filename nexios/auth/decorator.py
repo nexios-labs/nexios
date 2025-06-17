@@ -9,7 +9,6 @@ from .exceptions import AuthenticationFailed
 
 
 class auth(RouteDecorator):
-
     def __init__(self, scopes: typing.Union[str, typing.List[str], None] = None):
         super().__init__()
         if isinstance(scopes, str):
@@ -26,7 +25,6 @@ class auth(RouteDecorator):
             typing.Callable[..., typing.Awaitable[typing.Any]],
         ],
     ) -> typing.Any:
-
         if getattr(handler, "_is_wrapped", False):
             return handler
 

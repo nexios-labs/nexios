@@ -1,4 +1,3 @@
-
 from nexios.application import NexiosApp
 import typing
 from typing import Any, AsyncIterable, Dict, Iterable, Union
@@ -64,12 +63,17 @@ class Client(httpx.AsyncClient):
         params: Union[httpx._types.QueryParamTypes, None] = None,  # type: ignore
         headers: Union[httpx._types.HeaderTypes, None] = None,  # type: ignore
         cookies: Union[httpx._types.CookieTypes, None] = None,  # type: ignore
-        auth: Union[httpx._types.AuthTypes, httpx._client.UseClientDefault] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
-        follow_redirects: Union[bool, httpx._client.UseClientDefault] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
-        timeout: Union[httpx._types.TimeoutTypes, httpx._client.UseClientDefault] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
+        auth: Union[
+            httpx._types.AuthTypes, httpx._client.UseClientDefault
+        ] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
+        follow_redirects: Union[
+            bool, httpx._client.UseClientDefault
+        ] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
+        timeout: Union[
+            httpx._types.TimeoutTypes, httpx._client.UseClientDefault
+        ] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
         extensions: Union[Dict[str, typing.Any], None] = None,
     ) -> httpx.Response:
-
         response = await super().request(
             method,
             url,
@@ -94,9 +98,15 @@ class Client(httpx.AsyncClient):
         params: Union[httpx._types.QueryParamTypes, None] = None,  # type: ignore
         headers: Union[httpx._types.HeaderTypes, None] = None,  # type: ignore
         cookies: Union[httpx._types.CookieTypes, None] = None,  # type: ignore
-        auth: Union[httpx._types.AuthTypes, httpx._client.UseClientDefault] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
-        follow_redirects: Union[bool, httpx._client.UseClientDefault] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
-        timeout: Union[httpx._types.TimeoutTypes, httpx._client.UseClientDefault] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
+        auth: Union[
+            httpx._types.AuthTypes, httpx._client.UseClientDefault
+        ] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
+        follow_redirects: Union[
+            bool, httpx._client.UseClientDefault
+        ] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
+        timeout: Union[
+            httpx._types.TimeoutTypes, httpx._client.UseClientDefault
+        ] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
         extensions: Union[Dict[str, typing.Any], None] = None,
     ) -> httpx.Response:
         return await self.handle_request(

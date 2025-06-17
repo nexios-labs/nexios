@@ -22,9 +22,9 @@ class Group(BaseRoute):
         middleware: typing.List[Middleware] | None = None,
     ) -> None:
         assert path == "" or path.startswith("/"), "Routed paths must start with '/'"
-        assert (
-            app is not None or routes is not None
-        ), "Either 'app=...', or 'routes=' must be specified"
+        assert app is not None or routes is not None, (
+            "Either 'app=...', or 'routes=' must be specified"
+        )
 
         self.path = path.rstrip("/")
         self.name = name

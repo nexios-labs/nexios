@@ -50,7 +50,6 @@ class APIView:
         self.request = req
         self.res = res
         try:
-
             method = req.method.lower()
             handler = getattr(self, method, self.method_not_allowed)
             return await handler(req, res, **kwargs)

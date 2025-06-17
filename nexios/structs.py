@@ -632,8 +632,6 @@ class State:
         del self._state[key]
 
 
-
-
 class RouteParam:
     def __init__(self, data: Dict[str, Any]) -> None:
         """Initialize the RouteParam with a dictionary."""
@@ -759,7 +757,6 @@ class UploadedFile:
 class FormData(
     MultiDict[str, typing.Union[UploadedFile, str, Sequence[Any]]]  # type:ignore
 ):  # type:ignore
-
     def __init__(
         self,
         *args: typing.Union[
@@ -769,7 +766,6 @@ class FormData(
         ],
         **kwargs: typing.Union[str, UploadedFile],
     ) -> None:
-
         super().__init__(*args, **kwargs)
 
     async def close(self) -> None:

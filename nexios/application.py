@@ -50,7 +50,6 @@ lifespan_manager = Callable[["NexiosApp"], AsyncContextManager[bool]]
 
 
 class NexiosApp(object):
-
     def __init__(
         self,
         config: Annotated[
@@ -99,7 +98,6 @@ class NexiosApp(object):
         lifespan: Optional[lifespan_manager] = None,
         routes: Optional[List[Routes]] = None,
     ):
-
         self.config = config or DEFAULT_CONFIG
         from nexios.config import get_config, set_config
 
@@ -123,9 +121,7 @@ class NexiosApp(object):
         self.route = self.router.route
         self.lifespan_context: Optional[lifespan_manager] = lifespan
 
-        openapi_config: Dict[str, Any] = self.config.to_dict().get(
-            "openapi", {}
-        )  # type:ignore
+        openapi_config: Dict[str, Any] = self.config.to_dict().get("openapi", {})  # type:ignore
         self.openapi_config = OpenAPIConfig(
             title=openapi_config.get("title", title or "Nexios API"),
             version=openapi_config.get("version", version or "1.0.0"),
@@ -307,7 +303,6 @@ class NexiosApp(object):
             if getattr(route, "exlude_from_schema", False):
                 continue
             for method in route.methods:
-
                 parameters = [
                     Path(name=x, schema=Schema(type="string"), schema_=None)  # type: ignore
                     for x in route.param_names
@@ -362,7 +357,8 @@ class NexiosApp(object):
         """
 
         self.http_middleware.insert(
-            0, Middleware(ASGIRequestResponseBridge, dispatch=middleware)  # type:ignore
+            0,
+            Middleware(ASGIRequestResponseBridge, dispatch=middleware),  # type:ignore
         )
 
     def add_ws_route(
@@ -504,9 +500,7 @@ class NexiosApp(object):
             ]
             + self.http_middleware
             + [
-                Middleware(
-                    ASGIRequestResponseBridge, dispatch=self.exceptions_handler
-                )  # type:ignore
+                Middleware(ASGIRequestResponseBridge, dispatch=self.exceptions_handler)  # type:ignore
             ]
         )
         for cls, args, kwargs in reversed(middleware):
@@ -523,7 +517,6 @@ class NexiosApp(object):
             await self.handle_http_request(scope, receive, send)
 
         else:
-
             await self.handle_websocket(scope, receive, send)
 
     def get(

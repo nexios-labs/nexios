@@ -24,7 +24,7 @@ jobs:
 
       - name: Install Formatters
         run: |
-          pip install black isort
+          pip install black isort ruff
 
       - name: Run isort
         run: isort .
@@ -32,10 +32,15 @@ jobs:
       - name: Run Black Formatter
         run: black .
 
+      - name: Run Ruff Linter and Auto-fix
+        run: |
+          ruff check . --fix
+          ruff format .
+
       - name: Commit and Push Changes
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
           git add .
-          git commit -m 'Auto-format Python code with isort and Black' || echo "No changes to commit"
+          git commit -m 'Auto-format Python code with isort, Black, and Ruff' || echo "No changes to commit"
           git push

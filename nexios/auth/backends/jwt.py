@@ -54,9 +54,7 @@ class JWTAuthBackend(AuthenticationBackend):
     def __init__(self, authenticate_func):  # type:ignore
         self.authenticate_func = authenticate_func
 
-    async def authenticate(
-        self, request: Request, response: Response
-    ) -> Any:  # type:ignore
+    async def authenticate(self, request: Request, response: Response) -> Any:  # type:ignore
         app_config = get_config()
         self.secret = app_config.secret_key
         self.algorithms = app_config.jwt_algorithms or ["HS256"]
@@ -70,7 +68,6 @@ class JWTAuthBackend(AuthenticationBackend):
         try:
             payload = decode_jwt(token, self.secret, self.algorithms)
         except ValueError as _:
-
             return None
 
         user: Any = await self.authenticate_func(**payload)

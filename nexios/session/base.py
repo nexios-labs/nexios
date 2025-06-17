@@ -8,7 +8,6 @@ from nexios.config import MakeConfig, get_config
 
 
 class BaseSessionInterface:
-
     modified = False
 
     accessed = False
@@ -18,7 +17,6 @@ class BaseSessionInterface:
     _session_cache: Dict[str, Any] = {}
 
     def __init__(self, session_key: str) -> None:
-
         config = get_config()
         self.session_key = session_key
         if not config.secret_key:
@@ -57,7 +55,6 @@ class BaseSessionInterface:
         return key in self._session_cache
 
     def set_session(self, key: str, value: str):
-
         self.modified = True
         self.accessed = True
 
@@ -88,7 +85,6 @@ class BaseSessionInterface:
         return self._session_cache.items().__len__() == 0
 
     async def save(self):
-
         raise NotImplementedError
 
     def get_cookie_name(self) -> str:
@@ -159,7 +155,6 @@ class BaseSessionInterface:
         """Determines if the cookie should be set. Depends on `config.SESSION_REFRESH_EACH_REQUEST`."""
 
         if not self.session_config:
-
             return self.modified
         return self.modified or (
             self.session_config.session_permanent
@@ -190,7 +185,7 @@ class BaseSessionInterface:
         self._expiration_time = expiration
 
     def __str__(self) -> str:
-        return f"<Sesion { self._session_cache} >"
+        return f"<Sesion {self._session_cache} >"
 
     def __del__(self) -> None:
         self.clear()
