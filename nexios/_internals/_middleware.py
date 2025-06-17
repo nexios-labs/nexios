@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import sys
 import typing
+from collections.abc import Iterator
+from typing import Any, Protocol
 
 import anyio
 
@@ -10,24 +13,17 @@ from nexios.types import ASGIApp, Message, Receive, Scope, Send
 from nexios.utils.async_helpers import collapse_excgroups
 from nexios.websockets import WebSocket
 
+if sys.version_info >= (3, 10):  # pragma: no cover
+    from typing import ParamSpec
+else:  # pragma: no cover
+    from typing_extensions import ParamSpec
+
 RequestResponseEndpoint = typing.Callable[[Request], typing.Awaitable[Response]]
 DispatchFunction = typing.Callable[
     [Request, Response, typing.Callable[[], typing.Awaitable[Response]]],
     typing.Awaitable[Response],
 ]
 T = typing.TypeVar("T")
-
-import sys
-from collections.abc import Iterator
-from typing import Any, Protocol
-
-if sys.version_info >= (3, 10):  # pragma: no cover
-    from typing import ParamSpec
-else:  # pragma: no cover
-    from typing_extensions import ParamSpec
-
-from nexios.types import ASGIApp
-
 P = ParamSpec("P")
 
 

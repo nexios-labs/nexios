@@ -2,7 +2,7 @@ import re
 import typing
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Pattern
+from typing import Dict, List, Pattern, Set
 
 from nexios.converters import CONVERTOR_TYPES, Convertor
 

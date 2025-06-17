@@ -24,9 +24,7 @@ from typing_extensions import Doc, Literal
 
 from nexios._internals._middleware import (
     ASGIRequestResponseBridge,
-)
-from nexios._internals._middleware import DefineMiddleware as Middleware
-from nexios._internals._middleware import (
+    DefineMiddleware as Middleware,
     wrap_middleware,
 )
 from nexios._internals._response_transformer import request_response

@@ -15,9 +15,7 @@ from typing_extensions import Annotated, Doc
 
 from nexios._internals._middleware import (
     ASGIRequestResponseBridge,
-)
-from nexios._internals._middleware import DefineMiddleware as Middleware
-from nexios._internals._middleware import (
+    DefineMiddleware as Middleware,
     wrap_middleware,
 )
 from nexios.config import DEFAULT_CONFIG, MakeConfig
