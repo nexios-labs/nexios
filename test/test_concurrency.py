@@ -36,7 +36,7 @@ async def test_task_group_cancellation():
 async def test_task_group_error_propagation():
     with pytest.raises(ValueError):
         async with TaskGroup() as group:
-            task1 = group.create_task(asyncio.sleep(0.1))
+            group.create_task(asyncio.sleep(0.1))
             task2 = group.create_task(raise_error())
             await task2
 

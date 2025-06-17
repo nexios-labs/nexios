@@ -310,7 +310,7 @@ async def test_session_cookie_settings(file_session_client: Tuple[Client, Nexios
     response = await client.get("/set-cookie-settings")
     assert response.status_code == 200
 
-    cookie = response.cookies["file_session"]
+    response.cookies["file_session"]
     # assert cookie["httponly"] is True
     # assert cookie["secure"] is True
     # assert cookie["samesite"] == "lax"

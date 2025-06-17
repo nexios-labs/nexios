@@ -70,8 +70,6 @@ class Client(httpx.AsyncClient):
         timeout: Union[httpx._types.TimeoutTypes, httpx._client.UseClientDefault] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
         extensions: Union[Dict[str, typing.Any], None] = None,
     ) -> httpx.Response:
-        retries = 0
-        last_exception = None
 
         response = await super().request(
             method,

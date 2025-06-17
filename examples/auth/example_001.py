@@ -39,7 +39,7 @@ async def login(req, res):
 
 @app.post("/login")
 async def login_post(req, res):
-    username = req.form["username"]
+    req.form["username"]
     password = req.form["password"]
     user = await get_user_by_id(1)  # hardcoded user ID for demonstration
     if user and user.check_password(password):

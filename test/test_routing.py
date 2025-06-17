@@ -147,7 +147,7 @@ async def test_invalid_routes(async_client):
         return res.text("Valid Route")
 
     # Test an invalid route
-    invalid_response = await client.get("/invalid")
+    await client.get("/invalid")
 
 
 async def test_nested_routers(async_client):

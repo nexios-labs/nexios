@@ -304,7 +304,7 @@ class NexiosApp(object):
         docs = self.docs
 
         for route in self.get_all_routes():
-            if getattr(route, "exlude_from_schema", False) == True:
+            if getattr(route, "exlude_from_schema", False):
                 continue
             for method in route.methods:
 

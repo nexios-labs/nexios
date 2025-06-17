@@ -93,7 +93,7 @@ async def list_notes(request, response):
     async with get_session() as session:
         query = session.query(Note)
         if not show_private:
-            query = query.filter(Note.is_public == True)
+            query = query.filter(Note.is_public)
 
         notes = await query.order_by(Note.created_at.desc()).all()
 

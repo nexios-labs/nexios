@@ -67,8 +67,6 @@ class TemplateEngine:
             lstrip_blocks=self.config.lstrip_blocks,
         )
 
-        filters = self.env.filters
-        globals = self.env.globals
         config_ = self.config.to_dict()
         if config_.get("custom_filters"):
             self.env.filters.update(config_["custom_filters"])

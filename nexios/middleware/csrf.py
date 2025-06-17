@@ -18,7 +18,7 @@ class CSRFMiddleware(BaseMiddleware):
         app_config = get_config()
         self.use_csrf = app_config.csrf_enabled or False
         if self.use_csrf:
-            assert app_config.secret_key != None, ""
+            assert app_config.secret_key is not None, ""
         if not self.use_csrf:
             return
         self.serializer = URLSafeSerializer(

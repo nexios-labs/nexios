@@ -1,3 +1,4 @@
+from __future__ import annotations
 from functools import wraps
 from typing import Dict, List, Optional, Type, Union
 from uuid import uuid4
@@ -5,7 +6,6 @@ from uuid import uuid4
 from pydantic import BaseModel
 
 from nexios.http import Request, Response
-
 from .config import OpenAPIConfig
 from .models import (
     Components,
