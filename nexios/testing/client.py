@@ -1,4 +1,3 @@
-from nexios.application import NexiosApp
 import typing
 from typing import Any, AsyncIterable, Dict, Iterable, Union
 
