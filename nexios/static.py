@@ -69,7 +69,7 @@ class StaticFilesHandler:
                     return response.file(
                         str(file_path), content_disposition_type="inline"
                     )
-            except (ValueError, RuntimeError) as e:
+            except (ValueError, RuntimeError):
                 continue
 
         return response.json("Resource not found", status_code=404)
@@ -113,7 +113,7 @@ class StaticFiles(BaseRouter):
                     return response.file(
                         str(file_path), content_disposition_type="inline"
                     )
-            except (ValueError, RuntimeError) as e:
+            except (ValueError, RuntimeError):
                 continue
 
         return response.json("Resource not found", status_code=404)

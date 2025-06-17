@@ -1,8 +1,9 @@
 from nexios.config import MakeConfig
 
 try:
-    from dotenv import load_dotenv
     import os
+
+    from dotenv import load_dotenv
 
     load_dotenv()
     env_config = {key: value for key, value in os.environ.items()}

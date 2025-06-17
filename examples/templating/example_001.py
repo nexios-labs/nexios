@@ -1,5 +1,4 @@
 from nexios import NexiosApp
-from nexios.http.response import HTMLResponse
 from nexios.templating import TemplateConfig, render
 
 app = NexiosApp()

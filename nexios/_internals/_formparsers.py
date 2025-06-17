@@ -119,7 +119,7 @@ class FormParser:
                     # URL decode the value to handle special characters
                     decoded_value = urllib.parse.unquote(value)
                     form.append(key, decoded_value)
-            except (UnicodeDecodeError, ValueError) as e:
+            except (UnicodeDecodeError, ValueError):
                 # If there's a decoding error, try with latin-1 encoding
                 try:
                     field_items = urllib.parse.parse_qsl(

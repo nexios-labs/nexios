@@ -27,7 +27,7 @@ class WebSocketErrorMiddleware:
                 await self.app(scope, receive, send)
             except WebSocketException as exc:
                 await websocket_exception_handler(websocket, exc)
-            except Exception as exc:
+            except Exception:
                 error = traceback.format_exc()
                 logger.error(f"Unexpected error: {error}")
                 await websocket.close(code=1011, reason="Internal Server Error")

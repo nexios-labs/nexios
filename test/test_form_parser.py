@@ -1,9 +1,8 @@
-import asyncio
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator
 
 import pytest
 
-from nexios import NexiosApp, get_application
+from nexios import get_application
 from nexios.http import Request, Response
 from nexios.http.formparsers import FormParser, MultiPartException, MultiPartParser
 from nexios.structs import FormData, Headers, UploadedFile

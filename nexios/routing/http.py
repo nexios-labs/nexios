@@ -5,7 +5,6 @@ import inspect
 import re
 import typing
 import warnings
-from dataclasses import dataclass
 from typing import (
     Annotated,
     Any,
@@ -14,13 +13,12 @@ from typing import (
     List,
     Optional,
     Pattern,
-    Tuple,
     Type,
     Union,
 )
 
 from pydantic import BaseModel
-from typing_extensions import Doc, Literal
+from typing_extensions import Doc
 
 from nexios._internals._middleware import (
     ASGIRequestResponseBridge,
@@ -31,7 +29,6 @@ from nexios._internals._middleware import (
 )
 from nexios._internals._response_transformer import request_response
 from nexios._internals._route_builder import RouteBuilder
-from nexios.decorators import allowed_methods
 from nexios.dependencies import inject_dependencies
 from nexios.events import AsyncEventEmitter
 from nexios.exceptions import NotFoundException

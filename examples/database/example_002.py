@@ -1,6 +1,5 @@
 import datetime
 from contextlib import asynccontextmanager
-from typing import List, Optional
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine

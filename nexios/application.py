@@ -17,9 +17,6 @@ from nexios._internals._middleware import (
     ASGIRequestResponseBridge,
 )
 from nexios._internals._middleware import DefineMiddleware as Middleware
-from nexios._internals._middleware import (
-    wrap_middleware,
-)
 from nexios.config import DEFAULT_CONFIG, MakeConfig
 from nexios.events import AsyncEventEmitter
 from nexios.exception_handler import ExceptionHandlerType, ExceptionMiddleware

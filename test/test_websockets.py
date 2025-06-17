@@ -1,12 +1,8 @@
-import asyncio
-import json
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
-from nexios import status
-from nexios.websockets import Channel, ChannelBox, WebSocket, WebSocketConsumer
-from nexios.websockets.utils import ChannelMessageDC
+from nexios.websockets import WebSocket, WebSocketConsumer
 
 
 @pytest.fixture

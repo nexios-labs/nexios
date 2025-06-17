@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, ValidationError, constr
 
@@ -80,7 +80,7 @@ class ValidationMiddleware:
                 try:
                     validated_response = self.response_model(**result)
                     return response.json(validated_response.dict())
-                except ValidationError as e:
+                except ValidationError:
                     return response.json(
                         {"error": "Response validation error"}, status_code=500
                     )

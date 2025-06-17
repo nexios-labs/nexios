@@ -89,7 +89,7 @@ class BaseSessionInterface:
 
     async def save(self):
 
-        raise NotImplemented
+        raise NotImplementedError
 
     def get_cookie_name(self) -> str:
         """The name of the session cookie. Uses``app.config.SESSION_COOKIE_NAME``."""

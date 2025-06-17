@@ -1,7 +1,8 @@
 from nexios import get_application
-from routes.index import index
 from nexios.routing import Routes
+
 from config import app_config
+from routes.index import index
 
 # Create the application
 app = get_application(title="{{project_name_title}}", config=app_config)

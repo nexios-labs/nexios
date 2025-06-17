@@ -1,14 +1,11 @@
 import importlib
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Type, TypedDict
+from typing import List, Optional, TypedDict
 
-from httpx import get
-from pydantic import BaseModel
 
 from nexios.application import NexiosApp
 from nexios.logging import create_logger
-from nexios.openapi.models import Parameter
 from nexios.routing import Routes
 
 logger = create_logger("nexios")

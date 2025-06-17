@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-import logging
 import sys
 from logging import (
     DEBUG,
-    ERROR,
-    INFO,
-    NOTSET,
     Formatter,
     Handler,
     Logger,
@@ -19,7 +15,7 @@ from queue import SimpleQueue as Queue
 from typing import TYPE_CHECKING, Optional, Tuple
 
 if TYPE_CHECKING:
-    from .application import NexiosApp
+    pass
 
 
 class LocalQueueHandler(QueueHandler):

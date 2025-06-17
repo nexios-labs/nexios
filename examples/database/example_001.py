@@ -1,7 +1,5 @@
-import json
 import sqlite3
 from contextlib import contextmanager
-from typing import Any, Dict, List
 
 from nexios import NexiosApp
 from nexios.middleware.base import BaseMiddleware

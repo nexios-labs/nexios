@@ -146,7 +146,7 @@ class CORSMiddleware(BaseMiddleware):
     def is_allowed_method(self, method: Optional[str]) -> bool:
         if "*" in self.allow_methods:
             return True
-        if not (method or str()).lower() in [x.lower() for x in self.allow_methods]:
+        if (method or str()).lower() not in [x.lower() for x in self.allow_methods]:
 
             return False
         return True

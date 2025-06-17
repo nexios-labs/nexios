@@ -1,4 +1,3 @@
-import json
 from typing import Dict, Set
 
 from nexios import NexiosApp

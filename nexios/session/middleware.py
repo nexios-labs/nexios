@@ -1,5 +1,4 @@
 import typing
-import warnings
 
 from nexios.config import get_config
 from nexios.http import Request, Response

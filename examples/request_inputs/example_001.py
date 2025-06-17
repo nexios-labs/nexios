@@ -2,7 +2,6 @@
 Example of getting and processing JSON data
 """
 
-import json
 
 from pydantic import BaseModel, ValidationError
 

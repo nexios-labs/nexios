@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import traceback
 import typing
-from shutil import ReadError
 
 from nexios import logging
 from nexios.auth.exceptions import AuthenticationFailed, AuthErrorHandler

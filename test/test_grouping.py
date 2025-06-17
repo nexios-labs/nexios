@@ -2,8 +2,7 @@
 import pytest
 
 from nexios import get_application
-from nexios.http import Request, Response
-from nexios.routing import Group, Router, Routes
+from nexios.routing import Group, Routes
 from nexios.testing import Client
 
 

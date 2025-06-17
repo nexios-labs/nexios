@@ -1,4 +1,3 @@
-from os import path
 
 from nexios.file_router import mark_as_route
 from nexios.http import Request, Response

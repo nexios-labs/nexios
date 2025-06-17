@@ -4,7 +4,7 @@ from unittest.mock import Mock, call
 
 import pytest
 
-from nexios import NexiosApp, get_application
+from nexios import get_application
 from nexios.events import (
     EventEmitter,
     EventPhase,

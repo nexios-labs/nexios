@@ -1,6 +1,6 @@
 import pytest
 
-from nexios import NexiosApp, get_application
+from nexios import get_application
 from nexios.http import Request, Response
 from nexios.routing import Router, Routes
 from nexios.testing import Client
