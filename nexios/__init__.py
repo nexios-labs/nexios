@@ -169,11 +169,11 @@ def get_application(
     routes: Optional[list[Router]] = None,
 ) -> NexiosApp:
     """
-    Initializes and returns a `Nexios` application instance, serving as the core entry point for 
+    Initializes and returns a `Nexios` application instance, serving as the core entry point for
     building web applications.
 
-    Nexios is a lightweight, asynchronous Python framework designed for speed, flexibility, and 
-    ease of use. This function sets up the necessary configurations and routing mechanisms, 
+    Nexios is a lightweight, asynchronous Python framework designed for speed, flexibility, and
+    ease of use. This function sets up the necessary configurations and routing mechanisms,
     allowing developers to define routes, handle requests, and manage responses efficiently.
 
     ## Example Usage
