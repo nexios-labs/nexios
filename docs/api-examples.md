@@ -2,1047 +2,386 @@
 outline: deep
 ---
 
-# API Examples
+# Nexios API Examples
 
-This guide provides comprehensive examples of building APIs with Nexios, covering common use cases and best practices.
+This guide provides canonical, working examples for building APIs with Nexios. All code is idiomatic and matches the Nexios source, docs, and real-world examples.
 
-::: warning API Design Best Practices
-Before starting, consider these important aspects:
-- Use consistent URL patterns
-- Implement proper error handling
-- Follow REST principles
-- Consider API versioning
-- Plan for scalability
-- Document all endpoints
+::: tip Nexios Request API
+- Use `await req.json` (not `req.json()`)
+- Use `await req.files` (not `req.files()`)
+- Use `req.path_params.param` (not `req.path_params['param']`)
 :::
 
-## RESTful API
-
-### Basic CRUD Operations
-
-::: tip Model Design
-When designing models:
-- Use appropriate field types
-- Add indexes for frequently queried fields
-- Implement proper validation
-- Consider relationships carefully
-- Add timestamps for auditing
-:::
-
-::: code-group
-```python [Models]
-from nexios.db import Model, Column, types
-from datetime import datetime
-
-class User(Model):
-    id = Column(types.Integer, primary_key=True)
-    username = Column(types.String, unique=True)
-    email = Column(types.String, unique=True)
-    password = Column(types.String)
-    is_active = Column(types.Boolean, default=True)
-    created_at = Column(types.DateTime, default=datetime.utcnow)
-    updated_at = Column(types.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    class Meta:
-        indexes = [
-            ('username',),
-            ('email',)
-        ]
-
-class Post(Model):
-    id = Column(types.Integer, primary_key=True)
-    title = Column(types.String)
-    content = Column(types.Text)
-    user_id = Column(types.Integer, foreign_key="users.id")
-    published = Column(types.Boolean, default=False)
-    created_at = Column(types.DateTime, default=datetime.utcnow)
-    updated_at = Column(types.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    class Meta:
-        indexes = [
-            ('user_id',),
-            ('published',)
-        ]
-```
-
-```python [Schemas]
-from pydantic import BaseModel, EmailStr, validator
-from datetime import datetime
-from typing import Optional
-
-class UserCreate(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
-
-    @validator('password')
-    def password_strength(cls, v):
-        if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters')
-        if not any(c.isupper() for c in v):
-            raise ValueError('Password must contain at least one uppercase letter')
-        if not any(c.islower() for c in v):
-            raise ValueError('Password must contain at least one lowercase letter')
-        if not any(c.isdigit() for c in v):
-            raise ValueError('Password must contain at least one number')
-        return v
-
-class UserUpdate(BaseModel):
-    username: Optional[str] = None
-    email: Optional[EmailStr] = None
-    is_active: Optional[bool] = None
-
-class UserResponse(BaseModel):
-    id: int
-    username: str
-    email: str
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        orm_mode = True
-
-class PostCreate(BaseModel):
-    title: str
-    content: str
-    published: bool = False
-
-    @validator('title')
-    def title_length(cls, v):
-        if len(v) < 3:
-            raise ValueError('Title must be at least 3 characters')
-        return v
-
-class PostResponse(BaseModel):
-    id: int
-    title: str
-    content: str
-    user_id: int
-    published: bool
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        orm_mode = True
-```
-
-```python [Routes]
-from nexios import Router
-from nexios.responses import JSONResponse
-from nexios.exceptions import HTTPException
-from nexios.middleware import RateLimitMiddleware
-from typing import List
-
-router = Router(prefix="/api/v1")
-
-# Add rate limiting middleware
-router.add_middleware(
-    RateLimitMiddleware,
-    rate_limit=100,  # requests
-    time_window=60   # seconds
-)
-
-@router.get("/users")
-async def list_users(request, response):
-    """List all users with pagination.
-    
-    Query Parameters:
-        page (int): Page number (default: 1)
-        limit (int): Items per page (default: 10)
-        search (str): Search term for username/email
-        sort (str): Sort field (default: created_at)
-        order (str): Sort order (asc/desc, default: desc)
-    
-    Returns:
-        dict: Paginated list of users with metadata
-    """
-    page = int(request.query_params.get("page", 1))
-    limit = int(request.query_params.get("limit", 10))
-    search = request.query_params.get("search", "")
-    sort = request.query_params.get("sort", "created_at")
-    order = request.query_params.get("order", "desc")
-    
-    # Validate pagination parameters
-    if page < 1 or limit < 1 or limit > 100:
-        raise HTTPException(400, "Invalid pagination parameters")
-    
-    # Build query
-    query = User.query
-    if search:
-        query = query.filter(
-            (User.username.ilike(f"%{search}%")) |
-            (User.email.ilike(f"%{search}%"))
-        )
-    
-    # Apply sorting
-    if hasattr(User, sort):
-        sort_field = getattr(User, sort)
-        if order == "desc":
-            sort_field = sort_field.desc()
-        query = query.order_by(sort_field)
-    
-    # Execute query with pagination
-    users = await query.paginate(page, limit)
-    total = await query.count()
-    
-    return response.json({
-        "items": [UserResponse.from_orm(u) for u in users],
-        "total": total,
-        "page": page,
-        "pages": (total + limit - 1) // limit,
-        "has_next": page * limit < total,
-        "has_prev": page > 1
-    })
-
-@router.post("/users")
-async def create_user(request, response):
-    """Create a new user.
-    
-    Request Body:
-        username (str): Unique username
-        email (str): Valid email address
-        password (str): Secure password
-    
-    Returns:
-        UserResponse: Created user data
-    
-    Raises:
-        HTTPException: If username/email exists or validation fails
-    """
-    try:
-        data = UserCreate(**await request.json())
-    except ValueError as e:
-        raise HTTPException(400, str(e))
-    
-    # Check if user exists
-    if await User.query.filter_by(
-        username=data.username
-    ).exists():
-        raise HTTPException(400, "Username taken")
-    
-    if await User.query.filter_by(
-        email=data.email
-    ).exists():
-        raise HTTPException(400, "Email already registered")
-    
-    # Hash password
-    data.password = hash_password(data.password)
-    
-    # Create user
-    user = await User.create(**data.dict())
-    return response.json(
-        UserResponse.from_orm(user),
-        status_code=201
-    )
-
-@router.get("/users/{user_id:int}")
-async def get_user(request, response):
-    """Get user by ID.
-    
-    Path Parameters:
-        user_id (int): User ID
-    
-    Returns:
-        UserResponse: User data
-    
-    Raises:
-        HTTPException: If user not found
-    """
-    user = await User.get_or_404(
-        request.path_params.user_id
-    )
-    return response.json(UserResponse.from_orm(user))
-
-@router.put("/users/{user_id:int}")
-async def update_user(request, response):
-    """Update user by ID.
-    
-    Path Parameters:
-        user_id (int): User ID
-    
-    Request Body:
-        username (str, optional): New username
-        email (str, optional): New email
-        is_active (bool, optional): Active status
-    
-    Returns:
-        UserResponse: Updated user data
-    
-    Raises:
-        HTTPException: If user not found or validation fails
-    """
-    user = await User.get_or_404(
-        request.path_params.user_id
-    )
-    
-    try:
-        data = UserUpdate(**await request.json())
-    except ValueError as e:
-        raise HTTPException(400, str(e))
-    
-    # Check unique constraints
-    if data.username and data.username != user.username:
-        if await User.query.filter_by(
-            username=data.username
-        ).exists():
-            raise HTTPException(400, "Username taken")
-    
-    if data.email and data.email != user.email:
-        if await User.query.filter_by(
-            email=data.email
-        ).exists():
-            raise HTTPException(400, "Email already registered")
-    
-    # Update user
-    await user.update(**data.dict(exclude_unset=True))
-    return response.json(UserResponse.from_orm(user))
-
-@router.delete("/users/{user_id:int}")
-async def delete_user(request, response):
-    """Delete user by ID.
-    
-    Path Parameters:
-        user_id (int): User ID
-    
-    Returns:
-        None
-    
-    Raises:
-        HTTPException: If user not found
-    """
-    user = await User.get_or_404(
-        request.path_params.user_id
-    )
-    await user.delete()
-    return response.json(None, status_code=204)
-```
-:::
-
-::: warning Database Operations
-When working with databases:
-- Always use transactions for multiple operations
-- Implement proper error handling
-- Use appropriate indexes
-- Consider query performance
-- Handle concurrent access
-:::
-
-## Authentication
-
-### JWT Authentication
-
-::: tip Security Best Practices
-For JWT authentication:
-- Use strong secret keys
-- Implement token rotation
-- Set appropriate expiration times
-- Validate token claims
-- Use secure cookie settings
-:::
-
-::: code-group
-```python [Auth Handler]
-from nexios.auth import JWTAuthBackend
-from nexios.exceptions import HTTPException
-from datetime import datetime, timedelta
-from typing import Optional
-
-
-async def get_user_from_token(**payload):
-    ...
-auth = JWTAuthBackend(
-   get_user_from_token
-)
-
-@router.post("/auth/login")
-async def login(request, response):
-    """Authenticate user and return tokens.
-    
-    Request Body:
-        username (str): Username
-        password (str): Password
-    
-    Returns:
-        dict: Access and refresh tokens
-    
-    Raises:
-        HTTPException: If credentials are invalid
-    """
-    try:
-        data = await request.json()
-        username = data.get("username")
-        password = data.get("password")
-        
-        if not username or not password:
-            raise HTTPException(400, "Username and password required")
-        
-        # Validate credentials
-        user = await User.query.filter_by(
-            username=username
-        ).first()
-        
-        if not user or not verify_password(
-            password, user.password
-        ):
-            raise HTTPException(
-                401, "Invalid credentials"
-            )
-        
-        # Generate tokens
-        access_token = auth.create_access_token({
-            "sub": str(user.id),
-            "username": user.username,
-            "exp": datetime.utcnow() + AuthConfig.ACCESS_TOKEN_EXPIRE
-        })
-        
-        refresh_token = auth.create_refresh_token({
-            "sub": str(user.id),
-            "exp": datetime.utcnow() + AuthConfig.REFRESH_TOKEN_EXPIRE
-        })
-        
-        # Set secure cookie for refresh token
-        response.set_cookie(
-            "refresh_token",
-            refresh_token,
-            httponly=True,
-            secure=True,
-            samesite="strict",
-            max_age=AuthConfig.REFRESH_TOKEN_EXPIRE.seconds
-        )
-        
-        return response.json({
-            "access_token": access_token,
-            "token_type": "bearer"
-        })
-    except Exception as e:
-        raise HTTPException(500, f"Authentication failed: {str(e)}")
-
-@router.post("/auth/refresh")
-async def refresh_token(request, response):
-    """Refresh access token using refresh token.
-    
-    Headers:
-        Authorization: Bearer <refresh_token>
-    
-    Returns:
-        dict: New access token
-    
-    Raises:
-        HTTPException: If token is invalid or expired
-    """
-    refresh_token = request.headers.get("Authorization")
-    if not refresh_token:
-        raise HTTPException(401, "Missing token")
-    
-    try:
-        # Extract token from Bearer
-        token = refresh_token.split(" ")[1]
-        
-        # Decode and validate token
-        payload = auth.decode_refresh_token(token)
-        
-        # Check if token is about to expire
-        exp = datetime.fromtimestamp(payload["exp"])
-        if exp - datetime.utcnow() < AuthConfig.TOKEN_ROTATION_THRESHOLD:
-            # Generate new refresh token
-            new_refresh_token = auth.create_refresh_token({
-                "sub": payload["sub"],
-                "exp": datetime.utcnow() + AuthConfig.REFRESH_TOKEN_EXPIRE
-            })
-            response.set_cookie(
-                "refresh_token",
-                new_refresh_token,
-                httponly=True,
-                secure=True,
-                samesite="strict",
-                max_age=AuthConfig.REFRESH_TOKEN_EXPIRE.seconds
-            )
-        
-        # Generate new access token
-        access_token = auth.create_access_token({
-            "sub": payload["sub"],
-            "exp": datetime.utcnow() + AuthConfig.ACCESS_TOKEN_EXPIRE
-        })
-        
-        return response.json({
-            "access_token": access_token,
-            "token_type": "bearer"
-        })
-    except Exception as e:
-        raise HTTPException(401, f"Invalid token: {str(e)}")
-
-@router.post("/auth/logout")
-async def logout(request, response):
-    """Logout user by invalidating refresh token.
-    
-    Returns:
-        dict: Success message
-    """
-    response.delete_cookie("refresh_token")
-    return response.json({"message": "Successfully logged out"})
-```
-
-```python [Protected Routes]
-from nexios import Depend
-from typing import Optional
-
-async def get_current_user(
-    request,
-    token: str = Depend(auth.get_token)
-) -> User:
-    """Get current user from token.
-    
-    Args:
-        request: Request object
-        token: JWT token from Authorization header
-    
-    Returns:
-        User: Current user object
-    
-    Raises:
-        HTTPException: If token is invalid or user not found
-    """
-    try:
-        payload = auth.decode_access_token(token)
-        user = await User.get(int(payload["sub"]))
-        if not user:
-            raise HTTPException(401, "User not found")
-        if not user.is_active:
-            raise HTTPException(401, "User is inactive")
-        return user
-    except Exception as e:
-        raise HTTPException(401, f"Invalid token: {str(e)}")
-
-@router.get("/users/me")
-async def get_current_user_info(
-    request,
-    response,
-    user: User = Depend(get_current_user)
-):
-    """Get current user information.
-    
-    Returns:
-        UserResponse: Current user data
-    """
-    return response.json(UserResponse.from_orm(user))
-
-@router.post("/users/me/change-password")
-async def change_password(
-    request,
-    response,
-    user: User = Depend(get_current_user)
-):
-    """Change user password.
-    
-    Request Body:
-        old_password (str): Current password
-        new_password (str): New password
-    
-    Returns:
-        dict: Success message
-    
-    Raises:
-        HTTPException: If old password is incorrect or new password is invalid
-    """
-    try:
-        data = await request.json()
-        old_password = data.get("old_password")
-        new_password = data.get("new_password")
-        
-        if not old_password or not new_password:
-            raise HTTPException(400, "Both old and new passwords are required")
-        
-        # Verify old password
-        if not verify_password(old_password, user.password):
-            raise HTTPException(400, "Incorrect password")
-        
-        # Validate new password
-        if len(new_password) < 8:
-            raise HTTPException(400, "New password must be at least 8 characters")
-        
-        # Update password
-        user.password = hash_password(new_password)
-        await user.save()
-        
-        # Invalidate all sessions
-        await user.invalidate_sessions()
-        
-        return response.json({"message": "Password changed successfully"})
-    except Exception as e:
-        raise HTTPException(400, str(e))
-```
-:::
-
-::: warning Security Considerations
-When implementing authentication:
-- Never store plain-text passwords
-- Use secure password hashing (bcrypt, Argon2)
-- Implement rate limiting for auth endpoints
-- Use secure cookie settings
-- Implement proper session management
-- Consider 2FA for sensitive operations
-:::
-
-::: tip Error Handling
-Implement proper error handling for:
-- Invalid credentials
-- Expired tokens
-- Rate limiting
-- Account lockout
-- Session management
-- Password policies
-:::
-
-## File Handling
-
-### File Upload and Download
-
-```python
-from nexios.responses import FileResponse
-from pathlib import Path
-
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
-
-@router.post("/files/upload")
-async def upload_file(request, response):
-    """Upload a file."""
-    files = await request.files
-    if not files:
-        raise HTTPException(400, "No file uploaded")
-    
-    file = files["file"]
-    if not file.filename:
-        raise HTTPException(400, "No filename")
-    
-    # Save file
-    file_path = UPLOAD_DIR / file.filename
-    await file.save(file_path)
-    
-    return response.json({
-        "filename": file.filename,
-        "size": file_path.stat().st_size
-    })
-
-@router.get("/files/{filename}")
-async def download_file(request, response):
-    """Download a file."""
-    filename = request.path_params.filename
-    file_path = UPLOAD_DIR / filename
-    
-    if not file_path.exists():
-        raise HTTPException(404, "File not found")
-    
-    return FileResponse(
-        file_path,
-        filename=filename,
-        media_type="application/octet-stream"
-    )
-```
-
-## WebSocket
-
-### Real-time Chat
-
-```python
-from nexios.websockets import WebSocket
-from dataclasses import dataclass
-from typing import Dict, Set
-import json
-
-@dataclass
-class ChatRoom:
-    name: str
-    clients: Set[WebSocket]
-
-class ChatServer:
-    def __init__(self):
-        self.rooms: Dict[str, ChatRoom] = {}
-    
-    def get_room(self, name: str) -> ChatRoom:
-        if name not in self.rooms:
-            self.rooms[name] = ChatRoom(name, set())
-        return self.rooms[name]
-    
-    async def broadcast(
-        self,
-        room: ChatRoom,
-        message: dict,
-        exclude: WebSocket = None
-    ):
-        for client in room.clients:
-            if client != exclude:
-                await client.send_json(message)
-
-chat_server = ChatServer()
-
-@router.websocket("/ws/chat/{room_name}")
-async def chat_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    
-    try:
-        # Get room
-        room_name = websocket.path_params.room_name
-        room = chat_server.get_room(room_name)
-        room.clients.add(websocket)
-        
-        # Announce join
-        await chat_server.broadcast(
-            room,
-            {
-                "type": "system",
-                "message": "User joined"
-            },
-            websocket
-        )
-        
-        # Handle messages
-        async for message in websocket.iter_json():
-            await chat_server.broadcast(
-                room,
-                {
-                    "type": "message",
-                    "message": message["text"]
-                },
-                websocket
-            )
-    
-    finally:
-        room.clients.remove(websocket)
-        await chat_server.broadcast(
-            room,
-            {
-                "type": "system",
-                "message": "User left"
-            }
-        )
-```
-
-## Background Tasks
-
-### Task Queue Integration
-
-```python
-from nexios.background import BackgroundTask
-from nexios.email import EmailSender
-
-email_sender = EmailSender()
-
-@router.post("/users")
-async def create_user(request, response):
-    data = UserCreate(**await request.json())
-    user = await User.create(**data.dict())
-    
-    # Schedule welcome email
-    background_task = BackgroundTask(
-        email_sender.send_email,
-        to=user.email,
-        subject="Welcome!",
-        template="welcome.html",
-        context={"username": user.username}
-    )
-    
-    return response.json(
-        UserResponse.from_orm(user),
-        status_code=201,
-        background=background_task
-    )
-```
-
-## Database Integration
-
-### SQLAlchemy Integration
-
-```python
-from nexios.db import Database, Model
-from sqlalchemy import select
-from sqlalchemy.orm import joinedload
-
-db = Database("postgresql+asyncpg://user:pass@localhost/db")
-
-@router.get("/posts")
-async def list_posts(request, response):
-    async with db.session() as session:
-        # Complex query with joins
-        query = select(Post).options(
-            joinedload(Post.user)
-        ).order_by(
-            Post.created_at.desc()
-        )
-        
-        # Add filters
-        if category := request.query_params.get("category"):
-            query = query.filter(Post.category == category)
-        
-        # Pagination
-        page = int(request.query_params.get("page", 1))
-        limit = int(request.query_params.get("limit", 10))
-        offset = (page - 1) * limit
-        
-        # Execute query
-        result = await session.execute(
-            query.limit(limit).offset(offset)
-        )
-        posts = result.scalars().unique().all()
-        
-        # Get total
-        total = await session.scalar(
-            select(func.count()).select_from(Post)
-        )
-        
-        return response.json({
-            "items": [
-                PostResponse.from_orm(post)
-                for post in posts
-            ],
-            "total": total,
-            "page": page,
-            "pages": (total + limit - 1) // limit
-        })
-```
-
-## Error Handling
-
-### Custom Error Handlers
-
-```python
-from nexios.exceptions import HTTPException
-from sqlalchemy.exc import IntegrityError
-from pydantic import ValidationError
-
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request, exc):
-    return response.json(
-        {
-            "error": exc.detail,
-            "code": exc.status_code
-        },
-        status_code=exc.status_code
-    )
-
-@app.exception_handler(ValidationError)
-async def validation_exception_handler(request, exc):
-    return response.json(
-        {
-            "error": "Validation error",
-            "details": exc.errors()
-        },
-        status_code=422
-    )
-
-@app.exception_handler(IntegrityError)
-async def integrity_exception_handler(request, exc):
-    return response.json(
-        {
-            "error": "Database integrity error",
-            "detail": str(exc.orig)
-        },
-        status_code=409
-    )
-
-@app.exception_handler(Exception)
-async def generic_exception_handler(request, exc):
-    logger.exception("Unhandled error")
-    return response.json(
-        {
-            "error": "Internal server error",
-            "detail": str(exc) if app.debug else None
-        },
-        status_code=500
-    )
-```
-
-## Testing
-
-### API Testing
-
-```python
-from nexios.testing import Client
-import pytest
-
-@pytest.fixture
-async def client():
-    app = create_test_app()
-    async with Client(app) as client:
-        yield client
-
-async def test_create_user(client):
-    response = await client.post(
-        "/api/v1/users",
-        json={
-            "username": "testuser",
-            "email": "test@example.com",
-            "password": "password123"
-        }
-    )
-    assert response.status_code == 201
-    data = response.json()
-    assert data["username"] == "testuser"
-    assert "password" not in data
-
-async def test_login(client):
-    # Create user
-    await client.post(
-        "/api/v1/users",
-        json={
-            "username": "testuser",
-            "email": "test@example.com",
-            "password": "password123"
-        }
-    )
-    
-    # Login
-    response = await client.post(
-        "/api/v1/auth/login",
-        json={
-            "username": "testuser",
-            "password": "password123"
-        }
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert "access_token" in data
-    assert "refresh_token" in data
-
-async def test_protected_route(client):
-    # Try without token
-    response = await client.get("/api/v1/users/me")
-    assert response.status_code == 401
-    
-    # Login and get token
-    response = await client.post(
-        "/api/v1/auth/login",
-        json={
-            "username": "testuser",
-            "password": "password123"
-        }
-    )
-    token = response.json()["access_token"]
-    
-    # Try with token
-    response = await client.get(
-        "/api/v1/users/me",
-        headers={"Authorization": f"Bearer {token}"}
-    )
-    assert response.status_code == 200
-```
-
-## OpenAPI Documentation
-
-### API Documentation
+## 1. Minimal App and REST API
 
 ```python
 from nexios import NexiosApp
-from nexios.openapi import OpenAPIConfig
 
-app = NexiosApp(
-    title="My API",
-    version="1.0.0",
-    description="A sample API",
-    openapi_config=OpenAPIConfig(
-        tags=[
-            {
-                "name": "users",
-                "description": "User operations"
-            },
-            {
-                "name": "auth",
-                "description": "Authentication"
-            }
-        ],
-        servers=[
-            {
-                "url": "https://api.example.com",
-                "description": "Production server"
-            },
-            {
-                "url": "http://localhost:8000",
-                "description": "Development server"
-            }
-        ],
-        security_schemes={
-            "bearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT"
-            }
-        }
-    )
-)
+app = NexiosApp()
 
-@router.get(
-    "/users/{user_id}",
-    tags=["users"],
-    summary="Get user by ID",
-    description="Retrieve a user by their ID",
-    responses={
-        200: {
-            "description": "User found",
-            "content": {
-                "application/json": {
-                    "schema": UserResponse.schema()
-                }
-            }
-        },
-        404: {
-            "description": "User not found"
-        }
-    }
-)
-async def get_user(request, response):
-    """Get user by ID."""
-    user = await User.get_or_404(
-        request.path_params.user_id
-    )
-    return response.json(UserResponse.from_orm(user))
+@app.get("/api/items")
+async def get_items(req, res):
+    items = [{"id": 1, "name": "Item 1"}, {"id": 2, "name": "Item 2"}]
+    return res.json(items)
+
+@app.get("/api/items/{item_id:int}")
+async def get_item(req, res):
+    item_id = req.path_params['item_id']
+    return res.json({"id": item_id, "name": f"Item {item_id}"})
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=5000, reload=True)
 ```
 
-## Best Practices
+## 2. Request Input Handling (JSON Body)
 
-::: tip API Design
-1. Use consistent naming conventions
-2. Implement proper error handling
-3. Add comprehensive documentation
-4. Include input validation
-5. Use appropriate HTTP methods
-6. Implement rate limiting
-7. Add authentication where needed
-8. Use proper status codes
-9. Include pagination for lists
-10. Keep endpoints focused
-:::
+```python
+from pydantic import BaseModel, ValidationError
+from nexios import NexiosApp
 
-### Security Checklist
+app = NexiosApp()
 
-- [ ] Implement authentication
-- [ ] Use HTTPS
-- [ ] Validate input
-- [ ] Rate limit requests
-- [ ] Hash passwords
-- [ ] Use secure headers
-- [ ] Implement CORS
-- [ ] Log security events
-- [ ] Regular security updates
-- [ ] API key management
+class User(BaseModel):
+    name: str
+    age: int
 
-### Performance Tips
+@app.post("/json")
+async def process_json(req, res):
+    try:
+        data = await req.json
+        user = User(**data)
+        return res.json({"status": "success", "user": user.dict()})
+    except ValidationError as e:
+        return res.json({"error": str(e)}, status_code=422)
+```
 
-1. Use async operations
-2. Implement caching
-3. Optimize database queries
-4. Use connection pooling
-5. Compress responses
-6. Batch operations
-7. Profile endpoints
-8. Monitor performance
-9. Use appropriate indexes
-10. Optimize payload size
+## 3. File Upload and Download
 
-## More Information
+```python
+from nexios import NexiosApp
+from pathlib import Path
 
-- [Authentication Guide](/guide/authentication)
-- [Database Guide](/guide/database)
-- [WebSocket Guide](/guide/websockets/)
-- [Testing Guide](/guide/testing)
-- [Security Guide](/guide/security)
+app = NexiosApp()
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+
+@app.post("/upload")
+async def upload_files(req, res):
+    files = await req.files
+    uploaded = []
+    for name, file in files.items():
+        uploaded.append({
+            "filename": file.filename,
+            "content_type": file.content_type,
+            "size": len(await file.read()),
+        })
+    return res.json({"uploaded": uploaded})
+
+@app.get("/files/{filename}")
+async def download_file(req, res):
+    filename = req.path_params['filename']
+    filepath = UPLOAD_DIR / filename
+    if not filepath.exists():
+        return res.json({"error": "File not found"}, status_code=404)
+    from nexios.responses import FileResponse
+    return FileResponse(filepath, filename=filename)
+```
+
+## 4. Authentication (Session and JWT)
+
+### Session Auth Example
+```python
+from nexios import NexiosApp
+from nexios.auth.backends.session import SessionAuthBackend
+from nexios.auth.middleware import AuthenticationMiddleware
+
+app = NexiosApp()
+
+async def get_user_by_id(user_id: int):
+    # Replace with your DB lookup
+    return {"id": user_id, "username": "user"}
+
+session_backend = SessionAuthBackend(user_key="user_id", authenticate_func=get_user_by_id)
+app.add_middleware(AuthenticationMiddleware(backend=session_backend))
+
+@app.get("/protected")
+async def protected(req, res):
+    user = req.user
+    if user and user.is_authenticated:
+        return res.json({"message": f"Hello, {user['username']}!"})
+    return res.json({"error": "Not authenticated"}, status_code=401)
+```
+
+### JWT Auth Example
+```python
+from nexios import NexiosApp
+from nexios.auth.backends.jwt import JWTAuthBackend, create_jwt
+from nexios.auth.middleware import AuthenticationMiddleware
+from nexios.auth.base import BaseUser
+
+class User(BaseUser):
+    def __init__(self, id, username):
+        self.id = id
+        self.username = username
+    @property
+    def is_authenticated(self):
+        return True
+    @property
+    def identity(self):
+        return self.id
+    @property
+    def display_name(self):
+        return self.username
+
+app = NexiosApp()
+async def get_user_by_id(**payload):
+    return User(id=payload["sub"], username=payload["sub"])
+jwt_backend = JWTAuthBackend(authenticate_func=get_user_by_id)
+app.add_middleware(AuthenticationMiddleware(backend=jwt_backend))
+
+@app.post("/login")
+async def login(req, res):
+    data = await req.json
+    username = data.get("username")
+    password = data.get("password")
+    if username == "admin" and password == "password":
+        token = create_jwt({"sub": username})
+        return res.json({"token": token})
+    return res.json({"error": "Invalid credentials"}, status_code=401)
+
+@app.get("/protected")
+async def protected(req, res):
+    if req.user and req.user.is_authenticated:
+        return res.json({"message": f"Hello, {req.user.username}!"})
+    return res.json({"error": "Not authenticated"}, status_code=401)
+```
+
+## 5. Middleware Usage
+
+```python
+from nexios import NexiosApp
+from nexios.middleware import CORSMiddleware, SecurityMiddleware
+
+app = NexiosApp()
+app.add_middleware(CORSMiddleware())
+app.add_middleware(SecurityMiddleware())
+```
+
+## 6. Error Handling
+
+```python
+from nexios import NexiosApp
+from nexios.exceptions import HTTPException
+
+app = NexiosApp()
+
+@app.get("/error")
+async def error_route(req, res):
+    raise HTTPException(400, "This is a bad request!")
+
+@app.exception_handler(HTTPException)
+async def handle_http_exception(req, exc):
+    return res.json({"error": exc.detail}, status_code=exc.status_code)
+```
+
+## 7. WebSockets (Minimal)
+
+```python
+from nexios import NexiosApp
+from nexios.websockets import WebSocket
+
+app = NexiosApp()
+
+@app.ws_route("/ws")
+async def websocket_handler(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            message = await websocket.receive_text()
+            await websocket.send_text(f"Echo: {message}")
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+    finally:
+        await websocket.close()
+```
+
+## 8. WebSockets (Chat Room)
+
+```python
+from typing import Dict, Set
+from nexios import NexiosApp
+from nexios.websockets import WebSocket
+
+app = NexiosApp()
+chat_rooms: Dict[str, Set[WebSocket]] = {}
+
+@app.ws_route("/ws/chat/{room_id}")
+async def chat_room(websocket: WebSocket):
+    room_id = websocket.path_params["room_id"]
+    await websocket.accept()
+    if room_id not in chat_rooms:
+        chat_rooms[room_id] = set()
+    chat_rooms[room_id].add(websocket)
+    try:
+        for client in chat_rooms[room_id]:
+            if client != websocket:
+                await client.send_json({"type": "system", "message": "New user joined the chat"})
+        while True:
+            data = await websocket.receive_json()
+            message = data.get("message", "")
+            for client in chat_rooms[room_id]:
+                if client != websocket:
+                    await client.send_json({"type": "message", "message": message})
+    except Exception as e:
+        print(f"WebSocket error in room {room_id}: {e}")
+    finally:
+        chat_rooms[room_id].remove(websocket)
+        if not chat_rooms[room_id]:
+            del chat_rooms[room_id]
+        await websocket.close()
+```
+
+## 9. Advanced Validation (Pydantic, Enums, Query Params)
+
+```python
+from datetime import date, datetime
+from enum import Enum
+from typing import Optional
+from pydantic import BaseModel, EmailStr, Field, ValidationError, constr
+from nexios import NexiosApp
+
+app = NexiosApp()
+
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    USER = "user"
+    GUEST = "guest"
+
+class UserStatus(str, Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    SUSPENDED = "suspended"
+
+class UserCreate(BaseModel):
+    username: constr(min_length=3, max_length=50)
+    email: EmailStr
+    password: constr(min_length=8)
+    full_name: str
+    birth_date: Optional[date] = None
+    role: UserRole = UserRole.USER
+    status: UserStatus = UserStatus.ACTIVE
+
+@app.post("/users")
+async def create_user(request, response):
+    try:
+        data = await request.json
+        user = UserCreate(**data)
+        return response.json(user.dict())
+    except ValidationError as e:
+        return response.json({"error": str(e)}, status_code=422)
+
+class PaginationParams(BaseModel):
+    page: int = Field(ge=1, default=1)
+    limit: int = Field(ge=1, le=100, default=10)
+    sort_by: str = Field(default="created_at")
+    order: str = Field(default="desc")
+
+@app.get("/users")
+async def list_users(request, response):
+    try:
+        params = PaginationParams(
+            page=int(request.query_params.get("page", 1)),
+            limit=int(request.query_params.get("limit", 10)),
+            sort_by=request.query_params.get("sort_by", "created_at"),
+            order=request.query_params.get("order", "desc"),
+        )
+    except ValidationError as e:
+        return response.json({"error": "Invalid query parameters", "details": e.errors()}, status_code=422)
+    # Simulate paginated response
+    users = [{"id": i, "username": f"user{i}"} for i in range(1, 6)]
+    return response.json({"items": users, "total": len(users), "page": params.page, "limit": params.limit})
+```
+
+## 10. Advanced Templating (Inheritance, Context, Filters)
+
+```python
+from pathlib import Path
+from nexios import NexiosApp
+from nexios.templating import TemplateConfig, render
+
+app = NexiosApp()
+template_config = TemplateConfig(
+    template_dir=Path("templates"), trim_blocks=True, lstrip_blocks=True
+)
+app.config.templating = template_config
+
+@app.get("/")
+async def home(request, response):
+    return await render(
+        "pages/home.html",
+        {"title": "Home", "content": "Welcome!", "features": [
+            {"name": "Fast", "description": "Built for speed"},
+            {"name": "Secure", "description": "Security first"},
+        ]},
+    )
+```
+
+## 11. Advanced Routing (Typed Path Params, Wildcards)
+
+```python
+from nexios import NexiosApp
+from nexios.http import Request, Response
+
+app = NexiosApp()
+
+@app.get("/products/{product_id:int}")
+async def get_product(req: Request, res: Response):
+    product_id = req.path_params["product_id"]
+    return res.json({"product_id": product_id, "type": "integer"})
+
+@app.get("/categories/{category_name:str}")
+async def get_category(req: Request, res: Response):
+    category_name = req.path_params["category_name"]
+    return res.json({"category_name": category_name, "type": "string"})
+
+@app.get("/wildcard/{wildcard_path:path}")
+async def get_wildcard(req: Request, res: Response):
+    wildcard_path = req.path_params["wildcard_path"]
+    return res.json({"wildcard_path": wildcard_path, "type": "path"})
+```
+
+## 12. Custom Response Types
+
+```python
+from nexios import NexiosApp
+from nexios.http.response import (
+    BaseResponse, FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
+)
+
+app = NexiosApp()
+
+@app.get("/json")
+async def json_handler(req, res):
+    return JSONResponse({"message": "Hello, World!"})
+
+@app.get("/html")
+async def html_handler(req, res):
+    return HTMLResponse("<h1>Hello, World!</h1>")
+
+@app.get("/text")
+async def text_handler(req, res):
+    return PlainTextResponse("Hello, World!", content_type="text/plain")
+
+@app.get("/file")
+async def file_handler(req, res):
+    return FileResponse("examples/responses/example_004.py", content_disposition_type="attachment")
+
+@app.get("/raw")
+async def raw_handler(req, res):
+    return BaseResponse(b"Hello, World!", content_type="text/plain")
+```
+
+---
+
+For more, see the official Nexios documentation and the `examples/` folder in the repo. 
