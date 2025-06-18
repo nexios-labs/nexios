@@ -14,7 +14,21 @@ This guide will help you get started with Nexios and understand its core concept
 
 ## Installation
 
+::: tip Recommended: Use [uv](https://github.com/astral-sh/uv)
+We recommend using the [uv](https://github.com/astral-sh/uv) package manager for the fastest and most reliable Python dependency management. `uv` is a drop-in replacement for pip, pip-tools, and virtualenv, and is much faster than traditional tools.
+:::
+
 ::: code-group
+```bash [uv]
+# Install uv (if you don't have it)
+pip install uv
+
+# Create a virtual environment and install Nexios
+uv venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+uv pip install nexios
+```
+
 ```bash [pip]
 # Create a virtual environment
 python -m venv venv
