@@ -310,7 +310,7 @@ class NexiosApp(object):
                 ]
                 parameters.extend(route.parameters)  # type: ignore
                 docs.document_endpoint(
-                    path=re.sub(r'\{(\w+):\w+\}', r'{\1}', route.raw_path),
+                    path=re.sub(r"\{(\w+):\w+\}", r"{\1}", route.raw_path),
                     method=method,
                     tags=route.tags,
                     security=route.security,
