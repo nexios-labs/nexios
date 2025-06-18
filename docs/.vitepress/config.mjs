@@ -135,11 +135,14 @@ export default defineConfig({
           text: 'API Reference',
           items: [
             { text: 'Application', link: '/api/application' },
-            { text: 'Routing', link: '/api/routing' },
+            { text: 'Authentication', link: '/api/auth' },
+            { text: 'Dependencies', link: '/api/dependencies' },
+            { text: 'Middleware', link: '/api/middleware' },
+            { text: 'Request', link: '/api/request' },
             { text: 'Response', link: '/api/response' },
-            { text: "Request", link: '/api/request'},
+            { text: 'Routing', link: '/api/routing' },
+            { text: 'WebSocket Channels', link: '/api/websocket_channels' },
             { text: 'Exceptions', link: '/api/exceptions' },
-            { text: 'Websocket', link: '/api/websockets' },
           ]
         }
       ],
