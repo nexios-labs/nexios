@@ -8,7 +8,8 @@
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
-    "deploy": "gh-pages -d docs/.vitepress/dist"
+    "deploy": "gh-pages -d docs/.vitepress/dist",
+    "dev":"vitepress dev docs"
   },
   "dependencies": {
     "vitepress-plugin-group-icons": "^1.5.2"
