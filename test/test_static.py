@@ -1,9 +1,12 @@
-import pytest
 import asyncio
+from pathlib import Path
+
+import pytest
+
 from nexios import NexiosApp
 from nexios.static import StaticFiles
 from nexios.testing.client import Client
-from pathlib import Path
+
 
 @pytest.mark.asyncio
 async def test_static_file_serving():
@@ -19,4 +22,4 @@ async def test_static_file_serving():
 
         # Test missing file
         resp = await client.get("/static/doesnotexist.txt")
-        assert resp.status_code == 404 
+        assert resp.status_code == 404
