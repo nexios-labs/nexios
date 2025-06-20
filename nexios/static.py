@@ -82,7 +82,7 @@ class StaticFiles(BaseRouter):
         directories: Optional[List[Union[str, Path]]] = None,
     ):
         if not directories:
-            directories = [directory] if directory else [] 
+            directories = [directory] if directory else []
         self.directories = [self._ensure_directory(d) for d in directories or []]
 
     def _ensure_directory(self, path: Union[str, Path]) -> Path:
