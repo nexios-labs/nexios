@@ -81,6 +81,8 @@ class StaticFiles(BaseRouter):
         directory: Optional[Union[str, Path]] = None,
         directories: Optional[List[Union[str, Path]]] = None,
     ):
+        if not directories:
+            directories = [directory] if directory else [] 
         self.directories = [self._ensure_directory(d) for d in directories or []]
 
     def _ensure_directory(self, path: Union[str, Path]) -> Path:
@@ -104,11 +106,10 @@ class StaticFiles(BaseRouter):
             return False
 
     async def _handle(self, request: Request, response: Response):
-        path = request.path_params.get("path", "")
+        path = request.scope.get("path", "").lstrip("/")
         for directory in self.directories:
             try:
                 file_path = (directory / path).resolve()
-
                 if self._is_safe_path(file_path) and file_path.is_file():
                     return response.file(
                         str(file_path), content_disposition_type="inline"
@@ -122,3 +123,7 @@ class StaticFiles(BaseRouter):
         request = Request(scope, receive)
         response = Response(request)
         await self._handle(request, response)
+        result = response.get_response()
+        if result is not None:
+            response = result
+        await response(scope, receive, send)

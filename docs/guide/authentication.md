@@ -1,7 +1,39 @@
-
 # Authentication
 
 Authentication is a critical component of most web applications, enabling you to identify users, protect resources, and provide personalized experiences. Nexios provides a flexible, robust authentication system that's easy to implement and customize for your specific needs.
+
+::: tip Authentication Fundamentals
+Authentication in Nexios provides:
+- **Multiple Backends**: Session, JWT, API Key, and custom backends
+- **Middleware Integration**: Automatic user attachment to requests
+- **Flexible User Models**: Support for any user data structure
+- **Security Best Practices**: Built-in protection against common attacks
+- **Easy Testing**: Simple mocking and testing utilities
+- **Production Ready**: Scalable and secure for production use
+:::
+
+::: tip Security Best Practices
+1. **Use HTTPS**: Always use HTTPS in production to protect credentials
+2. **Secure Session Storage**: Use secure, encrypted session storage
+3. **JWT Security**: Use strong secrets and appropriate expiration times
+4. **API Key Rotation**: Implement key rotation for long-lived tokens
+5. **Rate Limiting**: Protect authentication endpoints from brute force attacks
+6. **Input Validation**: Validate all authentication inputs
+7. **Error Messages**: Don't reveal sensitive information in error messages
+8. **Logging**: Log authentication events for security monitoring
+:::
+
+::: tip Authentication Flow
+The typical authentication flow:
+1. **User submits credentials** (login form, API key, etc.)
+2. **Backend validates credentials** against user database
+3. **Authentication token created** (session, JWT, etc.)
+4. **Token stored/sent to client** (cookie, header, etc.)
+5. **Subsequent requests include token** automatically
+6. **Middleware validates token** and attaches user to request
+7. **Handler accesses user** via `request.user`
+:::
+
 The Nexios authentication system is built around three core components:
 
 - **`Authentication Middleware`**: Processes incoming requests, extracts credentials, and attaches user information to the request

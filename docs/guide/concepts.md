@@ -2,8 +2,37 @@
 
 Nexios is a modern, async-first Python web framework built on ASGI. It combines high performance with developer-friendly features while maintaining a clean and maintainable architecture.
 
+::: tip Framework Philosophy
+Nexios is designed around these core principles:
+- **Simplicity**: Clean, intuitive APIs that are easy to learn and use
+- **Performance**: High-performance async operations with minimal overhead
+- **Flexibility**: Extensive customization options for any use case
+- **Type Safety**: Full type hint support for better development experience
+- **Production Ready**: Built-in features for security, testing, and deployment
+- **Developer Experience**: Excellent tooling and documentation
+:::
+
+::: tip Architecture Benefits
+Nexios architecture provides:
+- **Scalability**: Handle thousands of concurrent connections
+- **Maintainability**: Clean separation of concerns and modular design
+- **Testability**: Easy to test individual components in isolation
+- **Extensibility**: Simple to add custom functionality and middleware
+- **Performance**: Optimized for high-throughput applications
+- **Security**: Built-in security features and best practices
+:::
+
 ::: tip ASGI
 ASGI (Asynchronous Server Gateway Interface) is the foundation that enables Nexios to handle concurrent connections efficiently.
+:::
+
+::: tip ASGI Benefits
+ASGI provides several advantages over traditional WSGI:
+- **Concurrent Requests**: Handle multiple requests simultaneously
+- **WebSocket Support**: Native WebSocket support without additional servers
+- **Real-time Features**: Built-in support for real-time communication
+- **Better Performance**: More efficient request handling
+- **Modern Standards**: Aligned with modern web standards
 :::
 
 ## Framework Architecture
@@ -18,9 +47,22 @@ Nexios is built on ASGI (Asynchronous Server Gateway Interface), providing:
 
 ::: warning Server Selection
 While Nexios works with any ASGI server, we recommend:
-- Uvicorn for development (auto-reload support)
-- Hypercorn for production (more configuration options)
-- Granian for high-performance scenarios
+- **Uvicorn**: For development (auto-reload support, fast startup)
+- **Hypercorn**: For production (more configuration options, HTTP/2 support)
+- **Granian**: For high-performance scenarios (Rust-based, very fast)
+- **Daphne**: For Django compatibility (if migrating from Django)
+:::
+
+::: tip Server Configuration
+**Development:**
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+**Production:**
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+```
 :::
 
 ### 2. Request Lifecycle
@@ -43,6 +85,21 @@ Each request goes through:
 
 ::: tip Performance
 The middleware chain is optimized to minimize overhead. Middleware can short-circuit the chain for better performance.
+
+**Performance Tips:**
+- Keep middleware lightweight
+- Use early returns for security checks
+- Cache expensive operations
+- Monitor middleware performance
+- Use async middleware when possible
+:::
+
+::: tip Request Flow Optimization
+1. **Early Validation**: Validate requests early in the middleware chain
+2. **Caching**: Cache expensive operations and database queries
+3. **Connection Pooling**: Use connection pools for database and external services
+4. **Async Operations**: Use async/await for I/O operations
+5. **Response Streaming**: Stream large responses to reduce memory usage
 :::
 
 ### 3. Core Components

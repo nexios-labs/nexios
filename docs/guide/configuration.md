@@ -6,6 +6,44 @@ icon: gear-code
 
 The Nexios framework provides a flexible and dynamic configuration system through its `MakeConfig` class. This system allows for structured configuration management with support for nested attributes, validation, and immutability.
 
+::: tip Configuration Fundamentals
+Configuration in Nexios provides:
+- **Type Safety**: Strong typing for configuration values
+- **Environment Variables**: Easy integration with environment variables
+- **Validation**: Built-in validation for configuration values
+- **Immutability**: Configuration objects are immutable by default
+- **Nested Structure**: Support for complex configuration hierarchies
+- **Default Values**: Sensible defaults with easy overrides
+- **Security**: Secure handling of sensitive configuration data
+:::
+
+::: tip Configuration Best Practices
+1. **Environment Separation**: Use different configurations for dev/staging/prod
+2. **Sensitive Data**: Never commit secrets to version control
+3. **Validation**: Validate configuration values at startup
+4. **Documentation**: Document all configuration options
+5. **Defaults**: Provide sensible defaults for all options
+6. **Type Safety**: Use type hints for configuration classes
+7. **Testing**: Test configuration loading and validation
+8. **Monitoring**: Monitor configuration changes in production
+:::
+
+::: tip Security Considerations
+- **Environment Variables**: Use environment variables for secrets
+- **File Permissions**: Secure configuration files with proper permissions
+- **Encryption**: Encrypt sensitive configuration data
+- **Rotation**: Regularly rotate secrets and keys
+- **Access Control**: Limit access to configuration files
+- **Audit Logging**: Log configuration changes for audit trails
+:::
+
+::: tip Configuration Patterns
+- **Development**: Debug mode, local database, detailed logging
+- **Staging**: Production-like settings, test data, monitoring
+- **Production**: Optimized settings, real data, minimal logging
+- **Testing**: Isolated settings, test databases, mock services
+:::
+
 ## Basic Usage
 
 ```python

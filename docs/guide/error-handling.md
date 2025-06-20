@@ -1,9 +1,53 @@
-
-
 # Error Handling
 
 Nexios provides a robust and flexible error handling system that allows you to manage exceptions gracefully and return appropriate responses to clients. This documentation covers all aspects of error handling in Nexios applications.
 
+::: tip Error Handling Fundamentals
+Error handling in Nexios provides:
+- **HTTP Exceptions**: Built-in exceptions for common HTTP error scenarios
+- **Custom Exceptions**: Easy creation of application-specific exceptions
+- **Exception Handlers**: Global and route-specific error handling
+- **Debug Mode**: Detailed error information during development
+- **Consistent Responses**: Standardized error response formats
+- **Logging Integration**: Automatic error logging and monitoring
+:::
+
+::: tip Error Handling Best Practices
+1. **Use Appropriate Status Codes**: Return the correct HTTP status code for each error
+2. **Provide Meaningful Messages**: Give users helpful error information
+3. **Log Errors**: Always log errors for debugging and monitoring
+4. **Don't Expose Sensitive Data**: Never include sensitive information in error responses
+5. **Handle All Exceptions**: Use global exception handlers for unexpected errors
+6. **Use Custom Exceptions**: Create specific exceptions for your application domain
+7. **Test Error Scenarios**: Write tests for error handling paths
+8. **Monitor Error Rates**: Track error frequencies in production
+:::
+
+::: tip Common Error Patterns
+- **Validation Errors**: 400 Bad Request for invalid input
+- **Authentication Errors**: 401 Unauthorized for missing/invalid credentials
+- **Authorization Errors**: 403 Forbidden for insufficient permissions
+- **Not Found Errors**: 404 Not Found for missing resources
+- **Conflict Errors**: 409 Conflict for resource conflicts
+- **Rate Limit Errors**: 429 Too Many Requests for rate limiting
+- **Server Errors**: 500 Internal Server Error for unexpected errors
+:::
+
+::: tip Error Response Structure
+Consistent error response format:
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid input data",
+    "details": {
+      "field": "email",
+      "issue": "Invalid email format"
+    }
+  }
+}
+```
+:::
 
 ## HTTP Exceptions
 

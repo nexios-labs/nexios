@@ -1,6 +1,45 @@
 # Dependency Injection in Nexios
 
-Nexios provides a powerful yet intuitive dependency injection system that helps you write clean, maintainable code. Let's explore its capabilities.
+Nexios provides a powerful yet intuitive dependency injection system that helps you write clean, maintainable code. The dependency injection system allows you to separate concerns, improve testability, and create reusable components.
+
+::: tip Dependency Injection Fundamentals
+Dependency injection in Nexios provides:
+- **Automatic Resolution**: Dependencies are automatically resolved and injected
+- **Async Support**: Full support for async dependencies and resource management
+- **Scoped Dependencies**: Different scopes for different use cases
+- **Type Safety**: Type hints provide better IDE support and error detection
+- **Testability**: Easy to mock dependencies for testing
+- **Resource Management**: Automatic cleanup with `yield` dependencies
+- **Performance**: Dependencies are cached and reused efficiently
+:::
+
+::: tip Dependency Injection Best Practices
+1. **Single Responsibility**: Each dependency should have one clear purpose
+2. **Interface Segregation**: Dependencies should expose only what's needed
+3. **Dependency Inversion**: Depend on abstractions, not concretions
+4. **Resource Management**: Use `yield` for resources that need cleanup
+5. **Error Handling**: Handle dependency errors gracefully
+6. **Documentation**: Document what each dependency provides
+7. **Testing**: Design dependencies to be easily testable
+8. **Performance**: Avoid expensive operations in dependencies
+:::
+
+::: tip Common Dependency Patterns
+- **Database Connections**: Reusable database connections with automatic cleanup
+- **Authentication**: User authentication and authorization
+- **Configuration**: Application settings and environment variables
+- **External Services**: HTTP clients, cache connections, etc.
+- **Validation**: Request validation and sanitization
+- **Logging**: Structured logging with context
+- **Caching**: Cache connections and utilities
+:::
+
+::: tip Dependency Scopes
+- **Request Scope**: New instance for each request (default)
+- **Application Scope**: Single instance for the entire application
+- **Session Scope**: Instance per user session
+- **Custom Scopes**: Define your own scoping rules
+:::
 
 ## 👓Simple Dependencies
 
