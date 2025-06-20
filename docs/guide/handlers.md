@@ -1,6 +1,25 @@
 # Handlers
 
-In Nexios, all route handlers must be async functions. These handlers receive a Request object and return a Response, dict, str, or other supported types.
+In Nexios, all route handlers must be async functions. These handlers receive a Request object and return a Response, dict, str, or other supported types. Handlers are the core building blocks of your application where business logic is implemented.
+
+::: tip Handler Fundamentals
+Every Nexios handler:
+- **Must be async**: All handlers use `async def` for non-blocking operations
+- **Receive request/response**: Standard parameters for accessing request data and building responses
+- **Return responses**: Can return various types that Nexios converts to HTTP responses
+- **Handle errors**: Can raise exceptions that are caught by exception handlers
+- **Support dependencies**: Can use dependency injection for clean, testable code
+:::
+
+::: tip Handler Best Practices
+1. **Keep handlers focused**: Each handler should do one thing well
+2. **Extract business logic**: Move complex logic to service functions
+3. **Use type hints**: Improve IDE support and code documentation
+4. **Handle errors gracefully**: Use appropriate exception handling
+5. **Validate inputs**: Check request data before processing
+6. **Return consistent responses**: Use standard response formats
+7. **Document your handlers**: Add docstrings explaining purpose and parameters
+:::
 
 ::: tip  💡Tip
 Every Nexios handler must be async def; it's triggered by a route and returns a value that becomes the response.
@@ -35,6 +54,15 @@ async def index(request: Request, response: Response):
     return "Hello, world!" 
 ```
 
+:::
+
+::: tip Type Annotations Benefits
+Using type annotations provides:
+- **Better IDE support** with autocomplete and error detection
+- **Improved documentation** making code self-documenting
+- **Static type checking** with tools like mypy
+- **Better refactoring** support in modern IDEs
+- **Clearer interfaces** between components
 :::
 
 For more information, see [Request](/guide/request) and [Response](/guide/response)
