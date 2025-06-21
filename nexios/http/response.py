@@ -674,9 +674,14 @@ class NexiosResponse:
         return key.lower() in (k.lower() for k in self.headers.keys())
 
     def text(
-        self, content: JSONType, status_code: int = 200, headers: Dict[str, Any] = {}
+        self,
+        content: JSONType,
+        status_code: Optional[int] = None,
+        headers: Dict[str, Any] = {},
     ):
         """Send plain text or HTML content."""
+        if status_code is None:
+            status_code = self._status_code
         new_response = PlainTextResponse(
             body=content, status_code=status_code, headers=headers
         )
@@ -686,12 +691,14 @@ class NexiosResponse:
     def json(
         self,
         data: Union[str, List[Any], Dict[str, Any]],
-        status_code: int = 200,
+        status_code: Optional[int] = None,
         headers: Dict[str, Any] = {},
         indent: Optional[int] = None,
         ensure_ascii: bool = True,
     ):
         """Send JSON response."""
+        if status_code is None:
+            status_code = self._status_code
         new_response = JSONResponse(
             content=data,
             status_code=status_code,
@@ -714,14 +721,23 @@ class NexiosResponse:
         self.set_cookie(key, value, expires=expires, **kwargs)  # type:ignore
         return self
 
-    def empty(self, status_code: int = 200, headers: Dict[str, Any] = {}):
+    def empty(self, status_code: Optional[int] = None, headers: Dict[str, Any] = {}):
         """Send an empty response."""
+        if status_code is None:
+            status_code = self._status_code
         new_response = BaseResponse(status_code=status_code, headers=headers)
         self._response = self._preserve_headers_and_cookies(new_response)
         return self
 
-    def html(self, content: str, status_code: int = 200, headers: Dict[str, Any] = {}):
+    def html(
+        self,
+        content: str,
+        status_code: Optional[int] = None,
+        headers: Dict[str, Any] = {},
+    ):
         """Send HTML response."""
+        if status_code is None:
+            status_code = self._status_code
         new_response = HTMLResponse(
             content=content, status_code=status_code, headers=headers
         )
@@ -743,6 +759,7 @@ class NexiosResponse:
             content_disposition_type=content_disposition_type,
         )
         self._response = self._preserve_headers_and_cookies(new_response)
+        self._response.status_code = self._status_code
         return self
 
     def stream(
@@ -752,6 +769,8 @@ class NexiosResponse:
         status_code: Optional[int] = None,
     ):
         """Send streaming response."""
+        if status_code is None:
+            status_code = self._status_code
         new_response = StreamingResponse(
             content=iterator,  # type: ignore
             status_code=status_code or self._status_code,
@@ -772,11 +791,11 @@ class NexiosResponse:
     def status(self, status_code: int):
         """Set response status code."""
         self._response.status_code = status_code
+        self._status_code = status_code
         return self
 
     def set_header(self, key: str, value: str, overide: bool = False):
         """Set a response header."""
-
         self._response.set_header(key, value, overide=overide)
         return self
 
