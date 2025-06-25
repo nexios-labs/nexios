@@ -1,8 +1,8 @@
+import contextvars
 import inspect
 from functools import wraps
 from inspect import Parameter, signature
 from typing import Any, Callable, Dict, List, Optional
-import contextvars
 
 from nexios.utils.async_helpers import is_async_callable
 from nexios.utils.concurrency import run_in_threadpool
@@ -23,7 +23,10 @@ class Context:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-current_context: contextvars.ContextVar[Context] = contextvars.ContextVar("current_context")
+
+current_context: contextvars.ContextVar[Context] = contextvars.ContextVar(
+    "current_context"
+)
 
 
 def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:

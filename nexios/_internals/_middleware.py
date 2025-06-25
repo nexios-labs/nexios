@@ -7,12 +7,12 @@ from typing import Any, Protocol
 
 import anyio
 
+from nexios.dependencies import Context, current_context
 from nexios.http.request import ClientDisconnect, Request
 from nexios.http.response import NexiosResponse as Response
 from nexios.types import ASGIApp, Message, Receive, Scope, Send
 from nexios.utils.async_helpers import collapse_excgroups
 from nexios.websockets import WebSocket
-from nexios.dependencies import Context, current_context
 
 if sys.version_info >= (3, 10):  # pragma: no cover
     from typing import ParamSpec
@@ -156,24 +156,31 @@ class ASGIRequestResponseBridge:
 
             async def call_next() -> Response:
                 app_exc: Exception | None = None
+
                 async def receive_or_disconnect() -> Message:
                     if response_sent.is_set():
                         return {"type": "http.disconnect"}
                     async with anyio.create_task_group() as task_group:
-                        async def wrap(func: typing.Callable[[], typing.Awaitable[T]]) -> T:
+
+                        async def wrap(
+                            func: typing.Callable[[], typing.Awaitable[T]],
+                        ) -> T:
                             result = await func()
                             task_group.cancel_scope.cancel()
                             return result
+
                         task_group.start_soon(wrap, response_sent.wait)
                         message = await wrap(wrapped_receive)
                     if response_sent.is_set():
                         return {"type": "http.disconnect"}
                     return message
+
                 async def send_no_error(message: Message) -> None:
                     try:
                         await send_stream.send(message)
                     except anyio.BrokenResourceError:
                         raise RuntimeError("No response returned")
+
                 async def coro() -> None:
                     nonlocal app_exc
                     with send_stream:
@@ -181,6 +188,7 @@ class ASGIRequestResponseBridge:
                             await self.app(scope, receive_or_disconnect, send_no_error)
                         except Exception as exc:
                             app_exc = exc
+
                 task_group.start_soon(coro)
                 try:
                     message = await recv_stream.receive()
@@ -192,6 +200,7 @@ class ASGIRequestResponseBridge:
                         raise app_exc
                     raise RuntimeError("Client disconnected before response was sent")
                 assert message["type"] == "http.response.start"
+
                 async def body_stream() -> typing.AsyncGenerator[bytes, None]:
                     async for message in recv_stream:
                         assert message["type"] == "http.response.body"
@@ -202,11 +211,13 @@ class ASGIRequestResponseBridge:
                             break
                     if app_exc is not None:
                         raise app_exc
+
                 response_ = response.stream(
                     iterator=body_stream(), status_code=message["status"]
                 )  # type: ignore
                 response_._response._headers = message["headers"]  # type: ignore
                 return response
+
             streams: anyio.create_memory_object_stream[Message] = (
                 anyio.create_memory_object_stream()
             )  # type: ignore
