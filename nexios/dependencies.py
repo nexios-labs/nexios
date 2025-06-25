@@ -2,6 +2,7 @@ import inspect
 from functools import wraps
 from inspect import Parameter, signature
 from typing import Any, Callable, Dict, List, Optional
+import contextvars
 
 from nexios.utils.async_helpers import is_async_callable
 from nexios.utils.concurrency import run_in_threadpool
@@ -15,16 +16,33 @@ class Depend:
         return cls
 
 
+class Context:
+    def __init__(self, request=None, user=None, **kwargs):
+        self.request = request
+        self.user = user
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+current_context: contextvars.ContextVar[Context] = contextvars.ContextVar("current_context")
+
+
 def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
-    """Decorator to inject dependencies into a route handler while preserving parameter names."""
+    """Decorator to inject dependencies into a route handler while preserving parameter names and passing context if needed."""
 
     @wraps(handler)
     async def wrapped(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
         sig = signature(handler)
         bound_args = sig.bind_partial(*args, **kwargs)
-
-        # Get the parameters in order
         params = list(sig.parameters.values())
+
+        # Pass context if handler accepts it and not already provided
+        ctx = None
+        if "context" in sig.parameters and "context" not in bound_args.arguments:
+            try:
+                ctx = current_context.get()
+            except LookupError:
+                ctx = None
+            bound_args.arguments["context"] = ctx
 
         for param in params:
             if (
@@ -45,6 +63,15 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
 
                 dep_sig = signature(dependency_func)
                 dep_kwargs = {}
+
+                # Pass context to dependencies if they accept it
+                if "context" in dep_sig.parameters and "context" not in dep_kwargs:
+                    if ctx is None:
+                        try:
+                            ctx = current_context.get()
+                        except LookupError:
+                            ctx = None
+                    dep_kwargs["context"] = ctx
 
                 for dep_param in dep_sig.parameters.values():
                     if dep_param.name in bound_args.arguments:
