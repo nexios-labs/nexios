@@ -68,6 +68,20 @@ def plot_results(df, timestamp):
     plt.close()
 
 
+def verify_equal_requests(results):
+    for framework, data in results.items():
+        endpoint_counts = [endpoint["num_requests"] for endpoint in data]
+        if not endpoint_counts:
+            continue
+        max_count = max(endpoint_counts)
+        min_count = min(endpoint_counts)
+        total = sum(endpoint_counts)
+        if total == 0:
+            continue
+        if max_count - min_count > 0.05 * total:
+            print(f"\u26a0\ufe0f Uneven requests in {framework}: {endpoint_counts}")
+
+
 def analyze_results():
     results_dir = "results"
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -75,6 +89,7 @@ def analyze_results():
 
     # Initialize data for summary
     summary_data = []
+    all_results = {}
 
     # Process each framework's results
     for result_file in glob.glob(f"{results_dir}/*.json"):
@@ -110,11 +125,15 @@ def analyze_results():
                     "avg_response_time": avg_response_time,
                 }
             )
+            all_results[framework] = data
 
     # Create DataFrame and save to CSV
     df = pd.DataFrame(summary_data)
     df.to_csv(summary_file, index=False)
     print(f"\nResults saved to {summary_file}")
+
+    # Verification step
+    verify_equal_requests(all_results)
 
     # Generate plots
     plot_results(df, timestamp)

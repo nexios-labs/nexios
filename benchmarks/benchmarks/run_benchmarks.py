@@ -47,9 +47,7 @@ def run_server(server_file, port):
 
 
 def run_locust_test(test_file, framework_name):
-    # Run locust for 1 minute with 10 users
-    # Each endpoint has weight 1, so with 4 endpoints, we need 75 requests per endpoint
-    # to get 300 total requests (75 * 4 = 300)
+    # Run locust for 60 seconds with 10 users
     cmd = [
         "locust",
         "-f",
@@ -58,9 +56,9 @@ def run_locust_test(test_file, framework_name):
         "--users",
         "10",
         "--spawn-rate",
-        "10",  # Increased spawn rate to reach target faster
+        "10",
         "--run-time",
-        "30s",  # Adjusted time to ensure we get exactly 300 requests
+        "60s",
         "--only-summary",
         "--json",
     ]
