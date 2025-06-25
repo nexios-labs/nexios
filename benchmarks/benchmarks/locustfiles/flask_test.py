@@ -1,4 +1,5 @@
-from locust import HttpUser, task, between
+from locust import HttpUser, between, task
+
 
 class RoundRobinUser(HttpUser):
     wait_time = between(0.1, 0.1)  # Minimal delay
