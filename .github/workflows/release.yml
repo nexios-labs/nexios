@@ -59,7 +59,7 @@ jobs:
       - name: Publish to PyPI
         run: uv publish --token ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
 
-       - name: Generate Changelog
+      - name: Generate Changelog
         run: |
           auto-changelog --commit-limit false --breaking-pattern "BREAKING CHANGE:"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
