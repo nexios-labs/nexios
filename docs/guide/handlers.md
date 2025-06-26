@@ -1,6 +1,10 @@
 # Handlers
 
-In Nexios, all route handlers must be async functions. These handlers receive a Request object and return a Response, dict, str, or other supported types. Handlers are the core building blocks of your application where business logic is implemented.
+::: danger STRICT REQUIREMENT
+In Nexios, all route handlers MUST be async functions - this is a strict requirement that cannot be overridden. Synchronous handlers are not supported and will raise errors.
+:::
+
+Handlers receive a Request object and return a Response, dict, str, or other supported types. They are the core building blocks of your application where business logic is implemented.
 
 ::: tip Handler Fundamentals
 Every Nexios handler:
