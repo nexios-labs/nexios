@@ -130,6 +130,100 @@ async def get_settings(
     return response.json({"settings": settings.settings})
 ```
 
+## Context-Aware Dependency Injection
+
+Nexios provides a powerful, context-aware dependency injection system that allows you to access request-scoped data (and more) anywhere in your dependency tree, even in deeply nested dependencies.
+
+### What is Context?
+
+The `Context` object in Nexios is a special class that carries information about the current request and its environment. It is automatically created for each incoming request and is available throughout the entire dependency resolution process.
+
+By default, the `Context` includes:
+- `request`: The current `Request` object
+- `user`: The authenticated user (if available)
+
+
+You can extend the `Context` class to include more fields as needed for your application.
+
+### How to Use Context in Handlers and Dependencies
+
+#### 1. Type Annotation (Classic)
+You can declare a `context: Context = None` parameter in your handler or dependency. Nexios will automatically inject the current context:
+
+```python
+from nexios.dependencies import Context
+
+@app.get("/context-demo")
+async def context_demo(req: Request, res: Response, context: Context = None):
+    return {"path": context.request.url.path, "trace_id": context.trace_id}
+```
+
+#### 2. Default Value (No Type Annotation Needed)
+You can also use `context=Context()` as a parameter. Nexios will recognize this and inject the current context automatically:
+
+```python
+@app.get("/auto-context")
+async def auto_context_demo(req: Request, res: Response, context=Context()):
+    return {"path": context.request.url.path}
+```
+
+This works for both handlers and dependencies, and even for deeply nested dependencies:
+
+```python
+async def get_user(context=Context()):
+    # context is injected automatically
+    return {"user": "alice", "path": context.request.url.path}
+
+@app.get("/user-path")
+async def user_path(req: Request, res: Response, user=Depend(get_user)):
+    return user
+```
+
+#### 3. Accessing Context Anywhere
+If you need to access the context outside of a function parameter, you can use the `current_context` variable:
+
+```python
+from nexios.dependencies import current_context
+
+def some_function():
+    ctx = current_context.get()
+    print(ctx.request.url.path)
+```
+
+### Advanced: Customizing Context
+You can subclass or extend the `Context` class to add more fields or methods relevant to your application:
+
+```python
+class MyContext(Context):
+    def __init__(self, request=None, user=None, my_custom_field=None, **kwargs):
+        super().__init__(request=request, user=user, **kwargs)
+        self.my_custom_field = my_custom_field
+```
+
+Then, you can configure Nexios to use your custom context class if needed.
+
+### Why Use Context?
+- **Consistency:** All dependencies and handlers can access the same request-scoped data.
+- **Flexibility:** Add custom fields to the context for your app's needs.
+- **No Boilerplate:** No need to manually pass context through every function.
+- **Async-Safe:** Works seamlessly with async code and deeply nested dependencies.
+
+### Example: Deeply Nested Context
+
+```python
+async def dep_a(context=Context()):
+    return f"A: {context.request.url.path}"
+
+async def dep_b(a=Depend(dep_a), context=Context()):
+    return f"B: {a}, {context.request.url.path}"
+
+@app.get("/deep-context")
+async def deep_context(req: Request, res: Response, b=Depend(dep_b)):
+    return {"result": b}
+```
+
+In this example, both `dep_a` and `dep_b` receive the same context object, even though they are nested.
+
 ## Dependency Validation
 
 ### Type Validation

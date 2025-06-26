@@ -7,6 +7,7 @@ from typing import Any, Protocol
 
 import anyio
 
+from nexios.dependencies import Context, current_context
 from nexios.http.request import ClientDisconnect, Request
 from nexios.http.response import NexiosResponse as Response
 from nexios.types import ASGIApp, Message, Receive, Scope, Send
@@ -146,89 +147,89 @@ class ASGIRequestResponseBridge:
         request = _CachedRequest(scope, receive)
         response = Response(request=request)
 
-        wrapped_receive = request.wrapped_receive
-        response_sent = anyio.Event()
+        # Set the context for this request
+        ctx = Context(request=request)
+        token = current_context.set(ctx)
+        try:
+            wrapped_receive = request.wrapped_receive
+            response_sent = anyio.Event()
 
-        async def call_next() -> Response:
-            app_exc: Exception | None = None
+            async def call_next() -> Response:
+                app_exc: Exception | None = None
 
-            async def receive_or_disconnect() -> Message:
-                if response_sent.is_set():
-                    return {"type": "http.disconnect"}
+                async def receive_or_disconnect() -> Message:
+                    if response_sent.is_set():
+                        return {"type": "http.disconnect"}
+                    async with anyio.create_task_group() as task_group:
 
-                async with anyio.create_task_group() as task_group:
+                        async def wrap(
+                            func: typing.Callable[[], typing.Awaitable[T]],
+                        ) -> T:
+                            result = await func()
+                            task_group.cancel_scope.cancel()
+                            return result
 
-                    async def wrap(func: typing.Callable[[], typing.Awaitable[T]]) -> T:
-                        result = await func()
-                        task_group.cancel_scope.cancel()
-                        return result
+                        task_group.start_soon(wrap, response_sent.wait)
+                        message = await wrap(wrapped_receive)
+                    if response_sent.is_set():
+                        return {"type": "http.disconnect"}
+                    return message
 
-                    task_group.start_soon(wrap, response_sent.wait)
-                    message = await wrap(wrapped_receive)
-
-                if response_sent.is_set():
-                    return {"type": "http.disconnect"}
-
-                return message
-
-            async def send_no_error(message: Message) -> None:
-                try:
-                    await send_stream.send(message)
-                except anyio.BrokenResourceError:
-                    # recv_stream has been closed, i.e. response_sent has been set.
-                    raise RuntimeError("No response returned")
-
-            async def coro() -> None:
-                nonlocal app_exc
-
-                with send_stream:
+                async def send_no_error(message: Message) -> None:
                     try:
-                        await self.app(scope, receive_or_disconnect, send_no_error)
-                    except Exception as exc:
-                        app_exc = exc
+                        await send_stream.send(message)
+                    except anyio.BrokenResourceError:
+                        raise RuntimeError("No response returned")
 
-            task_group.start_soon(coro)
+                async def coro() -> None:
+                    nonlocal app_exc
+                    with send_stream:
+                        try:
+                            await self.app(scope, receive_or_disconnect, send_no_error)
+                        except Exception as exc:
+                            app_exc = exc
 
-            try:
-                message = await recv_stream.receive()
-                info = message.get("info", None)
-                if message["type"] == "http.response.debug" and info is not None:
+                task_group.start_soon(coro)
+                try:
                     message = await recv_stream.receive()
-            except anyio.EndOfStream:
-                if app_exc is not None:
-                    raise app_exc
-                raise RuntimeError("Client disconnected before response was sent")
+                    info = message.get("info", None)
+                    if message["type"] == "http.response.debug" and info is not None:
+                        message = await recv_stream.receive()
+                except anyio.EndOfStream:
+                    if app_exc is not None:
+                        raise app_exc
+                    raise RuntimeError("Client disconnected before response was sent")
+                assert message["type"] == "http.response.start"
 
-            assert message["type"] == "http.response.start"
+                async def body_stream() -> typing.AsyncGenerator[bytes, None]:
+                    async for message in recv_stream:
+                        assert message["type"] == "http.response.body"
+                        body = message.get("body", b"")
+                        if body:
+                            yield body
+                        if not message.get("more_body", False):
+                            break
+                    if app_exc is not None:
+                        raise app_exc
 
-            async def body_stream() -> typing.AsyncGenerator[bytes, None]:
-                async for message in recv_stream:
-                    assert message["type"] == "http.response.body"
-                    body = message.get("body", b"")
-                    if body:
-                        yield body
-                    if not message.get("more_body", False):
-                        break
+                response_ = response.stream(
+                    iterator=body_stream(), status_code=message["status"]
+                )  # type: ignore
+                response_._response._headers = message["headers"]  # type: ignore
+                return response
 
-                if app_exc is not None:
-                    raise app_exc
-
-            response_ = response.stream(
-                iterator=body_stream(), status_code=message["status"]
+            streams: anyio.create_memory_object_stream[Message] = (
+                anyio.create_memory_object_stream()
             )  # type: ignore
-            response_._response._headers = message["headers"]  # type: ignore
-            return response
-
-        streams: anyio.create_memory_object_stream[Message] = (
-            anyio.create_memory_object_stream()
-        )  # type: ignore
-        send_stream, recv_stream = streams
-        with recv_stream, send_stream, collapse_excgroups():
-            async with anyio.create_task_group() as task_group:
-                await self.dispatch_func(request, response, call_next)  # type: ignore
-                await response.get_response()(scope, wrapped_receive, send)
-                response_sent.set()
-                recv_stream.close()
+            send_stream, recv_stream = streams
+            with recv_stream, send_stream, collapse_excgroups():
+                async with anyio.create_task_group() as task_group:
+                    await self.dispatch_func(request, response, call_next)  # type: ignore
+                    await response.get_response()(scope, wrapped_receive, send)
+                    response_sent.set()
+                    recv_stream.close()
+        finally:
+            current_context.reset(token)
 
 
 WebSocketDispatchFunction = typing.Callable[

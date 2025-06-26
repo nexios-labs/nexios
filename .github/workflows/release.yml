@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for auto-changelog to get all tags and commits
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -27,6 +29,11 @@ jobs:
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install auto-changelog
+        run: npm install -g auto-changelog
+
+     
 
       - name: Clean Old Builds
         run: rm -rf dist build *.egg-info
@@ -47,6 +54,15 @@ jobs:
           name: Release ${{ github.ref_name }}
           generate_release_notes: true
           files: dist/*
+          body_path: CHANGELOG.md
 
       - name: Publish to PyPI
         run: uv publish --token ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
+
+       - name: Generate Changelog
+        run: |
+          auto-changelog --commit-limit false --breaking-pattern "BREAKING CHANGE:"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add CHANGELOG.md
+          git commit -m "chore: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]" || echo "No changes to commit"

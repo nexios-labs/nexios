@@ -1,0 +1,14 @@
+{
+    "output": "CHANGELOG.md",
+    "template": "keepachangelog",
+    "unreleased": true,
+    "commitLimit": false,
+    "breakingPattern": "BREAKING CHANGE:",
+    "ignoreCommitPattern": "^chore: update CHANGELOG\\.md|\\[skip ci\\]",
+    "sortCommits": "date-desc",
+    "includeBranch": ["main", "dev"],
+    "commitUrl": "https://github.com/nexios-labs/Nexios/commit/{id}",
+    "issueUrl": "https://github.com/nexios-labs/Nexios/issues/{id}",
+    "mergeUrl": "https://github.com/nexios-labs/Nexios/pull/{id}",
+    "compareUrl": "https://github.com/nexios-labs/Nexios/compare/{from}...{to}"
+} 

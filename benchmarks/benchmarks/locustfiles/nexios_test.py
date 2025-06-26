@@ -1,29 +1,24 @@
 from locust import HttpUser, between, task
 
 
-class NexiosUser(HttpUser):
-    wait_time = between(1, 3)
+class RoundRobinUser(HttpUser):
+    wait_time = between(0.1, 0.1)  # Minimal delay
     host = "http://127.0.0.1:8005"
+    endpoints = ["/", "/json", "/echo", "/delay/0.1"]
+    current = 0
 
-    @task(1)
-    def get_root(self):
-        self.client.get("/")
-
-    @task(1)
-    def get_json(self):
-        self.client.get("/json")
-
-    @task(1)
-    def post_echo(self):
-        payload = {
-            "message": "Hello World",
-            "number": 42,
-            "boolean": True,
-            "array": [1, 2, 3],
-            "object": {"key": "value"},
-        }
-        self.client.post("/echo", json=payload)
-
-    @task(1)
-    def get_delay(self):
-        self.client.get("/delay/0.1")
+    @task
+    def cycle_endpoints(self):
+        endpoint = self.endpoints[self.current]
+        if endpoint == "/echo":
+            payload = {
+                "message": "Hello World",
+                "number": 42,
+                "boolean": True,
+                "array": [1, 2, 3],
+                "object": {"key": "value"},
+            }
+            self.client.post(endpoint, json=payload)
+        else:
+            self.client.get(endpoint)
+        self.current = (self.current + 1) % len(self.endpoints)
