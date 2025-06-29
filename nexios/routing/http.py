@@ -191,7 +191,7 @@ class Routes(BaseRoute):
         self.operation_id = operation_id
         self.deprecated = deprecated
         self.parameters = parameters
-        self.exlude_from_schema = exclude_from_schema
+        self.exclude_from_schema = exclude_from_schema
 
     def match(self, path: str, method: str) -> typing.Tuple[Any, Any, Any]:
         """
@@ -536,7 +536,7 @@ class Router(BaseRouter):
         # original_handler = route.handler
 
         if self.exclude_from_schema:
-            route.exlude_from_schema = True
+            route.exclude_from_schema = True
         original_handler = route.handler
 
         async def wrapped_handler(
