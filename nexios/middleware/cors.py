@@ -61,7 +61,7 @@ class CORSMiddleware(BaseMiddleware):
         if config.allow_headers:
             self.allow_headers: List[str] = [
                 *list(SAFELISTED_HEADERS),
-                *config.allow_headers,
+                *(config.allow_headers or []),
             ]
         else:
             self.allow_headers = list(SAFELISTED_HEADERS)
@@ -79,8 +79,7 @@ class CORSMiddleware(BaseMiddleware):
             return None
 
         origin = request.origin
-        if not origin:
-            return await call_next()
+        
         method = request.scope["method"]
 
         if not origin and self.strict_origin_checking:
