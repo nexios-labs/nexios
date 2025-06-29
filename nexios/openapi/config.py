@@ -3,20 +3,17 @@ from typing import Dict, List, Optional, Type, Union
 from pydantic import BaseModel
 
 from .models import (
-    Components, 
-    Contact, 
-    Info, 
-    License, 
-    OpenAPI, 
-    SecurityScheme, 
-    Server,
-    Schema,
-    Tag,
-    ExternalDocumentation,
-    Parameter,
+    Components,
+    Contact,
     Example,
-    Response as OpenAPIResponse
+    ExternalDocumentation,
+    Info,
+    License,
+    OpenAPI,
+    Parameter,
 )
+from .models import Response as OpenAPIResponse
+from .models import Schema, SecurityScheme, Server, Tag
 
 
 class OpenAPIConfig:
@@ -104,7 +101,7 @@ class OpenAPIConfig:
         """Add a tag to the OpenAPI specification"""
         if not self.openapi_spec.tags:
             self.openapi_spec.tags = []
-        
+
         # Check if tag already exists
         existing_tags = [t.name for t in self.openapi_spec.tags]
         if tag.name not in existing_tags:
@@ -114,7 +111,7 @@ class OpenAPIConfig:
         """Add a server to the OpenAPI specification"""
         if not self.openapi_spec.servers:
             self.openapi_spec.servers = []
-        
+
         self.openapi_spec.servers.append(server)
 
     def set_external_docs(self, external_docs: ExternalDocumentation):
