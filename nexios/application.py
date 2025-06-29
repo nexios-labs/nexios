@@ -2256,6 +2256,7 @@ class NexiosApp(object):
         """
         try:
             import granian
+
             use_granian = True
         except ImportError:
             use_granian = False
@@ -2275,7 +2276,9 @@ class NexiosApp(object):
             try:
                 import uvicorn
             except ImportError:
-                raise RuntimeError("Either granian or uvicorn must be installed to use app.run()")
+                raise RuntimeError(
+                    "Either granian or uvicorn must be installed to use app.run()"
+                )
 
             uvicorn.run(
                 self,

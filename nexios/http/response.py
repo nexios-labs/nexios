@@ -556,8 +556,8 @@ class StreamingResponse(BaseResponse):
 
         self.headers.pop("content-length", None)
         self._headers += [
-            (k.lower().encode("latin-1"), v.encode("latin-1"))for k, v in self.headers.items()
-           
+            (k.lower().encode("latin-1"), v.encode("latin-1"))
+            for k, v in self.headers.items()
         ]
 
     async def listen_for_disconnect(self, receive: Receive) -> None:
