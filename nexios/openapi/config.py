@@ -13,7 +13,12 @@ from .models import (
     Parameter,
 )
 from .models import Response as OpenAPIResponse
-from .models import Schema, SecurityScheme, Server, Tag
+from .models import (
+    Schema,
+    SecurityScheme,
+    Server,
+    Tag,
+)
 
 
 class OpenAPIConfig:
