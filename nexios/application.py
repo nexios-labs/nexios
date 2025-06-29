@@ -2235,3 +2235,52 @@ class NexiosApp(object):
 
     def __str__(self) -> str:
         return f"<NexiosApp: {self.title}>"
+
+    def run(
+        self,
+        host: str = "127.0.0.1",
+        port: int = 8000,
+        reload: bool = False,
+        rload: bool = False,
+        **kwargs,
+    ):
+        """
+        Run the application using uvicorn or granian if installed.
+
+        Args:
+            host (str): Host address to bind.
+            port (int): Port number to bind.
+            reload (bool): Enable auto-reload for uvicorn.
+            rload (bool): Enable auto-reload for granian.
+            **kwargs: Additional keyword arguments for the server.
+        """
+        try:
+            import granian
+            use_granian = True
+        except ImportError:
+            use_granian = False
+
+        if use_granian:
+            # Use granian if available
+            granian_args = {
+                "app": self,
+                "host": host,
+                "port": port,
+                "reload": rload,
+            }
+            granian_args.update(kwargs)
+            server = granian.Granian(**granian_args)
+            server.serve()
+        else:
+            try:
+                import uvicorn
+            except ImportError:
+                raise RuntimeError("Either granian or uvicorn must be installed to use app.run()")
+
+            uvicorn.run(
+                self,
+                host=host,
+                port=port,
+                reload=reload,
+                **kwargs,
+            )

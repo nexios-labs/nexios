@@ -11,7 +11,7 @@
 Setting up your testing environment:
 
 ```python
-from nexios import NexiosApp, NexiosApp
+from nexios import NexiosApp
 from nexios.testing import Client
 from nexios.http import Request, Response
 import pytest
