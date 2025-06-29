@@ -17,24 +17,29 @@ from nexios.middleware.base import BaseMiddleware
 
 logger = create_logger(__name__, log_level=DEBUG)
 STYLES = """
-
 :root {
-    --primary: #10b981;
-    --primary-dark: #059669;
-    --primary-light: #d1fae5;
-    --secondary: #14b8a6;
-    --background: #0f172a;
-    --surface: #1e293b;
-    --surface-light: #334155;
-    --error: #ef4444;
-    --text: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --text-tertiary: #64748b;
-    --border: #334155;
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --primary-light: #dbeafe;
+    --secondary: #10b981;
+    --background: #ffffff;
+    --surface: #f8fafc;
+    --surface-light: #f1f5f9;
+    --error: #02ba42;
+    --error-light: #fef2f2;
+    --warning: #f59e0b;
+    --success: #10b981;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-tertiary: #94a3b8;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
     --code-bg: #1e293b;
-    --code-fg: #a5f3fc;
-    --highlight: #eab308;
-    --highlight-bg: rgba(234, 179, 8, 0.1);
+    --code-fg: #e2e8f0;
+    --highlight: #fbbf24;
+    --highlight-bg: rgba(251, 191, 36, 0.1);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 * {
@@ -50,7 +55,7 @@ body {
     margin: 0;
     padding: 0;
     line-height: 1.6;
-    font-size: 15px;
+    font-size: 14px;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -59,56 +64,117 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 h1 {
-    color: var(--primary);
-    font-size: 24px;
-    margin-bottom: 4px;
+    color: var(--text);
+    font-size: 28px;
+    margin-bottom: 8px;
+    font-weight: 700;
 }
 
 h2 {
     color: var(--text);
-    font-size: 18px;
-    margin-top: 4px;
-    margin-bottom: 16px;
-    font-weight: 500;
+    font-size: 20px;
+    margin-top: 8px;
+    margin-bottom: 20px;
+    font-weight: 600;
 }
 
 h3 {
-    color: var(--primary);
+    color: var(--text);
     font-size: 16px;
-    margin-top: 16px;
-    margin-bottom: 10px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 5px;
+    margin-top: 20px;
+    margin-bottom: 12px;
+    font-weight: 600;
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 24px 16px;
+    padding: 32px 24px;
+}
+
+.error-header {
+    background: linear-gradient(135deg, #02ba42 0%, #02bb42 100%);
+    color: white;
+    padding: 32px 24px;
+    margin: -32px -24px 32px -24px;
+    border-radius: 0 0 16px 16px;
+    box-shadow: var(--shadow-lg);
+}
+
+.error-header h1 {
+    color: white;
+    font-size: 32px;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.error-header .error-message {
+    font-size: 18px;
+    opacity: 0.9;
+    margin-bottom: 16px;
+}
+
+.error-meta {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.error-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.error-meta-item strong {
+    font-weight: 600;
 }
 
 .section {
     margin-bottom: 24px;
     border: 1px solid var(--border);
     background: var(--surface);
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow);
+    transition: all 0.2s ease;
+}
+
+.section:hover {
+    box-shadow: var(--shadow-lg);
 }
 
 .section-title {
-    background-color: var(--primary);
-    color: var(--background);
-    padding: 12px 16px;
+    background-color: var(--surface-light);
+    color: var(--text);
+    padding: 16px 20px;
     font-size: 16px;
     font-weight: 600;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.section-title:hover {
+    background-color: var(--border-light);
 }
 
 .section-content {
-    padding: 16px;
+    padding: 20px;
+    max-height: none;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.section-content.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .traceback-container {
@@ -117,21 +183,40 @@ h3 {
     overflow: hidden;
 }
 
-.traceback-title {
-    background-color: var(--primary);
-    color: var(--background);
-    padding: 12px 16px;
-    font-size: 16px;
-    font-weight: 600;
+.frame-title {
+    font-weight: 500;
+    padding: 16px 20px;
+    background-color: var(--surface-light);
+    color: var(--text);
+    font-size: 14px;
+    border-radius: 8px;
+    margin-bottom: 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-left: 4px solid var(--primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.frame-line {
-    padding-left: 12px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-    color: var(--text);
+.frame-title:hover {
+    background-color: var(--border-light);
+}
+
+.frame-container {
+    margin-bottom: 16px;
+}
+
+.frame-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.frame-icon {
+    font-size: 16px;
+    opacity: 0.7;
 }
 
 .frame-filename {
@@ -140,92 +225,505 @@ h3 {
     color: var(--primary);
 }
 
-.center-line {
-    background-color: var(--primary-dark);
-    color: white;
-    padding: 6px 12px;
+.frame-separator {
+    color: var(--text-tertiary);
+    font-weight: 400;
+}
+
+.frame-lineno {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    color: var(--warning);
     font-weight: 600;
-    border-radius: 4px;
+}
+
+.frame-function {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    color: var(--secondary);
+    font-weight: 600;
+}
+
+.source-code {
+    background: var(--code-bg);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 8px 0;
+    overflow-x: auto;
+    max-height: none;
+    transition: all 0.3s ease;
+}
+
+.source-code.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+}
+
+.frame-line {
+    padding-left: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    color: var(--code-fg);
+    line-height: 1.5;
+}
+
+.center-line {
+    background-color: var(--error);
+    color: white;
+    padding: 8px 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    margin: 4px 0;
 }
 
 .lineno {
-    margin-right: 8px;
+    margin-right: 12px;
     color: var(--text-tertiary);
     user-select: none;
-}
-
-.frame-title {
-    font-weight: 500;
-    padding: 12px 16px;
-    background-color: var(--surface-light);
-    color: var(--text);
-    font-size: 14px;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-left: 4px solid var(--primary);
+    min-width: 40px;
+    display: inline-block;
 }
 
 .collapse-btn {
     background: var(--primary);
-    color: var(--background);
+    color: white;
     border: none;
-    width: 24px;
-    height: 24px;
-    font-size: 14px;
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-left: 10px;
-    transition: background-color 0.2s;
+    margin-left: 12px;
+    transition: all 0.2s ease;
+    font-weight: 600;
 }
 
 .collapse-btn:hover {
-    backgroun
+    background: var(--primary-dark);
+    transform: scale(1.05);
+}
+
+.collapse-btn:active {
+    transform: scale(0.95);
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.info-block {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.info-block h3 {
+    margin-bottom: 16px;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    min-width: 120px;
+}
+
+.info-value {
+    color: var(--text);
+    text-align: right;
+    word-break: break-all;
+    max-width: 200px;
+}
+
+.key-value-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+
+.key-value-table th,
+.key-value-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 13px;
+}
+
+.key-value-table th {
+    background-color: var(--surface-light);
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.key-value-table td:first-child {
+    font-weight: 500;
+    color: var(--text-secondary);
+    min-width: 120px;
+}
+
+.key-value-table td:last-child {
+    word-break: break-all;
+    max-width: 300px;
+}
+
+.suggestion {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.suggestion-title {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.code-box {
+    background: var(--code-bg);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.code-header {
+    background: var(--surface-light);
+    color: var(--text);
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+}
+
+.code-content {
+    padding: 16px;
+    color: var(--code-fg);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.stack-locals {
+    background: var(--highlight-bg);
+    border: 1px solid var(--highlight);
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 8px;
+}
+
+.stack-locals h4 {
+    color: var(--warning);
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.stack-locals div {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 13px;
+    margin-bottom: 4px;
+    word-break: break-all;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+    }
+    
+    .error-header {
+        margin: -16px -16px 24px -16px;
+        padding: 24px 16px;
+    }
+    
+    .error-meta {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .section-title {
+        padding: 12px 16px;
+    }
+    
+    .section-content {
+        padding: 16px;
+    }
+}
 """
 
 JS = """
 <script type="text/javascript">
-    function collapse(element){
+    // Enhanced collapse function with smooth animations
+    function collapse(element) {
         const targetId = element.getAttribute("data-target-id");
         const target = document.getElementById(targetId);
-
-        if (target.classList.contains("collapsed")){
+        
+        if (!target) return;
+        
+        const isCollapsed = target.classList.contains("collapsed");
+        
+        if (isCollapsed) {
+            // Expand
             element.innerHTML = "&#8210;"; // Minus symbol
             target.classList.remove("collapsed");
+            target.style.maxHeight = target.scrollHeight + "px";
+            setTimeout(() => {
+                target.style.maxHeight = "none";
+            }, 300);
         } else {
+            // Collapse
             element.innerHTML = "+"; // Plus symbol
-            target.classList.add("collapsed");
+            target.style.maxHeight = target.scrollHeight + "px";
+            setTimeout(() => {
+                target.classList.add("collapsed");
+                target.style.maxHeight = "0";
+            }, 10);
         }
     }
 
+    // Enhanced section toggle with smooth animations
     function toggleSection(sectionId) {
         const section = document.getElementById(sectionId);
         const button = document.querySelector(`[data-section="${sectionId}"]`);
         
-        if (section.classList.contains("collapsed")) {
+        if (!section || !button) return;
+        
+        const isCollapsed = section.classList.contains("collapsed");
+        
+        if (isCollapsed) {
+            // Expand
             section.classList.remove("collapsed");
             button.innerHTML = "&#8210;"; // Minus symbol
+            section.style.maxHeight = section.scrollHeight + "px";
+            setTimeout(() => {
+                section.style.maxHeight = "none";
+            }, 300);
         } else {
-            section.classList.add("collapsed");
+            // Collapse
             button.innerHTML = "+"; // Plus symbol
+            section.style.maxHeight = section.scrollHeight + "px";
+            setTimeout(() => {
+                section.classList.add("collapsed");
+                section.style.maxHeight = "0";
+            }, 10);
         }
     }
 
+    // Keyboard shortcuts
+    function handleKeyboardShortcuts(event) {
+        // Ctrl/Cmd + 1-6 to toggle sections
+        if ((event.ctrlKey || event.metaKey) && event.key >= '1' && event.key <= '6') {
+            event.preventDefault();
+            const sectionMap = {
+                '1': 'traceback-section',
+                '2': 'request-section', 
+                '3': 'system-section',
+                '4': 'suggestions-section',
+                '5': 'json-section'
+            };
+            const sectionId = sectionMap[event.key];
+            if (sectionId) {
+                toggleSection(sectionId);
+            }
+        }
+        
+        // Escape to collapse all sections
+        if (event.key === 'Escape') {
+            collapseAllSections();
+        }
+        
+        // Ctrl/Cmd + A to expand all sections
+        if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
+            event.preventDefault();
+            expandAllSections();
+        }
+    }
+
+    // Collapse all sections
+    function collapseAllSections() {
+        const sections = document.querySelectorAll('.section-content');
+        const buttons = document.querySelectorAll('.collapse-btn[data-section]');
+        
+        sections.forEach(section => {
+            if (!section.classList.contains("collapsed")) {
+                section.classList.add("collapsed");
+                section.style.maxHeight = "0";
+            }
+        });
+        
+        buttons.forEach(button => {
+            button.innerHTML = "+";
+        });
+    }
+
+    // Expand all sections
+    function expandAllSections() {
+        const sections = document.querySelectorAll('.section-content');
+        const buttons = document.querySelectorAll('.collapse-btn[data-section]');
+        
+        sections.forEach(section => {
+            section.classList.remove("collapsed");
+            section.style.maxHeight = "none";
+        });
+        
+        buttons.forEach(button => {
+            button.innerHTML = "&#8210;";
+        });
+    }
+
+    // Copy error details to clipboard
+    function copyErrorDetails() {
+        const errorType = document.querySelector('.error-header h1').textContent;
+        const errorMessage = document.querySelector('.error-header .error-message').textContent;
+        const traceback = document.querySelector('#traceback-section').textContent;
+        
+        const errorText = `Error: ${errorType}\\nMessage: ${errorMessage}\\n\\nTraceback:\\n${traceback}`;
+        
+        navigator.clipboard.writeText(errorText).then(() => {
+            showNotification('Error details copied to clipboard!');
+        }).catch(() => {
+            showNotification('Failed to copy error details');
+        });
+    }
+
+    // Show notification
+    function showNotification(message) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            font-weight: 500;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+        
+        setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
+    }
+
+    // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize all sections as expanded
+        // Initialize sections - keep traceback expanded, collapse others
         const sections = document.querySelectorAll('.section-content');
         sections.forEach(section => {
             if (section.id !== 'traceback-section') {
                 section.classList.add('collapsed');
+                section.style.maxHeight = '0';
                 const button = document.querySelector(`[data-section="${section.id}"]`);
                 if (button) button.innerHTML = "+";
             }
         });
+        
+        // Add keyboard event listener
+        document.addEventListener('keydown', handleKeyboardShortcuts);
+        
+        // Add copy button to error header
+        const errorHeader = document.querySelector('.error-header');
+        if (errorHeader) {
+            const copyButton = document.createElement('button');
+            copyButton.innerHTML = '📋 Copy Error';
+            copyButton.style.cssText = `
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                padding: 8px 16px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 500;
+                transition: all 0.2s ease;
+                margin-top: 16px;
+            `;
+            copyButton.onmouseover = () => {
+                copyButton.style.background = 'rgba(255, 255, 255, 0.3)';
+            };
+            copyButton.onmouseout = () => {
+                copyButton.style.background = 'rgba(255, 255, 255, 0.2)';
+            };
+            copyButton.onclick = copyErrorDetails;
+            errorHeader.appendChild(copyButton);
+        }
+        
+        // Add keyboard shortcuts help
+        const helpText = document.createElement('div');
+        helpText.innerHTML = `
+            <div style="
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 12px;
+                font-size: 12px;
+                color: var(--text-secondary);
+                box-shadow: var(--shadow);
+                z-index: 1000;
+                max-width: 200px;
+            ">
+                <strong>Keyboard Shortcuts:</strong><br>
+                Ctrl+1-5: Toggle sections<br>
+                Ctrl+A: Expand all<br>
+                Esc: Collapse all
+            </div>
+        `;
+        document.body.appendChild(helpText);
+        
+        // Auto-hide help after 10 seconds
+        setTimeout(() => {
+            helpText.style.opacity = '0';
+            helpText.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => {
+                if (helpText.parentNode) {
+                    helpText.parentNode.removeChild(helpText);
+                }
+            }, 500);
+        }, 10000);
     });
 </script>
 """
@@ -242,24 +740,28 @@ TEMPLATE = """
     </head>
     <body>
         <div class="container">
-            <h1>Server Error</h1>
-            <h1>Nexios Debug - {error_type}</h1>
-            <!-- Traceback Section -->
-
-             <div class="section">
-                <div class="section-title">
-                    <span>Request Information</span>
-                    <button class="collapse-btn" data-section="request-section" onclick="toggleSection('request-section')">+</button>
-                </div>
-                <div id="request-section" class="section-content">
-                    {request_info}
+            <!-- Error Header -->
+            <div class="error-header">
+                <h1>{error_type}</h1>
+                <div class="error-message">{error}</div>
+                <div class="error-meta">
+                    <div class="error-meta-item">
+                        <strong>Error ID:</strong> {error_id}
+                    </div>
+                    <div class="error-meta-item">
+                        <strong>Time:</strong> {timestamp}
+                    </div>
+                    <div class="error-meta-item">
+                        <strong>Status:</strong> 500 Internal Server Error
+                    </div>
                 </div>
             </div>
-            
+
+            <!-- Traceback Section (Always visible) -->
             <div class="section">
-                <div class="section-title">
-                    <span>Traceback</span>
-                    <button class="collapse-btn" data-section="traceback-section" onclick="toggleSection('traceback-section')">&#8210;</button>
+                <div class="section-title" onclick="toggleSection('traceback-section')">
+                    <span>🔍 Traceback & Stack Trace</span>
+                    <button class="collapse-btn" data-section="traceback-section" onclick="event.stopPropagation(); toggleSection('traceback-section')">&#8210;</button>
                 </div>
                 <div id="traceback-section" class="section-content">
                     <div>{exc_html}</div>
@@ -267,24 +769,32 @@ TEMPLATE = """
             </div>
 
             <!-- Request Information Section -->
-           
+            <div class="section">
+                <div class="section-title" onclick="toggleSection('request-section')">
+                    <span>📡 Request Information</span>
+                    <button class="collapse-btn" data-section="request-section" onclick="event.stopPropagation(); toggleSection('request-section')">+</button>
+                </div>
+                <div id="request-section" class="section-content">
+                    {request_info}
+                </div>
+            </div>
 
             <!-- System Information Section -->
             <div class="section">
-                <div class="section-title">
-                    <span>System Information</span>
-                    <button class="collapse-btn" data-section="system-section" onclick="toggleSection('system-section')">+</button>
+                <div class="section-title" onclick="toggleSection('system-section')">
+                    <span>⚙️ System Information</span>
+                    <button class="collapse-btn" data-section="system-section" onclick="event.stopPropagation(); toggleSection('system-section')">+</button>
                 </div>
                 <div id="system-section" class="section-content">
                     {system_info}
                 </div>
             </div>
 
-            <!-- Suggestions Section -->
+            <!-- Debugging Suggestions Section -->
             <div class="section">
-                <div class="section-title">
-                    <span>Debugging Suggestions</span>
-                    <button class="collapse-btn" data-section="suggestions-section" onclick="toggleSection('suggestions-section')">+</button>
+                <div class="section-title" onclick="toggleSection('suggestions-section')">
+                    <span>💡 Debugging Suggestions</span>
+                    <button class="collapse-btn" data-section="suggestions-section" onclick="event.stopPropagation(); toggleSection('suggestions-section')">+</button>
                 </div>
                 <div id="suggestions-section" class="section-content">
                     {debugging_suggestions}
@@ -293,9 +803,9 @@ TEMPLATE = """
 
             <!-- JSON Data Section -->
             <div class="section">
-                <div class="section-title">
-                    <span>Error JSON Data</span>
-                    <button class="collapse-btn" data-section="json-section" onclick="toggleSection('json-section')">+</button>
+                <div class="section-title" onclick="toggleSection('json-section')">
+                    <span>📄 Error JSON Data</span>
+                    <button class="collapse-btn" data-section="json-section" onclick="event.stopPropagation(); toggleSection('json-section')">+</button>
                 </div>
                 <div id="json-section" class="section-content">
                     <div class="code-box">
@@ -310,16 +820,23 @@ TEMPLATE = """
 </html>
 """
 FRAME_TEMPLATE = """
-<div>
-    <p class="frame-title">
-         File <span class="frame-filename">{frame_filename}</span>,
-        line <i>{frame_lineno}</i>,
-        in <b>{frame_name}</b>
-        <button class="collapse-btn" data-target-id="{frame_filename}-{frame_lineno}" onclick="collapse(this)">
+<div class="frame-container">
+    <div class="frame-title" onclick="collapse(this.querySelector('.collapse-btn'))">
+        <div class="frame-info">
+            <span class="frame-icon">📁</span>
+            <span class="frame-filename">{frame_filename}</span>
+            <span class="frame-separator">:</span>
+            <span class="frame-lineno">{frame_lineno}</span>
+            <span class="frame-separator">in</span>
+            <span class="frame-function">{frame_name}</span>
+        </div>
+        <button class="collapse-btn" data-target-id="{frame_filename}-{frame_lineno}">
             {collapse_button}
         </button>
-    </p>
-    <div id="{frame_filename}-{frame_lineno}" class="source-code {collapsed}">{code_context}</div>
+    </div>
+    <div id="{frame_filename}-{frame_lineno}" class="source-code {collapsed}">
+        {code_context}
+    </div>
     {locals_html}
 </div>
 """

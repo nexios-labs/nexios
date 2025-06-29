@@ -301,7 +301,7 @@ class NexiosApp(object):
         docs = self.docs
 
         for route in self.get_all_routes():
-            if getattr(route, "exlude_from_schema", False):
+            if getattr(route, "exclude_from_schema", False):
                 continue
             for method in route.methods:
                 parameters = [
@@ -2256,6 +2256,7 @@ class NexiosApp(object):
         """
         try:
             import granian
+
             use_granian = True
         except ImportError:
             use_granian = False
@@ -2275,7 +2276,9 @@ class NexiosApp(object):
             try:
                 import uvicorn
             except ImportError:
-                raise RuntimeError("Either granian or uvicorn must be installed to use app.run()")
+                raise RuntimeError(
+                    "Either granian or uvicorn must be installed to use app.run()"
+                )
 
             uvicorn.run(
                 self,
