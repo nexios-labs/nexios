@@ -59,7 +59,14 @@ jobs:
       - name: Publish to PyPI
         run: uv publish --token ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
 
-      
+      - name: Generate Changelog
+        run: |
+          auto-changelog --commit-limit false --breaking-pattern "BREAKING CHANGE:"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add CHANGELOG.md
+          git commit -m "chore: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]" || echo "No changes to commit"
+          git push
 
         
 
