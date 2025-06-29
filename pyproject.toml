@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nexios"
-version = "2.5.1"
+version = "2.5.2"
 description = "Nexios is a modern, high-performance ASGI web framework for Python with multi-server support with zero overhead."
 authors = [
     {name = "Chidebele Dunamis", email = "techwithdunamix@gmail.com"}
 ]
-license = "MIT"
+license = "BSD-3-Clause"
 homepage = "https://github.com/nexios-labs/nexios"
 repository = "https://github.com/nexios-labs/nexios"
 documentation = "https://nexios-docs.netlify.app/"

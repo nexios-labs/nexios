@@ -66,9 +66,8 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add CHANGELOG.md
           git commit -m "chore: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]" || echo "No changes to commit"
+          git push
 
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
+        
+
+     
