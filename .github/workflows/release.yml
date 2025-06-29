@@ -66,6 +66,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add CHANGELOG.md
           git commit -m "chore: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]" || echo "No changes to commit"
+          git checkout main
           git push
 
         
