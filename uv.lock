@@ -601,7 +601,7 @@ wheels = [
 
 [[package]]
 name = "nexios"
-version = "2.4.14"
+version = "2.5.2"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
@@ -664,7 +664,7 @@ requires-dist = [
     { name = "pyjwt", marker = "extra == 'dev'", specifier = ">=2.7.0" },
     { name = "pyjwt", marker = "extra == 'jwt'", specifier = ">=2.7.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.4,<8.4.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.4,<8.5.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.25.3,<0.27.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },

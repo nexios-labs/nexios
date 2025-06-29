@@ -78,7 +78,7 @@ class BaseMiddleware:
 
         await self.process_request(request, response, wrapped_call_next)
         if self._call_next:
-            await self.process_response(request, response)
+            return await self.process_response(request, response)
 
     async def process_request(
         self,
