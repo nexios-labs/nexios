@@ -2254,20 +2254,20 @@ class NexiosApp(object):
             rload (bool): Enable auto-reload for granian.
             **kwargs: Additional keyword arguments for the server.
         """
+        import os
         import subprocess
         import sys
-        import os
         import tempfile
-        import importlib.util
 
         # Create a temporary entry point file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             # Get the module name and class name
             module_name = self.__class__.__module__
             class_name = self.__class__.__name__
-            
+
             # Write the entry point code
-            f.write(f"""import sys
+            f.write(
+                f"""import sys
 import os
 
 # Add the current directory to Python path
@@ -2281,20 +2281,34 @@ app = {module_name}.{class_name}
 if __name__ == "__main__":
     # This will be used by uvicorn/granian
     pass
-""")
+"""
+            )
             temp_file = f.name
 
         try:
             # Try granian first
             try:
-                result = subprocess.run([sys.executable, "-m", "granian", "--help"], 
-                                      capture_output=True, text=True, timeout=5)
+                result = subprocess.run(
+                    [sys.executable, "-m", "granian", "--help"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
                 if result.returncode == 0:
                     # Granian is available, use it
-                    cmd = [sys.executable, "-m", "granian", f"{temp_file}:app", "--host", host, "--port", str(port)]
+                    cmd = [
+                        sys.executable,
+                        "-m",
+                        "granian",
+                        f"{temp_file}:app",
+                        "--host",
+                        host,
+                        "--port",
+                        str(port),
+                    ]
                     if rload:
                         cmd.append("--reload")
-                    
+
                     # Add additional kwargs as command line arguments
                     for key, value in kwargs.items():
                         if isinstance(value, bool):
@@ -2303,23 +2317,40 @@ if __name__ == "__main__":
                         else:
                             cmd.append(f"--{key}")
                             cmd.append(str(value))
-                    
+
                     print(f"Starting server with granian: {' '.join(cmd)}")
                     subprocess.run(cmd)
                     return
-            except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.CalledProcessError):
+            except (
+                subprocess.TimeoutExpired,
+                FileNotFoundError,
+                subprocess.CalledProcessError,
+            ):
                 pass
 
             # Fallback to uvicorn
             try:
-                result = subprocess.run([sys.executable, "-m", "uvicorn", "--help"], 
-                                      capture_output=True, text=True, timeout=5)
+                result = subprocess.run(
+                    [sys.executable, "-m", "uvicorn", "--help"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
                 if result.returncode == 0:
                     # Uvicorn is available, use it
-                    cmd = [sys.executable, "-m", "uvicorn", f"{temp_file}:app", "--host", host, "--port", str(port)]
+                    cmd = [
+                        sys.executable,
+                        "-m",
+                        "uvicorn",
+                        f"{temp_file}:app",
+                        "--host",
+                        host,
+                        "--port",
+                        str(port),
+                    ]
                     if reload:
                         cmd.append("--reload")
-                    
+
                     # Add additional kwargs as command line arguments
                     for key, value in kwargs.items():
                         if isinstance(value, bool):
@@ -2328,11 +2359,15 @@ if __name__ == "__main__":
                         else:
                             cmd.append(f"--{key}")
                             cmd.append(str(value))
-                    
+
                     print(f"Starting server with uvicorn: {' '.join(cmd)}")
                     subprocess.run(cmd)
                     return
-            except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.CalledProcessError):
+            except (
+                subprocess.TimeoutExpired,
+                FileNotFoundError,
+                subprocess.CalledProcessError,
+            ):
                 pass
 
             raise RuntimeError(
