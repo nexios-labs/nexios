@@ -1,6 +1,6 @@
 import gzip
 import json
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -10,7 +10,6 @@ from nexios.middleware.base import BaseMiddleware
 from nexios.middleware.common import CommonMiddleware
 from nexios.middleware.gzip import GZipMiddleware
 from nexios.middleware.security import SecurityMiddleware
-
 from nexios.testing import Client
 
 
@@ -27,12 +26,12 @@ class TestBaseMiddleware:
         middleware = BaseMiddleware()
         request = Mock()
         response = Mock()
-        
+
         # Should return the response as-is
         async def mock_call_next():
             return response
 
-        result = middleware(request, response,mock_call_next)
+        result = middleware(request, response, mock_call_next)
         assert result
 
 
@@ -62,7 +61,9 @@ class TestCommonMiddleware:
         middleware = CommonMiddleware(**config)
         assert middleware is not None
 
-    async def test_common_middleware_request_processing(self, app_with_common_middleware):
+    async def test_common_middleware_request_processing(
+        self, app_with_common_middleware
+    ):
         """Test CommonMiddleware request processing"""
         client, app = app_with_common_middleware
 
@@ -86,7 +87,9 @@ class TestCommonMiddleware:
         response = await client.get("/test", headers={"Host": "localhost"})
         assert response.status_code == 200
 
-    async def test_common_middleware_content_length_limit(self, app_with_common_middleware):
+    async def test_common_middleware_content_length_limit(
+        self, app_with_common_middleware
+    ):
         """Test CommonMiddleware content length limit"""
         client, app = app_with_common_middleware
 
@@ -137,7 +140,7 @@ class TestCommonMiddleware:
 
 #         response = await client.get("/test", headers={"Accept-Encoding": "gzip"})
 #         assert response.status_code == 200
-        
+
 #         # Check if response is compressed
 #         content_encoding = response.headers.get("content-encoding")
 #         if content_encoding == "gzip":
@@ -146,51 +149,51 @@ class TestCommonMiddleware:
 #             decompressed = gzip.decompress(response.content).decode()
 #             assert "This is a test response" in decompressed
 
-#TODO: Wrap this to suit nexios 
+# TODO: Wrap this to suit nexios
 
-    # async def test_gzip_middleware_no_compression_small_content(self, app_with_gzip_middleware):
-    #     """Test GzipMiddleware with small content (should not compress)"""
-    #     client, app = app_with_gzip_middleware
+# async def test_gzip_middleware_no_compression_small_content(self, app_with_gzip_middleware):
+#     """Test GzipMiddleware with small content (should not compress)"""
+#     client, app = app_with_gzip_middleware
 
-    #     @app.get("/test")
-    #     async def test_handler(req: Request, res: Response):
-    #         return res.text("small")
+#     @app.get("/test")
+#     async def test_handler(req: Request, res: Response):
+#         return res.text("small")
 
-    #     response = await client.get("/test", headers={"Accept-Encoding": "gzip"})
-    #     assert response.status_code == 200
-        
-    #     # Small content should not be compressed
-    #     assert response.headers.get("content-encoding") != "gzip"
+#     response = await client.get("/test", headers={"Accept-Encoding": "gzip"})
+#     assert response.status_code == 200
 
-    # async def test_gzip_middleware_no_accept_encoding(self, app_with_gzip_middleware):
-    #     """Test GzipMiddleware without Accept-Encoding header"""
-    #     client, app = app_with_gzip_middleware
+#     # Small content should not be compressed
+#     assert response.headers.get("content-encoding") != "gzip"
 
-    #     @app.get("/test")
-    #     async def test_handler(req: Request, res: Response):
-    #         return res.text("This is a test response")
+# async def test_gzip_middleware_no_accept_encoding(self, app_with_gzip_middleware):
+#     """Test GzipMiddleware without Accept-Encoding header"""
+#     client, app = app_with_gzip_middleware
 
-    #     response = await client.get("/test")  # No Accept-Encoding header
-    #     assert response.status_code == 200
-    #     assert response.headers.get("content-encoding") != "gzip"
+#     @app.get("/test")
+#     async def test_handler(req: Request, res: Response):
+#         return res.text("This is a test response")
 
-    # async def test_gzip_middleware_json_response(self, app_with_gzip_middleware):
-    #     """Test GzipMiddleware with JSON response"""
-    #     client, app = app_with_gzip_middleware
+#     response = await client.get("/test")  # No Accept-Encoding header
+#     assert response.status_code == 200
+#     assert response.headers.get("content-encoding") != "gzip"
 
-    #     @app.get("/test")
-    #     async def test_handler(req: Request, res: Response):
-    #         return res.json({"message": "This is a JSON response", "data": [1, 2, 3, 4, 5]})
+# async def test_gzip_middleware_json_response(self, app_with_gzip_middleware):
+#     """Test GzipMiddleware with JSON response"""
+#     client, app = app_with_gzip_middleware
 
-    #     response = await client.get("/test", headers={"Accept-Encoding": "gzip"})
-    #     assert response.status_code == 200
-        
-    #     # JSON responses should be compressible
-    #     content_encoding = response.headers.get("content-encoding")
-    #     if content_encoding == "gzip":
-    #         decompressed = gzip.decompress(response.content).decode()
-    #         data = json.loads(decompressed)
-    #         assert data["message"] == "This is a JSON response"
+#     @app.get("/test")
+#     async def test_handler(req: Request, res: Response):
+#         return res.json({"message": "This is a JSON response", "data": [1, 2, 3, 4, 5]})
+
+#     response = await client.get("/test", headers={"Accept-Encoding": "gzip"})
+#     assert response.status_code == 200
+
+#     # JSON responses should be compressible
+#     content_encoding = response.headers.get("content-encoding")
+#     if content_encoding == "gzip":
+#         decompressed = gzip.decompress(response.content).decode()
+#         data = json.loads(decompressed)
+#         assert data["message"] == "This is a JSON response"
 
 
 class TestSecurityMiddleware:
@@ -220,8 +223,6 @@ class TestSecurityMiddleware:
         middleware = SecurityMiddleware(**config)
         assert middleware is not None
 
-    
-
     async def test_security_middleware_csp_header(self, app_with_security_middleware):
         """Test SecurityMiddleware Content Security Policy header"""
         client, app = app_with_security_middleware
@@ -232,7 +233,7 @@ class TestSecurityMiddleware:
 
         response = await client.get("/test")
         assert response.status_code == 200
-        
+
         # CSP header might be present depending on configuration
         headers = response.headers
         # This is a basic check - actual CSP value depends on middleware config
@@ -247,13 +248,10 @@ class TestSecurityMiddleware:
 
         response = await client.get("/test")
         assert response.status_code == 200
-        
+
         # HSTS header might be present depending on configuration
         headers = response.headers
         # This is a basic check - actual HSTS value depends on middleware config
-
-
-
 
 
 class TestMiddlewareIntegration:
@@ -279,7 +277,7 @@ class TestMiddlewareIntegration:
 
         response = await client.get("/test", headers={"Accept-Encoding": "gzip"})
         assert response.status_code == 200
-        
+
         # Should have security headers
         headers = response.headers
         # Should potentially have compression
@@ -296,4 +294,4 @@ class TestMiddlewareIntegration:
         # Should handle errors gracefully
         response = await client.get("/error")
         # Should return appropriate error response
-        assert response.status_code in [500, 404]  # Depending on error handling 
+        assert response.status_code in [500, 404]  # Depending on error handling

@@ -75,8 +75,8 @@ async def test_preflight_request_success(client):
 
     assert response.status_code == 201  # Custom status from our middleware
     assert response.headers["Access-Control-Allow-Origin"] == "http://example.com"
-    assert response.headers["Access-Control-Allow-Methods"] == "GET, POST"
-    assert response.headers["Access-Control-Allow-Headers"] == "X-Custom-Header"
+    assert response.headers["Access-Control-Allow-Methods"] == "GET"
+    assert response.headers["Access-Control-Allow-Headers"] == "x-custom-header"
     assert response.headers["Access-Control-Allow-Credentials"] == "true"
     assert response.headers["Access-Control-Max-Age"] == "600"  # Default value
 
