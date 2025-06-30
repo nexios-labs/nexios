@@ -153,7 +153,7 @@ class CORSMiddleware(BaseMiddleware):
         requested_method = request.headers.get("access-control-request-method")
         requested_headers = request.headers.get("access-control-request-headers")
 
-        headers = self.preflight_headers.copy()
+        headers = {}
 
         if not self.is_allowed_origin(origin):
             if self.debug:
@@ -177,14 +177,28 @@ class CORSMiddleware(BaseMiddleware):
                     status_code=self.custom_error_status,
                 )
 
+        if requested_method:
+            headers["Access-Control-Allow-Methods"] = requested_method.upper()
+
         if requested_headers:
             requested_header_list = [
                 h.strip().lower() for h in requested_headers.split(",")
             ]
-            if "*" in self.allow_headers:
-                headers["Access-Control-Allow-Headers"] = "*"
-            else:
-                for header in requested_header_list:
+            
+            allowed_requested_headers = []
+            for header in requested_header_list:
+                # If allow_headers is "*", allow any header (except blacklisted)
+                if "*" in  self.allow_headers:
+                    if header in self.blacklist_headers:
+                        if self.debug:
+                            logger.error(
+                                f"Preflight request denied: Header '{header}' is blacklisted."
+                            )
+                        return response.json(
+                            self.get_error_message("disallowed_header"),
+                            status_code=self.custom_error_status,
+                        )
+                else:
                     if (
                         header not in [x.lower() for x in self.allow_headers]
                         or header in self.blacklist_headers
@@ -197,7 +211,15 @@ class CORSMiddleware(BaseMiddleware):
                             self.get_error_message("disallowed_header"),
                             status_code=self.custom_error_status,
                         )
-                headers["Access-Control-Allow-Headers"] = requested_headers
+                allowed_requested_headers.append(header)
+            
+            if allowed_requested_headers:
+                headers["Access-Control-Allow-Headers"] = ", ".join(allowed_requested_headers)
+
+        headers["Access-Control-Max-Age"] = str(self.max_age)
+        if self.allow_credentials:
+            headers["Access-Control-Allow-Credentials"] = "true"
+
         return response.json("OK", status_code=201, headers=headers)
 
     def get_error_message(self, error_type: str) -> str:
