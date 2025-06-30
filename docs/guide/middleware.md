@@ -211,6 +211,84 @@ app.mount_router("/admin", admin_router)  # Mount router at "/admin"
 
 ***
 
+## **Nexios Middleware vs. ASGI Middleware**
+
+Nexios offers two ways to add middleware to your application: `app.add_middleware()` and `app.wrap_asgi()`. While both are used to hook into the request/response lifecycle, they serve different purposes and are designed for different types of middleware.
+
+### **`add_middleware`: For Nexios-Specific Middleware**
+
+The `app.add_middleware()` method is designed for middleware that is tightly integrated with the Nexios framework. This type of middleware operates on Nexios's `Request` and `Response` objects, giving you access to the rich features and abstractions that Nexios provides.
+
+**When to use `add_middleware`:**
+
+*   You want to interact with Nexios-specific objects like `Request` and `Response`.
+*   Your middleware needs to access path parameters, parsed query parameters, or the request body in a convenient way.
+*   You want to take advantage of Nexios's dependency injection system within your middleware.
+
+**Example:**
+
+```python
+from nexios import NexiosApp, Request, Response
+
+app = NexiosApp()
+
+async def nexios_style_middleware(req: Request, res: Response, next_call):
+    # This middleware has access to the Nexios Request and Response objects
+    print(f"Request path: {req.path}")
+    print(f"Query params: {req.query_params}")
+    await next_call()
+    res.set_header("X-Nexios-Middleware", "true")
+
+app.add_middleware(nexios_style_middleware)
+
+@app.get("/")
+async def home(req: Request, res: Response):
+    res.send("Hello from Nexios!")
+```
+
+### **`wrap_asgi`: For Standard ASGI Middleware**
+
+The `app.wrap_asgi()` method is used to add standard ASGI middleware to your application. ASGI middleware is a lower-level type of middleware that conforms to the ASGI specification. It operates directly on the raw ASGI `scope`, `receive`, and `send` callables.
+
+This is particularly useful when you want to use third-party ASGI middleware that is not specific to Nexios.
+
+**When to use `wrap_asgi`:**
+
+*   You need to integrate a third-party ASGI middleware (e.g., from a library like `asgi-correlation-id`).
+*   Your middleware needs to operate at a lower level, before the request is processed by Nexios's routing and request/response handling.
+*   The middleware is designed to be framework-agnostic.
+
+**Example (using a hypothetical third-party ASGI middleware):**
+
+Let's say you have a third-party library that provides a GZip middleware for ASGI applications.
+
+```python
+from nexios import NexiosApp
+from some_asgi_library import GZipMiddleware  # A hypothetical third-party middleware
+
+app = NexiosApp()
+
+# Wrap the Nexios application with the third-party ASGI middleware
+app.wrap_asgi(GZipMiddleware, minimum_size=1000)
+
+@app.get("/")
+async def home(req, res):
+    # The response will be gzipped by the middleware if it's large enough
+    res.send("This is a long string that will hopefully be compressed." * 100)
+```
+
+### **When to Use Which?**
+
+| Feature                 | `add_middleware`                                       | `wrap_asgi`                                             |
+| ----------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
+| **Abstraction Level**   | High-level (Nexios `Request`/`Response`)               | Low-level (ASGI `scope`, `receive`, `send`)             |
+| **Framework Specific**  | Nexios-specific                                        | Framework-agnostic (standard ASGI)                      |
+| **Use Case**            | Business logic, auth, interacting with Nexios features | Third-party middleware, low-level request manipulation  |
+| **Example**             | Custom logging, modifying Nexios `Response`            | GZip compression, CORS handling from a standard library |
+
+By understanding the difference between these two methods, you can choose the right tool for the job and build more powerful and flexible applications with Nexios.
+
+
 ## **Using `@use_for_route` Decorator**
 
 The `@use_for_route` decorator binds a middleware function to specific routes or route patterns, ensuring that the middleware only executes when a matching route is accessed.
@@ -227,11 +305,6 @@ async def log_middleware(req, res, cnext):
 ```
 
 ***
-
-
-
-
-  
 
 Always call `await next()`  in middleware to ensure the request continues processing. Failing to do so will block the request pipeline.
 
