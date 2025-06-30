@@ -10,7 +10,6 @@ from nexios.structs import Headers, MutableHeaders
 from nexios.types import ASGIApp, Message, Receive, Scope, Send
 
 
-
 class GZipMiddleware:
     def __init__(
         self, app: ASGIApp, minimum_size: int = 500, compresslevel: int = 9

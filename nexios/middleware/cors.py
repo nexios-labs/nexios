@@ -79,7 +79,7 @@ class CORSMiddleware(BaseMiddleware):
             return None
 
         origin = request.origin
-        
+
         method = request.scope["method"]
 
         if not origin and self.strict_origin_checking:
@@ -184,11 +184,11 @@ class CORSMiddleware(BaseMiddleware):
             requested_header_list = [
                 h.strip().lower() for h in requested_headers.split(",")
             ]
-            
+
             allowed_requested_headers = []
             for header in requested_header_list:
                 # If allow_headers is "*", allow any header (except blacklisted)
-                if "*" in  self.allow_headers:
+                if "*" in self.allow_headers:
                     if header in self.blacklist_headers:
                         if self.debug:
                             logger.error(
@@ -212,9 +212,11 @@ class CORSMiddleware(BaseMiddleware):
                             status_code=self.custom_error_status,
                         )
                 allowed_requested_headers.append(header)
-            
+
             if allowed_requested_headers:
-                headers["Access-Control-Allow-Headers"] = ", ".join(allowed_requested_headers)
+                headers["Access-Control-Allow-Headers"] = ", ".join(
+                    allowed_requested_headers
+                )
 
         headers["Access-Control-Max-Age"] = str(self.max_age)
         if self.allow_credentials:

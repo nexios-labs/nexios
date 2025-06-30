@@ -2,27 +2,27 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
-import pytest
 import click
+import pytest
 
 from nexios.cli import (
-    cli,
-    _echo_success,
+    _check_server_installed,
     _echo_error,
     _echo_info,
+    _echo_success,
     _echo_warning,
+    _find_app_module,
     _has_write_permission,
     _is_port_in_use,
-    _check_server_installed,
-    _validate_project_name,
-    _validate_project_title,
+    _validate_app_path,
     _validate_host,
     _validate_port,
-    _validate_app_path,
+    _validate_project_name,
+    _validate_project_title,
     _validate_server,
-    _find_app_module,
+    cli,
     new,
     run,
 )
@@ -56,27 +56,27 @@ class TestCLIUtilityFunctions:
         test_file.write_text("test")
         assert _has_write_permission(test_file) is True
 
-    @patch('socket.socket')
+    @patch("socket.socket")
     def test_is_port_in_use_true(self, mock_socket):
         mock_socket.return_value.__enter__.return_value.connect_ex.return_value = 0
         assert _is_port_in_use("localhost", 8000) is True
 
-    @patch('socket.socket')
+    @patch("socket.socket")
     def test_is_port_in_use_false(self, mock_socket):
         mock_socket.return_value.__enter__.return_value.connect_ex.return_value = 1
         assert _is_port_in_use("localhost", 8000) is False
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_check_server_installed_true(self, mock_run):
         mock_run.return_value.returncode = 0
         assert _check_server_installed("uvicorn") is True
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_check_server_installed_false(self, mock_run):
         mock_run.side_effect = FileNotFoundError()
         assert _check_server_installed("nonexistent") is False
 
-    @patch('subprocess.run')
+    @patch("subprocess.run")
     def test_check_server_installed_called_process_error(self, mock_run):
         mock_run.side_effect = subprocess.CalledProcessError(1, "test")
         assert _check_server_installed("test") is False
@@ -214,4 +214,4 @@ class TestCLIGroup:
 
     def test_cli_has_run_command(self):
         """Test that the CLI has the run command"""
-        assert "run" in cli.commands 
+        assert "run" in cli.commands
