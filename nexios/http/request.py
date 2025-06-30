@@ -18,6 +18,11 @@ from nexios.utils.async_helpers import (
     AwaitableOrContextManager,
     AwaitableOrContextManagerWrapper,
 )
+import typing
+
+if typing.TYPE_CHECKING:
+    from nexios import NexiosApp
+
 
 try:
     from python_multipart.multipart import parse_options_header  # type:ignore
