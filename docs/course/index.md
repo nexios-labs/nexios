@@ -44,112 +44,112 @@ features:
 const days = [
   {
     name: 'Day 1',
-    title: 'Introduction to Nexios',
+    title: 'Welcome & Your First Nexios App',
     link: '/course/day01/'
   },
   {
     name: 'Day 2',
-    title: 'First Application & Routing',
+    title: 'Routing: Mapping URLs to Code',
     link: '/course/day02/'
   },
   {
     name: 'Day 3',
-    title: 'Request & Response Handling',
+    title: 'Async, Request & Response Essentials',
     link: '/course/day03/'
   },
   {
     name: 'Day 4',
-    title: 'Path & Query Parameters',
+    title: 'Class-Based Views & APIHandler',
     link: '/course/day04/'
   },
   {
     name: 'Day 5',
-    title: 'Basic Middleware',
+    title: 'Middleware: Built-in & Custom',
     link: '/course/day05/'
   },
   {
     name: 'Day 6',
-    title: 'Error Handling',
+    title: 'Environment & CORS Configuration',
     link: '/course/day06/'
   },
   {
     name: 'Day 7',
-    title: 'RESTful API Project',
+    title: 'Project: Mini To-Do API',
     link: '/course/day07/'
   },
   {
     name: 'Day 8',
-    title: 'Database Integration',
+    title: 'JWT Authentication (Part 1)',
     link: '/course/day08/'
   },
   {
     name: 'Day 9',
-    title: 'Data Validation',
+    title: 'JWT Authentication (Part 2)',
     link: '/course/day09/'
   },
   {
     name: 'Day 10',
-    title: 'Forms & File Uploads',
+    title: 'Testing Nexios Applications',
     link: '/course/day10/'
   },
   {
     name: 'Day 11',
-    title: 'Session Management',
+    title: 'Request Validation with Pydantic',
     link: '/course/day11/'
   },
   {
     name: 'Day 12',
-    title: 'Authentication Basics',
+    title: 'File Uploads & Multipart Data',
     link: '/course/day12/'
   },
   {
     name: 'Day 13',
-    title: 'JWT & OAuth',
+    title: 'WebSocket Basics',
     link: '/course/day13/'
   },
   {
     name: 'Day 14',
-    title: 'User Management System',
+    title: 'Real-Time Chat App with ChannelBox',
     link: '/course/day14/'
   },
   {
     name: 'Day 15',
-    title: 'WebSockets Basics',
+    title: 'Background Tasks & Scheduling',
     link: '/course/day15/'
   },
   {
     name: 'Day 16',
-    title: 'Real-time Applications',
+    title: 'Real-Time Application Patterns',
     link: '/course/day16/'
   },
   {
     name: 'Day 17',
-    title: 'Advanced Middleware',
+    title: 'Advanced Middleware Techniques',
     link: '/course/day17/'
   },
   {
     name: 'Day 18',
-    title: 'Custom Decorators',
+    title: 'Custom Decorators & Utilities',
     link: '/course/day18/'
   },
   {
     name: 'Day 19',
-    title: 'Dependency Injection',
+    title: 'Dependency Injection in Nexios',
     link: '/course/day19/'
   },
   {
     name: 'Day 20',
-    title: 'Background Tasks',
+    title: 'Concurrency & Async Utilities',
     link: '/course/day20/'
   },
   {
     name: 'Day 21',
-    title: 'Chat Application Project',
+    title: 'Project: Real-Time Chat Application',
     link: '/course/day21/'
   },
   {
     name: 'Day 22',
-    title: 'Testing Strategies',
+    title: 'Testing Strategies & Best Practices',
     link: '/course/day22/'
   },
   {
@@ -164,7 +164,7 @@ const days = [
   },
   {
     name: 'Day 25',
-    title: 'Security Best Practices',
+    title: 'Event System & WebSocket Events',
     link: '/course/day25/'
   },
   {
@@ -174,12 +174,12 @@ const days = [
   },
   {
     name: 'Day 27',
-    title: 'Docker & Containers',
+    title: 'Docker & Containerization',
     link: '/course/day27/'
   },
   {
     name: 'Day 28',
-    title: 'Production-Ready API Project',
+    title: 'Project: Production-Ready API',
     link: '/course/day28/'
   }
 ]

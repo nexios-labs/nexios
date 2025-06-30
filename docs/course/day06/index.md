@@ -6,7 +6,7 @@ Nexios supports environment configuration through `.env` files:
 
 ```python
 from nexios import NexiosApp
-from nexios.comfig import MakeConfig
+from nexios.config import MakeConfig
 
 config = MakeConfig(
     debug = False,
@@ -14,7 +14,7 @@ config = MakeConfig(
         "allow_origins" : ["*"]
     }
 )
-app = NexiosApp(settings=settings)
+app = NexiosApp(config=settings)
 ```
 
 Example `.env` file:
@@ -35,9 +35,11 @@ Configure Cross-Origin Resource Sharing (CORS):
 from nexios import NexiosApp
 from nexios.middleware import CORSMiddleware
 from nexios.config import MakeConfig
-app = NexiosApp(cors = {
+app = NexiosApp(config = MakeConfig(
+    cors = {
     "allow_origins" : "*"
-})
+}
+))
 
 # Basic CORS setup
 app.add_middleware(CORSMiddleware())
