@@ -14,8 +14,12 @@ from pathlib import Path
 from typing import Optional
 
 import click
+import importlib.util
+import asyncio
 
 from nexios.__main__ import __version__
+from nexios.application import NexiosApp
+from nexios.testing.client import Client
 
 CONTEXT_SETTINGS = {
     "help_option_names": ["-h", "--help"],
@@ -416,6 +420,85 @@ def run(
     except Exception as e:
         _echo_error(f"Error running server: {str(e)}")
         sys.exit(1)
+
+
+def _load_app_from_path(app_path: str = None, config_path: str = None) -> NexiosApp:
+    """
+    Load the Nexios app instance from the given app_path (module:app) or config file.
+    If not provided, auto-detect using the same logic as _find_app_module.
+    """
+    if config_path:
+        # Support for a config file (Python file that sets up the app)
+        spec = importlib.util.spec_from_file_location("nexios_config", config_path)
+        config_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(config_mod)  # type: ignore
+        if hasattr(config_mod, "app"):
+            return config_mod.app
+        raise RuntimeError(f"No 'app' found in config file: {config_path}")
+    if app_path:
+        if ":" not in app_path:
+            raise RuntimeError("App path must be in format 'module:app'")
+        module_name, app_var = app_path.split(":", 1)
+        mod = importlib.import_module(module_name)
+        app = getattr(mod, app_var, None)
+        if app is None:
+            raise RuntimeError(f"No '{app_var}' found in module '{module_name}'")
+        return app
+    # Auto-detect
+    auto_path = _find_app_module(Path.cwd())
+    if auto_path:
+        return _load_app_from_path(auto_path)
+    raise RuntimeError("Could not find app instance. Please specify --app or --config.")
+
+
+@cli.command()
+@click.option("--app", "app_path", help="App module path in format 'module:app_variable'. Auto-detected if not specified.")
+@click.option("--config", "config_path", help="Path to a Python config file that sets up the app instance.")
+def urls(app_path: str = None, config_path: str = None):
+    """
+    List all registered URLs in the Nexios application.
+    """
+    try:
+        app = _load_app_from_path(app_path, config_path)
+        routes = app.get_all_routes()
+        click.echo(f"{'METHODS':<15} {'PATH':<40} {'NAME':<20} {'SUMMARY'}")
+        click.echo("-" * 90)
+        for route in routes:
+            methods = ",".join(route.methods) if getattr(route, 'methods', None) else "-"
+            path = getattr(route, 'raw_path', getattr(route, 'path', '-')) or "-"
+            name = getattr(route, 'name', None) or "-"
+            summary = getattr(route, 'summary', None) or ""
+            click.echo(f"{methods:<15} {path:<40} {name:<20} {summary}")
+    except Exception as e:
+        _echo_error(f"Error listing URLs: {e}")
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument("route_path")
+@click.option("--app", "app_path", help="App module path in format 'module:app_variable'. Auto-detected if not specified.")
+@click.option("--config", "config_path", help="Path to a Python config file that sets up the app instance.")
+@click.option("--method", default="GET", help="HTTP method to use (default: GET)")
+def ping(route_path: str, app_path: str = None, config_path: str = None, method: str = "GET"):
+    """
+    Ping a route in the Nexios app to check if it exists (returns status code).
+    """
+    async def _ping():
+        try:
+            app = _load_app_from_path(app_path, config_path)
+            async with Client(app) as client:
+                resp = await client.request(method.upper(), route_path)
+                click.echo(f"{route_path} [{method.upper()}] -> {resp.status_code}")
+                if resp.status_code == 200:
+                    _echo_success("Route exists and is reachable.")
+                elif resp.status_code == 404:
+                    _echo_error("Route not found (404).")
+                else:
+                    _echo_warning(f"Route returned status: {resp.status_code}")
+        except Exception as e:
+            _echo_error(f"Error pinging route: {e}")
+            sys.exit(1)
+    asyncio.run(_ping())
 
 
 if __name__ == "__main__":
