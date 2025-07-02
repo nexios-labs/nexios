@@ -5,6 +5,8 @@ Nexios CLI - Command line interface for the Nexios framework.
 This module provides CLI commands for bootstrapping and running Nexios projects.
 """
 
+import asyncio
+import importlib.util
 import os
 import re
 import socket
@@ -14,8 +16,6 @@ from pathlib import Path
 from typing import Optional
 
 import click
-import importlib.util
-import asyncio
 
 from nexios.__main__ import __version__
 from nexios.application import NexiosApp
@@ -468,12 +468,22 @@ def _load_app_from_path(app_path: str = None, config_path: str = None) -> Nexios
     auto_path = _find_app_module(Path.cwd())
     if auto_path:
         return _load_app_from_path(auto_path)
-    raise RuntimeError("Could not find app instance. Please specify --app or --config, or provide a nexios.config.py or .nexioscli file.")
+    raise RuntimeError(
+        "Could not find app instance. Please specify --app or --config, or provide a nexios.config.py or .nexioscli file."
+    )
 
 
 @cli.command()
-@click.option("--app", "app_path", help="App module path in format 'module:app_variable'. Auto-detected if not specified.")
-@click.option("--config", "config_path", help="Path to a Python config file that sets up the app instance.")
+@click.option(
+    "--app",
+    "app_path",
+    help="App module path in format 'module:app_variable'. Auto-detected if not specified.",
+)
+@click.option(
+    "--config",
+    "config_path",
+    help="Path to a Python config file that sets up the app instance.",
+)
 def urls(app_path: str = None, config_path: str = None):
     """
     List all registered URLs in the Nexios application.
@@ -484,10 +494,12 @@ def urls(app_path: str = None, config_path: str = None):
         click.echo(f"{'METHODS':<15} {'PATH':<40} {'NAME':<20} {'SUMMARY'}")
         click.echo("-" * 90)
         for route in routes:
-            methods = ",".join(route.methods) if getattr(route, 'methods', None) else "-"
-            path = getattr(route, 'raw_path', getattr(route, 'path', '-')) or "-"
-            name = getattr(route, 'name', None) or "-"
-            summary = getattr(route, 'summary', None) or ""
+            methods = (
+                ",".join(route.methods) if getattr(route, "methods", None) else "-"
+            )
+            path = getattr(route, "raw_path", getattr(route, "path", "-")) or "-"
+            name = getattr(route, "name", None) or "-"
+            summary = getattr(route, "summary", None) or ""
             click.echo(f"{methods:<15} {path:<40} {name:<20} {summary}")
     except Exception as e:
         _echo_error(f"Error listing URLs: {e}")
@@ -496,13 +508,24 @@ def urls(app_path: str = None, config_path: str = None):
 
 @cli.command()
 @click.argument("route_path")
-@click.option("--app", "app_path", help="App module path in format 'module:app_variable'. Auto-detected if not specified.")
-@click.option("--config", "config_path", help="Path to a Python config file that sets up the app instance.")
+@click.option(
+    "--app",
+    "app_path",
+    help="App module path in format 'module:app_variable'. Auto-detected if not specified.",
+)
+@click.option(
+    "--config",
+    "config_path",
+    help="Path to a Python config file that sets up the app instance.",
+)
 @click.option("--method", default="GET", help="HTTP method to use (default: GET)")
-def ping(route_path: str, app_path: str = None, config_path: str = None, method: str = "GET"):
+def ping(
+    route_path: str, app_path: str = None, config_path: str = None, method: str = "GET"
+):
     """
     Ping a route in the Nexios app to check if it exists (returns status code).
     """
+
     async def _ping():
         try:
             app = _load_app_from_path(app_path, config_path)
@@ -518,6 +541,7 @@ def ping(route_path: str, app_path: str = None, config_path: str = None, method:
         except Exception as e:
             _echo_error(f"Error pinging route: {e}")
             sys.exit(1)
+
     asyncio.run(_ping())
 
 
