@@ -34,4 +34,5 @@ async def get_root(req, res):
     return res.json({"message": "Hello World"})
 ```
 
-<img src=./description.png">
+
+<img src="./description.png">

@@ -38,7 +38,7 @@ You can also access the openapi config from `app.docs.cofig` object.
 ```python
 from nexios.openapi.models import  APIKey
 
-openapi_config.add_security_scheme(
+app.docs.add_security_scheme(
     "apiKeyAuth",
     APIKey(
     name="X-API-KEY",
@@ -69,7 +69,7 @@ app.docs.config.add_security_scheme(
         type="http",
         scheme="bearer",
         bearerFormat="JWT",
-        description="🔒 Requires valid JWT token in Authorization header"
+        description="Requires valid JWT token in Authorization header"
     )
 )
 
@@ -101,13 +101,13 @@ app.docs.config.add_security_scheme(
             password=OAuthFlowPassword(
                 tokenUrl="/auth/token",
                 scopes={
-                    "read": "📖 Read access",
-                    "write": "✏️ Write access",
-                    "admin": "👑 Admin privileges"
+                    "read": "Read access",
+                    "write": " Write access",
+                    "admin": " Admin privileges"
                 }
             )
         ),
-        description="🔄 OAuth2 password flow authentication"
+        description="OAuth2 password flow authentication"
     )
 )
 ```
