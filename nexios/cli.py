@@ -422,19 +422,39 @@ def run(
         sys.exit(1)
 
 
+def _find_cli_config_file() -> str | None:
+    """Search for nexios.cli.py in the current directory only."""
+    cwd = Path.cwd()
+    candidate = cwd / "nexios.cli.py"
+    if candidate.exists():
+        return str(candidate)
+    return None
+
+
 def _load_app_from_path(app_path: str = None, config_path: str = None) -> NexiosApp:
     """
     Load the Nexios app instance from the given app_path (module:app) or config file.
     If not provided, auto-detect using the same logic as _find_app_module.
+    Now also auto-searches for nexios.config.py or .nexioscli in the current directory.
     """
+    # Prefer explicit config_path
     if config_path:
-        # Support for a config file (Python file that sets up the app)
         spec = importlib.util.spec_from_file_location("nexios_config", config_path)
         config_mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(config_mod)  # type: ignore
         if hasattr(config_mod, "app"):
             return config_mod.app
         raise RuntimeError(f"No 'app' found in config file: {config_path}")
+    # Auto-search for config file
+    auto_config = _find_cli_config_file()
+    if auto_config:
+        spec = importlib.util.spec_from_file_location("nexios_config", auto_config)
+        config_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(config_mod)  # type: ignore
+        if hasattr(config_mod, "app"):
+            return config_mod.app
+        raise RuntimeError(f"No 'app' found in config file: {auto_config}")
+    # Fallback to app_path
     if app_path:
         if ":" not in app_path:
             raise RuntimeError("App path must be in format 'module:app'")
@@ -448,7 +468,7 @@ def _load_app_from_path(app_path: str = None, config_path: str = None) -> Nexios
     auto_path = _find_app_module(Path.cwd())
     if auto_path:
         return _load_app_from_path(auto_path)
-    raise RuntimeError("Could not find app instance. Please specify --app or --config.")
+    raise RuntimeError("Could not find app instance. Please specify --app or --config, or provide a nexios.config.py or .nexioscli file.")
 
 
 @cli.command()
