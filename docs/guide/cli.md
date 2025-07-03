@@ -1,262 +1,147 @@
-#  CLI Tools
+# Nexios CLI & Configuration Guide
 
-Nexios comes with a powerful CLI tool that helps you bootstrap new projects and manage development servers. It supports multiple server engines (Uvicorn by default, with optional Granian or Gunicorn support) to run your ASGI applications.
+Nexios provides a powerful, unified CLI for development, debugging, and deployment. The CLI is fully driven by a single configuration file: `nexios.config.py`.
 
-## Configuration File: `nexios.config.py`
+---
 
-All CLI and server options are now configured as plain variables in a single file: `nexios.config.py` in your project root.
+## 📦 Project Configuration: `nexios.config.py`
 
-Example:
+All CLI and server options are set as **plain variables** in `nexios.config.py` at your project root. This file is the single source of truth for how your app is run, introspected, and debugged.
 
+### Example: Minimal Development Config
 ```python
-from nexios import NexiosApp
+# nexios.config.py
+app_path = "main:app"      # Path to your app instance (module:variable)
+server = "uvicorn"         # Server to use (uvicorn, granian, gunicorn)
+port = 8000                # Port to bind
+host = "127.0.0.1"         # Host to bind
+reload = True              # Enable auto-reload (dev only)
+```
 
-app = NexiosApp()
-
-# CLI/server options as plain variables
-server = "gunicorn"  # or "uvicorn", "granian"
-port = 8080
+### Example: Production with Gunicorn
+```python
+# nexios.config.py
+app_path = "myproject.main:app"
+server = "gunicorn"
+port = 80
+host = "0.0.0.0"
 workers = 4
 log_level = "info"
-
-# Optionally, you can set a custom_command to start your app
-custom_command = "gunicorn -w 4 -b 0.0.0.0:8080 nexios.config:app"
 ```
 
-- `app`: Your Nexios application instance (required)
-- All other options: just set as top-level variables (e.g., `server`, `port`, `workers`, etc)
-- `custom_command`: (Optional) String command to run instead of built-in server logic
-
-## Usage
-
-You can invoke the CLI in two ways:
-
-1.  Using the `nexios` command (recommended):
-
-    ```bash
-    nexios [command]
-    ```
-2.  Using Python's module runner:
-
-    ```bash
-    python -m nexios [command]
-    ```
-
-Both methods provide the same functionality. The first method is recommended for regular use, while the second method can be useful in environments where command-line scripts are not properly installed or when you need to ensure you're using a specific Python interpreter.
-
-## Commands
-
-### Creating a New Project
-
-```bash
-nexios new PROJECT_NAME
-```
-
-Options:
-
-* `--output-dir, -o`: Directory where the project should be created (default: current directory)
-* `--title`: Display title for the project (defaults to project name)
-* `--template, -t`: Template type to use for the project (choices: basic, standard, beta, default: basic)
-
-### Running the Development Server
-
-```bash
-nexios run
-```
-
-- Loads all options from `nexios.config.py` unless overridden by CLI args.
-- If `custom_command` is set, it will be used to start the app.
-- If `server` is set to `gunicorn`, Gunicorn will be used for production.
-
-Options:
-
-* `--host`: Host to bind the server to (default: from config or 127.0.0.1)
-* `--port, -p`: Port to bind the server to (default: from config or 4000)
-* `--reload` : Enable auto-reload (default: from config or enabled)
-* `--workers`: Number of worker processes (default: from config or 1)
-* `--server`: Server to use for running the application (choices: auto, uvicorn, granian, gunicorn)
-
-#### Gunicorn Example
-
-```bash
-nexios run --server gunicorn --workers 4 --host 0.0.0.0 --port 8080
-```
-
-#### Custom Command Example
-
-In `nexios.config.py`:
-
+### Example: Custom Command
 ```python
-custom_command = "gunicorn -w 4 -b 0.0.0.0:8080 nexios.config:app"
+# nexios.config.py
+app_path = "src.main:app"
+custom_command = "gunicorn -w 8 -b 0.0.0.0:8080 src.main:app"
 ```
 
-Then:
+---
 
+## 🔑 Supported Config Variables
+
+| Variable         | Type    | Description |
+|------------------|---------|-------------|
+| `app_path`       | str     | **Required.** Path to your app instance, e.g. `main:app` or `src.main:app` |
+| `server`         | str     | Server to use: `uvicorn`, `granian`, or `gunicorn` |
+| `port`           | int     | Port to bind the server to |
+| `host`           | str     | Host to bind the server to |
+| `reload`         | bool    | Enable auto-reload (dev only, uvicorn) |
+| `workers`        | int     | Number of worker processes (granian/gunicorn) |
+| `log_level`      | str     | Log level for the server |
+| `custom_command` | str     | If set, this command is run instead of built-in server logic |
+| ...              | ...     | Any other variables you want to use in your project |
+
+---
+
+## 🚀 CLI Commands & How They Use Config
+
+All CLI commands automatically load `nexios.config.py` and use the variables you set:
+
+- **`nexios run`**: Starts your app using `app_path` and all other config. If `custom_command` is set, it is used. If `server` is `gunicorn`, Gunicorn is used. Otherwise, Uvicorn or Granian is used.
+- **`nexios dev`**: Like `run`, but always enables debug, reload, and verbose logging.
+- **`nexios urls`**: Lists all registered routes. Uses `app_path` to load your app instance for introspection.
+- **`nexios ping /route`**: Checks if a route exists. Uses `app_path` to load your app instance.
+- **`nexios shell`**: Starts an interactive shell with your app loaded, using `app_path`.
+
+You do **not** need to define an `app` variable in your config unless you want to use it for advanced scripting. The CLI will always use `app_path` to find and load your app instance.
+
+---
+
+## 🧑‍💻 Example Workflows
+
+### 1. **Development**
+```python
+# nexios.config.py
+app_path = "main:app"
+server = "uvicorn"
+port = 5050
+host = "127.0.0.1"
+reload = True
+```
 ```bash
 nexios run
-```
-
-### Development Mode
-
-```bash
 nexios dev
-```
-
-- Like `nexios run` but always enables debug, reload, and verbose logging.
-- Useful for local development.
-
-### Listing All Registered URLs
-
-```bash
-nexios urls
-```
-
-Displays all registered routes in your application with their HTTP methods, paths, and handler information.
-
-### Checking Route Existence
-
-```bash
-nexios ping [PATH]
-```
-
-Checks if a specific route exists in your application and provides detailed information about it.
-
-### Interactive Development Shell
-
-```bash
 nexios shell
+nexios urls
+nexios ping /about
 ```
 
-Launches an interactive Python shell with your Nexios application pre-loaded, allowing you to explore and test your application programmatically.
-
-## Project Structure
-
-When you create a new project with `nexios new`, it generates the following structure:
-
+### 2. **Production (Gunicorn)**
+```python
+# nexios.config.py
+app_path = "src.main:app"
+server = "gunicorn"
+port = 80
+host = "0.0.0.0"
+workers = 8
+log_level = "info"
 ```
-project_name/
-├── main.py           # Application entry point
-├── nexios.config.py  # Project configuration (app, options)
-├── requirements.txt  # Project dependencies
-├── README.md         # Project documentation
-├── .gitignore        # Git ignore rules
-└── .env              # Environment variables
-```
-
-## Exposing Config in Your App
-
-- The loaded config is available as `app.config` in your Nexios app instance.
-
-## Environment Variables
-
-The `.env` file in your project supports the following variables:
-
-* `DEBUG`: Enable/disable debug mode (default: True)
-* `HOST`: Server host (default: 127.0.0.1)
-* `PORT`: Server port (default: 4000)
-
-You can add your own environment variables to this file, and they will be available to your application.
-
-## Using with Poetry
-
-If you're using Poetry for dependency management:
-
-1.  Create a new project:
-
-    ```bash
-    nexios new myproject
-    cd myproject
-    ```
-2.  Initialize Poetry and install dependencies:
-
-    ```bash
-    poetry install
-    ```
-3.  Run the development server:
-
-    ```bash
-    poetry run nexios run
-    ```
-
-## Common Issues and Solutions
-
-### Port Already in Use
-
-If you see an error like "Port 4000 is already in use", try using a different port:
-
 ```bash
-nexios run --port 5000
-```
-
-### Module Not Found
-
-If you get a "Module not found" error, make sure you're running the command from the project root directory or specify the correct application path:
-
-```bash
-nexios run --app mymodule:app
-```
-
-### Customizing the Server
-
-For production deployments, you might want to disable auto-reload and increase the number of workers:
-
-```bash
-nexios run --no-reload --workers 4 --host 0.0.0.0
-```
-
-## Server Selection
-
-Nexios now supports multiple server engines for running your applications:
-
-### Automatic Server Selection
-
-By default, Nexios will automatically use the best available server in this order:
-
-1. Uvicorn (default if installed)
-2. Granian (used if Uvicorn is not installed)
-
-```bash
-# Uses the best available server (Uvicorn by default)
 nexios run
 ```
 
-### Explicit Server Selection
-
-You can explicitly choose which server to use:
-
+### 3. **Custom Command**
+```python
+# nexios.config.py
+app_path = "myproject.main:app"
+custom_command = "gunicorn -w 4 -b 0.0.0.0:9000 myproject.main:app"
+```
 ```bash
-# Use Uvicorn server
-nexios run --server uvicorn
-
-# Use Granian server
-nexios run --server granian
+nexios run
 ```
 
-### Server-specific Configuration
+---
 
-#### Uvicorn Example
+## ⚡️ Advanced: app vs. app_path
+- `app_path` (recommended): The string path to your app instance, e.g. `main:app`. Used by all CLI commands to dynamically import your app.
+- `app` (optional): If you want to use your app instance directly in Python scripts or for advanced CLI scripting, you can define it in `nexios.config.py`. Otherwise, it is not needed.
 
-```bash
-nexios run --server uvicorn --workers 4  --host 0.0.0.0
-```
+---
 
-#### Granian Example
+## 🛠️ Troubleshooting & Migration
+- **Error: Could not find app module**: Make sure `app_path` is set in `nexios.config.py` and points to a valid module:variable.
+- **Error: Could not load the app instance**: Check that your `app_path` is correct and the module is importable.
+- **Switching from old config**: Just move your options to plain variables in `nexios.config.py` and set `app_path`.
+- **Custom server logic**: Use `custom_command` for full control.
 
-```bash
-nexios run --server granian 
-```
+---
 
+## 📝 Best Practices
+- Always set `app_path` in your config for maximum compatibility.
+- Use `server = "gunicorn"` for production, `uvicorn` for development.
+- Use `nexios dev` for local development with auto-reload and debug.
+- Use `nexios shell` for interactive debugging and testing.
+- Keep your config expressive and version-controlled.
 
+---
 
-**Installation**: Make sure to install Nexios with Granian support:
+## 📚 Further Reading
+- [Nexios Routing](./routing.md)
+- [Nexios Middleware](./middleware.md)
+- [Nexios Configuration Reference](./configuration.md)
+- [Nexios URL Configuration](./url-configuration.md)
 
-    ```bash
-    pip install "nexios[granian]"
-    ```
+---
 
-
-::: warning ⚠️ Warning
-
-Granian Integration in nexios cli is not yet solid, use directly or use uvicorn
-
-:::
+With this setup, Nexios CLI is fully driven by your project config, making development, debugging, and deployment seamless and consistent.
