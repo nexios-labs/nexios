@@ -10,11 +10,12 @@ import subprocess
 import sys
 import importlib.util
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple, Any, Dict,TYPE_CHECKING
+from types import ModuleType
 
 import click
-
-from nexios.application import NexiosApp
+if TYPE_CHECKING:
+    from nexios.application import NexiosApp
 
 
 # Utility functions
@@ -150,7 +151,7 @@ def _find_cli_config_file() -> str | None:
     return None
 
 
-def _load_app_from_string(app_path: str) -> NexiosApp:
+def _load_app_from_string(app_path: str) -> "NexiosApp":
     """Load app from module:app format string."""
     if ":" not in app_path:
         raise RuntimeError("App path must be in format 'module:app'")
@@ -164,7 +165,7 @@ def _load_app_from_string(app_path: str) -> NexiosApp:
     return app
 
 
-def _load_app_from_path(app_path: str = None, config_path: str = None) -> NexiosApp:
+def _load_app_from_path(app_path: str = None, config_path: str = None) -> "NexiosApp":
     """
     Load the Nexios app instance from the given app_path (module:app) or config file.
     If not provided, auto-detect using the same logic as _find_app_module.
@@ -203,4 +204,38 @@ def _load_app_from_path(app_path: str = None, config_path: str = None) -> Nexios
         if not app_path:
             raise RuntimeError("Could not find app instance. Please specify --app or --config, or provide a nexios.cli.py file.")
     
-    return _load_app_from_string(app_path) 
+    return _load_app_from_string(app_path)
+
+
+def load_config_module(config_path: Optional[str] = None) -> Tuple[Any, Dict[str, Any]]:
+    """
+    Load the Nexios config file (nexios.config.py) and return (app, config_dict).
+    """
+    config_file = config_path or os.path.join(os.getcwd(), "nexios.config.py")
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"Config file not found: {config_file}")
+
+    spec = importlib.util.spec_from_file_location("nexios_config", config_file)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load config file: {config_file}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["nexios_config"] = module
+    spec.loader.exec_module(module)
+
+    app = getattr(module, "app", None)
+    # Collect all top-level variables except built-ins and 'app'
+    config = {
+        k: v for k, v in vars(module).items()
+        if not k.startswith("__") and k != "app" and not isinstance(v, ModuleType)
+    }
+    return app, config
+
+
+def get_config() -> Dict[str, Any]:
+    """
+    Return the loaded config (all variables except 'app') from nexios.config.py.
+    """
+    _, config = load_config_module()
+    return config
+
+

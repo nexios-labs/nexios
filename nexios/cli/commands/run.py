@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
+import os
 
 import click
 
@@ -15,6 +16,7 @@ from ..utils import (
     _validate_host, _validate_port, _validate_app_path, _validate_server,
     _find_app_module
 )
+from nexios.cli.utils import load_config_module
 
 
 @click.command()
@@ -85,6 +87,17 @@ def run(
     try:
         project_dir = Path.cwd()
 
+        # Load config
+        app, config = load_config_module(None)
+
+        # Merge CLI args with config (CLI args take precedence)
+        options = dict(config)
+        for k, v in locals().items():
+            if v is not None and k != "config" and k != "app":
+                options[k] = v
+
+        # Use app_path from CLI or config, or auto-detect
+        app_path = options.get("app_path")
         if not app_path:
             app_path = _find_app_module(project_dir)
             if not app_path:
@@ -98,19 +111,29 @@ def run(
                 )
                 sys.exit(1)
             _echo_info(f"Auto-detected app module: {app_path}")
+        options["app_path"] = app_path
 
-        # Check if port is available
-        if _is_port_in_use(host, port):
-            _echo_error(f"Port {port} is already in use on {host}")
-            sys.exit(1)
+        # Attach config to app
+        if app:
+            if hasattr(app, 'config'):
+                app.config.update(options)
+            else:
+                app.config = options
 
-        # Check server availability
-        if not _check_server_installed(server):
-            _echo_error(
-                f"{server.capitalize()} is not installed. Please install it with:\n"
-                f"pip install {server}"
-            )
-            sys.exit(1)
+        # Use custom command if set
+        if 'custom_command' in options and options['custom_command']:
+            os.system(options['custom_command'])
+            return
+
+        # Use gunicorn if server is gunicorn
+        if options.get('server') == 'gunicorn':
+            workers = options.get('workers', 4)
+            host = options.get('host', '0.0.0.0')
+            port = options.get('port', 8000)
+            app_path = options.get('app_path', 'nexios.config:app')
+            cmd = f"gunicorn -w {workers} -b {host}:{port} {app_path}"
+            os.system(cmd)
+            return
 
         # Prepare the command based on server choice
         if server == "uvicorn":

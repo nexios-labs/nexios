@@ -143,6 +143,28 @@ class MakeConfig:
 
     def __repr__(self) -> str:
         return f"MakeConfig({self.to_dict()})"
+    
+    def __str__(self) -> str:
+        return self.to_json()
+
+    def update(self, data: Dict[str, Any], *, recursive: bool = True) -> None:
+        """
+        Update the configuration with values from a dictionary.
+
+        Args:
+            data (Dict[str, Any]): Dictionary of values to update.
+            recursive (bool): If True, update nested MakeConfig objects recursively.
+        """
+        for key, value in data.items():
+            if (
+                recursive
+                and key in self._config
+                and isinstance(self._config[key], MakeConfig)
+                and isinstance(value, dict)
+            ):
+                self._config[key].update(value, recursive=True)
+            else:
+                self._set_config(key, value)
 
 
 # Server configuration validation

@@ -1,20 +1,31 @@
 #  CLI Tools
 
-Nexios comes with a powerful CLI tool that helps you bootstrap new projects and manage development servers. It supports multiple server engines (Uvicorn by default, with optional Granian support) to run your ASGI applications.
+Nexios comes with a powerful CLI tool that helps you bootstrap new projects and manage development servers. It supports multiple server engines (Uvicorn by default, with optional Granian or Gunicorn support) to run your ASGI applications.
 
-## Installation
+## Configuration File: `nexios.config.py`
 
-The CLI tool is automatically installed when you install Nexios:
+All CLI and server options are now configured as plain variables in a single file: `nexios.config.py` in your project root.
 
-```bash
-pip install nexios  # Installs with Uvicorn by default
+Example:
+
+```python
+from nexios import NexiosApp
+
+app = NexiosApp()
+
+# CLI/server options as plain variables
+server = "gunicorn"  # or "uvicorn", "granian"
+port = 8080
+workers = 4
+log_level = "info"
+
+# Optionally, you can set a custom_command to start your app
+custom_command = "gunicorn -w 4 -b 0.0.0.0:8080 nexios.config:app"
 ```
 
-To install with Granian server support:
-
-```bash
-pip install "nexios[granian]"  # Install Nexios with optional Granian support
-```
+- `app`: Your Nexios application instance (required)
+- All other options: just set as top-level variables (e.g., `server`, `port`, `workers`, etc)
+- `custom_command`: (Optional) String command to run instead of built-in server logic
 
 ## Usage
 
@@ -53,14 +64,46 @@ Options:
 nexios run
 ```
 
+- Loads all options from `nexios.config.py` unless overridden by CLI args.
+- If `custom_command` is set, it will be used to start the app.
+- If `server` is set to `gunicorn`, Gunicorn will be used for production.
+
 Options:
 
-* `--app, -a`: Application import path (default: main:app)
-* `--host`: Host to bind the server to (default: 127.0.0.1)
-* `--port, -p`: Port to bind the server to (default: 4000)
-* `--reload` : Enable auto-reload (default: enabled)
-* `--workers`: Number of worker processes (default: 1)
-* `--server`: Server to use for running the application (choices: auto, uvicorn, granian, default: auto)
+* `--host`: Host to bind the server to (default: from config or 127.0.0.1)
+* `--port, -p`: Port to bind the server to (default: from config or 4000)
+* `--reload` : Enable auto-reload (default: from config or enabled)
+* `--workers`: Number of worker processes (default: from config or 1)
+* `--server`: Server to use for running the application (choices: auto, uvicorn, granian, gunicorn)
+
+#### Gunicorn Example
+
+```bash
+nexios run --server gunicorn --workers 4 --host 0.0.0.0 --port 8080
+```
+
+#### Custom Command Example
+
+In `nexios.config.py`:
+
+```python
+custom_command = "gunicorn -w 4 -b 0.0.0.0:8080 nexios.config:app"
+```
+
+Then:
+
+```bash
+nexios run
+```
+
+### Development Mode
+
+```bash
+nexios dev
+```
+
+- Like `nexios run` but always enables debug, reload, and verbose logging.
+- Useful for local development.
 
 ### Listing All Registered URLs
 
@@ -70,33 +113,6 @@ nexios urls
 
 Displays all registered routes in your application with their HTTP methods, paths, and handler information.
 
-Options:
-
-* `--app, -a`: Application import path (default: auto-detected from nexios.cli.py or main:app)
-* `--config, -c`: Path to configuration file (default: nexios.cli.py in current directory)
-* `--format, -f`: Output format (choices: table, json, yaml, default: table)
-* `--methods`: Filter by HTTP methods (comma-separated, e.g., "GET,POST")
-* `--path-prefix`: Filter routes by path prefix
-
-Examples:
-
-```bash
-# List all URLs in table format
-nexios urls
-
-# List URLs in JSON format
-nexios urls --format json
-
-# List only GET and POST routes
-nexios urls --methods GET,POST
-
-# List routes with specific app
-nexios urls --app myapp:app
-
-# List routes starting with /api
-nexios urls --path-prefix /api
-```
-
 ### Checking Route Existence
 
 ```bash
@@ -104,29 +120,6 @@ nexios ping [PATH]
 ```
 
 Checks if a specific route exists in your application and provides detailed information about it.
-
-Options:
-
-* `--app, -a`: Application import path (default: auto-detected from nexios.cli.py or main:app)
-* `--config, -c`: Path to configuration file (default: nexios.cli.py in current directory)
-* `--method, -m`: HTTP method to check (default: GET)
-* `--verbose, -v`: Show detailed route information
-
-Examples:
-
-```bash
-# Check if /api/users route exists
-nexios ping /api/users
-
-# Check POST method for /api/users
-nexios ping /api/users --method POST
-
-# Check with verbose output
-nexios ping /api/users --verbose
-
-# Check route with specific app
-nexios ping /api/users --app myapp:app
-```
 
 ### Interactive Development Shell
 
@@ -136,58 +129,6 @@ nexios shell
 
 Launches an interactive Python shell with your Nexios application pre-loaded, allowing you to explore and test your application programmatically.
 
-Options:
-
-* `--app, -a`: Application import path (default: auto-detected from nexios.cli.py or main:app)
-* `--config, -c`: Path to configuration file (default: nexios.cli.py in current directory)
-* `--ipython`: Use IPython shell if available (default: auto-detect)
-* `--bpython`: Use bpython shell if available (default: auto-detect)
-
-Examples:
-
-```bash
-# Start interactive shell
-nexios shell
-
-# Use specific app
-nexios shell --app myapp:app
-
-# Force IPython shell
-nexios shell --ipython
-```
-
-The shell provides access to:
-- Your application instance (`app`)
-- All registered routes (`app.routes`)
-- Request/response utilities
-- Database connections (if configured)
-- Any other application dependencies
-
-### Display Version Information
-
-```bash
-nexios version
-```
-
-Displays the Nexios version and ASCII art logo.
-
-## Configuration File Support
-
-The CLI automatically looks for a `nexios.cli.py` file in the current directory to load your application instance. This file should export an `app` variable:
-
-```python
-# nexios.cli.py
-from nexios import NexiosApp
-
-app = NexiosApp()
-
-@app.get("/")
-async def home():
-    return {"message": "Hello World"}
-```
-
-This allows the CLI to work with your specific application configuration without requiring manual app path specification.
-
 ## Project Structure
 
 When you create a new project with `nexios new`, it generates the following structure:
@@ -195,47 +136,16 @@ When you create a new project with `nexios new`, it generates the following stru
 ```
 project_name/
 ├── main.py           # Application entry point
+├── nexios.config.py  # Project configuration (app, options)
 ├── requirements.txt  # Project dependencies
 ├── README.md         # Project documentation
 ├── .gitignore        # Git ignore rules
 └── .env              # Environment variables
 ```
 
-## Development Workflow
+## Exposing Config in Your App
 
-1.  Create a new project:
-
-    ```bash
-    nexios new myproject
-    cd myproject
-    ```
-2.  Install dependencies:
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-3.  Run the development server:
-
-    ```bash
-    nexios run
-    ```
-4.  Explore your routes:
-
-    ```bash
-    nexios urls
-    ```
-5.  Test specific routes:
-
-    ```bash
-    nexios ping /api/users
-    ```
-6.  Use interactive shell for debugging:
-
-    ```bash
-    nexios shell
-    ```
-
-The server will start with auto-reload enabled by default. Any changes to your code will automatically restart the server.
+- The loaded config is available as `app.config` in your Nexios app instance.
 
 ## Environment Variables
 

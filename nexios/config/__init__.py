@@ -33,5 +33,4 @@ def validate_server_config(config: Dict[str, Any]) -> bool:
 
 DEFAULT_CONFIG = MakeConfig(
     {"debug": True, "server": DEFAULT_SERVER_CONFIG},
-    validate={"server": validate_server_config},
 )

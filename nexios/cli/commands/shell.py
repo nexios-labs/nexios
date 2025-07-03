@@ -5,10 +5,12 @@ Nexios CLI - Interactive shell command.
 
 import sys
 from typing import Optional
+from pathlib import Path
 
 import click
 
 from ..utils import _echo_error, _echo_info, _load_app_from_path
+from nexios.cli.utils import load_config_module, _find_app_module
 
 
 @click.command()
@@ -26,14 +28,36 @@ def shell(app_path: str = None, config_path: str = None, ipython: bool = False):
     - Debug and experiment with your application
     """
     try:
-        # Load the app
-        app = _load_app_from_path(app_path, config_path)
+        # Load config and resolve app_path
+        app, config = load_config_module(None)
+        options = dict(config)
+        for k, v in locals().items():
+            if v is not None and k != "config" and k != "app":
+                options[k] = v
+        app_path = options.get("app_path")
+        if not app_path:
+            project_dir = Path.cwd()
+            app_path = _find_app_module(project_dir)
+            if not app_path:
+                _echo_error("Could not automatically find the app module. Please specify it with --app option. ...")
+                sys.exit(1)
+            _echo_info(f"Auto-detected app module: {app_path}")
+        options["app_path"] = app_path
+
+        # Load app instance if not present, using app_path
+        if app is None and app_path:
+            app = _load_app_from_path(app_path, config_path)
+        if app is None:
+            _echo_error("Could not load the app instance. Please check your app_path or config.")
+            sys.exit(1)
+
         _echo_info(f"Loaded app: {app}")
         
         # Prepare the shell environment
         shell_vars = {
             'app': app,
             'NexiosApp': type(app),
+            'config': app.config
         }
         
         # Try to import common modules that might be useful
@@ -76,7 +100,7 @@ def _try_start_ipython_shell(shell_vars: dict) -> bool:
         from IPython.terminal.embed import InteractiveShellEmbed
         
         _echo_info("Starting IPython shell...")
-        _echo_info("Available variables: app, Client, Request, Response, MakeConfig")
+        _echo_info("Available variables: app,config, Client, Request, Response, MakeConfig")
         _echo_info("Type 'exit' or press Ctrl+D to exit")
         
         # Create IPython shell with custom banner
@@ -116,7 +140,7 @@ def _try_start_regular_shell(shell_vars: dict) -> bool:
         import code
         
         _echo_info("Starting Python shell...")
-        _echo_info("Available variables: app, Client, Request, Response, MakeConfig")
+        _echo_info("Available variables: app,config,  Client, Request, Response, MakeConfig")
         _echo_info("Type 'exit()' or press Ctrl+D to exit")
         
         # Create interactive console

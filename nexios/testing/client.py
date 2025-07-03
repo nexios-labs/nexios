@@ -1,13 +1,14 @@
 import typing
-from typing import Any, AsyncIterable, Dict, Iterable, Union
+from typing import Any, AsyncIterable, Dict, Iterable, Union,TYPE_CHECKING
 
 import httpx
 
-from nexios.application import NexiosApp
 
 from .transport import (
     NexiosAsyncTransport,
 )
+if TYPE_CHECKING:
+    from nexios.application import NexiosApp
 
 _RequestData = typing.Mapping[str, typing.Union[str, typing.Iterable[str], bytes]]
 
@@ -15,7 +16,7 @@ _RequestData = typing.Mapping[str, typing.Union[str, typing.Iterable[str], bytes
 class Client(httpx.AsyncClient):
     def __init__(
         self,
-        app: NexiosApp,
+        app: "NexiosApp",
         root_path: str = "",
         client: tuple[str, int] = ("testclient", 5000),
         base_url: str = "http://testserver",

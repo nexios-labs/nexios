@@ -31,7 +31,7 @@ from nexios.openapi.config import OpenAPIConfig
 from nexios.openapi.models import HTTPBearer, Parameter, Path, Schema
 from nexios.routing.base import BaseRoute
 from nexios.structs import URLPath
-
+from nexios.cli.utils import get_config as get_nexios_config
 from .routing import Router, Routes, WebsocketRoutes, WSRouter
 from .types import (
     ASGIApp,
@@ -106,6 +106,9 @@ class NexiosApp(object):
             get_config()
         except RuntimeError:
             set_config(self.config)
+        self.config.update(
+            get_nexios_config(),
+        )
         self.server_error_handler = None
         self.ws_router = WSRouter()
         self.ws_routes: List[WebsocketRoutes] = []
