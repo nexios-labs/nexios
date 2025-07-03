@@ -10,5 +10,4 @@ from .concurrency import *
 
 __all__ = [
     "URLNormalizer",
-    "normalize_url_path",
 ]
