@@ -18,6 +18,7 @@ from nexios._internals._middleware import (
     ASGIRequestResponseBridge,
 )
 from nexios._internals._middleware import DefineMiddleware as Middleware
+from nexios.cli.utils import get_config as get_nexios_config
 from nexios.config import DEFAULT_CONFIG, MakeConfig
 from nexios.events import AsyncEventEmitter
 from nexios.exception_handler import ExceptionHandlerType, ExceptionMiddleware
@@ -106,6 +107,9 @@ class NexiosApp(object):
             get_config()
         except RuntimeError:
             set_config(self.config)
+        self.config.update(
+            get_nexios_config(),
+        )
         self.server_error_handler = None
         self.ws_router = WSRouter()
         self.ws_routes: List[WebsocketRoutes] = []

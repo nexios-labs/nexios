@@ -62,7 +62,7 @@ export default defineConfig({
             { text: 'Sending Responses', link: '/guide/sending-responses' },
             { text: 'Routers and Subapps', link: '/guide/routers-and-subapps' },
             { text: 'Middleware', link: '/guide/middleware' },
-          ]
+          ] 
         },
         {
           text: 'Request Lifecycle',
