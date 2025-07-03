@@ -7,7 +7,8 @@ from unittest.mock import MagicMock, Mock, patch
 import click
 import pytest
 
-from nexios.cli import (
+
+from nexios.cli.utils import (
     _check_server_installed,
     _echo_error,
     _echo_info,
@@ -22,11 +23,13 @@ from nexios.cli import (
     _validate_project_name,
     _validate_project_title,
     _validate_server,
-    cli,
+    
+)
+from nexios.cli import cli
+from nexios.cli.commands import (
     new,
     run,
 )
-
 
 class TestCLIUtilityFunctions:
     """Test CLI utility functions"""

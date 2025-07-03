@@ -62,7 +62,106 @@ Options:
 * `--workers`: Number of worker processes (default: 1)
 * `--server`: Server to use for running the application (choices: auto, uvicorn, granian, default: auto)
 
+### Listing All Registered URLs
 
+```bash
+nexios urls
+```
+
+Displays all registered routes in your application with their HTTP methods, paths, and handler information.
+
+Options:
+
+* `--app, -a`: Application import path (default: auto-detected from nexios.cli.py or main:app)
+* `--config, -c`: Path to configuration file (default: nexios.cli.py in current directory)
+* `--format, -f`: Output format (choices: table, json, yaml, default: table)
+* `--methods`: Filter by HTTP methods (comma-separated, e.g., "GET,POST")
+* `--path-prefix`: Filter routes by path prefix
+
+Examples:
+
+```bash
+# List all URLs in table format
+nexios urls
+
+# List URLs in JSON format
+nexios urls --format json
+
+# List only GET and POST routes
+nexios urls --methods GET,POST
+
+# List routes with specific app
+nexios urls --app myapp:app
+
+# List routes starting with /api
+nexios urls --path-prefix /api
+```
+
+### Checking Route Existence
+
+```bash
+nexios ping [PATH]
+```
+
+Checks if a specific route exists in your application and provides detailed information about it.
+
+Options:
+
+* `--app, -a`: Application import path (default: auto-detected from nexios.cli.py or main:app)
+* `--config, -c`: Path to configuration file (default: nexios.cli.py in current directory)
+* `--method, -m`: HTTP method to check (default: GET)
+* `--verbose, -v`: Show detailed route information
+
+Examples:
+
+```bash
+# Check if /api/users route exists
+nexios ping /api/users
+
+# Check POST method for /api/users
+nexios ping /api/users --method POST
+
+# Check with verbose output
+nexios ping /api/users --verbose
+
+# Check route with specific app
+nexios ping /api/users --app myapp:app
+```
+
+### Interactive Development Shell
+
+```bash
+nexios shell
+```
+
+Launches an interactive Python shell with your Nexios application pre-loaded, allowing you to explore and test your application programmatically.
+
+Options:
+
+* `--app, -a`: Application import path (default: auto-detected from nexios.cli.py or main:app)
+* `--config, -c`: Path to configuration file (default: nexios.cli.py in current directory)
+* `--ipython`: Use IPython shell if available (default: auto-detect)
+* `--bpython`: Use bpython shell if available (default: auto-detect)
+
+Examples:
+
+```bash
+# Start interactive shell
+nexios shell
+
+# Use specific app
+nexios shell --app myapp:app
+
+# Force IPython shell
+nexios shell --ipython
+```
+
+The shell provides access to:
+- Your application instance (`app`)
+- All registered routes (`app.routes`)
+- Request/response utilities
+- Database connections (if configured)
+- Any other application dependencies
 
 ### Display Version Information
 
@@ -71,6 +170,23 @@ nexios version
 ```
 
 Displays the Nexios version and ASCII art logo.
+
+## Configuration File Support
+
+The CLI automatically looks for a `nexios.cli.py` file in the current directory to load your application instance. This file should export an `app` variable:
+
+```python
+# nexios.cli.py
+from nexios import NexiosApp
+
+app = NexiosApp()
+
+@app.get("/")
+async def home():
+    return {"message": "Hello World"}
+```
+
+This allows the CLI to work with your specific application configuration without requiring manual app path specification.
 
 ## Project Structure
 
@@ -102,6 +218,21 @@ project_name/
 
     ```bash
     nexios run
+    ```
+4.  Explore your routes:
+
+    ```bash
+    nexios urls
+    ```
+5.  Test specific routes:
+
+    ```bash
+    nexios ping /api/users
+    ```
+6.  Use interactive shell for debugging:
+
+    ```bash
+    nexios shell
     ```
 
 The server will start with auto-reload enabled by default. Any changes to your code will automatically restart the server.
