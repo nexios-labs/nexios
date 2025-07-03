@@ -45,6 +45,16 @@ jobs:
       - name: Build the package
         run: uv build
 
+      - name: Generate Changelog
+        run: |
+          auto-changelog --commit-limit false --breaking-pattern "BREAKING CHANGE:"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          git commit -m "chore: update CHANGELOG.md for ${{ github.ref_name }} "
+          git checkout main
+          git push
+
       - name: Create GitHub Release with Notes
         uses: softprops/action-gh-release@v2
         with:
@@ -57,12 +67,4 @@ jobs:
       - name: Publish to PyPI
         run: uv publish --token ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
 
-      - name: Generate Changelog
-        run: |
-          auto-changelog --commit-limit false --breaking-pattern "BREAKING CHANGE:"
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add CHANGELOG.md
-          git commit -m "chore: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]" || echo "No changes to commit"
-          git checkout main
-          git push
+      
