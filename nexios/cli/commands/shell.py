@@ -4,7 +4,6 @@ Nexios CLI - Interactive shell command.
 """
 
 import sys
-from typing import Optional
 from pathlib import Path
 
 import click

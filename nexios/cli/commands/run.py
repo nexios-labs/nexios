@@ -12,8 +12,7 @@ import os
 import click
 
 from ..utils import (
-    _echo_error, _echo_info, _is_port_in_use, _check_server_installed,
-    _validate_host, _validate_port, _validate_app_path, _validate_server,
+    _echo_error, _echo_info, _validate_host, _validate_port, _validate_app_path, _validate_server,
     _find_app_module
 )
 from nexios.cli.utils import load_config_module

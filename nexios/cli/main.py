@@ -2,6 +2,7 @@
 """
 Nexios CLI - Main entry point for all CLI commands.
 """
+from nexios.cli.commands import new, run, urls, ping, shell
 
 import click
 
@@ -23,7 +24,6 @@ def cli():
 
 
 # Import and register all CLI commands
-from nexios.cli.commands import new, run, urls, ping, shell
 
 # Register commands
 cli.add_command(new)

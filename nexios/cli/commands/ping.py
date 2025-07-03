@@ -5,7 +5,6 @@ Nexios CLI - Ping route command.
 
 import asyncio
 import sys
-from typing import Optional
 from pathlib import Path
 
 import click
