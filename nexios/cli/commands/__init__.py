@@ -4,9 +4,9 @@ Nexios CLI - Command implementations.
 """
 
 from .new import new
-from .run import run
-from .urls import urls
 from .ping import ping
+from .run import run
 from .shell import shell
+from .urls import urls
 
-__all__ = ["new", "run", "urls", "ping", "shell"] 
+__all__ = ["new", "run", "urls", "ping", "shell"]

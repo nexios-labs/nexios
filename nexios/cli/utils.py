@@ -3,17 +3,18 @@
 Nexios CLI - Shared utilities and helper functions.
 """
 
+import importlib.util
 import os
 import re
 import socket
 import subprocess
 import sys
-import importlib.util
 from pathlib import Path
-from typing import Optional, Tuple, Any, Dict,TYPE_CHECKING
 from types import ModuleType
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 import click
+
 if TYPE_CHECKING:
     from nexios.application import NexiosApp
 
@@ -155,13 +156,13 @@ def _load_app_from_string(app_path: str) -> "NexiosApp":
     """Load app from module:app format string."""
     if ":" not in app_path:
         raise RuntimeError("App path must be in format 'module:app'")
-    
+
     module_name, app_var = app_path.split(":", 1)
     mod = importlib.import_module(module_name)
     app = getattr(mod, app_var, None)
     if app is None:
         raise RuntimeError(f"No '{app_var}' found in module '{module_name}'")
-    
+
     return app
 
 
@@ -183,7 +184,7 @@ def _load_app_from_path(app_path: str = None, config_path: str = None) -> "Nexio
                 return _load_app_from_string(app_value)
             return app_value
         raise RuntimeError(f"No 'app' found in config file: {config_path}")
-    
+
     # Auto-search for config file
     auto_config = _find_cli_config_file()
     if auto_config:
@@ -197,13 +198,15 @@ def _load_app_from_path(app_path: str = None, config_path: str = None) -> "Nexio
                 return _load_app_from_string(app_value)
             return app_value
         raise RuntimeError(f"No 'app' found in config file: {auto_config}")
-    
+
     # Use provided app_path or auto-detect
     if not app_path:
         app_path = _find_app_module(Path.cwd())
         if not app_path:
-            raise RuntimeError("Could not find app instance. Please specify --app or --config, or provide a nexios.cli.py file.")
-    
+            raise RuntimeError(
+                "Could not find app instance. Please specify --app or --config, or provide a nexios.cli.py file."
+            )
+
     return _load_app_from_string(app_path)
 
 
@@ -225,7 +228,8 @@ def load_config_module(config_path: Optional[str] = None) -> Tuple[Any, Dict[str
     app = getattr(module, "app", None)
     # Collect all top-level variables except built-ins and 'app'
     config = {
-        k: v for k, v in vars(module).items()
+        k: v
+        for k, v in vars(module).items()
         if not k.startswith("__") and k != "app" and not isinstance(v, ModuleType)
     }
     return app, config
@@ -237,5 +241,3 @@ def get_config() -> Dict[str, Any]:
     """
     _, config = load_config_module()
     return config
-
-

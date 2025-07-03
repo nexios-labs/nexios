@@ -10,9 +10,15 @@ from typing import Optional
 import click
 
 from nexios.__main__ import __version__
+
 from ..utils import (
-    _echo_success, _echo_error, _echo_info, _echo_warning,
-    _has_write_permission, _validate_project_name, _validate_project_title
+    _echo_error,
+    _echo_info,
+    _echo_success,
+    _echo_warning,
+    _has_write_permission,
+    _validate_project_name,
+    _validate_project_title,
 )
 
 
@@ -81,7 +87,9 @@ def new(
             f"Creating new Nexios project: {project_name} using {template} template"
         )
 
-        template_dir = Path(__file__).parent.parent.parent / "templates" / template.lower()
+        template_dir = (
+            Path(__file__).parent.parent.parent / "templates" / template.lower()
+        )
 
         if not template_dir.exists():
             _echo_error(
@@ -132,7 +140,7 @@ def new(
         ]
         env_path.write_text("\n".join(env_content) + "\n", encoding="utf-8")
 
-        TEMPLATE_CONFIG = '''\
+        TEMPLATE_CONFIG = """\
 from nexios import NexiosApp
 
 app = NexiosApp()
@@ -146,7 +154,7 @@ cli_options = {
 
 # Optionally, you can set a custom_command to start your app
 # custom_command = "gunicorn -w 4 -b 0.0.0.0:4000 nexios.config:app"
-'''
+"""
 
         config_path = project_path / "nexios.config.py"
         config_path.write_text(TEMPLATE_CONFIG, encoding="utf-8")
@@ -159,4 +167,4 @@ cli_options = {
 
     except Exception as e:
         _echo_error(f"Error creating project: {str(e)}")
-        sys.exit(1) 
+        sys.exit(1)

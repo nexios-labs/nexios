@@ -3,19 +3,25 @@
 Nexios CLI - Run server command.
 """
 
+import os
 import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
-import os
 
 import click
 
-from ..utils import (
-    _echo_error, _echo_info, _validate_host, _validate_port, _validate_app_path, _validate_server,
-    _find_app_module
-)
 from nexios.cli.utils import load_config_module
+
+from ..utils import (
+    _echo_error,
+    _echo_info,
+    _find_app_module,
+    _validate_app_path,
+    _validate_host,
+    _validate_port,
+    _validate_server,
+)
 
 
 @click.command()
@@ -114,22 +120,22 @@ def run(
 
         # Attach config to app
         if app:
-            if hasattr(app, 'config'):
+            if hasattr(app, "config"):
                 app.config.update(options)
             else:
                 app.config = options
 
         # Use custom command if set
-        if 'custom_command' in options and options['custom_command']:
-            os.system(options['custom_command'])
+        if "custom_command" in options and options["custom_command"]:
+            os.system(options["custom_command"])
             return
 
         # Use gunicorn if server is gunicorn
-        if options.get('server') == 'gunicorn':
-            workers = options.get('workers', 4)
-            host = options.get('host', '0.0.0.0')
-            port = options.get('port', 8000)
-            app_path = options.get('app_path', 'nexios.config:app')
+        if options.get("server") == "gunicorn":
+            workers = options.get("workers", 4)
+            host = options.get("host", "0.0.0.0")
+            port = options.get("port", 8000)
+            app_path = options.get("app_path", "nexios.config:app")
             cmd = f"gunicorn -w {workers} -b {host}:{port} {app_path}"
             os.system(cmd)
             return
@@ -171,4 +177,4 @@ def run(
         sys.exit(1)
     except Exception as e:
         _echo_error(f"Error running server: {str(e)}")
-        sys.exit(1) 
+        sys.exit(1)

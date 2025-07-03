@@ -2,11 +2,11 @@
 """
 Nexios CLI - Main entry point for all CLI commands.
 """
-from nexios.cli.commands import new, run, urls, ping, shell
 
 import click
 
 from nexios.__main__ import __version__
+from nexios.cli.commands import new, ping, run, shell, urls
 
 CONTEXT_SETTINGS = {
     "help_option_names": ["-h", "--help"],
@@ -30,4 +30,4 @@ cli.add_command(new)
 cli.add_command(run)
 cli.add_command(urls)
 cli.add_command(ping)
-cli.add_command(shell) 
+cli.add_command(shell)

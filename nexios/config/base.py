@@ -143,7 +143,7 @@ class MakeConfig:
 
     def __repr__(self) -> str:
         return f"MakeConfig({self.to_dict()})"
-    
+
     def __str__(self) -> str:
         return self.to_json()
 

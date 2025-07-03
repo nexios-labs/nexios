@@ -18,6 +18,7 @@ from nexios._internals._middleware import (
     ASGIRequestResponseBridge,
 )
 from nexios._internals._middleware import DefineMiddleware as Middleware
+from nexios.cli.utils import get_config as get_nexios_config
 from nexios.config import DEFAULT_CONFIG, MakeConfig
 from nexios.events import AsyncEventEmitter
 from nexios.exception_handler import ExceptionHandlerType, ExceptionMiddleware
@@ -31,7 +32,7 @@ from nexios.openapi.config import OpenAPIConfig
 from nexios.openapi.models import HTTPBearer, Parameter, Path, Schema
 from nexios.routing.base import BaseRoute
 from nexios.structs import URLPath
-from nexios.cli.utils import get_config as get_nexios_config
+
 from .routing import Router, Routes, WebsocketRoutes, WSRouter
 from .types import (
     ASGIApp,
