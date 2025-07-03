@@ -96,8 +96,8 @@ def shell(app_path: str = None, config_path: str = None, ipython: bool = False):
 def _try_start_ipython_shell(shell_vars: dict) -> bool:
     """Try to start IPython shell."""
     try:
-        import IPython
-        from IPython.terminal.embed import InteractiveShellEmbed
+        import IPython # noqa: F401
+        from IPython.terminal.embed import InteractiveShellEmbed # noqa: F401
         
         _echo_info("Starting IPython shell...")
         _echo_info("Available variables: app,config, Client, Request, Response, MakeConfig")
