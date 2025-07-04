@@ -7,8 +7,13 @@ import sys
 
 import click
 
-from nexios.cli.utils import _echo_info, _echo_warning, load_config_module
-from nexios.cli.utils import _echo_error, _load_app_from_path
+from nexios.cli.utils import (
+    _echo_error,
+    _echo_info,
+    _echo_warning,
+    _load_app_from_path,
+    load_config_module,
+)
 
 
 @click.command()
@@ -45,7 +50,7 @@ def shell(app_path: str, config_path: str = None, ipython: bool = False):
     try:
         # Load config if provided (will return empty dict if file doesn't exist)
         app, config = load_config_module(config_path)
-        
+
         # If app_path was provided in config, use it (CLI arg takes precedence)
         if "app_path" in config and not app_path:
             app_path = config["app_path"]
@@ -70,6 +75,7 @@ def shell(app_path: str, config_path: str = None, ipython: bool = False):
         # Try to import common modules that might be useful
         try:
             from nexios.testing.client import Client
+
             shell_vars["Client"] = Client
             _echo_info("Test client available as 'Client'")
         except ImportError:
@@ -78,6 +84,7 @@ def shell(app_path: str, config_path: str = None, ipython: bool = False):
         try:
             from nexios.http.request import Request
             from nexios.http.response import Response
+
             shell_vars["Request"] = Request
             shell_vars["Response"] = Response
             _echo_info("Request/Response classes available")
@@ -86,6 +93,7 @@ def shell(app_path: str, config_path: str = None, ipython: bool = False):
 
         try:
             from nexios.config import MakeConfig
+
             shell_vars["MakeConfig"] = MakeConfig
             _echo_info("MakeConfig available for configuration")
         except ImportError:
@@ -109,11 +117,13 @@ def shell(app_path: str, config_path: str = None, ipython: bool = False):
 def _try_start_ipython_shell(shell_vars: dict) -> bool:
     """Try to start IPython shell."""
     try:
-        import IPython #noqa: F401
+        import IPython  # noqa: F401
         from IPython.terminal.embed import InteractiveShellEmbed
 
         _echo_info("Starting IPython shell...")
-        _echo_info("Available variables: app, config, Client, Request, Response, MakeConfig")
+        _echo_info(
+            "Available variables: app, config, Client, Request, Response, MakeConfig"
+        )
         _echo_info("Type 'exit' or press Ctrl+D to exit")
 
         banner = """
@@ -152,7 +162,9 @@ def _try_start_regular_shell(shell_vars: dict) -> bool:
         import code
 
         _echo_info("Starting Python shell...")
-        _echo_info("Available variables: app, config, Client, Request, Response, MakeConfig")
+        _echo_info(
+            "Available variables: app, config, Client, Request, Response, MakeConfig"
+        )
         _echo_info("Type 'exit()' or press Ctrl+D to exit")
 
         banner = """

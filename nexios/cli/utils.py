@@ -217,7 +217,7 @@ def load_config_module(config_path: Optional[str] = None) -> Tuple[Any, Dict[str
     """
     config_file = config_path or os.path.join(os.getcwd(), "nexios.config.py")
     if not os.path.exists(config_file):
-        return  None, {}
+        return None, {}
 
     spec = importlib.util.spec_from_file_location("nexios_config", config_file)
     if spec is None or spec.loader is None:

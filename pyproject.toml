@@ -188,6 +188,7 @@ known-first-party = ["nexios"]
 [tool.uv.workspace]
 members = [
     "oneapp",
+    "dev_App",
 ]
 
 
