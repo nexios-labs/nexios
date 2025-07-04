@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nexios"
-version = "2.6.0"
+version = "2.6.1"
 description = "Nexios is a modern, high-performance ASGI web framework for Python with multi-server support with zero overhead."
 authors = [
     {name = "Chidebele Dunamis", email = "techwithdunamix@gmail.com"}

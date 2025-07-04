@@ -4,7 +4,7 @@ icon: gear-code
 
 # Configuration Management
 
-The Nexios framework provides a flexible and dynamic configuration system through its `MakeConfig` class. This system allows for structured configuration management with support for nested attributes, validation, and immutability. Proper configuration management is essential for building scalable, maintainable applications that can run in different environments.
+> **New in Nexios:** The CLI now supports a unified configuration system using a `nexios.config.py` file at your project root. This file is the default source for all CLI and server options. However, if `nexios.config.py` does not exist, you can pass configuration directly via CLI arguments, and these will take precedence. See the [CLI Guide](../guide/cli.md) for details.
 
 ## Configuration Fundamentals
 
@@ -546,6 +546,19 @@ async def update_config(request, response):
         "message": "Configuration updated successfully"
     })
 ```
+
+## CLI-Driven and Application-Wide Configuration: `nexios.config.py` and CLI Args
+
+::: tip nexios.config.py: CLI & App-Wide Config
+If a `nexios.config.py` file is present at your project root, its values will be **automatically loaded** for both the CLI and as application-wide configuration. This means you can use it to define settings for your app, your server, and any custom project variables. If the file is missing, you can provide all necessary options via CLI arguments (e.g., `nexios run --app-path main:app --port 8080`). CLI arguments always take precedence over config file values.
+:::
+
+- **nexios.config.py**: Place this file at your project root to define all your app/server options as plain Python variables (e.g., `app_path`, `server`, `port`, etc.), as well as any custom configuration your application needs. The CLI and your app can both import and use these settings.
+- **Bypassing the Config File**: If `nexios.config.py` is missing, you can provide all necessary options via CLI arguments. CLI arguments always take precedence over config file values.
+- **Best Practice**: For consistency and portability, keep a `nexios.config.py` in version control. Use CLI args for quick overrides or in CI/CD pipelines.
+- **Migration**: If you used the old config system, simply move your options to `nexios.config.py` as plain variables. The CLI and your app will handle the rest.
+
+For more, see the [Nexios CLI & Configuration Guide](../guide/cli.md).
 
 This comprehensive configuration guide covers all aspects of managing configuration in Nexios applications. The configuration system is designed to be flexible, secure, and easy to use while providing the power to handle complex configuration scenarios across different environments.
 

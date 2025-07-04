@@ -213,11 +213,12 @@ def _load_app_from_path(app_path: str = None, config_path: str = None) -> "Nexio
 def load_config_module(config_path: Optional[str] = None) -> Tuple[Any, Dict[str, Any]]:
     """
     Load the Nexios config file (nexios.config.py) and return (app, config_dict).
+    If config file doesn't exist, return (None, {}).
     """
     config_file = config_path or os.path.join(os.getcwd(), "nexios.config.py")
     if not os.path.exists(config_file):
-        raise FileNotFoundError(f"Config file not found: {config_file}")
-
+        return None, {}
+    
     spec = importlib.util.spec_from_file_location("nexios_config", config_file)
     if spec is None or spec.loader is None:
         raise ImportError(f"Could not load config file: {config_file}")

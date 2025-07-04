@@ -17,7 +17,8 @@ from ..utils import _echo_error, _load_app_from_path
 @click.option(
     "--app",
     "app_path",
-    help="App module path in format 'module:app_variable'. Auto-detected if not specified.",
+    # required=True,
+    help="App module path in format 'module:app_variable'.",
 )
 @click.option(
     "--config",
@@ -29,26 +30,21 @@ def urls(app_path: str = None, config_path: str = None):
     List all registered URLs in the Nexios application.
     """
     try:
-        app, config = load_config_module(None)
-        options = dict(config)
-        for k, v in locals().items():
-            if v is not None and k != "config" and k != "app":
-                options[k] = v
-        app_path = options.get("app_path")
+        # Load config (optional)
+        app, config = load_config_module(config_path)
+        
+        # If app_path wasn't provided in CLI args, check config
+        if not app_path and "app_path" in config:
+            app_path = config["app_path"]
+            
         if not app_path:
-            project_dir = Path.cwd()
-            app_path = _find_app_module(project_dir)
-            if not app_path:
-                _echo_error(
-                    "Could not automatically find the app module. Please specify it with --app option. ..."
-                )
-                sys.exit(1)
-            _echo_info(f"Auto-detected app module: {app_path}")
-        options["app_path"] = app_path
+            _echo_error(
+                "App path must be specified with --app or in config file."
+            )
+            sys.exit(1)
 
-        # Load app instance if not present, using app_path
-        if app is None and app_path:
-            app = _load_app_from_path(app_path, config_path)
+        # Load app instance using app_path
+        app = _load_app_from_path(app_path, config_path)
         if app is None:
             _echo_error(
                 "Could not load the app instance. Please check your app_path or config."
