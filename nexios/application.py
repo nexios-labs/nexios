@@ -2262,18 +2262,19 @@ class NexiosApp(object):
             **kwargs: Additional keyword arguments for uvicorn.
         """
         import warnings
-        
+
         warnings.warn(
             "app.run() is inefficient and only for testing. For development and production, use:\n"
             "- nexios run --host 0.0.0.0 --port 8000\n"
             "- uvicorn app:app --host 0.0.0.0 --port 8000\n"
             "- granian app:app --host 0.0.0.0 --port 8000",
             UserWarning,
-            stacklevel=2
+            stacklevel=2,
         )
-        
+
         try:
             import uvicorn
+
             print(f"Starting server with uvicorn: {host}:{port}")
             uvicorn.run(self, host=host, port=port, reload=reload, **kwargs)
         except ImportError:
