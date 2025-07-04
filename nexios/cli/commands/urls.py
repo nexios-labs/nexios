@@ -4,11 +4,10 @@ Nexios CLI - URLs listing command.
 """
 
 import sys
-from pathlib import Path
 
 import click
 
-from nexios.cli.utils import _echo_info, _find_app_module, load_config_module
+from nexios.cli.utils import load_config_module
 
 from ..utils import _echo_error, _load_app_from_path
 

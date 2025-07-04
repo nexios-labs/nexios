@@ -4,11 +4,10 @@ Nexios CLI - Interactive shell command.
 """
 
 import sys
-from pathlib import Path
 
 import click
 
-from nexios.cli.utils import _echo_info, load_config_module
+from nexios.cli.utils import _echo_info, _echo_warning, load_config_module
 from nexios.cli.utils import _echo_error, _load_app_from_path
 
 
@@ -110,7 +109,7 @@ def shell(app_path: str, config_path: str = None, ipython: bool = False):
 def _try_start_ipython_shell(shell_vars: dict) -> bool:
     """Try to start IPython shell."""
     try:
-        import IPython
+        import IPython #noqa: F401
         from IPython.terminal.embed import InteractiveShellEmbed
 
         _echo_info("Starting IPython shell...")
