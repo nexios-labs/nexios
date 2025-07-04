@@ -185,3 +185,8 @@ known-first-party = ["nexios"]
 "examples/*" = ["F401"]
 "benchmarks/*" = ["F401"]
 
+[tool.uv.workspace]
+members = [
+    "oneapp",
+]
+

@@ -6,7 +6,7 @@ Nexios provides a comprehensive security middleware that implements various secu
 
 ```python
 from nexios import NexiosApp
-from nexios.middleware import SecurityMiddleware
+from nexios.middleware.security import SecurityMiddleware
 
 app = NexiosApp()
 
