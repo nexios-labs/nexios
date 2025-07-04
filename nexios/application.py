@@ -2272,11 +2272,14 @@ class NexiosApp(object):
             if result.returncode == 0:
                 # Granian is available, use it
                 # For granian, we need to create a temporary file since it doesn't have a direct API
-                import tempfile
                 import os
-                
-                with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-                    f.write(f"""import sys
+                import tempfile
+
+                with tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".py", delete=False
+                ) as f:
+                    f.write(
+                        f"""import sys
 import os
 
 # Add the current directory to Python path
@@ -2289,7 +2292,8 @@ app = {self.__class__.__name__}()
 # Make the app available for the server
 if __name__ == "__main__":
     pass
-""")
+"""
+                    )
                     temp_file = f.name
 
                 try:
@@ -2342,15 +2346,9 @@ if __name__ == "__main__":
             if result.returncode == 0:
                 # Uvicorn is available, use it directly with the app instance
                 import uvicorn
-                
+
                 print(f"Starting server with uvicorn: {host}:{port}")
-                uvicorn.run(
-                    self,
-                    host=host,
-                    port=port,
-                    reload=reload,
-                    **kwargs
-                )
+                uvicorn.run(self, host=host, port=port, reload=reload, **kwargs)
                 return
         except (
             subprocess.TimeoutExpired,

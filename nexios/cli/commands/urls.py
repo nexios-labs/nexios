@@ -31,15 +31,13 @@ def urls(app_path: str = None, config_path: str = None):
     try:
         # Load config (optional)
         app, config = load_config_module(config_path)
-        
+
         # If app_path wasn't provided in CLI args, check config
         if not app_path and "app_path" in config:
             app_path = config["app_path"]
-            
+
         if not app_path:
-            _echo_error(
-                "App path must be specified with --app or in config file."
-            )
+            _echo_error("App path must be specified with --app or in config file.")
             sys.exit(1)
 
         # Load app instance using app_path

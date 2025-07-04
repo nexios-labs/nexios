@@ -9,9 +9,15 @@ from typing import Optional
 
 import click
 
-from nexios.cli.utils import _echo_error, _echo_info, _echo_success, _echo_warning, load_config_module
+from nexios.cli.utils import (
+    _echo_error,
+    _echo_info,
+    _echo_success,
+    _echo_warning,
+    _load_app_from_path,
+    load_config_module,
+)
 from nexios.testing.client import Client
-from nexios.cli.utils import _load_app_from_path
 
 
 @click.command()
@@ -31,20 +37,21 @@ def ping(
     route_path: str,
     cli_app_path: Optional[str] = None,
     config_path: Optional[str] = None,
-    method: str = "GET"
+    method: str = "GET",
 ):
     """
     Ping a route in the Nexios app to check if it exists (returns status code).
-    
+
     Examples:
       nexios ping /about --app sandbox:app
       nexios ping /api/users --config config.py
     """
+
     async def _ping():
         try:
             # Load config (returns None, {} if file doesn't exist)
             app, config = load_config_module(config_path)
-            
+
             # Resolve app path (CLI argument takes precedence over config)
             resolved_app_path = cli_app_path or config.get("app_path")
             if not resolved_app_path:
@@ -65,7 +72,7 @@ def ping(
             async with Client(app) as client:
                 resp = await client.request(method.upper(), route_path)
                 click.echo(f"{route_path} [{method.upper()}] -> {resp.status_code}")
-                
+
                 if resp.status_code == 200:
                     _echo_success("Route exists and is reachable")
                 elif resp.status_code == 404:
@@ -78,4 +85,3 @@ def ping(
             sys.exit(1)
 
     asyncio.run(_ping())
-
