@@ -2258,48 +2258,41 @@ class NexiosApp(object):
             rload (bool): Enable auto-reload for granian.
             **kwargs: Additional keyword arguments for the server.
         """
-        import os
         import subprocess
         import sys
-        import tempfile
 
-        # Create a temporary entry point file
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            # Get the module name and class name
-            module_name = self.__class__.__module__
-            class_name = self.__class__.__name__
-
-            # Write the entry point code
-            f.write(
-                f"""import sys
+        # Try granian first
+        try:
+            result = subprocess.run(
+                [sys.executable, "-m", "granian", "--help"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if result.returncode == 0:
+                # Granian is available, use it
+                # For granian, we need to create a temporary file since it doesn't have a direct API
+                import tempfile
+                import os
+                
+                with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+                    f.write(f"""import sys
 import os
 
 # Add the current directory to Python path
 sys.path.insert(0, os.getcwd())
 
-# Import the module and get the app instance
-import {module_name}
-app = {module_name}.{class_name}
+# Import and create the app instance
+from {self.__class__.__module__} import {self.__class__.__name__}
+app = {self.__class__.__name__}()
 
 # Make the app available for the server
 if __name__ == "__main__":
-    # This will be used by uvicorn/granian
     pass
-"""
-            )
-            temp_file = f.name
+""")
+                    temp_file = f.name
 
-        try:
-            # Try granian first
-            try:
-                result = subprocess.run(
-                    [sys.executable, "-m", "granian", "--help"],
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                )
-                if result.returncode == 0:
-                    # Granian is available, use it
+                try:
                     cmd = [
                         sys.executable,
                         "-m",
@@ -2325,64 +2318,50 @@ if __name__ == "__main__":
                     print(f"Starting server with granian: {' '.join(cmd)}")
                     subprocess.run(cmd)
                     return
-            except (
-                subprocess.TimeoutExpired,
-                FileNotFoundError,
-                subprocess.CalledProcessError,
-            ):
-                pass
+                finally:
+                    # Clean up the temporary file
+                    try:
+                        os.unlink(temp_file)
+                    except OSError:
+                        pass
+        except (
+            subprocess.TimeoutExpired,
+            FileNotFoundError,
+            subprocess.CalledProcessError,
+        ):
+            pass
 
-            # Fallback to uvicorn
-            try:
-                result = subprocess.run(
-                    [sys.executable, "-m", "uvicorn", "--help"],
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                )
-                if result.returncode == 0:
-                    # Uvicorn is available, use it
-                    cmd = [
-                        sys.executable,
-                        "-m",
-                        "uvicorn",
-                        f"{temp_file}:app",
-                        "--host",
-                        host,
-                        "--port",
-                        str(port),
-                    ]
-                    if reload:
-                        cmd.append("--reload")
-
-                    # Add additional kwargs as command line arguments
-                    for key, value in kwargs.items():
-                        if isinstance(value, bool):
-                            if value:
-                                cmd.append(f"--{key}")
-                        else:
-                            cmd.append(f"--{key}")
-                            cmd.append(str(value))
-
-                    print(f"Starting server with uvicorn: {' '.join(cmd)}")
-                    subprocess.run(cmd)
-                    return
-            except (
-                subprocess.TimeoutExpired,
-                FileNotFoundError,
-                subprocess.CalledProcessError,
-            ):
-                pass
-
-            raise RuntimeError(
-                "Neither granian nor uvicorn could be found. Please install one of them:\n"
-                "pip install granian\n"
-                "or\n"
-                "pip install uvicorn"
+        # Fallback to uvicorn
+        try:
+            result = subprocess.run(
+                [sys.executable, "-m", "uvicorn", "--help"],
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
-        finally:
-            # Clean up the temporary file
-            try:
-                os.unlink(temp_file)
-            except OSError:
-                pass
+            if result.returncode == 0:
+                # Uvicorn is available, use it directly with the app instance
+                import uvicorn
+                
+                print(f"Starting server with uvicorn: {host}:{port}")
+                uvicorn.run(
+                    self,
+                    host=host,
+                    port=port,
+                    reload=reload,
+                    **kwargs
+                )
+                return
+        except (
+            subprocess.TimeoutExpired,
+            FileNotFoundError,
+            subprocess.CalledProcessError,
+        ):
+            pass
+
+        raise RuntimeError(
+            "Neither granian nor uvicorn could be found. Please install one of them:\n"
+            "pip install granian\n"
+            "or\n"
+            "pip install uvicorn"
+        )
