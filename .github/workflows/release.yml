@@ -65,7 +65,7 @@ jobs:
         run: uv build
       
       - name: Publish to PyPI
-        run: uv publish --token ${{ secrets.PYPI_TOKEN }}
+        run: uv publish --token ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
 
   release-github:
     runs-on: ubuntu-latest
