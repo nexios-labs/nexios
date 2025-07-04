@@ -45,24 +45,32 @@ jobs:
       - name: Build the package
         run: uv build
 
+      # The changelog is generated and committed/pushed to main *before* the release is created.
+      # This means the tag (which triggered this workflow) does not include the new changelog entry,
+      # so the release notes will reflect the previous version's changelog.
+      # To fix this, generate the changelog but do NOT commit/push it here.
+      # Instead, use the generated changelog for the release notes, then optionally commit/push after.
+
+      - name: Generate Changelog
+        run: |
+          auto-changelog --commit-limit false --breaking-pattern "BREAKING CHANGE:"
+
       - name: Create GitHub Release with Notes
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
-          generate_release_notes: true
+          generate_release_notes: false
           files: dist/*
           body_path: CHANGELOG.md
 
       - name: Publish to PyPI
         run: uv publish --token ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
 
-      - name: Generate Changelog
+      - name: Commit and Push Changelog
         run: |
-          auto-changelog --commit-limit false --breaking-pattern "BREAKING CHANGE:"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add CHANGELOG.md
-          git commit -m "chore: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]" || echo "No changes to commit"
-          git checkout main
-          git push
+          git commit -m "chore: update CHANGELOG.md for ${{ github.ref_name }} " || echo "No changes"
+          git push origin main

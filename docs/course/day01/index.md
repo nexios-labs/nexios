@@ -126,6 +126,12 @@ Save the `app.py` file and run it from your terminal:
 python app.py
 ```
 
+> **Tip:** You can also run Nexios projects using the CLI:
+> ```bash
+> nexios run
+> ```
+> The CLI will use `nexios.config.py` if present, or you can pass options directly as CLI arguments (e.g., `nexios run --app-path app:app --port 5000`). CLI args always override config file values. See the [CLI Guide](../../guide/cli.md) and [Configuration Guide](../../guide/configuration.md) for more details.
+
 You should see output similar to this:
 ```
 INFO:     Uvicorn running on http://127.0.0.1:5000 (Press CTRL+C to quit)

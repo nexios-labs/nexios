@@ -1,15 +1,14 @@
-# Import your sandbox app here if needed
-# from sandbox import app as sandbox_app
+# Nexios project configuration for CLI
 
-# Nexios app instance
-# app = NexiosApp()
+# Path to your app instance (module:variable)
+app_path = "sandbox:app"
 
-# CLI/server options
-server = "uvicorn"  # Use Uvicorn for development
-port = 5050  # Serve on port 5050
-host = "127.0.0.1"  # Bind to localhost
-app_path = "sandbox:app"  # The app module path (e.g., sandbox.py with 'app' variable)
+# Server and host/port options
+server = "uvicorn"
+host = "127.0.0.1"
+port = 5050
+reload = True  # Enable auto-reload for development
 
-# Optionally, you can add more options as needed
-# reload = True
-# log_level = "debug"
+# You can add more options as needed, e.g.:
+# workers = 4
+# log_level = "debug" 
