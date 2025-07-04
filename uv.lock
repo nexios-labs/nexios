@@ -4,8 +4,8 @@ requires-python = ">=3.13"
 
 [manifest]
 members = [
+    "dev-app",
     "nexios",
-    "oneapp",
 ]
 
 [[package]]
@@ -110,6 +110,17 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/1f/56/4ee027d5965fc7fc126d7ec1187529cc30cc7d740846e1ecb5e92d31b224/coverage-7.9.1-cp313-cp313t-win_arm64.whl", hash = "sha256:18a0912944d70aaf5f399e350445738a1a20b50fbea788f640751c2ed9208b6c", size = 214392, upload-time = "2025-06-13T13:02:07.642Z" },
     { url = "https://files.pythonhosted.org/packages/08/b8/7ddd1e8ba9701dea08ce22029917140e6f66a859427406579fd8d0ca7274/coverage-7.9.1-py3-none-any.whl", hash = "sha256:66b974b145aa189516b6bf2d8423e888b742517d37872f6ee4c5be0073bd9a3c", size = 204000, upload-time = "2025-06-13T13:02:27.173Z" },
 ]
+
+[[package]]
+name = "dev-app"
+version = "0.1.0"
+source = { virtual = "dev_App" }
+dependencies = [
+    { name = "nexios" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "nexios", editable = "." }]
 
 [[package]]
 name = "ghp-import"
@@ -352,7 +363,7 @@ wheels = [
 
 [[package]]
 name = "nexios"
-version = "2.6.0"
+version = "2.6.2a1"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
@@ -425,11 +436,6 @@ requires-dist = [
     { name = "uvicorn", specifier = ">=0.27.0" },
 ]
 provides-extras = ["templating", "jwt", "granian", "all", "dev"]
-
-[[package]]
-name = "oneapp"
-version = "0.1.0"
-source = { virtual = "oneapp" }
 
 [[package]]
 name = "packaging"

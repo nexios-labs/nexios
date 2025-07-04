@@ -2245,121 +2245,39 @@ class NexiosApp(object):
         host: str = "127.0.0.1",
         port: int = 8000,
         reload: bool = False,
-        rload: bool = False,
         **kwargs,
     ):
         """
-        Run the application using uvicorn or granian if installed.
+        Run the application using uvicorn.
+
+        Note: For production, consider using the Nexios CLI or ASGI servers directly:
+        - nexios run --host 0.0.0.0 --port 8000
+        - uvicorn app:app --host 0.0.0.0 --port 8000
+        - granian app:app --host 0.0.0.0 --port 8000
 
         Args:
             host (str): Host address to bind.
             port (int): Port number to bind.
-            reload (bool): Enable auto-reload for uvicorn.
-            rload (bool): Enable auto-reload for granian.
-            **kwargs: Additional keyword arguments for the server.
+            reload (bool): Enable auto-reload.
+            **kwargs: Additional keyword arguments for uvicorn.
         """
-        import subprocess
-        import sys
-
-        # Try granian first
-        try:
-            result = subprocess.run(
-                [sys.executable, "-m", "granian", "--help"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            if result.returncode == 0:
-                # Granian is available, use it
-                # For granian, we need to create a temporary file since it doesn't have a direct API
-                import os
-                import tempfile
-
-                with tempfile.NamedTemporaryFile(
-                    mode="w", suffix=".py", delete=False
-                ) as f:
-                    f.write(
-                        f"""import sys
-import os
-
-# Add the current directory to Python path
-sys.path.insert(0, os.getcwd())
-
-# Import and create the app instance
-from {self.__class__.__module__} import {self.__class__.__name__}
-app = {self.__class__.__name__}()
-
-# Make the app available for the server
-if __name__ == "__main__":
-    pass
-"""
-                    )
-                    temp_file = f.name
-
-                try:
-                    cmd = [
-                        sys.executable,
-                        "-m",
-                        "granian",
-                        f"{temp_file}:app",
-                        "--host",
-                        host,
-                        "--port",
-                        str(port),
-                    ]
-                    if rload:
-                        cmd.append("--reload")
-
-                    # Add additional kwargs as command line arguments
-                    for key, value in kwargs.items():
-                        if isinstance(value, bool):
-                            if value:
-                                cmd.append(f"--{key}")
-                        else:
-                            cmd.append(f"--{key}")
-                            cmd.append(str(value))
-
-                    print(f"Starting server with granian: {' '.join(cmd)}")
-                    subprocess.run(cmd)
-                    return
-                finally:
-                    # Clean up the temporary file
-                    try:
-                        os.unlink(temp_file)
-                    except OSError:
-                        pass
-        except (
-            subprocess.TimeoutExpired,
-            FileNotFoundError,
-            subprocess.CalledProcessError,
-        ):
-            pass
-
-        # Fallback to uvicorn
-        try:
-            result = subprocess.run(
-                [sys.executable, "-m", "uvicorn", "--help"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            if result.returncode == 0:
-                # Uvicorn is available, use it directly with the app instance
-                import uvicorn
-
-                print(f"Starting server with uvicorn: {host}:{port}")
-                uvicorn.run(self, host=host, port=port, reload=reload, **kwargs)
-                return
-        except (
-            subprocess.TimeoutExpired,
-            FileNotFoundError,
-            subprocess.CalledProcessError,
-        ):
-            pass
-
-        raise RuntimeError(
-            "Neither granian nor uvicorn could be found. Please install one of them:\n"
-            "pip install granian\n"
-            "or\n"
-            "pip install uvicorn"
+        import warnings
+        
+        warnings.warn(
+            "app.run() is inefficient and only for testing. For development and production, use:\n"
+            "- nexios run --host 0.0.0.0 --port 8000\n"
+            "- uvicorn app:app --host 0.0.0.0 --port 8000\n"
+            "- granian app:app --host 0.0.0.0 --port 8000",
+            UserWarning,
+            stacklevel=2
         )
+        
+        try:
+            import uvicorn
+            print(f"Starting server with uvicorn: {host}:{port}")
+            uvicorn.run(self, host=host, port=port, reload=reload, **kwargs)
+        except ImportError:
+            raise RuntimeError(
+                "uvicorn not found. Install it with: pip install uvicorn\n"
+                "Or use the Nexios CLI: nexios run"
+            )
