@@ -14,7 +14,7 @@ engine.setup_environment()
 
 @app.get("/")
 async def home(request, response):
-    return await render("home.html", {"title": "Welcome"})
+    return await render("home.html", {"title": "Welcome"}, request=request)
 ```
 ::: tip Tip
 Without setting up the templating engine , the render function throws a Notimpemented error
@@ -207,6 +207,7 @@ async def render(
     context: Dict[str, Any] = None,
     status_code: int = 200,
     headers: Dict[str, str] = None,
+    request: Request = None,
     **kwargs
 ) -> Response
 ```
