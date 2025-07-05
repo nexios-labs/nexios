@@ -20,6 +20,7 @@ class BaseSessionInterface:
         config = get_config()
         self.session_key = session_key
         if not config.secret_key:
+            print("secret_key", config.secret_key)
             warnings.warn(
                 "`secret_key` is not set, `secret_key`  is required to use session",
                 RuntimeWarning,

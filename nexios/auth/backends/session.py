@@ -39,8 +39,8 @@ class SessionAuthBackend(AuthenticationBackend):
             None if no session exists
             UnauthenticatedUser if session exists but is invalid
         """
-        assert request.session
-        user_data = request.session["user_key"]
+        assert "session" in request.scope, "No Session Middleware Installed"
+        user_data = request.session.get(self.user_key)
         if not user_data:
             return None
 
