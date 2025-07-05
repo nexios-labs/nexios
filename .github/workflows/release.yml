@@ -31,6 +31,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           changelog: CHANGELOG.md
+          fail_on_missing: false
 
   release:
     runs-on: ubuntu-latest
@@ -78,7 +79,13 @@ jobs:
       
       - name: Create Release Notes File
         run: |
-          echo "${{ join(fromJson(needs.detect-release-parameters.outputs.notes).notes, '') }}" > release_notes.txt
+          if [ -n "${{ needs.detect-release-parameters.outputs.notes }}" ]; then
+            echo "${{ join(fromJson(needs.detect-release-parameters.outputs.notes).notes, '') }}" > release_notes.txt
+          else
+            echo "Release ${{ github.ref_name }}" > release_notes.txt
+            echo "" >> release_notes.txt
+            echo "This release was created automatically." >> release_notes.txt
+          fi
       
       - name: Create GitHub Release
         env:

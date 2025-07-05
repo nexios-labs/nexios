@@ -1,0 +1,55 @@
+name: Merge to Main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      
+      - name: Setup Virtual Environment
+        run: uv venv
+      
+      - name: Install dependencies
+        run: uv pip install commitizen
+      
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Check for version bump
+        id: check_version
+        run: |
+          cz check --rev-range HEAD~1..HEAD || echo "no_version_bump=true" >> $GITHUB_OUTPUT
+      
+      - name: Bump version and update changelog
+        if: steps.check_version.outputs.no_version_bump != 'true'
+        run: |
+          cz bump --yes
+      
+      - name: Push changes
+        if: steps.check_version.outputs.no_version_bump != 'true'
+        run: |
+          git push --follow-tags 
