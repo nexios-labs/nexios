@@ -14,17 +14,18 @@ template_config = TemplateConfig(
 # Apply template configuration
 app.config.templating = template_config
 
+
 # Add template context middleware
 async def user_context(request):
-    return {
-        "user": {"name": "Test User", "id": 123},
-        "app_version": "1.0.0"
-    }
+    return {"user": {"name": "Test User", "id": 123}, "app_version": "1.0.0"}
 
-app.add_middleware(template_context(
-    default_context={"site_name": "Nexios Demo"},
-    context_processor=user_context
-))
+
+app.add_middleware(
+    template_context(
+        default_context={"site_name": "Nexios Demo"}, context_processor=user_context
+    )
+)
+
 
 @app.get("/")
 async def index(request, response):

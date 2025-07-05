@@ -100,15 +100,19 @@ async def render(
     """Render template to response."""
     if not engine:
         raise NotImplementedError("Template Engine Has not been set")
-    
+
     # Start with provided context
     final_context = context or {}
     final_context.update(kwargs)
-    
+
     # Merge with template context from middleware if available
-    if request and hasattr(request, 'state') and hasattr(request.state, 'template_context'):
+    if (
+        request
+        and hasattr(request, "state")
+        and hasattr(request.state, "template_context")
+    ):
         middleware_context = request.state.template_context
         final_context.update(middleware_context)
-    
+
     content = await engine.render(template_name, final_context)
     return HTMLResponse(content=content, status_code=status_code, headers=headers)
