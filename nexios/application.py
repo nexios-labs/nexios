@@ -100,9 +100,8 @@ class NexiosApp(object):
         routes: Optional[List[Routes]] = None,
     ):
         self.config = config or DEFAULT_CONFIG
-        from nexios.config import get_config, set_config
         from nexios.cli.utils import get_config as get_nexios_config
-
+        from nexios.config import get_config, set_config
 
         try:
             get_config()

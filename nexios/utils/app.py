@@ -1,6 +1,7 @@
+import importlib
 import os
 import sys
-import importlib
+
 
 def get_app_instance(target: str):
     """
@@ -9,7 +10,7 @@ def get_app_instance(target: str):
     """
     if not target:
         return None
-        
+
     if ":" not in target:
         raise ValueError("Target must be in the format 'module:attribute'")
 
@@ -27,6 +28,8 @@ def get_app_instance(target: str):
     try:
         app = getattr(module, attr_name)
     except AttributeError as e:
-        raise AttributeError(f"Module '{module_name}' has no attribute '{attr_name}'") from e
+        raise AttributeError(
+            f"Module '{module_name}' has no attribute '{attr_name}'"
+        ) from e
 
     return app

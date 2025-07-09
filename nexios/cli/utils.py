@@ -14,11 +14,11 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 import click
+
 from nexios.utils.app import get_app_instance
 
 if TYPE_CHECKING:
     from nexios.application import NexiosApp
-
 
 
 # Utility functions
@@ -230,7 +230,7 @@ def load_config_module(config_path: Optional[str] = None) -> Tuple[Any, Dict[str
 
     app_path = getattr(module, "app_path", None)
     app = get_app_instance(app_path) if app_path else None
-    
+
     # Collect all top-level variables except built-ins and 'app'
     config = {
         k: v

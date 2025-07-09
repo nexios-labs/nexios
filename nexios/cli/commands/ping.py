@@ -17,6 +17,7 @@ from nexios.cli.utils import (
     _load_app_from_path,
     load_config_module,
 )
+
 try:
     from nexios.testing.client import Client
 except ImportError:

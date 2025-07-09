@@ -3,14 +3,14 @@
 Nexios CLI - URLs listing command.
 """
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import click
 
 from nexios.cli.utils import load_config_module
 
-from ..utils import _echo_error, _echo_info, _find_app_module, _load_app_from_path
+from ..utils import _echo_error, _echo_info, _find_app_module
 
 
 @click.command()
@@ -57,7 +57,7 @@ def urls(app_path: str = None, config_path: str = None):
         options["app_path"] = app_path
 
         # Attach config to app
-        
+
         if app is None:
             _echo_error(
                 "Could not load the app instance. Please check your app_path or config."

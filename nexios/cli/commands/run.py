@@ -118,7 +118,6 @@ def run(
             _echo_info(f"Auto-detected app module: {app_path}")
         options["app_path"] = app_path
 
-
         if "custom_command" in options and options["custom_command"]:
             os.system(options["custom_command"])
             return
