@@ -17,7 +17,11 @@ from nexios.cli.utils import (
     _load_app_from_path,
     load_config_module,
 )
-from nexios.testing.client import Client
+
+try:
+    from nexios.testing.client import Client
+except ImportError:
+    Client = None
 
 
 @click.command()
@@ -68,7 +72,10 @@ def ping(
             if app is None:
                 _echo_error("Could not load app instance from: {resolved_app_path}")
                 sys.exit(1)
-
+            if not Client:
+                _echo_error("httpx is not installed. Install with: pip install httpx")
+                sys.exit(1)
+                return
             async with Client(app) as client:
                 resp = await client.request(method.upper(), route_path)
                 click.echo(f"{route_path} [{method.upper()}] -> {resp.status_code}")

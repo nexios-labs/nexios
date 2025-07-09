@@ -1,5 +1,6 @@
 from nexios import NexiosApp
 from nexios.templating import TemplateConfig, render
+from nexios.templating.middleware import template_context
 
 app = NexiosApp()
 
@@ -14,12 +15,25 @@ template_config = TemplateConfig(
 app.config.templating = template_config
 
 
+# Add template context middleware
+async def user_context(request):
+    return {"user": {"name": "Test User", "id": 123}, "app_version": "1.0.0"}
+
+
+app.add_middleware(
+    template_context(
+        default_context={"site_name": "Nexios Demo"}, context_processor=user_context
+    )
+)
+
+
 @app.get("/")
 async def index(request, response):
     # Simple template rendering with context
     return await render(
         "index.html",
         {"title": "Welcome to Nexios", "message": "Hello from the template engine!"},
+        request=request,
     )
 
 
@@ -29,6 +43,7 @@ async def user_profile(request, response, username: str):
     return await render(
         "user_profile.html",
         {"username": username, "profile_data": {"joined": "2024-01-01", "posts": 42}},
+        request=request,
     )
 
 

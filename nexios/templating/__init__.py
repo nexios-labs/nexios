@@ -10,6 +10,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from nexios.config import MakeConfig, get_config
 from nexios.http.response import HTMLResponse
+from nexios.types import Request
 
 engine: Union["TemplateEngine", None] = None
 
@@ -93,10 +94,25 @@ async def render(
     context: Optional[Dict[str, Any]] = None,
     status_code: int = 200,
     headers: Optional[Dict[str, str]] = None,
+    request: Optional["Request"] = None,
     **kwargs,
 ) -> HTMLResponse:
     """Render template to response."""
     if not engine:
         raise NotImplementedError("Template Engine Has not been set")
-    content = await engine.render(template_name, context, **kwargs)
+
+    # Start with provided context
+    final_context = context or {}
+    final_context.update(kwargs)
+
+    # Merge with template context from middleware if available
+    if (
+        request
+        and hasattr(request, "state")
+        and hasattr(request.state, "template_context")
+    ):
+        middleware_context = request.state.template_context
+        final_context.update(middleware_context)
+
+    content = await engine.render(template_name, final_context)
     return HTMLResponse(content=content, status_code=status_code, headers=headers)

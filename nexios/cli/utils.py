@@ -15,6 +15,8 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 import click
 
+from nexios.utils.app import get_app_instance
+
 if TYPE_CHECKING:
     from nexios.application import NexiosApp
 
@@ -226,7 +228,9 @@ def load_config_module(config_path: Optional[str] = None) -> Tuple[Any, Dict[str
     sys.modules["nexios_config"] = module
     spec.loader.exec_module(module)
 
-    app = getattr(module, "app", None)
+    app_path = getattr(module, "app_path", None)
+    app = get_app_instance(app_path) if app_path else None
+
     # Collect all top-level variables except built-ins and 'app'
     config = {
         k: v
@@ -236,9 +240,34 @@ def load_config_module(config_path: Optional[str] = None) -> Tuple[Any, Dict[str
     return app, config
 
 
+def load_config_only(config_path: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Load the Nexios config file (nexios.config.py) and return only the config dict,
+    without loading or importing the app instance. This avoids circular imports.
+    """
+    config_file = config_path or os.path.join(os.getcwd(), "nexios.config.py")
+    if not os.path.exists(config_file):
+        return {}
+
+    spec = importlib.util.spec_from_file_location("nexios_config", config_file)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load config file: {config_file}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["nexios_config"] = module
+    spec.loader.exec_module(module)
+
+    # Collect all top-level variables except built-ins and 'app'
+    config = {
+        k: v
+        for k, v in vars(module).items()
+        if not k.startswith("__") and k != "app" and not isinstance(v, ModuleType)
+    }
+    return config
+
+
 def get_config() -> Dict[str, Any]:
     """
     Return the loaded config (all variables except 'app') from nexios.config.py.
     """
-    _, config = load_config_module()
+    config = load_config_only()
     return config

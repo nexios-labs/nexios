@@ -880,8 +880,8 @@ class ServerErrorMiddleware(BaseMiddleware):
             else:
                 response = self.error_response(response)
 
-            # err = traceback.format_exc()
-            # logger.error(err)
+            err = traceback.format_exc()
+            logger.error(err)
             return response
 
     def error_response(self, res: Response):

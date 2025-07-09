@@ -18,7 +18,6 @@ from nexios._internals._middleware import (
     ASGIRequestResponseBridge,
 )
 from nexios._internals._middleware import DefineMiddleware as Middleware
-from nexios.cli.utils import get_config as get_nexios_config
 from nexios.config import DEFAULT_CONFIG, MakeConfig
 from nexios.events import AsyncEventEmitter
 from nexios.exception_handler import ExceptionHandlerType, ExceptionMiddleware
@@ -101,6 +100,7 @@ class NexiosApp(object):
         routes: Optional[List[Routes]] = None,
     ):
         self.config = config or DEFAULT_CONFIG
+        from nexios.cli.utils import get_config as get_nexios_config
         from nexios.config import get_config, set_config
 
         try:

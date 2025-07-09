@@ -93,7 +93,7 @@ def run(
         project_dir = Path.cwd()
 
         # Load config
-        app, config = load_config_module(None)
+        _, config = load_config_module(None)
 
         # Merge CLI args with config (CLI args take precedence)
         options = dict(config)
@@ -118,14 +118,6 @@ def run(
             _echo_info(f"Auto-detected app module: {app_path}")
         options["app_path"] = app_path
 
-        # Attach config to app
-        if app:
-            if hasattr(app, "config"):
-                app.config.update(options)
-            else:
-                app.config = options
-
-        # Use custom command if set
         if "custom_command" in options and options["custom_command"]:
             os.system(options["custom_command"])
             return

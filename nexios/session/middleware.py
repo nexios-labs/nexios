@@ -22,7 +22,6 @@ class SessionMiddleware(BaseMiddleware):
         call_next: typing.Callable[..., typing.Awaitable[typing.Any]],
     ):
         self.secret = get_config().secret_key
-
         self.config = get_config().session
         if not self.secret:
             return await call_next()
@@ -35,7 +34,6 @@ class SessionMiddleware(BaseMiddleware):
         self.session_cookie_name = session_cookie_name
         manager = self.get_manager()
         request.scope["session"] = manager
-
         session: type[BaseSessionInterface] = manager(
             session_key=request.cookies.get(session_cookie_name)  # type:ignore
         )
