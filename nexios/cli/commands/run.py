@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
-
+import traceback
 import click
 
 from nexios.cli.utils import load_config_module
@@ -168,5 +168,6 @@ def run(
         _echo_error(f"Server exited with error: {e}")
         sys.exit(1)
     except Exception as e:
+        traceback.print_exc()
         _echo_error(f"Error running server: {str(e)}")
         sys.exit(1)
