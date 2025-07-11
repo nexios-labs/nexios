@@ -6,9 +6,10 @@ Nexios CLI - Run server command.
 import os
 import subprocess
 import sys
+import traceback
 from pathlib import Path
 from typing import Optional
-import traceback
+
 import click
 
 from nexios.cli.utils import load_config_module
