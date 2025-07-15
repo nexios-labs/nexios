@@ -420,3 +420,32 @@ async def create_user(
     user = await create_user_in_db(user_data)
     return response.status(201).json({"user": user.dict()})
 ``` 
+
+## App-level and Router-level Dependencies
+
+You can apply dependencies to all routes in the app or in a router by passing a `dependencies` argument:
+
+- **App-level**: `NexiosApp(dependencies=[...])` applies to every route in the app.
+- **Router-level**: `Router(dependencies=[...])` applies to every route in that router.
+
+### Example: App-level
+```python
+from nexios import NexiosApp, Depend
+
+def global_dep():
+    return "global-value"
+
+app = NexiosApp(dependencies=[Depend(global_dep)])
+```
+
+### Example: Router-level
+```python
+from nexios import Router, Depend
+
+def router_dep():
+    return "router-value"
+
+router = Router(prefix="/api", dependencies=[Depend(router_dep)])
+```
+
+These dependencies are resolved before any route-specific dependencies. 
