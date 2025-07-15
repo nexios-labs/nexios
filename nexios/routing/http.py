@@ -2312,15 +2312,17 @@ class Router(BaseRouter):
         self.sub_routers[prefix] = app
 
     def _wrap_with_router_dependencies(self, handler):
-        from nexios.dependencies import inject_dependencies, Depend
         import inspect
+
+        from nexios.dependencies import Depend, inject_dependencies
+
         # Merge app-level and router-level dependencies
         all_deps = []
         # Try to get app-level dependencies if present
         app_deps = []
-        if hasattr(self, 'app') and hasattr(self.app, 'dependencies'):
+        if hasattr(self, "app") and hasattr(self.app, "dependencies"):
             app_deps = self.app.dependencies
-        elif hasattr(self, 'dependencies'):
+        elif hasattr(self, "dependencies"):
             # If this is the root router, self.dependencies is app-level
             app_deps = self.dependencies
         all_deps.extend(app_deps)
@@ -2329,7 +2331,7 @@ class Router(BaseRouter):
         seen = set()
         unique_deps = []
         for dep in all_deps:
-            fn = getattr(dep, 'dependency', None)
+            fn = getattr(dep, "dependency", None)
             if fn and fn not in seen:
                 unique_deps.append(dep)
                 seen.add(fn)
@@ -2343,15 +2345,19 @@ class Router(BaseRouter):
                     found = True
                     break
             if not found:
-                new_params.append(inspect.Parameter(
-                    name=dep.dependency.__name__,
-                    kind=inspect.Parameter.KEYWORD_ONLY,
-                    default=dep
-                ))
+                new_params.append(
+                    inspect.Parameter(
+                        name=dep.dependency.__name__,
+                        kind=inspect.Parameter.KEYWORD_ONLY,
+                        default=dep,
+                    )
+                )
         if new_params:
             new_sig = sig.replace(parameters=list(sig.parameters.values()) + new_params)
+
             def wrapper(*args, **kwargs):
                 return handler(*args, **kwargs)
+
             wrapper.__signature__ = new_sig
             return inject_dependencies(wrapper)
         else:
