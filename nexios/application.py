@@ -98,8 +98,10 @@ class NexiosApp(object):
         ] = None,
         lifespan: Optional[lifespan_manager] = None,
         routes: Optional[List[Routes]] = None,
+        dependencies: Optional[list] = None,
     ):
         self.config = config or DEFAULT_CONFIG
+        self.dependencies = dependencies or []
         from nexios.cli.utils import get_config as get_nexios_config
         from nexios.config import get_config, set_config
 
@@ -121,7 +123,7 @@ class NexiosApp(object):
         self.server_error_handler = server_error_handler
         self._background_tasks = set()
 
-        self.app = Router(routes=routes)  # type:ignore
+        self.app = Router(routes=routes, dependencies=self.dependencies)  # type:ignore
         self.router = self.app
         self.route = self.router.route
         self.lifespan_context: Optional[lifespan_manager] = lifespan
