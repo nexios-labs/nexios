@@ -106,3 +106,64 @@ async def test_context_dep_injection(async_client: Client):
     response = await async_client.get("/test-context-dep")
     assert response.status_code == 200
     assert response.json()["path"] == "/test-context-dep"
+
+
+# --- App-level and Router-level Dependency Tests ---
+
+import types
+
+
+@pytest.fixture
+def app_with_app_dep():
+    calls = []
+
+    def app_dep():
+        calls.append("app")
+        return "app-dep"
+
+    test_app = NexiosApp(dependencies=[Depend(app_dep)])
+
+    @test_app.get("/app-dep-test")
+    async def handler(req: Request, res: Response, dep=Depend(app_dep)):
+        return res.text(dep)
+
+    return test_app, calls
+
+
+@pytest.fixture
+def app_with_router_dep():
+    calls = []
+
+    def router_dep():
+        calls.append("router")
+        return "router-dep"
+
+    test_router = Router(prefix="/router", dependencies=[Depend(router_dep)])
+
+    @test_router.get("/dep-test")
+    async def handler(req: Request, res: Response, dep=Depend(router_dep)):
+        return res.text(dep)
+
+    test_app = NexiosApp()
+    test_app.mount_router(test_router)
+    return test_app, calls
+
+
+@pytest.mark.asyncio
+async def test_app_level_dependency(app_with_app_dep):
+    app, calls = app_with_app_dep
+    async with Client(app) as client:
+        response = await client.get("/app-dep-test")
+        assert response.status_code == 200
+        assert response.text == "app-dep"
+        assert "app" in calls
+
+
+@pytest.mark.asyncio
+async def test_router_level_dependency(app_with_router_dep):
+    app, calls = app_with_router_dep
+    async with Client(app) as client:
+        response = await client.get("/router/dep-test")
+        assert response.status_code == 200
+        assert response.text == "router-dep"
+        assert "router" in calls

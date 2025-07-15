@@ -293,6 +293,7 @@ class Router(BaseRouter):
         tags: Optional[List[str]] = None,
         exclude_from_schema: bool = False,
         name: Optional[str] = None,
+        dependencies: Optional[list] = None,
     ):
         self.prefix = prefix or ""
         self.prefix.rstrip("/")
@@ -304,6 +305,7 @@ class Router(BaseRouter):
         self.exclude_from_schema = exclude_from_schema
         self.name = name
         self.event = AsyncEventEmitter()
+        self.dependencies = dependencies or []
 
         if self.prefix and not self.prefix.startswith("/"):
             warnings.warn("Router prefix should start with '/'")
@@ -2308,3 +2310,55 @@ class Router(BaseRouter):
         """
 
         self.sub_routers[prefix] = app
+
+    def _wrap_with_router_dependencies(self, handler):
+        import inspect
+
+        from nexios.dependencies import Depend, inject_dependencies
+
+        # Merge app-level and router-level dependencies
+        all_deps = []
+        # Try to get app-level dependencies if present
+        app_deps = []
+        if hasattr(self, "app") and hasattr(self.app, "dependencies"):
+            app_deps = self.app.dependencies
+        elif hasattr(self, "dependencies"):
+            # If this is the root router, self.dependencies is app-level
+            app_deps = self.dependencies
+        all_deps.extend(app_deps)
+        all_deps.extend(self.dependencies)
+        # Remove duplicates (by dependency function)
+        seen = set()
+        unique_deps = []
+        for dep in all_deps:
+            fn = getattr(dep, "dependency", None)
+            if fn and fn not in seen:
+                unique_deps.append(dep)
+                seen.add(fn)
+        sig = inspect.signature(handler)
+        params = list(sig.parameters.values())
+        new_params = []
+        for dep in unique_deps:
+            found = False
+            for p in params:
+                if isinstance(dep, Depend) and p.default == dep:
+                    found = True
+                    break
+            if not found:
+                new_params.append(
+                    inspect.Parameter(
+                        name=dep.dependency.__name__,
+                        kind=inspect.Parameter.KEYWORD_ONLY,
+                        default=dep,
+                    )
+                )
+        if new_params:
+            new_sig = sig.replace(parameters=list(sig.parameters.values()) + new_params)
+
+            def wrapper(*args, **kwargs):
+                return handler(*args, **kwargs)
+
+            wrapper.__signature__ = new_sig
+            return inject_dependencies(wrapper)
+        else:
+            return inject_dependencies(handler)

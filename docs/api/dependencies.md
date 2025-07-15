@@ -327,6 +327,39 @@ async def get_test_db():
 app.dependency_overrides[get_db] = get_test_db
 ```
 
+### Generator and Async Generator Dependencies
+
+Nexios supports both synchronous and asynchronous generator dependencies for resource management. Use `yield` in your dependency to provide a resource and run cleanup code after the request:
+
+```python
+# Synchronous generator dependency
+def get_resource():
+    resource = acquire()
+    try:
+        yield resource
+    finally:
+        release(resource)
+
+# Async generator dependency
+async def get_async_resource():
+    resource = await acquire_async()
+    try:
+        yield resource
+    finally:
+        await release_async(resource)
+
+@app.get("/resource")
+async def use_resource(request, response, r=Depend(get_resource)):
+    ...
+
+@app.get("/async-resource")
+async def use_async_resource(request, response, r=Depend(get_async_resource)):
+    ...
+```
+
+- Cleanup code in the `finally` block is always executed after the request, even if an exception occurs.
+- Both sync and async generator dependencies are supported.
+
 ## Best Practices
 
 1. **Keep Dependencies Focused**: Each dependency should have a single responsibility.
@@ -387,3 +420,32 @@ async def create_user(
     user = await create_user_in_db(user_data)
     return response.status(201).json({"user": user.dict()})
 ``` 
+
+## App-level and Router-level Dependencies
+
+You can apply dependencies to all routes in the app or in a router by passing a `dependencies` argument:
+
+- **App-level**: `NexiosApp(dependencies=[...])` applies to every route in the app.
+- **Router-level**: `Router(dependencies=[...])` applies to every route in that router.
+
+### Example: App-level
+```python
+from nexios import NexiosApp, Depend
+
+def global_dep():
+    return "global-value"
+
+app = NexiosApp(dependencies=[Depend(global_dep)])
+```
+
+### Example: Router-level
+```python
+from nexios import Router, Depend
+
+def router_dep():
+    return "router-value"
+
+router = Router(prefix="/api", dependencies=[Depend(router_dep)])
+```
+
+These dependencies are resolved before any route-specific dependencies. 

@@ -255,15 +255,28 @@ async def protected(request, response):
 ```python [Basic DI]
 from nexios import Depend
 
-async def get_db():
-    async with Database() as db:
+# Both generator and async generator dependencies are supported.
+# Cleanup in the finally block is always run after the request.
+
+def get_db():
+    db = connect()
+    try:
         yield db
+    finally:
+        db.close()
+
+async def get_async_db():
+    db = await async_connect()
+    try:
+        yield db
+    finally:
+        await db.close()
 
 @app.get("/users")
 async def list_users(
     request, 
     response, 
-    db=Depend(get_db)
+    db=Depend(get_db)  # or db=Depend(get_async_db)
 ):
     users = await db.query("SELECT * FROM users")
     return response.json(users)
