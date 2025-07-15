@@ -119,8 +119,14 @@ def run(
             _echo_info(f"Auto-detected app module: {app_path}")
         options["app_path"] = app_path
 
+        # Support custom_command as either a string or a list (array)
         if "custom_command" in options and options["custom_command"]:
-            os.system(options["custom_command"])
+            custom_cmd = options["custom_command"]
+            if isinstance(custom_cmd, (list, tuple)):
+                subprocess.run(custom_cmd, check=True)
+            else:
+                # Assume string, run in shell
+                os.system(custom_cmd)
             return
 
         # Use gunicorn if server is gunicorn
