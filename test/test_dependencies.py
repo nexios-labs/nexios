@@ -171,6 +171,7 @@ async def test_route_param_dependency(di_client):
     assert response.status_code == 200
     assert response.text == "123"
 
+
 # Test generator dependency (sync)
 async def test_generator_dependency(di_client):
     client, app = di_client
@@ -191,6 +192,7 @@ async def test_generator_dependency(di_client):
     assert response.status_code == 200
     assert response.text == "gen-value"
     assert cleanup == ["start", "cleanup"]
+
 
 # Test async generator dependency
 async def test_async_generator_dependency(di_client):
