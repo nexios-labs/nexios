@@ -82,22 +82,37 @@ async def list_users(req, res, db: Database = Depend(get_db_connection)):
 
 ## Using Yield (Resource Management)
 
-For resources that need cleanup, use `yield`:
+For resources that need cleanup, use `yield` in either a generator or async generator dependency. Nexios will automatically handle cleanup (calling `close()` or `aclose()`) after the request, for both sync and async generator dependencies:
 
 ```python
-async def get_db_session():
-    session = Session()
-    try:
-        yield session
-    finally:
-        await session.close()
+# Synchronous generator dependency
 
-@app.post("/items")
-async def create_item(req, res, session = Depend(get_db_session)):
-    await session.add(Item(...))
-    return {"status": "created"}
+def get_resource():
+    resource = acquire()
+    try:
+        yield resource
+    finally:
+        release(resource)
+
+# Async generator dependency
+async def get_async_resource():
+    resource = await acquire_async()
+    try:
+        yield resource
+    finally:
+        await release_async(resource)
+
+@app.get("/resource")
+async def use_resource(req, res, r=Depend(get_resource)):
+    ...
+
+@app.get("/async-resource")
+async def use_async_resource(req, res, r=Depend(get_async_resource)):
+    ...
 ```
 
+- Cleanup code in the `finally` block is always executed after the request, even if an exception occurs.
+- Both sync and async generator dependencies are supported.
 
 ## Using Classes as Dependencies
 

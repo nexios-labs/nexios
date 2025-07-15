@@ -170,3 +170,45 @@ async def test_route_param_dependency(di_client):
     response = await client.get("/di/param/123")
     assert response.status_code == 200
     assert response.text == "123"
+
+# Test generator dependency (sync)
+async def test_generator_dependency(di_client):
+    client, app = di_client
+    cleanup = []
+
+    def gen_dep():
+        cleanup.append("start")
+        try:
+            yield "gen-value"
+        finally:
+            cleanup.append("cleanup")
+
+    @app.get("/di/gen")
+    async def gen_route(req: Request, res: Response, value: str = Depend(gen_dep)):
+        return res.text(value)
+
+    response = await client.get("/di/gen")
+    assert response.status_code == 200
+    assert response.text == "gen-value"
+    assert cleanup == ["start", "cleanup"]
+
+# Test async generator dependency
+async def test_async_generator_dependency(di_client):
+    client, app = di_client
+    cleanup = []
+
+    async def agen_dep():
+        cleanup.append("start")
+        try:
+            yield "agen-value"
+        finally:
+            cleanup.append("cleanup")
+
+    @app.get("/di/agen")
+    async def agen_route(req: Request, res: Response, value: str = Depend(agen_dep)):
+        return res.text(value)
+
+    response = await client.get("/di/agen")
+    assert response.status_code == 200
+    assert response.text == "agen-value"
+    assert cleanup == ["start", "cleanup"]

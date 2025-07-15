@@ -154,7 +154,7 @@ class ASGIRequestResponseBridge:
             wrapped_receive = request.wrapped_receive
             response_sent = anyio.Event()
 
-            async def call_next() -> Response:
+            async def call_next(*_) -> Response: # Why cant this be flexible , i mean ☺️🤷‍♀️
                 app_exc: Exception | None = None
 
                 async def receive_or_disconnect() -> Message:

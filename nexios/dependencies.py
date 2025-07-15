@@ -47,6 +47,14 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
                 ctx = None
             bound_args.arguments["context"] = ctx
 
+        # --- Generator/async generator cleanup support ---
+        cleanup_callbacks = []
+        # Store cleanup in context if possible
+        if ctx is not None:
+            if not hasattr(ctx, "_dependency_cleanup"):
+                ctx._dependency_cleanup = []
+            cleanup_callbacks = ctx._dependency_cleanup
+
         for param in params:
             if (
                 param.default != Parameter.empty
@@ -90,17 +98,33 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
                         else:
                             dep_kwargs[dep_param.name] = nested_dep()  # type: ignore[attr-defined]
 
-                # Call the dependency
-                if inspect.iscoroutinefunction(dependency_func):
+                if inspect.isasyncgenfunction(dependency_func):
+                    agen = dependency_func(**dep_kwargs)
+                    value = await agen.__anext__()
+                    bound_args.arguments[param.name] = value
+                    cleanup_callbacks.append(lambda agen=agen: agen.aclose())
+                elif inspect.isgeneratorfunction(dependency_func):
+                    gen = dependency_func(**dep_kwargs)
+                    value = next(gen)
+                    bound_args.arguments[param.name] = value
+                    cleanup_callbacks.append(lambda gen=gen: gen.close())
+                elif inspect.iscoroutinefunction(dependency_func):
                     bound_args.arguments[param.name] = await dependency_func(
                         **dep_kwargs
                     )
                 else:
                     bound_args.arguments[param.name] = dependency_func(**dep_kwargs)
 
-        if is_async_callable(handler):
-            return await handler(**bound_args.arguments)
-        else:
-            return await run_in_threadpool(handler, **bound_args.arguments)
+        try:
+            if is_async_callable(handler):
+                return await handler(**bound_args.arguments)
+            else:
+                return await run_in_threadpool(handler, **bound_args.arguments)
+        finally:
+            # Run cleanup callbacks (sync or async)
+            for cleanup in cleanup_callbacks:
+                result = cleanup()
+                if inspect.isawaitable(result):
+                    await result
 
     return wrapped
