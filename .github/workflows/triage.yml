@@ -17,4 +17,4 @@ jobs:
            uses: bdougie/take-action@main
            with:
               issueCurrentlyAssignedMessage: Thanks for being interested in this issue. It looks like this ticket is already assigned to someone else.
-              token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+              token: ${{ secrets.GITHUB_TOKEN }}

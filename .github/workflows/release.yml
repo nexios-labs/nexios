@@ -92,6 +92,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.ref_name }}
         run: |
-          gh release create ${{ github.ref }} \
+          gh release create ${{ github.ref_name }} \
           --title "Release $VERSION" \
           --notes-file "release_notes.txt"
