@@ -4,7 +4,8 @@ on:
   push:
     tags:
       - 'v*'
-
+permissions:
+  contents: write
 jobs:
   release:
     name: Release to PyPI
@@ -47,7 +48,7 @@ jobs:
         with:
           configuration: ".github/release-changelog-config.json"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -56,7 +57,7 @@ jobs:
           name: Release ${{ github.ref_name }}
           body: ${{ steps.changelog.outputs.changelog }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Update CHANGELOG.md
         run: |
