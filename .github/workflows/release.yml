@@ -39,8 +39,7 @@ jobs:
       - name: Publish to PyPI with uv
         env:
           PYPI_TOKEN: ${{ secrets.POETRY_PYPI_TOKEN_PYPI  }}
-        run: |
-          uv publish --token $PYPI_TOKEN dist/*
+       
 
       - name: Generate release notes
         id: changelog
