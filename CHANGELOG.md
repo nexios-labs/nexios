@@ -1,3 +1,19 @@
+## v2.8.1 (2025-07-18)
+
+### Feat
+
+- add virtualenv setup step in release workflow
+- implement new tag creation workflow for releases
+- implement new tag creation workflow for releases
+
+### Fix
+
+- update build command in release workflow
+
+### Refactor
+
+- simplify release workflow by removing deprecated steps
+
 ## v2.8.0 (2025-07-18)
 
 ### Feat
