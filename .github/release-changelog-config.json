@@ -1,0 +1,53 @@
+{
+    "categories": [
+        {
+            "title": "## 🚀 Features",
+            "labels": [
+                "feature",
+                "enhancement"
+            ]
+        },
+        {
+            "title": "## 🐛 Fixes",
+            "labels": [
+                "fix",
+                "bugfix"
+            ]
+        },
+        {
+            "title": "## 📚 Documentation",
+            "labels": [
+                "documentation",
+                "docs"
+            ]
+        },
+        {
+            "title": "## 🔧 Maintenance",
+            "labels": [
+                "chore",
+                "refactor",
+                "test"
+            ]
+        }
+    ],
+    "change_template": "- $TITLE @$AUTHOR (#$NUMBER)",
+    "version_resolver": {
+        "major": [
+            "breaking"
+        ],
+        "minor": [
+            "feature",
+            "enhancement"
+        ],
+        "patch": [
+            "fix",
+            "bugfix",
+            "documentation",
+            "docs",
+            "chore",
+            "refactor",
+            "test"
+        ]
+    },
+    "template": "$CHANGES"
+}
