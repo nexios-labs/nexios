@@ -1,9 +1,18 @@
-import pytest
-from nexios.converters import (
-    StringConvertor, PathConvertor, IntegerConvertor, FloatConvertor, UUIDConvertor, SlugConvertor,
-    register_url_convertor, CONVERTOR_TYPES
-)
 import uuid
+
+import pytest
+
+from nexios.converters import (
+    CONVERTOR_TYPES,
+    FloatConvertor,
+    IntegerConvertor,
+    PathConvertor,
+    SlugConvertor,
+    StringConvertor,
+    UUIDConvertor,
+    register_url_convertor,
+)
+
 
 def test_string_convertor():
     c = StringConvertor()
@@ -14,10 +23,12 @@ def test_string_convertor():
     with pytest.raises(AssertionError):
         c.to_string("")
 
+
 def test_path_convertor():
     c = PathConvertor()
     assert c.convert("/foo/bar") == "/foo/bar"
     assert c.to_string("/foo/bar") == "/foo/bar"
+
 
 def test_integer_convertor():
     c = IntegerConvertor()
@@ -25,6 +36,7 @@ def test_integer_convertor():
     assert c.to_string(42) == "42"
     with pytest.raises(AssertionError):
         c.to_string(-1)
+
 
 def test_float_convertor():
     c = FloatConvertor()
@@ -37,11 +49,13 @@ def test_float_convertor():
     with pytest.raises(AssertionError):
         c.to_string(float("inf"))
 
+
 def test_uuid_convertor():
     c = UUIDConvertor()
     u = uuid.uuid4()
     assert c.convert(str(u)) == u
     assert c.to_string(u) == str(u)
+
 
 def test_slug_convertor():
     c = SlugConvertor()
@@ -52,8 +66,10 @@ def test_slug_convertor():
     with pytest.raises(ValueError):
         c.to_string("foo_bar")
 
+
 def test_register_url_convertor():
     class Dummy:
         pass
+
     register_url_convertor("dummy", Dummy())
-    assert "dummy" in CONVERTOR_TYPES 
+    assert "dummy" in CONVERTOR_TYPES
