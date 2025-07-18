@@ -143,8 +143,8 @@ class Routes(BaseRoute):
         security: Optional[List[Dict[str, List[str]]]] = None,
         operation_id: Optional[str] = None,
         deprecated: bool = False,
-        parameters: List[Parameter] = [],
-        middleware: List[Any] = [],
+        parameters: Optional[List[Parameter]] = None,
+        middleware: Optional[List[Any]] = None,
         exclude_from_schema: bool = False,
         **kwargs: Dict[str, Any],
     ):
@@ -180,7 +180,7 @@ class Routes(BaseRoute):
         self.pattern: Pattern[str] = self.route_info.pattern
         self.param_names = self.route_info.param_names
         self.route_type = self.route_info.route_type
-        self.middleware: typing.List[MiddlewareType] = list(middleware)
+        self.middleware: typing.List[MiddlewareType] = list(middleware) if middleware else []
         self.summary = summary
         self.description = description
         self.responses = responses
@@ -190,7 +190,7 @@ class Routes(BaseRoute):
         self.security = security
         self.operation_id = operation_id
         self.deprecated = deprecated
-        self.parameters = parameters
+        self.parameters = parameters or []
         self.exclude_from_schema = exclude_from_schema
 
     def match(self, path: str, method: str) -> typing.Tuple[Any, Any, Any]:
