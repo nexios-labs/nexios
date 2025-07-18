@@ -1,35 +1,4 @@
-## v2.7.1 (2025-07-18)
-
-### Feat
-
-- add virtualenv setup step in release workflow
-- implement new tag creation workflow for releases
-- implement new tag creation workflow for releases
-
-### Fix
-
-- update build command in release workflow
-
-### Refactor
-
-- simplify release workflow by removing deprecated steps
-
-## v2.8.0 (2025-07-16)
-
-### Feat
-
-- enhance dependency injection documentation
-- add support for app-level and router-level dependencies
-- add support for synchronous and asynchronous generator dependencies
-- enhance run command to support custom commands as lists or strings
-
-### Fix
-
-- update release and triage workflows for consistency
-- resolve issues with dependency merging in Router class
-- add TYPE_CHECKING import for improved type hinting in _builder.py
-
-## v2.7.0 (2025-07-18)
+## v2.8.0 (2025-07-18)
 
 ### Feat
 
