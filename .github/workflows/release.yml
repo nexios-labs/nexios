@@ -4,11 +4,13 @@ on:
   push:
     tags:
       - 'v*'
+
 permissions:
   contents: write
+
 jobs:
   release:
-    name: Release to PyPI
+    name: Release to PyPI + GitHub Release
     runs-on: ubuntu-latest
 
     steps:
@@ -24,22 +26,41 @@ jobs:
         run: |
           curl -Ls https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
       - name: Set up virtualenv
         run: uv venv
+
       - name: Install dependencies
         run: uv pip install -e ".[dev]"
-      
+
       - name: Clean Old Builds
         run: rm -rf dist build *.egg-info
 
       - name: Build package
-        run: |
-          uv build
+        run: uv build
 
       - name: Publish to PyPI with uv
         env:
-          PYPI_TOKEN: ${{ secrets.POETRY_PYPI_TOKEN_PYPI  }}
-        run: |
-          uv publish --token $PYPI_TOKEN dist/*
+          PYPI_TOKEN: ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
+        run: uv publish --token $PYPI_TOKEN dist/*
 
-  
+      # --- GitHub Release Section ---
+      - name: Extract version from tag
+        id: get_tag
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Get changelog section
+        id: changelog
+        run: |
+          version="${{ steps.get_tag.outputs.version }}"
+          notes=$(awk "/^## $version/,/^## v/" CHANGELOG.md | sed '$d' || true)
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$notes" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_tag.outputs.version }}
+          name: Release ${{ steps.get_tag.outputs.version }}
+          body: ${{ steps.changelog.outputs.notes }}

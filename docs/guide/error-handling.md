@@ -161,3 +161,115 @@ app = NexiosApp(config=config)
 You can modify the app config simply as
 app.config.debug = True
 :::
+
+## Customizing 404 Not Found Responses
+
+Nexios allows you to control how 404 Not Found errors are handled and presented to users. This is useful for providing a more user-friendly experience, matching your API or website style, or giving developers more debugging information during development.
+
+### What is a 404 Not Found Error?
+A **404 Not Found** error is a standard HTTP response code. It means the client (browser, API consumer, etc.) tried to access a URL or resource that doesn’t exist on your server. This could be a mistyped URL, a deleted resource, or a route that was never defined.
+
+### Why Customize 404 Responses?
+- **User Experience:** Show a branded or helpful error page/message.
+- **API Consistency:** Ensure all errors follow your API's response format.
+- **Debugging:** Show more details (like tracebacks) in development, but hide them in production.
+- **Security:** In production, you may want to hide technical details to avoid leaking information about your app’s structure.
+
+### How Nexios Handles 404s by Default
+- If a route isn’t found, Nexios raises a `NotFoundException`.
+- The default handler returns a simple JSON or HTML message, depending on the request and debug mode.
+
+### How to Customize 404 Handling
+You can add a `not_found` section to your application config. This controls the format and content of 404 responses. This is **not** a route or a handler you write yourself, but a set of options that tell Nexios how to respond when a 404 happens.
+
+#### Available Options
+| Option           | Type   | What it Does                                                                 | When to Use It                        |
+|------------------|--------|------------------------------------------------------------------------------|---------------------------------------|
+| `return_json`    | bool   | If `True`, respond with JSON. If `False`, use HTML or plain text.            | APIs: `True`, Websites: `False`       |
+| `custom_message` | str    | The message shown for 404 errors (when not in debug mode).                   | Branding, user-friendliness           |
+| `show_traceback` | bool   | If `True` and debug is on, include a Python traceback in the response.       | Development only                      |
+| `use_html`       | bool   | If `True`, use an HTML error page (if not returning JSON).                   | Websites, or pretty error pages       |
+
+#### Example: Custom 404 Config
+```python
+from nexios import NexiosApp
+from nexios.config import MakeConfig
+
+config = MakeConfig({
+    # ... other config options ...
+    "not_found": {
+        "return_json": True,  # Set to False for HTML/plain text
+        "custom_message": "Sorry, this page does not exist.",
+        "show_traceback": False,  # Only relevant if debug is True
+        "use_html": False,  # Set to True for HTML error page
+    }
+})
+
+app = NexiosApp(config=config)
+```
+
+#### How it Works
+- If `return_json` is `True`, the response will be JSON:
+  ```json
+  {"status": 404, "error": "Not Found", "message": "Sorry, this page does not exist."}
+  ```
+- If `use_html` is `True` and `return_json` is `False`, an HTML error page is shown.
+- If both are `False`, a plain text message is returned.
+- If `show_traceback` is `True` and debug mode is on, the response (JSON or HTML) will include a Python traceback, which helps you debug why the route wasn’t found.
+
+#### Real-World Scenarios
+**A. API-First Project**
+You want all errors, including 404s, to be JSON so your frontend or mobile app can handle them consistently.
+```python
+config = MakeConfig({
+    "not_found": {
+        "return_json": True,
+        "custom_message": "Resource not found.",
+        "show_traceback": False,
+        "use_html": False,
+    }
+})
+```
+
+**B. Marketing Website**
+You want a pretty, branded HTML error page for users who mistype a URL.
+```python
+config = MakeConfig({
+    "not_found": {
+        "return_json": False,
+        "custom_message": "Oops! We couldn't find that page.",
+        "show_traceback": False,
+        "use_html": True,
+    }
+})
+```
+
+**C. Developer Debugging**
+You want to see tracebacks for 404s while developing, but not in production.
+```python
+config = MakeConfig({
+    "debug": True,
+    "not_found": {
+        "return_json": True,
+        "custom_message": "Not here!",
+        "show_traceback": True,
+        "use_html": False,
+    }
+})
+```
+
+#### Summary Table
+| Use Case         | return_json | use_html | show_traceback | custom_message                |
+|------------------|-------------|----------|---------------|-------------------------------|
+| API              | True        | False    | False         | "Resource not found."         |
+| Website          | False       | True     | False         | "Sorry, this page does not exist." |
+| Debugging        | True/False  | Any      | True          | Any                           |
+
+#### Best Practices
+- **APIs:** Always use JSON for errors.
+- **Websites:** Use HTML for a better user experience.
+- **Production:** Never show tracebacks or technical details.
+- **Development:** Enable tracebacks for faster debugging.
+
+> **Tip:** You can change these settings at runtime by updating your config and calling `set_config()`.
+```
