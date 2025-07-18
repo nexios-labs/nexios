@@ -1,70 +1,71 @@
-name: Release to PyPI
+name: On Tag Creation
 
 on:
   push:
     tags:
       - 'v*'
-permissions:
-  contents: write
-jobs:
-  release:
-    name: Release to PyPI
-    runs-on: ubuntu-latest
 
+concurrency:
+  group: tag-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect-release-parameters:
+    runs-on: ubuntu-latest
+    outputs:
+      notes: ${{ steps.generate_notes.outputs.notes }}
     steps:
-      - name: Checkout code
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      
+      - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      
+      - name: Get release notes
+        id: generate_notes
+        uses: anmarkoulis/commitizen-changelog-reader@v1.2.0
+        with:
+          tag_name: ${{ github.ref }}
+          changelog: CHANGELOG.md
+          fail_on_missing: false
 
+  release:
+    runs-on: ubuntu-latest
+    needs: detect-release-parameters
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-
+          python-version: "3.11"
+      
       - name: Install uv
         run: |
-          curl -Ls https://astral.sh/uv/install.sh | sh
+          curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: Set up virtualenv
+      
+      - name: Setup Virtual Environment
         run: uv venv
+      
       - name: Install dependencies
         run: uv pip install -e ".[dev]"
       
       - name: Clean Old Builds
         run: rm -rf dist build *.egg-info
+      
+      - name: Build the package
+        run: uv build
+      
+      - name: Publish to PyPI
+        run: uv publish --token ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
 
-      - name: Build package
-        run: |
-          uv build
-
- 
-
-      - name: Generate release notes
-        id: changelog
-        uses: mikepenz/release-changelog-builder-action@v4
-        with:
-          configuration: ".github/release-changelog-config.json"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-        continue-on-error: true
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          body: ${{ steps.changelog.outputs.changelog || 'Release ' + github.ref_name }}
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-
-      - name: Update CHANGELOG.md
-        run: |
-          echo "${{ steps.changelog.outputs.changelog }}" > CHANGELOG.md
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md
-          git commit -m "chore: update CHANGELOG.md for ${{ github.ref_name }}"
-          git push
-
+  
