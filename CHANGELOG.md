@@ -14,6 +14,8 @@ W## v2.8.0 (2025-07-18)
 
 - simplify release workflow by removing deprecated steps
 
+## v2.8.6 (2025-07-19)
+
 ## v2.8.5 (2025-07-19)
 
 ## v2.8.4 (2025-07-18)
