@@ -14,6 +14,12 @@ W## v2.8.0 (2025-07-18)
 
 - simplify release workflow by removing deprecated steps
 
+## v2.8.4 (2025-07-18)
+
+### Fix
+
+- improve CSRF token handling and enhance security middleware defaults
+
 ## v2.8.3 (2025-07-18)
 
 ### Fix
