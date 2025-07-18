@@ -1,4 +1,4 @@
-## v2.8.1 (2025-07-18)
+W## v2.8.0 (2025-07-18)
 
 ### Feat
 
@@ -14,7 +14,7 @@
 
 - simplify release workflow by removing deprecated steps
 
-## v2.8.0 (2025-07-18)
+## v2.8.2 (2025-07-18)
 
 ### Feat
 
