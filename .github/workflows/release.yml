@@ -42,29 +42,4 @@ jobs:
         run: |
           uv publish --token $PYPI_TOKEN dist/*
 
-      - name: Generate release notes
-        id: changelog
-        uses: mikepenz/release-changelog-builder-action@v4
-        with:
-          configuration: ".github/release-changelog-config.json"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          body: ${{ steps.changelog.outputs.changelog }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-
-      - name: Update CHANGELOG.md
-        run: |
-          echo "${{ steps.changelog.outputs.changelog }}" > CHANGELOG.md
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md
-          git commit -m "chore: update CHANGELOG.md for ${{ github.ref_name }}"
-          git push
-
+  
