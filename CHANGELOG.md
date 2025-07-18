@@ -14,6 +14,12 @@ W## v2.8.0 (2025-07-18)
 
 - simplify release workflow by removing deprecated steps
 
+## v2.8.3 (2025-07-18)
+
+### Fix
+
+- initialize _session_cache in BaseSessionInterface constructor
+
 ## v2.8.2 (2025-07-18)
 
 ### Feat
