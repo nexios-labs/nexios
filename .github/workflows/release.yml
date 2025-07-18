@@ -1,71 +1,70 @@
-name: On Tag Creation
+name: Release on Tag
 
 on:
   push:
     tags:
-      - 'v*'
-
-concurrency:
-  group: tag-release-${{ github.ref }}
-  cancel-in-progress: true
+      - 'v*'  # only triggers on tags like v1.0.0
 
 jobs:
-  detect-release-parameters:
-    runs-on: ubuntu-latest
-    outputs:
-      notes: ${{ steps.generate_notes.outputs.notes }}
-    steps:
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      
-      - name: Get release notes
-        id: generate_notes
-        uses: anmarkoulis/commitizen-changelog-reader@v1.2.0
-        with:
-          tag_name: ${{ github.ref }}
-          changelog: CHANGELOG.md
-          fail_on_missing: false
-
   release:
+    name: Build and Publish Release
     runs-on: ubuntu-latest
-    needs: detect-release-parameters
+
     permissions:
-      contents: write
-      id-token: write
+      contents: write       # to create GitHub release
+      id-token: write       # for OIDC (trusted publishing)
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      
+          fetch-depth: 0  # Required for auto-changelog to get all tags and commits
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
       - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      
-      - name: Setup Virtual Environment
-        run: uv venv
-      
-      - name: Install dependencies
-        run: uv pip install -e ".[dev]"
-      
+
+      - name: Install auto-changelog
+        run: npm install -g auto-changelog
+
       - name: Clean Old Builds
         run: rm -rf dist build *.egg-info
-      
+
+      - name: Setup Virtual Environment
+        run: uv venv
+
+      - name: Install dependencies
+        run: uv pip install -e ".[dev]"
+
       - name: Build the package
         run: uv build
-      
+
+      - name: Generate Changelog
+        run: |
+          auto-changelog --commit-limit false --breaking-pattern "BREAKING CHANGE:"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          git commit -m "chore: update CHANGELOG.md for ${{ github.ref_name }} "
+          git checkout main
+          git push
+
+      - name: Create GitHub Release with Notes
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          files: dist/*
+          body_path: CHANGELOG.md
+
       - name: Publish to PyPI
         run: uv publish --token ${{ secrets.POETRY_PYPI_TOKEN_PYPI }}
 
-  
+      
