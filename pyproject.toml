@@ -188,7 +188,7 @@ known-first-party = ["nexios"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "2.6.2"
+version = "2.7.0"
 version_files = [
     "pyproject.toml:version",
     "nexios/__main__.py:__version__"
