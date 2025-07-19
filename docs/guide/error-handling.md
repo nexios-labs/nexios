@@ -61,8 +61,9 @@ async def get_user(request, response):
     if not user:
         raise HTTPException(detail="User not found", status = 404)
     return response.json(user)
-```
 
+# If you raise a non-HTTPException (e.g., raise ValueError("fail")), Nexios will return a 500 Internal Server Error unless you register a handler for that exception type.
+```
 
 ## Raising HTTP Exceptions
 All HTTP exceptions accept these parameters:
@@ -102,6 +103,7 @@ async def get_premium_content(request, response):
         raise PaymentRequiredException("Upgrade to premium to access this content")
     return response.json({"message": "Premium content available"})
 
+# If your custom exception handler raises an error, Nexios will return a 500 error. Always handle exceptions in your handlers gracefully.
 ```
 
 ## Exception Handlers
@@ -265,11 +267,7 @@ config = MakeConfig({
 | Website          | False       | True     | False         | "Sorry, this page does not exist." |
 | Debugging        | True/False  | Any      | True          | Any                           |
 
-#### Best Practices
-- **APIs:** Always use JSON for errors.
-- **Websites:** Use HTML for a better user experience.
-- **Production:** Never show tracebacks or technical details.
-- **Development:** Enable tracebacks for faster debugging.
+
 
 > **Tip:** You can change these settings at runtime by updating your config and calling `set_config()`.
 ```

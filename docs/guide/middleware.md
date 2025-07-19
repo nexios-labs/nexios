@@ -83,6 +83,10 @@ async def validate_cookies(req, res, next):
         return res.json({"error": "Missing session_id cookie"}, status_code=400)
     await next()
 
+# If you forget to call await next(), the request will hang or time out.
+
+# If you return a response before calling next(), the pipeline is short-circuited and no further middleware or handlers will run.
+
 # Add middleware to the application
 app.add_middleware(my_logger)
 app.add_middleware(request_time)
@@ -159,6 +163,26 @@ class ExampleMiddleware(BaseMiddleware):
    * Used for post-processing tasks like modifying the response or logging.
    * Must return the modified `res` object.
 
+# If you forget to return the response in process_response, the client will not receive the intended response.
+
+# If you use the wrong parameter order in your methods, Nexios will raise an error at startup.
+
+# You can handle errors in middleware by wrapping logic in try/except and returning a custom error response.
+
+```python
+from nexios.middleware import BaseMiddleware
+
+class ErrorCatchingMiddleware(BaseMiddleware):
+    async def process_request(self, req, res, cnext):
+        try:
+            await cnext(req, res)
+        except Exception as exc:
+            return res.json({"error": str(exc)}, status_code=500)
+
+    async def process_response(self, req, res):
+        return res
+```
+
 ***
 
 ## **Route-Specific Middleware**
@@ -180,6 +204,8 @@ async def get_profile(req, res):
 
 **⚙️ Execution Order:**\
 `auth_middleware → get_profile handler → response sent`
+
+# If you forget to call await cnext(req, res) in route-specific middleware, the request will not reach the handler.
 
 ***
 
@@ -370,3 +396,13 @@ class RawMiddleware:
 
 app.wrap_asgi(RawMiddleware, "arg1", "arg2")
 ```
+
+## Troubleshooting
+
+### Common Middleware Mistakes and Solutions
+
+- If you forget to call await next() or cnext(), the request will hang or time out.
+- If you return a response before calling next(), the pipeline is short-circuited and no further middleware or handlers will run.
+- If you use the wrong parameter order in middleware functions or methods, Nexios will raise an error at startup.
+- If you forget to return the response in process_response, the client will not receive the intended response.
+- If you raise an error in middleware and do not handle it, Nexios will return a 500 error.
