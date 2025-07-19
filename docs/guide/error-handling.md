@@ -12,17 +12,6 @@ Error handling in Nexios provides:
 - **Logging Integration**: Automatic error logging and monitoring
 :::
 
-::: tip Error Handling Best Practices
-1. **Use Appropriate Status Codes**: Return the correct HTTP status code for each error
-2. **Provide Meaningful Messages**: Give users helpful error information
-3. **Log Errors**: Always log errors for debugging and monitoring
-4. **Don't Expose Sensitive Data**: Never include sensitive information in error responses
-5. **Handle All Exceptions**: Use global exception handlers for unexpected errors
-6. **Use Custom Exceptions**: Create specific exceptions for your application domain
-7. **Test Error Scenarios**: Write tests for error handling paths
-8. **Monitor Error Rates**: Track error frequencies in production
-:::
-
 ::: tip Common Error Patterns
 - **Validation Errors**: 400 Bad Request for invalid input
 - **Authentication Errors**: 401 Unauthorized for missing/invalid credentials

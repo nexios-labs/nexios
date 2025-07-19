@@ -71,6 +71,7 @@ app = NexiosApp()
 async def my_logger(req, res, next):
     print(f"Received request: {req.method} {req.path}")
     await next()  # Pass control to the next middleware or handler
+    # If you forget to call await next(), the request will hang or time out and the client will not receive a response.
 
 # Middleware 2: Request Timing
 async def request_time(req, res, next):
@@ -82,10 +83,7 @@ async def validate_cookies(req, res, next):
     if "session_id" not in req.cookies:
         return res.json({"error": "Missing session_id cookie"}, status_code=400)
     await next()
-
-# If you forget to call await next(), the request will hang or time out.
-
-# If you return a response before calling next(), the pipeline is short-circuited and no further middleware or handlers will run.
+    # If you return a response before calling next(), the pipeline is short-circuited and no further middleware or handlers will run. This is useful for early exits, such as authentication failures.
 
 # Add middleware to the application
 app.add_middleware(my_logger)
@@ -96,7 +94,6 @@ app.add_middleware(validate_cookies)
 @app.get("/")
 async def hello_world(req, res):
     return res.text("Hello, World!")
-```
 
 ::: tip  💡Tip
 All code before `await next()` is executed before the route handler.
@@ -147,11 +144,14 @@ class ExampleMiddleware(BaseMiddleware):
         """Executed before the request handler."""
         print("Processing Request:", req.method, req.url)
         await cnext(req, res)  # Pass control to the next middleware or handler
+        # If you use the wrong parameter order in your methods, Nexios will raise an error at startup.
+        # If you forget to call await cnext(req, res), the request will not reach the handler and the client will not receive a response.
 
     async def process_response(self, req, res):
         """Executed after the request handler."""
         print("Processing Response:", res.status_code)
         return res  # Must return the modified response
+        # If you forget to return the response in process_response, the client will not receive the intended response.
 ```
 
 ### **Method Breakdown**
@@ -178,9 +178,11 @@ class ErrorCatchingMiddleware(BaseMiddleware):
             await cnext(req, res)
         except Exception as exc:
             return res.json({"error": str(exc)}, status_code=500)
+    # If you raise an error in middleware and do not handle it, Nexios will return a 500 error. Always use try/except for critical middleware logic.
 
     async def process_response(self, req, res):
         return res
+
 ```
 
 ***
@@ -196,6 +198,7 @@ async def auth_middleware(req, res, cnext):
     if not req.headers.get("Authorization"):
         return res.json({"error": "Unauthorized"}, status_code=401)
     await cnext(req, res)
+    # If you forget to call await cnext(req, res) in route-specific middleware, the request will not reach the handler and the client will not receive a response.
 
 @app.route("/profile", "GET", middleware=[auth_middleware])
 async def get_profile(req, res):
@@ -222,6 +225,7 @@ async def admin_auth(req, res, cnext):
     if not req.headers.get("Admin-Token"):
         return res.json({"error": "Forbidden"}, status_code=403)
     await cnext(req, res)
+    # Returning a response before calling cnext will stop further processing for this request.
 
 admin_router.add_middleware(admin_auth)  # Applies to all routes inside admin_router
 
@@ -349,60 +353,68 @@ Modifying the response object should be done after the request is processed. It'
 
 ##  Raw ASGI Middleware
 
-Nexios Allow you to use raw ASGI middleware. This can be useful for adding middleware that needs lower-level control over the ASGI protocol.
+Nexios allows you to use raw ASGI middleware for scenarios where you need lower-level control over the ASGI protocol. This is especially useful when integrating with third-party ASGI middleware, performing operations that require direct access to the ASGI `scope`, or when you need to manipulate the request/response cycle before Nexios processes the request.
+
+Raw ASGI middleware operates directly on the `scope`, `receive`, and `send` callables, and is completely framework-agnostic. Unlike Nexios middleware, it does not have access to Nexios-specific abstractions like `Request` or `Response` objects.
+
+### Function-Based Raw Middleware
+
+A function-based raw middleware wraps the ASGI app and must call the next app in the chain. If you forget to call `await app(scope, receive, send)`, the request will never reach the application and the client will hang.
 
 ```python
 def raw_middleware(app):
     async def middleware(scope, receive, send):
-        ## Do something with scope, receive, send
+        # You can inspect or modify the scope here
+        # For example, add a custom key:
+        scope["custom_key"] = "custom_value"
+        # Always call the next app in the chain
         await app(scope, receive, send)
     return middleware
-```
 
-The `app(scope, receive, send)` function is the next middleware in the chain
-
-**Adding raw middleware**
-
-```python
 app.wrap_asgi(raw_middleware)
-
 ```
 
-::: tip 💡Tip
-The `app` objects is an instance of `NexiosApp` You can access the `app` object in your middleware by calling `app`.
-:::
-#### Class Based Raw Middleware
+If you modify the `scope`, be careful not to overwrite required ASGI keys or introduce security issues. Always validate any changes you make.
 
-```python
-class RawMiddleware:
-    def __init__(self, app):
-        self.app = app
+### Class-Based Raw Middleware
 
-    async def __call__(self, scope, receive, send):
-        ## Do something with scope, receive, send
-        await self.app(scope, receive, send)
-``` 
-
-### Raw Middleware with args
+A class-based raw middleware provides more flexibility and can maintain state between requests if needed. The class must implement the `__call__` method and accept the ASGI app as its first argument.
 
 ```python
 class RawMiddleware:
     def __init__(self, app, *args, **kwargs):
         self.app = app
+        # You can store args/kwargs for configuration
 
     async def __call__(self, scope, receive, send):
-        ## Do something with scope, receive, send
-        await self.app(scope, receive, send)
+        # Perform actions before the request is processed
+        # For example, log the incoming scope
+        print(f"ASGI scope: {scope}")
+        try:
+            await self.app(scope, receive, send)
+        except Exception as exc:
+            # Handle errors gracefully
+            print(f"Error in raw middleware: {exc}")
+            raise
+        # You can also perform actions after the response is sent
 
-app.wrap_asgi(RawMiddleware, "arg1", "arg2")
+app.wrap_asgi(RawMiddleware, some_option=True)
 ```
 
-## Troubleshooting
+If you raise an error in raw middleware and do not handle it, the client will receive a 500 error. Always use try/except for critical logic.
 
-### Common Middleware Mistakes and Solutions
+### When to Use Raw Middleware
 
-- If you forget to call await next() or cnext(), the request will hang or time out.
-- If you return a response before calling next(), the pipeline is short-circuited and no further middleware or handlers will run.
-- If you use the wrong parameter order in middleware functions or methods, Nexios will raise an error at startup.
-- If you forget to return the response in process_response, the client will not receive the intended response.
-- If you raise an error in middleware and do not handle it, Nexios will return a 500 error.
+- Integrating third-party ASGI middleware (e.g., CORS, GZip, Sentry, etc.)
+- Performing low-level request/response manipulation before Nexios processes the request
+- Adding features that require direct access to the ASGI protocol
+- Ensuring compatibility with other ASGI frameworks or tools
+
+### Common Mistakes
+
+- Not calling `await app(scope, receive, send)`: The request will hang and the client will not receive a response.
+- Modifying the `scope` incorrectly: Can break downstream middleware or the application.
+- Not handling exceptions: Unhandled errors will result in a 500 error for the client.
+- Assuming access to Nexios-specific objects: Raw middleware only works with ASGI primitives.
+
+By understanding and using raw ASGI middleware appropriately, you can extend your Nexios application with powerful, low-level features and integrate seamlessly with the broader ASGI ecosystem.
