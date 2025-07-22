@@ -8,7 +8,7 @@ from nexios.utils.async_helpers import is_async_callable
 from nexios.utils.concurrency import run_in_threadpool
 if TYPE_CHECKING:
     from nexios.http import Request, Response
-    from nexios.auth.base import User 
+    from nexios.auth.base import BaseUser 
     from nexios import NexiosApp,Router
 
 
@@ -25,7 +25,7 @@ class Depend:
 class Context:
     def __init__(self, 
                  request: Optional['Request'] = None,
-                 user: Optional['User'] = None,
+                 user: Optional['BaseUser'] = None,
                  base_app: Optional['NexiosApp'] = None,
                  app: Optional['Router'] = None,
                  **kwargs):
