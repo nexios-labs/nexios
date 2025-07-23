@@ -1,19 +1,3 @@
-W## v2.8.0 (2025-07-18)
-
-### Feat
-
-- add virtualenv setup step in release workflow
-- implement new tag creation workflow for releases
-- implement new tag creation workflow for releases
-
-### Fix
-
-- update build command in release workflow
-
-### Refactor
-
-- simplify release workflow by removing deprecated steps
-
 ## v2.9.0 (2025-07-23)
 
 ### Feat
@@ -47,7 +31,7 @@ W## v2.8.0 (2025-07-18)
 
 ### Fix
 
-- initialize _session_cache in BaseSessionInterface constructor
+- initialize \_session_cache in BaseSessionInterface constructor
 
 ## v2.8.2 (2025-07-18)
 
@@ -78,7 +62,7 @@ W## v2.8.0 (2025-07-18)
 
 - update release and triage workflows for consistency
 - resolve issues with dependency merging in Router class
-- add TYPE_CHECKING import for improved type hinting in _builder.py
+- add TYPE_CHECKING import for improved type hinting in \_builder.py
 
 ## v2.7.0 (2025-07-09)
 
@@ -226,7 +210,7 @@ W## v2.8.0 (2025-07-18)
 
 ### Fix
 
-- restore __repr__ method in MakeConfig; add warning for missing secret_key in session handling
+- restore **repr** method in MakeConfig; add warning for missing secret_key in session handling
 - **docs**: improve clarity in concurrency guide and update examples for better understanding
 
 ### Refactor
@@ -249,7 +233,7 @@ W## v2.8.0 (2025-07-18)
 - **docs**: update markdown configuration and correct file data handling in concurrency guide
 - **docs**: correct image upload handling in concurrency guide
 - **request**: cast session to BaseSessionInterface for type safety
-- **application**: restore _setup_openapi call in handle_lifespan method
+- **application**: restore \_setup_openapi call in handle_lifespan method
 - **session**: streamline session configuration access and improve file path handling
 - **session**: improve session configuration handling with getattr for safer access
 - **readme**: update support icon URL to point to the new documentation site
@@ -258,7 +242,7 @@ W## v2.8.0 (2025-07-18)
 
 - **dependencies**: enhance dependency injection to support synchronous and asynchronous handlers
 - move utility functions to a new location and remove deprecated files
-- **middleware**: rename __middleware to _middleware and update imports
+- **middleware**: rename \_\_middleware to \_middleware and update imports
 
 ## v2.4.6 (2025-05-30)
 
@@ -359,7 +343,7 @@ W## v2.8.0 (2025-07-18)
 - set base path for VitePress configuration
 - set base path for VitePress configuration
 - add .nojekyll file to prevent GitHub Pages from ignoring files
-- add .nojekyll file to prevent GitHub Pages from ignoring _files
+- add .nojekyll file to prevent GitHub Pages from ignoring \_files
 - **docs**: update API Reference link and enhance Getting Started section with version badge
 - **docs**: update API Reference link and enhance Getting Started section with version badge
 - **docs**: add OpenAPI section to navigation and enhance OpenAPI documentation links
@@ -454,7 +438,7 @@ W## v2.8.0 (2025-07-18)
 - remove debug print statements and enhance dependency injection in routing
 - **dependencies**: remove old dependency injection implementation and add new one fix(exception_handler): change response from text to json for HTTP exceptions fix(exceptions): update detail type in HTTPException to Any fix(models): update Pydantic model configuration to use ConfigDict test: update assertions in exception handler tests to check for JSON responses
 - **minor**: Remove unused TypeVar and clean up lifespan handling in NexiosApp
-- Update typing imports and lifespan type annotation in __init__.py
+- Update typing imports and lifespan type annotation in **init**.py
 - **docs**: Remove redundant examples and streamline event handling section in events.md
 - Improve type annotations and remove unnecessary type ignores across multiple files
 - update type annotations for middleware functions to improve clarity and consistency
@@ -603,9 +587,9 @@ W## v2.8.0 (2025-07-18)
 - ♻️: remove unused import from routing module
 - ♻️: remove unused imports and clean up HTTPMethod class in types module
 - ♻️: remove APIHandler class; introduce APIView for enhanced class-based views with routing support
-- ♻️: reorganize utils and async_helpers; move functions to _utils and update imports
+- ♻️: reorganize utils and async_helpers; move functions to \_utils and update imports
 - 🔧: remove unused middlewares and update FileResponse initialization in response.py
-- 🔧: rename __handle_lifespan to handle_lifespan and improve message logging in NexiosApp
+- 🔧: rename \_\_handle_lifespan to handle_lifespan and improve message logging in NexiosApp
 - remove database session management and related files
 - remove direct authentication middleware instantiation and simplify BasicAuthBackend initialization
 - remove BaseConfig dependency and implement global configuration management
