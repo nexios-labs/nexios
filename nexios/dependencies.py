@@ -131,6 +131,7 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
         try:
             if is_async_callable(handler):
                 return await handler(**bound_args.arguments)
+            
             else:
                 return await run_in_threadpool(handler, **bound_args.arguments)
         finally:

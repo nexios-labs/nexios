@@ -2295,6 +2295,7 @@ class Router(BaseRouter):
 
         return all_routes
 
+    
     def register(
         self,
         app: ASGIApp,
