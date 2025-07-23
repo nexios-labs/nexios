@@ -59,7 +59,10 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
         except LookupError:
             ctx = None
         for param in params:
-            if isinstance(param.default, Context) and param.name not in bound_args.arguments:
+            if (
+                isinstance(param.default, Context)
+                and param.name not in bound_args.arguments
+            ):
                 bound_args.arguments[param.name] = ctx
 
         # --- Generator/async generator cleanup support ---
@@ -74,9 +77,7 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
             for dep in app_dependencies:
                 dependency_func = dep.dependency
                 if dependency_func is None:
-                    raise ValueError(
-                        f"Dependency  has no provider"
-                    )
+                    raise ValueError("Dependency  has no provider")
                 dep_sig = signature(dependency_func)
                 dep_kwargs = {}
                 for dep_param in dep_sig.parameters.values():
@@ -101,13 +102,9 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
                     value = next(gen)
                     cleanup_callbacks.append(lambda gen=gen: gen.close())
                 elif inspect.iscoroutinefunction(dependency_func):
-                    await dependency_func(
-                        **dep_kwargs
-                    )
+                    await dependency_func(**dep_kwargs)
                 else:
                     dependency_func(**dep_kwargs)
-                
-
 
         for param in params:
             if (
@@ -185,11 +182,11 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
     return wrapped
 
 
-def get_app_dependencies(router :"Router") -> List[Depend]:
+def get_app_dependencies(router: "Router") -> List[Depend]:
     dependencies = []
-    if hasattr(router, 'sub_routers'):
+    if hasattr(router, "sub_routers"):
         for child_router in router.sub_routers.values():
             dependencies.extend(get_app_dependencies(child_router))
-    if hasattr(router, 'dependencies'):
+    if hasattr(router, "dependencies"):
         dependencies.extend(router.dependencies)
     return dependencies
