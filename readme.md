@@ -1,5 +1,4 @@
-
-## `NEXIOS` 
+## `NEXIOS`
 
 <div align="left">
 
@@ -9,7 +8,7 @@
   <a href="">
     <img alt=Support height="350" src="https://nexios-docs.netlify.app/icon.svg"> 
     </p>
-    <h1 align="center">Nexios 2.7.x<br></h1>
+    <h1 align="center">Nexios 2.9.x<br></h1>
     
    </a>
 </p>
@@ -28,7 +27,6 @@
 <a href="https://github.com/nexios-labs/Nexios/network/members"><img title="Fork" src="https://img.shields.io/github/forks/nexios-labs/Nexios?style=social"></a>
 <a href="https://github.com/nexios-labs/Nexios/watchers"><img title="Watching" src="https://img.shields.io/github/watchers/nexios-labs/Nexios?label=Watching&style=social"></a>
 
-
 </br>
 
 <h2 align="center"> Star the repo if u like it🌟
@@ -37,7 +35,6 @@
 Nexios is a high-performance Python web framework. Designed for speed, flexibility, and simplicity, Nexios delivers exceptional performance through its native Rust engine while maintaining the simplicity and elegance of Python. It supports RESTful APIs, authentication, and integrates easily with any ORM. Built for modern web development, Nexios allows developers to quickly spin up scalable, modular apps with minimal boilerplate—ideal for startups, rapid prototyping, and custom backend solutions. Think Django's capability with Rust-powered speed.
 
 ---
-
 
 ## `Installation` 📦
 
@@ -49,26 +46,25 @@ To install **Nexios**, you can use several methods depending on your environment
 pip install nexios
 ```
 
-
 ## Features ✨
 
 - [x] **Routing**
 - [x] **Automatic OpenAPI Documentation**
 - [x] **Session Management**
-- [x] **File Router**  
+- [x] **File Router**
 - [x] **Authentication (Limited)**
-- [x] **Event Listener for Signals** 
+- [x] **Event Listener for Signals**
 - [x] **Middleware Support**
 - [x] **Express-like Functionality**
 - [x] **JWT Authentication**
 - [x] **Pydantic Support**
 - [x] **Dependency Injection**
-- [x] **In-built Support for CORS**  
+- [x] **In-built Support for CORS**
 - [x] **Custom Decorators**
-- [x] **WebSocket Support**  
+- [x] **WebSocket Support**
 - [x] **Custom Error Handling**
 - [x] **Pagination**
-- [x] **HTTP/2 Support**  
+- [x] **HTTP/2 Support**
 - [x] **High-Performance Async Processing**
 
 ### Upcoming Features
@@ -108,13 +104,11 @@ async def get_user():
 
 @app.get("/users")
 async def get_user(request: Request, response: Response, user: Depend(get_user)):
-   
+
     return {"user": user}
 ```
 
-Visit http://localhost:4000/docs to view the Swagger API documentation.  
-
-
+Visit http://localhost:4000/docs to view the Swagger API documentation.
 
 ### Testimonies
 
@@ -130,6 +124,7 @@ Visit http://localhost:4000/docs to view the Swagger API documentation.
 👉 <a href="https://nexios-docs.netlify.app">https://nexios-docs.netlify.app</a>
 
 ## Contributors:
+
 <a href="https://github.com/nexios-labs/nexios/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=nexios-labs/nexios" />
 </a>
@@ -145,5 +140,3 @@ If Nexios has helped you build something awesome, saved you time, or inspired yo
 Every little bit counts — whether it's the cost of a coffee or more. Thank you for believing in the project!
 
 👉 [**Buy Me a Coffee**](https://www.buymeacoffee.com/techwithdul) and support the future of Nexios.
-
-
