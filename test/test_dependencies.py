@@ -240,8 +240,6 @@ async def test_global_dependency(di_client):
     class CustomError(Exception):
         pass
 
-
-
     async def global_dep():
         raise CustomError("global-value")
 
