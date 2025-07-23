@@ -238,13 +238,15 @@ async def test_dependency_injection_with_custom_error(di_client):
 
 async def test_global_dependency(di_client):
     client, _ = di_client
+
     async def global_dep():
-       raise ValueError("global-value")
-    app = get_application(dependencies = [global_dep])
+        raise ValueError("global-value")
+
+    app = get_application(dependencies=[global_dep])
+
     @app.get("/di/global")
     async def global_route(req: Request, res: Response):
         return res.text("should-not-reach-here")
-
 
     response = await client.get("/di/global")
     assert response.status_code == 500

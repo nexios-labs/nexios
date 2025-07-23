@@ -167,7 +167,7 @@ def get_application(
     ] = None,
     lifespan: Optional[Callable[["NexiosApp"], AsyncContextManager[bool]]] = None,
     routes: Optional[list[Router]] = None,
-    dependencies :Optional[list[Depend]] = None
+    dependencies: Optional[list[Depend]] = None,
 ) -> NexiosApp:
     """
     Initializes and returns a `Nexios` application instance, serving as the core entry point for
@@ -206,7 +206,7 @@ def get_application(
         description=description,
         lifespan=lifespan,
         routes=routes,
-        dependencies=dependencies
+        dependencies=dependencies,
     )
 
     return app
