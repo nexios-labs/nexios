@@ -54,12 +54,13 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
 
         # Pass context if handler accepts it and not already provided
         ctx = None
-        if "context" in sig.parameters and "context" not in bound_args.arguments:
-            try:
-                ctx = current_context.get()
-            except LookupError:
-                ctx = None
-            bound_args.arguments["context"] = ctx
+        try:
+            ctx = current_context.get()
+        except LookupError:
+            ctx = None
+        for param in params:
+            if isinstance(param.default, Context) and param.name not in bound_args.arguments:
+                bound_args.arguments[param.name] = ctx
 
         # --- Generator/async generator cleanup support ---
         cleanup_callbacks = []
@@ -68,6 +69,45 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
             if not hasattr(ctx, "_dependency_cleanup"):
                 ctx._dependency_cleanup = []
             cleanup_callbacks = ctx._dependency_cleanup
+        if ctx.base_app:
+            app_dependencies = get_app_dependencies(ctx.base_app.router)
+            for dep in app_dependencies:
+                dependency_func = dep.dependency
+                if dependency_func is None:
+                    raise ValueError(
+                        f"Dependency  has no provider"
+                    )
+                dep_sig = signature(dependency_func)
+                dep_kwargs = {}
+                for dep_param in dep_sig.parameters.values():
+                    if dep_param.name in bound_args.arguments:
+                        dep_kwargs[dep_param.name] = bound_args.arguments[
+                            dep_param.name
+                        ]
+                    elif dep_param.default != Parameter.empty and isinstance(
+                        dep_param.default, Depend
+                    ):
+                        nested_dep = dep_param.default.dependency
+                        if inspect.iscoroutinefunction(nested_dep):
+                            dep_kwargs[dep_param.name] = await nested_dep()
+                        else:
+                            dep_kwargs[dep_param.name] = nested_dep()  # type: ignore[attr-defined]
+                if inspect.isasyncgenfunction(dependency_func):
+                    agen = dependency_func(**dep_kwargs)
+                    value = await agen.__anext__()
+                    cleanup_callbacks.append(lambda agen=agen: agen.aclose())
+                elif inspect.isgeneratorfunction(dependency_func):
+                    gen = dependency_func(**dep_kwargs)
+                    value = next(gen)
+                    cleanup_callbacks.append(lambda gen=gen: gen.close())
+                elif inspect.iscoroutinefunction(dependency_func):
+                    await dependency_func(
+                        **dep_kwargs
+                    )
+                else:
+                    dependency_func(**dep_kwargs)
+                
+
 
         for param in params:
             if (
@@ -143,3 +183,13 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
                     await result
 
     return wrapped
+
+
+def get_app_dependencies(router :"Router") -> List[Depend]:
+    dependencies = []
+    if hasattr(router, 'sub_routers'):
+        for child_router in router.sub_routers.values():
+            dependencies.extend(get_app_dependencies(child_router))
+    if hasattr(router, 'dependencies'):
+        dependencies.extend(router.dependencies)
+    return dependencies
