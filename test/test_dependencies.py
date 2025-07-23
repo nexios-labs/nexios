@@ -214,3 +214,38 @@ async def test_async_generator_dependency(di_client):
     assert response.status_code == 200
     assert response.text == "agen-value"
     assert cleanup == ["start", "cleanup"]
+
+
+async def test_dependency_injection_with_custom_error(di_client):
+    client, app = di_client
+
+    class CustomError(Exception):
+        pass
+
+    async def custom_error_dep():
+        raise CustomError("This is a custom error")
+
+    @app.get("/di/custom-error")
+    async def custom_error_route(
+        req: Request, res: Response, dep: str = Depend(custom_error_dep)
+    ):
+        return res.text("should-not-reach-here")
+
+    response = await client.get("/di/custom-error")
+    assert response.status_code == 500
+    assert "This is a custom error" in response.text
+
+
+async def test_global_dependency(di_client):
+    client, _ = di_client
+    async def global_dep():
+       raise ValueError("global-value")
+    app = get_application(dependencies = [global_dep])
+    @app.get("/di/global")
+    async def global_route(req: Request, res: Response):
+        return res.text("should-not-reach-here")
+
+
+    response = await client.get("/di/global")
+    assert response.status_code == 500
+    assert "global-value" in response.text
