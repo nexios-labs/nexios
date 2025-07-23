@@ -65,7 +65,6 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
             ):
                 bound_args.arguments[param.name] = ctx
 
-        # --- Generator/async generator cleanup support ---
         cleanup_callbacks = []
         # Store cleanup in context if possible
         if ctx is not None:
