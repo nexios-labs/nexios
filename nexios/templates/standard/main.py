@@ -1,10 +1,12 @@
 from nexios import NexiosApp
 
-from config import app_config
+from nexios.templating import render,TemplateEngine
 from routes.index.route import index_router
 
-# Create the application
-app = NexiosApp(title="{{project_name_title}}", config=app_config)
+
+app = NexiosApp()
+engine = TemplateEngine()
+engine.setup_environment()
 
 
 app.mount_router(index_router)

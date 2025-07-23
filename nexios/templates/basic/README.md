@@ -53,7 +53,8 @@ The application will be available at http://127.0.0.1:4000
 ## API Documentation
 
 Once the server is running, visit:
-- http://127.0.0.1:4000/docs - OpenAPI documentation
+
+- http://127.0.0.1:8000/docs - OpenAPI documentation
 
 ## Development
 
