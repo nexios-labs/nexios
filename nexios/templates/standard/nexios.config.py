@@ -1,7 +1,7 @@
-
 from tempfile import template
 from nexios.templating import TemplateConfig
 import os
+
 try:
 
     from dotenv import load_dotenv
@@ -14,8 +14,4 @@ except ImportError:
 title = "{{project_name_title}}"
 
 
-templating = TemplateConfig(
-   template_dir="templates"
-)
-
-
+templating = TemplateConfig(template_dir="templates")

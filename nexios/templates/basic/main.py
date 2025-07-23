@@ -10,8 +10,3 @@ app = NexiosApp(title="{{project_name_title}}")
 async def index(request: Request, response: Response):
     """Homepage route."""
     return {"message": "Welcome to {{project_name_title}}!", "framework": "Nexios"}
-    
-
-
-
-
