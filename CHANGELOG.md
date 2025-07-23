@@ -14,6 +14,25 @@ W## v2.8.0 (2025-07-18)
 
 - simplify release workflow by removing deprecated steps
 
+## v2.9.0 (2025-07-23)
+
+### Feat
+
+- update global dependency test to use custom error handling
+- update README and main application structure, remove unused files, and add new index template
+- add support for dependency injection error handling and global dependencies in tests
+- enhance inject_dependencies to support context and app dependency injection
+- enhance Context initialization with additional parameters for improved middleware functionality
+
+### Fix
+
+- ensure proper handling of async and sync handlers in inject_dependencies function
+- update user type annotation from User to BaseUser in Context class
+
+### Refactor
+
+- simplify dependency injection in Router class
+
 ## v2.8.6 (2025-07-19)
 
 ## v2.8.5 (2025-07-19)
