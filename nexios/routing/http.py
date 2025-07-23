@@ -29,7 +29,7 @@ from nexios._internals._middleware import (
 )
 from nexios._internals._response_transformer import request_response
 from nexios._internals._route_builder import RouteBuilder
-from nexios.dependencies import Depend, inject_dependencies
+from nexios.dependencies import inject_dependencies
 from nexios.events import AsyncEventEmitter
 from nexios.exceptions import NotFoundException
 from nexios.http import Request, Response
@@ -180,7 +180,9 @@ class Routes(BaseRoute):
         self.pattern: Pattern[str] = self.route_info.pattern
         self.param_names = self.route_info.param_names
         self.route_type = self.route_info.route_type
-        self.middleware: typing.List[MiddlewareType] = list(middleware) if middleware else []
+        self.middleware: typing.List[MiddlewareType] = (
+            list(middleware) if middleware else []
+        )
         self.summary = summary
         self.description = description
         self.responses = responses
@@ -2295,7 +2297,6 @@ class Router(BaseRouter):
 
         return all_routes
 
-    
     def register(
         self,
         app: ASGIApp,
@@ -2310,5 +2311,3 @@ class Router(BaseRouter):
         """
 
         self.sub_routers[prefix] = app
-
-    

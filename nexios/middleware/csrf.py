@@ -67,13 +67,19 @@ class CSRFMiddleware(BaseMiddleware):
         ):
             submitted_csrf_token = request.headers.get(self.header_name)
             if not csrf_cookie:
-                response.delete_cookie(self.cookie_name, self.cookie_path, self.cookie_domain)
+                response.delete_cookie(
+                    self.cookie_name, self.cookie_path, self.cookie_domain
+                )
                 return response.text("CSRF token missing from cookies", status_code=403)
             if not submitted_csrf_token:
-                response.delete_cookie(self.cookie_name, self.cookie_path, self.cookie_domain)
+                response.delete_cookie(
+                    self.cookie_name, self.cookie_path, self.cookie_domain
+                )
                 return response.text("CSRF token missing from headers", status_code=403)
             if not self._csrf_tokens_match(csrf_cookie, submitted_csrf_token):
-                response.delete_cookie(self.cookie_name, self.cookie_path, self.cookie_domain)
+                response.delete_cookie(
+                    self.cookie_name, self.cookie_path, self.cookie_domain
+                )
                 return response.text("CSRF token incorrect", status_code=403)
         await call_next()
 

@@ -148,11 +148,13 @@ class ASGIRequestResponseBridge:
         response = Response(request=request)
 
         # Set the context for this request
-        ctx = Context(request=request, 
-                      response=response, 
-                      user = getattr(request, "user", None),
-                      app=request.app,
-                      base_app=getattr(request, "base_app", None))
+        ctx = Context(
+            request=request,
+            response=response,
+            user=getattr(request, "user", None),
+            app=request.app,
+            base_app=getattr(request, "base_app", None),
+        )
         token = current_context.set(ctx)
         try:
             wrapped_receive = request.wrapped_receive
