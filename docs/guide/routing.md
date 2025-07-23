@@ -143,6 +143,11 @@ async def update_item(request, response):
 async def delete_item(request, response):
     item_id = request.path_params.id
     return response.json(None, status_code=204)
+
+# If a required path parameter is missing or invalid, Nexios will return a 422 error.
+# For example, GET /items/abc (when id is expected as int) will return a validation error.
+
+# If you define two routes with the same path and method, Nexios will raise a conflict error at startup.
 ```
 
 ```python [Multiple Methods]
@@ -153,6 +158,8 @@ async def handle_items(request, response):
     elif request.method == "POST":
         data = await request.json
         return response.json(data, status_code=201)
+
+# If you send a request with an unsupported method, Nexios will return a 405 Method Not Allowed.
 ```
 
 ```python [Head/Options]
@@ -165,6 +172,8 @@ async def status(request, response):
 async def items_options(request, response):
     response.headers["Allow"] = "GET, POST, PUT, DELETE"
     return response.json(None)
+
+# If you forget to return a response, Nexios will raise an error indicating the handler did not return a response object.
 ```
 :::
 
@@ -286,6 +295,8 @@ async def get_user(request, response):
     user_id = request.path_params.user_id  # Automatically converted to int
     return response.json({"id": user_id})
 
+# If user_id is not an integer, Nexios will return a 422 error.
+
 @app.get("/files/{filename:str}")
 async def get_file(request, response):
     filename = request.path_params.filename
@@ -295,6 +306,8 @@ async def get_file(request, response):
 async def get_item(request, response):
     item_id = request.path_params.item_id  # UUID object
     return response.json({"id": str(item_id)})
+
+# If item_id is not a valid UUID, Nexios will return a 422 error.
 ```
 
 ```python [Path and Slug]
@@ -307,6 +320,8 @@ async def get_static_file(request, response):
 async def get_post(request, response):
     slug = request.path_params.slug  # URL-friendly string
     return response.json({"slug": slug})
+
+# If the slug does not match the expected pattern, Nexios will return a 422 error.
 ```
 
 ```python [Numeric Types]
@@ -319,6 +334,8 @@ async def get_product(request, response):
 async def get_order(request, response):
     order_id = request.path_params.order_id  # Integer value
     return response.json({"order_id": order_id})
+
+# If price or order_id are not valid numbers, Nexios will return a 422 error.
 ```
 :::
 
@@ -362,6 +379,8 @@ register_url_convertor("email", EmailConvertor())
 async def get_user_by_email(request, response):
     email = request.path_params.email
     return response.json({"email": email})
+
+# If your custom converter raises a ValueError, Nexios will return a 422 error with your message.
 ```
 
 ### Creating Custom Converters
@@ -541,6 +560,8 @@ async def admin_users(request, response):
 
 # All routes in admin_router will have CORS middleware applied
 app.mount_router(admin_router)
+
+# If your middleware raises an exception, the request will be interrupted and a 500 error will be returned. Use try/except in middleware for graceful error handling.
 ```
 
 ## Route Metadata and Documentation
@@ -1124,6 +1145,8 @@ for route_config in routes_config:
     )
     
     app.add_route(route)
+
+# If a dynamically imported handler does not exist or fails to import, Nexios will raise an ImportError at startup.
 ```
 
 ## Route Testing and Debugging
@@ -1164,6 +1187,8 @@ print(f"Matched: {match}")  # None (invalid int)
 
 match, params, allowed = route.match("/users/123", "POST")
 print(f"Method allowed: {allowed}")  # False
+
+# If a route does not match the path or method, Nexios will return a 404 or 405 error as appropriate.
 ```
 
 ## Route Debugging
@@ -1178,6 +1203,8 @@ app = NexiosApp(config=config)
 
 # In debug mode, you'll see detailed route information
 # and better error messages for route matching issues
+
+# In debug mode, route matching errors will include detailed information about why a route did not match.
 ```
 
 ## Performance Considerations

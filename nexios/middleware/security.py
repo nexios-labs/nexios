@@ -168,7 +168,7 @@ class SecurityMiddleware(BaseMiddleware):
         self.ssl_permanent = ssl_permanent
 
         self.cache_control = cache_control
-        self.clear_site_data = clear_site_data
+        self.clear_site_data = clear_site_data or []
         self.dns_prefetch_control = dns_prefetch_control
         self.download_options = download_options
 
@@ -181,11 +181,11 @@ class SecurityMiddleware(BaseMiddleware):
         self.expect_ct_enforce = expect_ct_enforce
         self.expect_ct_report_uri = expect_ct_report_uri
 
-        self.report_to = report_to
-        self.nel = nel
+        self.report_to = report_to or {}
+        self.nel = nel or {}
 
         self.trusted_types = trusted_types
-        self.trusted_types_policies = trusted_types_policies
+        self.trusted_types_policies = trusted_types_policies or []
 
         self.hide_server = hide_server
         self.server_header = server_header

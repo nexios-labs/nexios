@@ -9,14 +9,11 @@ from nexios.config import MakeConfig, get_config
 
 class BaseSessionInterface:
     modified = False
-
     accessed = False
-
     deleted = False
 
-    _session_cache: Dict[str, Any] = {}
-
     def __init__(self, session_key: str) -> None:
+        self._session_cache: Dict[str, Any] = {}
         config = get_config()
         self.session_key = session_key
         if not config.secret_key:

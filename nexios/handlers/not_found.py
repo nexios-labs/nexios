@@ -59,7 +59,7 @@ async def handle_404_error(
     settings = get_config()
 
     debug = settings.debug or False
-    not_found_config = settings.not_fouund
+    not_found_config = settings.not_found
 
     if not_found_config:
         return_json = not_found_config.return_json

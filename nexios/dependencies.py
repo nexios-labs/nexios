@@ -2,10 +2,16 @@ import contextvars
 import inspect
 from functools import wraps
 from inspect import Parameter, signature
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 
 from nexios.utils.async_helpers import is_async_callable
 from nexios.utils.concurrency import run_in_threadpool
+if TYPE_CHECKING:
+    from nexios.http import Request, Response
+    from nexios.auth.base import BaseUser 
+    from nexios import NexiosApp,Router
+
+
 
 
 class Depend:
@@ -17,9 +23,16 @@ class Depend:
 
 
 class Context:
-    def __init__(self, request=None, user=None, **kwargs):
+    def __init__(self, 
+                 request: Optional['Request'] = None,
+                 user: Optional['BaseUser'] = None,
+                 base_app: Optional['NexiosApp'] = None,
+                 app: Optional['Router'] = None,
+                 **kwargs):
         self.request = request
         self.user = user
+        self.base_app = base_app
+        self.app = app
         for k, v in kwargs.items():
             setattr(self, k, v)
 
@@ -118,6 +131,7 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
         try:
             if is_async_callable(handler):
                 return await handler(**bound_args.arguments)
+            
             else:
                 return await run_in_threadpool(handler, **bound_args.arguments)
         finally:

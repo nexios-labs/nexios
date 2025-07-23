@@ -206,6 +206,10 @@ async def hello_world(request, response):
         "status": "success"
     })
 
+# If you forget to use async def for your handler, Nexios will raise an error at startup.
+
+# If you define two routes with the same path and method, Nexios will raise a conflict error at startup.
+
 # Run the application
 if __name__ == "__main__":
     uvicorn.run("main:app")
@@ -250,6 +254,8 @@ curl http://localhost:8000/
 
 # Expected response:
 # {"message": "Hello from Nexios!", "status": "success"}
+
+# If the server is not running or the port is wrong, you'll get a connection error.
 ```
 
 Or simply open your browser and navigate to `http://localhost:8000/`.
@@ -279,6 +285,8 @@ async def hello_world(request, response):
         "message": "Hello from Nexios!",
         "status": "success"
     })
+
+# If you forget to return a response, Nexios will raise an error indicating the handler did not return a response object.
 ```
 
 - `@app.get("/")` decorates a function to handle GET requests to the root path
@@ -291,10 +299,9 @@ async def hello_world(request, response):
 ```python
 if __name__ == "__main__":
     app.run()
-```
 
-- `app.run()` starts the development server
-- This is equivalent to running with uvicorn directly
+# If you run this in production, make sure to use uvicorn or another ASGI server for better performance and reliability.
+```
 
 ## Next Steps
 
@@ -334,6 +341,59 @@ Nexios is built on ASGI, which requires async handlers for optimal performance. 
 ### Can I use synchronous code in my handlers?
 
 While handlers themselves must be async, you can call synchronous functions within them. However, for I/O operations (database queries, HTTP requests, file operations), you should use async alternatives for better performance.
+
+If you call a blocking (sync) function in an async handler, your app may hang or perform poorly. Use `run_in_executor` for heavy sync work:
+
+```python
+import asyncio
+
+def blocking_task():
+    # Some CPU-bound or blocking code
+    ...
+
+@app.get("/heavy")
+async def heavy_route(request, response):
+    result = await asyncio.get_running_loop().run_in_executor(None, blocking_task)
+    return response.json({"result": result})
+```
+
+### What happens if I pass invalid input or miss a required parameter?
+
+If a required parameter is missing or invalid, Nexios will return a 422 error:
+
+```python
+@app.get("/items/{item_id}")
+async def get_item(request, response, item_id: int):
+    return response.json({"item_id": item_id})
+
+# GET /items/abc will return a 422 Unprocessable Entity
+```
+
+### What if my middleware fails?
+
+If your middleware raises an exception, it will interrupt the request and return a 500 error. Use try/except in middleware for graceful error handling:
+
+```python
+from nexios.middleware import BaseMiddleware
+
+
+async def FailingMiddleware(self, request, response, call_next):
+    try:
+        # Your logic here
+        return await call_next()
+    except Exception as exc:
+        return response.json({"error": str(exc)}, status_code=500)
+
+app.add_middleware(FailingMiddleware)
+```
+
+### What if I try to dynamically import a handler that doesn't exist?
+
+If a dynamically imported handler does not exist or fails to import, Nexios will raise an ImportError at startup.
+
+### What if my custom path converter fails?
+
+If your custom converter raises a ValueError, Nexios will return a 422 error with your message.
 
 ### How does Nexios compare to FastAPI/Django/Flask?
 
