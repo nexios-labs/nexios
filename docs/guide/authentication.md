@@ -1,30 +1,6 @@
-# Authentication
+# Authentication in Nexios
 
 Authentication is a critical component of most web applications, enabling you to identify users, protect resources, and provide personalized experiences. Nexios provides a flexible, robust authentication system that's easy to implement and customize for your specific needs.
-
-## Authentication Fundamentals
-
-Authentication in Nexios provides several key benefits:
-
-- **Multiple Backends**: Session, JWT, API Key, and custom backends
-- **Middleware Integration**: Automatic user attachment to requests
-- **Flexible User Models**: Support for any user data structure
-- **Security Best Practices**: Built-in protection against common attacks
-- **Easy Testing**: Simple mocking and testing utilities
-- **Production Ready**: Scalable and secure for production use
-
-## Security Best Practices
-
-When implementing authentication in your Nexios application, follow these security best practices:
-
-1. **Use HTTPS**: Always use HTTPS in production to protect credentials
-2. **Secure Session Storage**: Use secure, encrypted session storage
-3. **JWT Security**: Use strong secrets and appropriate expiration times
-4. **API Key Rotation**: Implement key rotation for long-lived tokens
-5. **Rate Limiting**: Protect authentication endpoints from brute force attacks
-6. **Input Validation**: Validate all authentication inputs
-7. **Error Messages**: Don't reveal sensitive information in error messages
-8. **Logging**: Log authentication events for security monitoring
 
 ## Authentication Flow
 
@@ -45,60 +21,6 @@ The Nexios authentication system is built around three core components:
 - **`Authentication Middleware`**: Processes incoming requests, extracts credentials, and attaches user information to the request
 - **`Authentication Backends`**: Validate credentials and retrieve user information
 - **`User Objects`**: Represent authenticated and unauthenticated users with consistent interfaces
-
-## Basic Authentication Setup
-
-To get started with authentication in Nexios, you need to set up an authentication backend and add the authentication middleware:
-
-```python
-from nexios import NexiosApp
-from nexios.auth.middleware import AuthenticationMiddleware
-from nexios.auth.backends.session import SessionAuthBackend
-
-app = NexiosApp()
-
-async def get_user_by_id(user_id: int):
-    # Load user by ID from your database
-    user = await db.get_user(user_id)
-    if user:
-        return UserModel(
-            id=user.id,
-            username=user.username,
-            email=user.email
-        )
-    return None
-
-# Create authentication backend
-auth_backend = SessionAuthBackend(authenticate_func=get_user_by_id)
-
-# Add authentication middleware
-app.add_middleware(AuthenticationMiddleware(backend=auth_backend))
-```
-
-Once configured, the authentication system will process each request, attempt to authenticate the user, and make the user object available via `request.user`:
-
-```python
-@app.get("/profile")
-async def profile(request, response):
-    if request.user.is_authenticated:
-        return response.json({
-            "id": request.user.id,
-            "username": request.user.username,
-            "email": request.user.email
-        })
-    else:
-        return response.redirect("/login")
-
-@app.get("/admin")
-async def admin_panel(request, response):
-    if not request.user.is_authenticated:
-        return response.json({"error": "Authentication required"}, status_code=401)
-    
-    if not request.user.is_admin:
-        return response.json({"error": "Admin access required"}, status_code=403)
-    
-    return response.json({"message": "Welcome to admin panel"})
-```
 
 ## Authentication Middleware
 
@@ -129,35 +51,17 @@ The authentication middleware follows this process for each request:
 5. **Auth Type Attachment**: An authentication type string is also attached to `request.scope["auth"]`
 6. **Fallback**: If authentication fails, an `UnauthenticatedUser` instance is attached instead
 
-### Multiple Authentication Backends
-
-You can configure multiple authentication backends for different scenarios:
-
-```python
-from nexios.auth.middleware import AuthenticationMiddleware
-from nexios.auth.backends.session import SessionAuthBackend
-from nexios.auth.backends.jwt import JWTAuthBackend
-
-# Create multiple backends
-session_backend = SessionAuthBackend(authenticate_func=get_user_by_id)
-jwt_backend = JWTAuthBackend(
-    secret_key="your-secret-key",
-    authenticate_func=get_user_by_id
-)
-
-# Add middleware with multiple backends
-app.add_middleware(AuthenticationMiddleware(backends=[session_backend, jwt_backend]))
-```
-
 ## Authentication Backends
 
 Nexios includes several built-in authentication backends and allows you to create custom backends for specific needs.
 
-### Built-in Authentication Backends
+---
 
-#### 1. Session Authentication Backend
+### 1. Session Authentication Backend
 
-Session authentication uses server-side sessions to maintain user state:
+Session authentication uses server-side sessions to maintain user state. This is ideal for traditional web applications with browser-based access.
+
+#### Implementation
 
 ```python
 from nexios.auth.backends.session import SessionAuthBackend
@@ -182,28 +86,53 @@ session_backend = SessionAuthBackend(
 app.add_middleware(AuthenticationMiddleware(backend=session_backend))
 ```
 
-**Session Backend Features:**
+#### Key Features
+
 - Checks for a user ID stored in the session (typically set during login)
 - Loads the full user object using the provided loader function
 - Returns an authenticated user if found, or an unauthenticated user otherwise
 - Works with any session storage backend (database, Redis, etc.)
 
-**Login Handler Example:**
+#### Protecting Routes with Session Authentication
+
+```python
+from nexios.auth.decorator import auth
+
+@app.get("/profile")
+@auth(["session"])  # Only allow session-authenticated users
+async def profile(request, response):
+    return response.json({
+        "id": request.user.id,
+        "username": request.user.username,
+        "email": request.user.email
+    })
+
+@app.get("/admin")
+@auth(["session"])
+async def admin_panel(request, response):
+    if not request.user.is_admin:
+        return response.json({"error": "Admin access required"}, status_code=403)
+
+    return response.json({"message": "Welcome to admin panel"})
+```
+
+#### Login/Logout Handlers
+
 ```python
 @app.post("/login")
 async def login(request, response):
     data = await request.json
     username = data.get("username")
     password = data.get("password")
-    
+
     # Validate credentials
     user = await validate_credentials(username, password)
     if not user:
         return response.json({"error": "Invalid credentials"}, status_code=401)
-    
+
     # Store user ID in session
     request.session["user_id"] = user.id
-    
+
     return response.json({"message": "Login successful"})
 
 @app.post("/logout")
@@ -213,16 +142,21 @@ async def logout(request, response):
     return response.json({"message": "Logout successful"})
 ```
 
-#### 2. JWT Authentication Backend
+---
 
-JWT (JSON Web Token) authentication uses stateless tokens:
+### 2. JWT Authentication Backend
+
+JWT (JSON Web Token) authentication uses stateless tokens, ideal for APIs and single-page applications.
+
+#### Implementation
 
 ```python
 from nexios.auth.backends.jwt import JWTAuthBackend
 import jwt
 
-async def get_user_by_id(user_id: int):
+async def get_user_by_id(**payload):
     # Load user from database
+    user_id = payload.get("user_id")
     user = await db.get_user(user_id)
     if user:
         return UserModel(
@@ -232,25 +166,44 @@ async def get_user_by_id(user_id: int):
         )
     return None
 
-jwt_backend = JWTAuthBackend(
-    secret_key="your-super-secret-jwt-key",
-    algorithm="HS256",  # Optional, default is HS256
-    token_prefix="Bearer",  # Optional, default is "Bearer"
-    authenticate_func=get_user_by_id,  # Function to load user by ID
-    auth_header_name="Authorization"  # Optional, default is "Authorization"
-)
+jwt_backend = JWTAuthBackend(authenticate_func=get_user_by_id)
 
 app.add_middleware(AuthenticationMiddleware(backend=jwt_backend))
 ```
 
-**JWT Backend Features:**
+#### Key Features
+
 - Extracts a JWT token from the Authorization header
 - Validates the token signature, expiration, etc.
 - Extracts the user ID from the token claims
 - Loads the full user object using the provided loader function
 - Supports custom claims and validation
 
-**JWT Login Handler Example:**
+#### Protecting Routes with JWT Authentication
+
+```python
+from nexios.auth.decorator import auth
+
+@app.get("/profile")
+@auth(["jwt"])  # Only allow JWT-authenticated users
+async def profile(request, response):
+    return response.json({
+        "id": request.user.id,
+        "username": request.user.username,
+        "email": request.user.email
+    })
+
+@app.get("/admin")
+@auth(["jwt"])
+async def admin_panel(request, response):
+    if not request.user.is_admin:
+        return response.json({"error": "Admin access required"}, status_code=403)
+
+    return response.json({"message": "Welcome to admin panel"})
+```
+
+#### JWT Token Generation
+
 ```python
 import jwt
 from datetime import datetime, timedelta
@@ -260,12 +213,12 @@ async def login(request, response):
     data = await request.json
     username = data.get("username")
     password = data.get("password")
-    
+
     # Validate credentials
     user = await validate_credentials(username, password)
     if not user:
         return response.json({"error": "Invalid credentials"}, status_code=401)
-    
+
     # Create JWT token
     payload = {
         "user_id": user.id,
@@ -273,39 +226,23 @@ async def login(request, response):
         "exp": datetime.utcnow() + timedelta(hours=24),
         "iat": datetime.utcnow()
     }
-    
+
     token = jwt.encode(payload, "your-super-secret-jwt-key", algorithm="HS256")
-    
+
     return response.json({
         "message": "Login successful",
         "token": token,
         "expires_in": 86400  # 24 hours in seconds
     })
-
-@app.post("/refresh")
-async def refresh_token(request, response):
-    if not request.user.is_authenticated:
-        return response.json({"error": "Authentication required"}, status_code=401)
-    
-    # Create new token
-    payload = {
-        "user_id": request.user.id,
-        "username": request.user.username,
-        "exp": datetime.utcnow() + timedelta(hours=24),
-        "iat": datetime.utcnow()
-    }
-    
-    token = jwt.encode(payload, "your-super-secret-jwt-key", algorithm="HS256")
-    
-    return response.json({
-        "token": token,
-        "expires_in": 86400
-    })
 ```
 
-#### 3. API Key Authentication Backend
+---
 
-API key authentication is commonly used for service-to-service communication:
+### 3. API Key Authentication Backend
+
+API key authentication is commonly used for service-to-service communication and machine-to-machine APIs.
+
+#### Implementation
 
 ```python
 from nexios.auth.backends.apikey import APIKeyBackend
@@ -330,46 +267,35 @@ api_key_backend = APIKeyBackend(
 app.add_middleware(AuthenticationMiddleware(backend=api_key_backend))
 ```
 
-**API Key Backend Features:**
+#### Key Features
+
 - Extracts an API key from the specified header
 - Loads the full user object using the provided loader function
 - Returns an authenticated user if found, or an unauthenticated user otherwise
 - Ideal for service-to-service authentication
 
-**API Key Management Example:**
-```python
-@app.post("/api-keys")
-async def create_api_key(request, response):
-    if not request.user.is_authenticated:
-        return response.json({"error": "Authentication required"}, status_code=401)
-    
-    # Generate API key
-    api_key = generate_secure_api_key()
-    
-    # Store API key in database
-    await db.store_api_key(request.user.id, api_key)
-    
-    return response.json({
-        "api_key": api_key,
-        "created_at": datetime.utcnow().isoformat()
-    })
+#### Protecting Routes with API Key Authentication
 
-@app.delete("/api-keys/{key_id}")
-async def revoke_api_key(request, response):
-    if not request.user.is_authenticated:
-        return response.json({"error": "Authentication required"}, status_code=401)
-    
-    key_id = request.path_params.key_id
-    
-    # Revoke API key
-    await db.revoke_api_key(request.user.id, key_id)
-    
-    return response.json({"message": "API key revoked"})
+```python
+from nexios.auth.decorator import auth
+
+@app.get("/api/data")
+@auth(["apikey"])  # Only allow API key authenticated requests
+async def get_data(request, response):
+    if not request.user.has_permission("read_data"):
+        return response.json({"error": "Insufficient permissions"}, status_code=403)
+
+    data = await fetch_data()
+    return response.json(data)
 ```
 
-## Creating a Custom Authentication Backend
+---
+
+## Creating and Using Custom Authentication Backends
 
 You can create custom authentication backends by implementing the `AuthenticationBackend` abstract base class:
+
+### Custom Backend Implementation
 
 ```python
 from nexios.auth.base import AuthenticationBackend, BaseUser, UnauthenticatedUser
@@ -391,21 +317,20 @@ class CustomAuthBackend(AuthenticationBackend):
     async def authenticate(self, request, response):
         # Extract credentials from the request
         custom_header = request.headers.get("X-Custom-Auth")
-        
+
         if not custom_header:
             return UnauthenticatedUser()
-        
+
         # Validate custom authentication logic
         user = await self.validate_custom_auth(custom_header)
-        
+
         if user:
             return user, "custom"
-        
+
         return UnauthenticatedUser()
-    
+
     async def validate_custom_auth(self, auth_header):
         # Implement your custom authentication logic
-        # This could involve checking against a database, external service, etc.
         if auth_header == "valid-token":
             return CustomUser(id=1, username="custom_user", is_admin=True)
         return None
@@ -413,6 +338,43 @@ class CustomAuthBackend(AuthenticationBackend):
 # Use the custom backend
 custom_backend = CustomAuthBackend()
 app.add_middleware(AuthenticationMiddleware(backend=custom_backend))
+```
+
+### Protecting Routes with Custom Authentication
+
+```python
+from nexios.auth.decorator import auth
+
+@app.get("/custom-protected")
+@auth(["custom"])  # Only allow custom-authenticated users
+async def custom_protected_route(request, response):
+    return response.json({
+        "message": "Access granted to custom protected route",
+        "user": request.user.username
+    })
+
+@app.get("/custom-admin")
+@auth(["custom"])
+async def custom_admin_route(request, response):
+    if not request.user.is_admin:
+        return response.json({"error": "Admin access required"}, status_code=403)
+
+    return response.json({"message": "Welcome to custom admin panel"})
+```
+
+### Login Handler for Custom Authentication
+
+```python
+@app.post("/custom-login")
+async def custom_login(request, response):
+    # In a real implementation, you would validate credentials
+    # and return a custom token or authentication method
+
+    # For this example, we'll just return a valid token
+    return response.json({
+        "message": "Custom login successful",
+        "token": "valid-token"  # This would be validated by our custom backend
+    })
 ```
 
 ## User Models
@@ -483,51 +445,18 @@ class User(BaseUser):
         return self.role in feature_permissions.get(feature, [])
 ```
 
-## Authentication Decorators
-
-Nexios provides decorators to simplify authentication checks:
-
-```python
-from nexios.auth.decorator import login_required, permission_required
-
-@app.get("/profile")
-@login_required
-async def profile(request, response):
-    # User is guaranteed to be authenticated here
-    return response.json({
-        "id": request.user.id,
-        "username": request.user.username,
-        "email": request.user.email
-    })
-
-@app.get("/admin")
-@permission_required("admin")
-async def admin_panel(request, response):
-    # User is guaranteed to have admin permission
-    return response.json({"message": "Welcome to admin panel"})
-
-@app.get("/moderate")
-@permission_required(["admin", "moderator"])
-async def moderation_panel(request, response):
-    # User is guaranteed to have admin or moderator permission
-    return response.json({"message": "Welcome to moderation panel"})
-```
-
 ## Error Handling
 
 ### Authentication Exceptions
 
 ```python
-from nexios.auth.exceptions import AuthenticationFailed, PermissionDenied
+from nexios.auth.exceptions import AuthenticationFailed
 
 @app.get("/protected")
 async def protected_route(request, response):
     if not request.user.is_authenticated:
         raise AuthenticationFailed("Authentication required")
-    
-    if not request.user.is_admin():
-        raise PermissionDenied("Admin access required")
-    
+
     return response.json({"message": "Access granted"})
 ```
 
@@ -540,142 +469,6 @@ async def handle_auth_failed(request, response, exc):
         "error": "Authentication failed",
         "message": str(exc)
     }, status_code=401)
-
-@app.add_exception_handler(PermissionDenied)
-async def handle_permission_denied(request, response, exc):
-    return response.json({
-        "error": "Permission denied",
-        "message": str(exc)
-    }, status_code=403)
-```
-
-## Testing Authentication
-
-### Mocking Authentication
-
-```python
-import pytest
-from nexios.testing import TestClient
-from nexios.auth.base import BaseUser
-
-class MockUser(BaseUser):
-    def __init__(self, id=1, username="test_user", is_admin=False):
-        self.id = id
-        self.username = username
-        self.is_admin = is_admin
-
-    @property
-    def is_authenticated(self):
-        return True
-
-@pytest.fixture
-def authenticated_client():
-    client = TestClient(app)
-    
-    # Mock authenticated user
-    client.app.scope["user"] = MockUser(id=1, username="test_user")
-    client.app.scope["auth"] = "session"
-    
-    return client
-
-def test_protected_route(authenticated_client):
-    response = authenticated_client.get("/profile")
-    assert response.status_code == 200
-    assert response.json()["username"] == "test_user"
-
-def test_admin_route(authenticated_client):
-    # Mock admin user
-    authenticated_client.app.scope["user"] = MockUser(
-        id=1, username="admin", is_admin=True
-    )
-    
-    response = authenticated_client.get("/admin")
-    assert response.status_code == 200
-```
-
-### Integration Testing
-
-```python
-async def test_login_flow(client):
-    # Test login
-    login_data = {"username": "test_user", "password": "password123"}
-    response = await client.post("/login", json=login_data)
-    assert response.status_code == 200
-    
-    # Test accessing protected route
-    response = await client.get("/profile")
-    assert response.status_code == 200
-    
-    # Test logout
-    response = await client.post("/logout")
-    assert response.status_code == 200
-    
-    # Test accessing protected route after logout
-    response = await client.get("/profile")
-    assert response.status_code == 302  # Redirect to login
-```
-
-## Security Considerations
-
-### Password Security
-
-```python
-import bcrypt
-
-def hash_password(password: str) -> str:
-    salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
-
-def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
-
-@app.post("/register")
-async def register(request, response):
-    data = await request.json
-    username = data.get("username")
-    password = data.get("password")
-    email = data.get("email")
-    
-    # Hash password before storing
-    hashed_password = hash_password(password)
-    
-    # Store user in database
-    user = await db.create_user(username, hashed_password, email)
-    
-    return response.json({"message": "User created successfully"}, status_code=201)
-```
-
-### Rate Limiting
-
-```python
-from nexios.middleware import RateLimitMiddleware
-
-# Add rate limiting to authentication endpoints
-app.add_middleware(RateLimitMiddleware(
-    rate_limit=5,  # 5 requests
-    time_window=60  # per minute
-))
-
-@app.post("/login")
-async def login(request, response):
-    # Login logic here
-    pass
-```
-
-### Session Security
-
-```python
-from nexios.session import SessionMiddleware
-
-# Configure secure session middleware
-app.add_middleware(SessionMiddleware(
-    secret_key="your-secret-key",
-    max_age=3600,  # 1 hour
-    secure=True,  # HTTPS only
-    httponly=True,  # Prevent XSS
-    samesite="strict"  # Prevent CSRF
-))
 ```
 
 This comprehensive authentication guide covers all aspects of implementing secure authentication in Nexios applications. The authentication system is designed to be flexible, secure, and easy to use while providing the power to handle complex authentication scenarios.
-
