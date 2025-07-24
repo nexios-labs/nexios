@@ -30,7 +30,7 @@ features:
       - Event-driven architecture
       Perfect for building real-time applications and APIs.
 
-  - icon: 🎯 
+  - icon: 🎯
     title: Clean Architecture
     details: |
       Modular design with clear separation of concerns:
@@ -87,12 +87,12 @@ features:
       - Authentication backends
       - Template engines
       - Database integrations
-
 ---
 
 ## Quick Start
 
 ::: code-group
+
 ```bash [Install]
 # Create virtual environment
 python -m venv venv
@@ -133,6 +133,7 @@ app = NexiosApp(
     version="1.0.0"
 )
 ```
+
 :::
 
 ::: tip Quick Development
@@ -144,6 +145,7 @@ Use `nexios run --reload` for automatic reloading during development.
 ### Type-Safe Routing
 
 ::: code-group
+
 ```python [Basic Routes]
 @app.get("/users/{user_id:int}")
 async def get_user(request, response):
@@ -176,11 +178,13 @@ async def get_user_post(request, response):
         "post_id": str(post_id)
     })
 ```
+
 :::
 
 ### WebSocket Support
 
 ::: code-group
+
 ```python [Basic WebSocket]
 @app.ws_route("/ws")
 async def websocket_endpoint(websocket):
@@ -200,7 +204,7 @@ from nexios.websockets import Channel
 async def chat_room(websocket, room_id: str):
     channel = Channel(f"room:{room_id}")
     await channel.connect(websocket)
-    
+
     try:
         while True:
             message = await websocket.receive_json()
@@ -208,11 +212,13 @@ async def chat_room(websocket, room_id: str):
     except WebSocketDisconnect:
         await channel.disconnect(websocket)
 ```
+
 :::
 
 ### Middleware System
 
 ::: code-group
+
 ```python [Basic Middleware]
 from nexios.middleware import BaseMiddleware
 
@@ -239,7 +245,7 @@ auth = AuthenticationMiddleware(
       )
 )
 
-app.add_middleware(auth.middleware)
+app.add_middleware(auth)
 
 @app.get("/protected")
 @auth(["jwt"])
@@ -247,11 +253,13 @@ async def protected(request, response):
     user = request.user
     return response.json({"message": f"Hello {user.username}"})
 ```
+
 :::
 
 ### Dependency Injection
 
 ::: code-group
+
 ```python [Basic DI]
 from nexios import Depend
 
@@ -274,8 +282,8 @@ async def get_async_db():
 
 @app.get("/users")
 async def list_users(
-    request, 
-    response, 
+    request,
+    response,
     db=Depend(get_db)  # or db=Depend(get_async_db)
 ):
     users = await db.query("SELECT * FROM users")
@@ -292,25 +300,28 @@ async def get_current_user(
 
 @app.get("/profile")
 async def profile(
-    request, 
+    request,
     response,
     user=Depend(get_current_user)
 ):
     return response.json(user.to_dict())
 ```
+
 :::
 
 ::: tip Production Ready
 Nexios is built for production use with:
+
 - Comprehensive error handling
 - Security best practices
 - Performance optimizations
 - Monitoring support
-:::
+  :::
 
 ::: warning Python Version
 Nexios requires Python 3.9+ for:
+
 - Native async/await
 - Type hints
 - Modern language features
-:::
+  :::
