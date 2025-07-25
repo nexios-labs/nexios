@@ -26,7 +26,7 @@ async def get_items(req, res):
 
 @app.get("/api/items/{item_id:int}")
 async def get_item(req, res):
-    item_id = req.path_params['item_id']
+    item_id = req.path_params.item_id
     return res.json({"id": item_id, "name": f"Item {item_id}"})
 
 if __name__ == "__main__":
@@ -71,16 +71,25 @@ async def upload_files(req, res):
     files = await req.files
     uploaded = []
     for name, file in files.items():
+        # Read file content for processing/saving
+        file_content = await file.read()
+        file_path = UPLOAD_DIR / file.filename
+        
+        # Save file to disk
+        with open(file_path, "wb") as f:
+            f.write(file_content)
+        
         uploaded.append({
             "filename": file.filename,
             "content_type": file.content_type,
-            "size": len(await file.read()),
+            "size": len(file_content),
+            "saved_path": str(file_path)
         })
     return res.json({"uploaded": uploaded})
 
 @app.get("/files/{filename}")
 async def download_file(req, res):
-    filename = req.path_params['filename']
+    filename = req.path_params.filename
     filepath = UPLOAD_DIR / filename
     if not filepath.exists():
         return res.json({"error": "File not found"}, status_code=404)
@@ -109,7 +118,7 @@ app.add_middleware(AuthenticationMiddleware(backend=session_backend))
 async def protected(req, res):
     user = req.user
     if user and user.is_authenticated:
-        return res.json({"message": f"Hello, {user['username']}!"})
+        return res.json({"message": f"Hello, {user.username}!"})
     return res.json({"error": "Not authenticated"}, status_code=401)
 ```
 
@@ -181,7 +190,7 @@ async def error_route(req, res):
     raise HTTPException(400, "This is a bad request!")
 
 @app.exception_handler(HTTPException)
-async def handle_http_exception(req, exc):
+async def handle_http_exception(req, res, exc):
     return res.json({"error": exc.detail}, status_code=exc.status_code)
 ```
 
@@ -218,7 +227,7 @@ chat_rooms: Dict[str, Set[WebSocket]] = {}
 
 @app.ws_route("/ws/chat/{room_id}")
 async def chat_room(websocket: WebSocket):
-    room_id = websocket.path_params["room_id"]
+    room_id = websocket.path_params.room_id
     await websocket.accept()
     if room_id not in chat_rooms:
         chat_rooms[room_id] = set()
@@ -337,17 +346,17 @@ app = NexiosApp()
 
 @app.get("/products/{product_id:int}")
 async def get_product(req: Request, res: Response):
-    product_id = req.path_params["product_id"]
+    product_id = req.path_params.product_id
     return res.json({"product_id": product_id, "type": "integer"})
 
 @app.get("/categories/{category_name:str}")
 async def get_category(req: Request, res: Response):
-    category_name = req.path_params["category_name"]
+    category_name = req.path_params.category_name
     return res.json({"category_name": category_name, "type": "string"})
 
 @app.get("/wildcard/{wildcard_path:path}")
 async def get_wildcard(req: Request, res: Response):
-    wildcard_path = req.path_params["wildcard_path"]
+    wildcard_path = req.path_params.wildcard_path
     return res.json({"wildcard_path": wildcard_path, "type": "path"})
 ```
 

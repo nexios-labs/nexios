@@ -96,9 +96,9 @@ async def index(request, response):
     })
 
 # Handler with path parameters
-@app.get("/users/{user_id:int}",user_id)
+@app.get("/users/{user_id:int}")
 async def get_user(request, response):
-   
+    user_id = request.path_params.user_id
     return response.json({
         "id": user_id,
         "name": "John Doe"

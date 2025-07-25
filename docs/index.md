@@ -147,6 +147,10 @@ Use `nexios run --reload` for automatic reloading during development.
 ::: code-group
 
 ```python [Basic Routes]
+from nexios import NexiosApp
+
+app = NexiosApp()
+
 @app.get("/users/{user_id:int}")
 async def get_user(request, response):
     user_id = request.path_params.user_id  # Automatically int
@@ -169,6 +173,11 @@ async def create_user(request, response):
 ```
 
 ```python [Advanced Routing]
+from nexios import NexiosApp
+from uuid import UUID
+
+app = NexiosApp()
+
 @app.get("/users/{user_id:int}/posts/{post_id:uuid}")
 async def get_user_post(request, response):
     user_id = request.path_params.user_id

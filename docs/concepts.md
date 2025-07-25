@@ -23,14 +23,14 @@ graph TD
 The router is responsible for URL pattern matching and request routing. Nexios uses a tree-based router for efficient routing:
 
 ```python
-from nexios import Router
+from nexios import NexiosApp
 
-router = Router()
+app = NexiosApp()
 
-@router.get("/users/{user_id}")
-async def get_user(request):
-    user_id = request.path_params["user_id"]
-    return {"user_id": user_id}
+@app.get("/users/{user_id}")
+async def get_user(request, response):
+    user_id = request.path_params.user_id
+    return response.json({"user_id": user_id})
 ```
 
 ### 2. Middleware
@@ -38,12 +38,13 @@ Middleware provides a way to process requests/responses before/after they reach 
 
 ```python
 from nexios import Middleware
+from nexios.exceptions import HTTPException
 
 class AuthMiddleware(Middleware):
     async def process_request(self, request):
         token = request.headers.get("Authorization")
         if not token:
-            raise UnauthorizedError()
+            raise HTTPException(401, "Authorization token required")
         request.user = await validate_token(token)
 ```
 
@@ -84,10 +85,11 @@ Always validate and sanitize user inputs to prevent injection attacks:
 ```python
 from nexios.validation import validate_input
 
-@router.post("/users")
-async def create_user(request):
-    data = await validate_input(request.json(), UserSchema)
+@app.post("/users")
+async def create_user(request, response):
+    data = await validate_input(await request.json, UserSchema)
     # Proceed with validated data
+    return response.json({"status": "success", "data": data})
 ```
 :::
 
@@ -96,12 +98,17 @@ async def create_user(request):
 Nexios provides first-class WebSocket support:
 
 ```python
-@router.websocket("/ws")
+@app.ws_route("/ws")
 async def websocket_endpoint(websocket):
     await websocket.accept()
-    while True:
-        data = await websocket.receive_json()
-        await websocket.send_json({"message": "Received"})
+    try:
+        while True:
+            data = await websocket.receive_json()
+            await websocket.send_json({"message": "Received"})
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+    finally:
+        await websocket.close()
 ```
 
 ## Authentication
@@ -114,15 +121,21 @@ Nexios supports multiple authentication methods:
 :::
 
 ```python
-from nexios.auth import JWTAuth
+from nexios.auth.backends.jwt import JWTAuthBackend
+from nexios.auth.middleware import AuthenticationMiddleware
 
-auth = JWTAuth(secret_key="your-secret")
+# Setup JWT authentication
+async def get_user_from_payload(**payload):
+    # Your user lookup logic here
+    return {"username": payload.get("sub")}
 
-@router.get("/protected")
-@auth.required()
-async def protected_route(request):
+jwt_backend = JWTAuthBackend(authenticate_func=get_user_from_payload)
+auth_middleware = AuthenticationMiddleware(backend=jwt_backend)
+
+@app.get("/protected")
+async def protected_route(request, response):
     user = request.user  # Authenticated user
-    return {"message": f"Hello {user.username}"}
+    return response.json({"message": f"Hello {user.username}"})
 ```
 
 ## Performance Optimization
@@ -137,14 +150,16 @@ async def protected_route(request):
 ```python
 from nexios.exceptions import HTTPException
 
-@router.exception_handler(404)
-async def not_found(request, exc):
-    return {"error": "Resource not found"}, 404
+@app.exception_handler(404)
+async def not_found(request, response, exc):
+    return response.json({"error": "Resource not found"}, status_code=404)
 
-@router.exception_handler(Exception)
-async def server_error(request, exc):
+@app.exception_handler(Exception)
+async def server_error(request, response, exc):
     # Log the error
-    return {"error": "Internal server error"}, 500
+    import logging
+    logging.error(f"Server error: {exc}")
+    return response.json({"error": "Internal server error"}, status_code=500)
 ```
 
 ## Testing
@@ -171,6 +186,6 @@ async def test_endpoint():
 
 ## Next Steps
 
-- [API Examples](/api-examples)
-- [Markdown Examples](/markdown-examples)
-- [Documentation Guide](/docs)
+- [API Examples](./api-examples.md)
+- [Markdown Examples](./markdown-examples.md)
+- [Documentation Guide](./docs.md)

@@ -8,7 +8,7 @@
   <a href="">
     <img alt=Support height="350" src="https://nexios-docs.netlify.app/icon.svg"> 
     </p>
-    <h1 align="center">Nexios 2.9.x<br></h1>
+    <h1 align="center">Nexios 2.9.0<br></h1>
     
    </a>
 </p>
@@ -38,12 +38,23 @@ Nexios is a high-performance Python web framework. Designed for speed, flexibili
 
 ## `Installation` 📦
 
+**Requirements:**
+- Python 3.9 or higher
+- pip (Python package manager)
+
 To install **Nexios**, you can use several methods depending on your environment and preferred package manager. Below are the instructions for different package managers:
 
 ### 1. **From `pip`** (Standard Python Package Manager)
 
 ```bash
+# Ensure you have Python 3.9+
+python --version
+
+# Install Nexios
 pip install nexios
+
+# Or install with specific version
+pip install nexios==2.9.0
 ```
 
 ## Features ✨
