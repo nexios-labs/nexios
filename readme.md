@@ -39,6 +39,7 @@ Nexios is a high-performance Python web framework. Designed for speed, flexibili
 ## `Installation` 📦
 
 **Requirements:**
+
 - Python 3.9 or higher
 - pip (Python package manager)
 
@@ -141,6 +142,8 @@ Visit http://localhost:4000/docs to view the Swagger API documentation.
 </a>
 
 ---
+
+> Nexios is currently in active development. The current version is not yet considered stable.We're working towards a stable 3.x.x release. Please be aware that breaking changes may occur in versions before 3.x.
 
 ## ☕ Donate to Support Nexios
 

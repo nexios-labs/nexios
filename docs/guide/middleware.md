@@ -8,15 +8,17 @@ Middleware in Nexios is a powerful feature that allows you to intercept, process
 
 ::: tip Middleware Fundamentals
 Middleware in Nexios provides:
+
 - **Request/Response Pipeline**: Process requests before and after handlers
 - **Cross-cutting Concerns**: Implement logging, auth, CORS, etc. once
 - **Modular Design**: Each middleware has a single responsibility
 - **Reusability**: Middleware can be shared across different routes
 - **Order Control**: Middleware executes in the order they're added
 - **Error Handling**: Middleware can catch and handle exceptions
-:::
+  :::
 
 ::: tip Middleware Best Practices
+
 1. **Single Responsibility**: Each middleware should do one thing well
 2. **Order Matters**: Add middleware in logical order (auth before business logic)
 3. **Error Handling**: Always handle exceptions gracefully
@@ -24,9 +26,10 @@ Middleware in Nexios provides:
 5. **Reusability**: Design middleware to be reusable across projects
 6. **Documentation**: Document what each middleware does and its requirements
 7. **Testing**: Test middleware in isolation and with your application
-:::
+   :::
 
 ::: tip Common Middleware Patterns
+
 - **Authentication**: Verify user identity and permissions
 - **Logging**: Record request/response information
 - **CORS**: Handle cross-origin requests
@@ -35,9 +38,9 @@ Middleware in Nexios provides:
 - **Security Headers**: Add security-related HTTP headers
 - **Request Validation**: Validate and sanitize request data
 - **Response Transformation**: Modify responses before sending
-:::
+  :::
 
-***
+---
 
 ## **How Middleware Works**
 
@@ -52,11 +55,12 @@ Middleware functions are executed in a sequence, forming a pipeline that process
 
 ::: tip Middleware Flow
 The middleware pipeline follows this pattern:
+
 1. **Pre-processing**: Execute code before the handler
 2. **Call next()**: Pass control to the next middleware or handler
 3. **Post-processing**: Execute code after the handler returns
 4. **Return response**: Send the final response back to the client
-:::
+   :::
 
 ## **Basic Middleware Example**
 
@@ -95,7 +99,9 @@ app.add_middleware(validate_cookies)
 async def hello_world(req, res):
     return res.text("Hello, World!")
 
-::: tip  💡Tip
+```
+
+::: tip 💡Tip
 All code before `await next()` is executed before the route handler.
 :::
 
@@ -118,23 +124,25 @@ Middleware functions are executed in the order they are added. The flow of execu
 ←──── Final response sent
 
 ```
-::: tip  💡Tip
- Middleware functions are executed in the order they are added. Ensure that middleware with dependencies (e.g., authentication before authorization) is added in the correct sequence.
+
+::: tip 💡Tip
+Middleware functions are executed in the order they are added. Ensure that middleware with dependencies (e.g., authentication before authorization) is added in the correct sequence.
 :::
-***
 
-##  What is `cnext`?
+---
+
+## What is `cnext`?
+
 In Nexios, middleware functions rely on a continuation callback (commonly called next, cnext, or callnext) to pass control to the next stage of the request pipeline. This parameter is crucial for request flow but its name is completely flexible — you're free to call it whatever makes sense for your codebase.
-
 
 ## **Class-Based Middleware**
 
 Nexios supports class-based middleware for better organization and reusability. A class-based middleware must inherit from `BaseMiddleware` and implement the following methods:
 
-* **`process_request(req, res, cnext)`** – Executed before the request reaches the handler.
-* **`process_response(req, res)`** – Executed after the handler has processed the request.
+- **`process_request(req, res, cnext)`** – Executed before the request reaches the handler.
+- **`process_response(req, res)`** – Executed after the handler has processed the request.
 
-###  **Example: Class-Based Middleware**
+### **Example: Class-Based Middleware**
 
 ```python
 from nexios.middleware import BaseMiddleware
@@ -157,11 +165,11 @@ class ExampleMiddleware(BaseMiddleware):
 ### **Method Breakdown**
 
 1. **`process_request(req, res, cnext)`**
-   * Used for pre-processing tasks like logging, authentication, or data injection.
-   * Must call `await cnext(req, res)` to continue processing.
+   - Used for pre-processing tasks like logging, authentication, or data injection.
+   - Must call `await cnext(req, res)` to continue processing.
 2. **`process_response(req, res)`**
-   * Used for post-processing tasks like modifying the response or logging.
-   * Must return the modified `res` object.
+   - Used for post-processing tasks like modifying the response or logging.
+   - Must return the modified `res` object.
 
 # If you forget to return the response in process_response, the client will not receive the intended response.
 
@@ -185,7 +193,7 @@ class ErrorCatchingMiddleware(BaseMiddleware):
 
 ```
 
-***
+---
 
 ## **Route-Specific Middleware**
 
@@ -210,7 +218,7 @@ async def get_profile(req, res):
 
 # If you forget to call await cnext(req, res) in route-specific middleware, the request will not reach the handler.
 
-***
+---
 
 ## **Router-Specific Middleware**
 
@@ -239,7 +247,7 @@ app.mount_router("/admin", admin_router)  # Mount router at "/admin"
 **Execution Order:**\
 `admin_auth → dashboard handler → response sent`
 
-***
+---
 
 ## **Nexios Middleware vs. ASGI Middleware**
 
@@ -251,9 +259,9 @@ The `app.add_middleware()` method is designed for middleware that is tightly int
 
 **When to use `add_middleware`:**
 
-*   You want to interact with Nexios-specific objects like `Request` and `Response`.
-*   Your middleware needs to access path parameters, parsed query parameters, or the request body in a convenient way.
-*   You want to take advantage of Nexios's dependency injection system within your middleware.
+- You want to interact with Nexios-specific objects like `Request` and `Response`.
+- Your middleware needs to access path parameters, parsed query parameters, or the request body in a convenient way.
+- You want to take advantage of Nexios's dependency injection system within your middleware.
 
 **Example:**
 
@@ -284,9 +292,9 @@ This is particularly useful when you want to use third-party ASGI middleware tha
 
 **When to use `wrap_asgi`:**
 
-*   You need to integrate a third-party ASGI middleware (e.g., from a library like `asgi-correlation-id`).
-*   Your middleware needs to operate at a lower level, before the request is processed by Nexios's routing and request/response handling.
-*   The middleware is designed to be framework-agnostic.
+- You need to integrate a third-party ASGI middleware (e.g., from a library like `asgi-correlation-id`).
+- Your middleware needs to operate at a lower level, before the request is processed by Nexios's routing and request/response handling.
+- The middleware is designed to be framework-agnostic.
 
 **Example (using a hypothetical third-party ASGI middleware):**
 
@@ -309,15 +317,14 @@ async def home(req, res):
 
 ### **When to Use Which?**
 
-| Feature                 | `add_middleware`                                       | `wrap_asgi`                                             |
-| ----------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
-| **Abstraction Level**   | High-level (Nexios `Request`/`Response`)               | Low-level (ASGI `scope`, `receive`, `send`)             |
-| **Framework Specific**  | Nexios-specific                                        | Framework-agnostic (standard ASGI)                      |
-| **Use Case**            | Business logic, auth, interacting with Nexios features | Third-party middleware, low-level request manipulation  |
-| **Example**             | Custom logging, modifying Nexios `Response`            | GZip compression, CORS handling from a standard library |
+| Feature                | `add_middleware`                                       | `wrap_asgi`                                             |
+| ---------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
+| **Abstraction Level**  | High-level (Nexios `Request`/`Response`)               | Low-level (ASGI `scope`, `receive`, `send`)             |
+| **Framework Specific** | Nexios-specific                                        | Framework-agnostic (standard ASGI)                      |
+| **Use Case**           | Business logic, auth, interacting with Nexios features | Third-party middleware, low-level request manipulation  |
+| **Example**            | Custom logging, modifying Nexios `Response`            | GZip compression, CORS handling from a standard library |
 
 By understanding the difference between these two methods, you can choose the right tool for the job and build more powerful and flexible applications with Nexios.
-
 
 ## **Using `@use_for_route` Decorator**
 
@@ -334,24 +341,22 @@ async def log_middleware(req, res, cnext):
     await cnext(req, res)  # Proceed to the next function (handler or middleware)
 ```
 
-***
+---
 
-Always call `await next()`  in middleware to ensure the request continues processing. Failing to do so will block the request pipeline.
-
+Always call `await next()` in middleware to ensure the request continues processing. Failing to do so will block the request pipeline.
 
 ::: warning ⚠️ Warning
 Avoind modifying the request object in middleware. This can lead to unexpected behavior or security issues.
 
 :::
 
-
 ::: warning ⚠️ Warning
 
-Modifying the response object should be done after the request is processed. It's best to use the `process_response` method of middleware or `callnext` 
+Modifying the response object should be done after the request is processed. It's best to use the `process_response` method of middleware or `callnext`
 
 :::
 
-##  Raw ASGI Middleware
+## Raw ASGI Middleware
 
 Nexios allows you to use raw ASGI middleware for scenarios where you need lower-level control over the ASGI protocol. This is especially useful when integrating with third-party ASGI middleware, performing operations that require direct access to the ASGI `scope`, or when you need to manipulate the request/response cycle before Nexios processes the request.
 
