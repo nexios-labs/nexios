@@ -43,6 +43,8 @@ current_context: contextvars.ContextVar[Context] = contextvars.ContextVar(
 )
 
 test_var = 1
+
+
 def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to inject dependencies into a route handler while preserving parameter names and passing context if needed."""
 

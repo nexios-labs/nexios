@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type    
+from typing import Any, Dict, List, Optional, Type
 
 from nexios.types import ASGIApp, Receive, Scope, Send
 
