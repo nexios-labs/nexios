@@ -37,6 +37,7 @@ from nexios.http.response import JSONResponse
 from nexios.openapi import Parameter
 from nexios.structs import RouteParam, URLPath
 from nexios.types import ASGIApp, HandlerType, MiddlewareType, Receive, Scope, Send
+
 from ._utils import get_route_path
 from .base import BaseRoute, BaseRouter
 
@@ -559,7 +560,7 @@ class Router(BaseRouter):
 
             return await original_handler(*handler_args, **handler_kwargs)
 
-        route.handler = inject_dependencies(wrapped_handler)
+        route.handler = wrapped_handler
 
         self.routes.append(route)
 
