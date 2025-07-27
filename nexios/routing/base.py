@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type    
 
 from nexios.types import ASGIApp, Receive, Scope, Send
 
@@ -15,7 +15,7 @@ class BaseRouter(ABC):
 
     def __init__(self, prefix: Optional[str] = None):
         self.prefix = prefix or ""
-        self.routes: List[Any] = []
+        self.routes: List[Type[BaseRoute]] = []
         self.middleware: List[Any] = []
         self.sub_routers: Dict[str, ASGIApp] = {}
 

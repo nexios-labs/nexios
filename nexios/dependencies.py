@@ -42,12 +42,14 @@ current_context: contextvars.ContextVar[Context] = contextvars.ContextVar(
     "current_context"
 )
 
-
+test_var = 1
 def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator to inject dependencies into a route handler while preserving parameter names and passing context if needed."""
 
     @wraps(handler)
     async def wrapped(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
+        global test_var
+        test_var += 1
         sig = signature(handler)
         bound_args = sig.bind_partial(*args, **kwargs)
         params = list(sig.parameters.values())

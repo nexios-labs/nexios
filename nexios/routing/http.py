@@ -540,7 +540,6 @@ class Router(BaseRouter):
         if self.exclude_from_schema:
             route.exclude_from_schema = True
         original_handler = route.handler
-
         async def wrapped_handler(
             request: Request, response: Response, **kwargs: Dict[str, Any]
         ):
@@ -559,7 +558,7 @@ class Router(BaseRouter):
 
             return await original_handler(*handler_args, **handler_kwargs)
 
-        route.handler = inject_dependencies(wrapped_handler)
+        route.handler = wrapped_handler
 
         self.routes.append(route)
 
