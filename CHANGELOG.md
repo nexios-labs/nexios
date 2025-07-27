@@ -1,3 +1,10 @@
+## v2.9.1 (2025-07-27)
+
+### Fix
+
+- clean up formatting in index.md and remove unnecessary whitespace
+- remove duplicate entry for granian in requirements.txt
+
 ## v2.9.0 (2025-07-23)
 
 ### Feat
