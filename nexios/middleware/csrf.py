@@ -53,7 +53,6 @@ class CSRFMiddleware(BaseMiddleware):
         """
         Process the incoming request to validate the CSRF token for unsafe HTTP methods.
         """
-
         if not self.use_csrf:
             await call_next()
             return
@@ -61,6 +60,7 @@ class CSRFMiddleware(BaseMiddleware):
         if request.method.upper() in self.safe_methods:
             await call_next()
             return
+        print(csrf_cookie)
         if self._url_is_required(request.url.path) or (
             self._url_is_exempt(request.url.path)
             and self._has_sensitive_cookies(request.cookies)

@@ -25,29 +25,32 @@ class CustomMiddleware(BaseMiddleware):
 The main middleware method that processes requests and responses.
 
 **Parameters:**
+
 - `request` (Request): The incoming HTTP request
 - `response` (Response): The HTTP response object
 - `next`: The next middleware or route handler in the chain
 
 **Returns:**
+
 - Any: The processed response
 
 **Example:**
+
 ```python
 class LoggingMiddleware(BaseMiddleware):
     async def __call__(self, request: Request, response: Response, next):
         start_time = time.time()
-        
+
         # Process request
         print(f"Request started: {request.method} {request.url}")
-        
+
         # Call next middleware/handler
         result = await next(request, response)
-        
+
         # Process response
         duration = time.time() - start_time
         print(f"Request completed: {request.method} {request.url} in {duration:.2f}s")
-        
+
         return result
 ```
 
@@ -71,6 +74,7 @@ app.add_middleware(
 ```
 
 **Parameters:**
+
 - `allow_origins` (List[str]): List of allowed origins
 - `allow_methods` (List[str]): List of allowed HTTP methods
 - `allow_headers` (List[str]): List of allowed headers
@@ -93,6 +97,7 @@ app.add_middleware(
 ```
 
 **Parameters:**
+
 - `rate_limit` (int): Maximum number of requests allowed
 - `time_window` (int): Time window in seconds
 - `key_func` (Callable): Function to generate rate limit key
@@ -115,6 +120,7 @@ app.add_middleware(
 ```
 
 **Parameters:**
+
 - `secret_key` (str): Secret key for session encryption
 - `session_cookie` (str): Name of the session cookie
 - `max_age` (int): Session lifetime in seconds
@@ -131,7 +137,7 @@ class AuthMiddleware(BaseMiddleware):
         auth_header = request.headers.get("Authorization")
         if not auth_header:
             return response.status(401).json({"error": "Unauthorized"})
-            
+
         try:
             user = await authenticate_user(auth_header)
             request.state.user = user
@@ -161,23 +167,23 @@ class ErrorHandlingMiddleware(BaseMiddleware):
 class RequestLoggingMiddleware(BaseMiddleware):
     async def __call__(self, request: Request, response: Response, next):
         start_time = time.time()
-        
+
         # Log request
         logger.info(
             f"Request started: {request.method} {request.url} "
             f"from {request.client.host}"
         )
-        
+
         # Process request
         result = await next(request, response)
-        
+
         # Log response
         duration = time.time() - start_time
         logger.info(
             f"Request completed: {request.method} {request.url} "
             f"in {duration:.2f}s with status {response.status_code}"
         )
-        
+
         return result
 ```
 
@@ -221,11 +227,11 @@ async def test_auth_middleware():
     middleware = AuthMiddleware()
     request = Request(...)
     response = Response(...)
-    
+
     # Test successful authentication
     result = await middleware(request, response, next_handler)
     assert result.status_code == 200
-    
+
     # Test failed authentication
     request.headers = {}
     result = await middleware(request, response, next_handler)
@@ -240,12 +246,12 @@ class PerformanceMonitoringMiddleware(BaseMiddleware):
         start_time = time.time()
         result = await next(request, response)
         duration = time.time() - start_time
-        
+
         if duration > 1.0:  # Log slow requests
             logger.warning(
                 f"Slow request: {request.method} {request.url} "
                 f"took {duration:.2f}s"
             )
-            
+
         return result
-``` 
+```
