@@ -8,7 +8,7 @@
   <a href="">
     <img alt=Support height="350" src="https://nexios-docs.netlify.app/icon.svg"> 
     </p>
-    <h1 align="center">Nexios 2.9.0<br></h1>
+    <h1 align="center">Nexios 2.9.x<br></h1>
     
    </a>
 </p>
