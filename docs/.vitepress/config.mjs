@@ -89,6 +89,7 @@ export default defineConfig({
             { text: 'Static Files', link: '/guide/static-files' },
             { text: 'File Upload', link: '/guide/file-upload' },
             { text: 'Cors', link: '/guide/cors' },
+            { text: 'CSRF', link: '/guide/csrf' },
             { text: 'File Router', link: '/guide/file-router' },
             { text: 'Concurrency Utilities', link: '/guide/concurrency' },
             { text: 'Security', link: '/guide/security' },
