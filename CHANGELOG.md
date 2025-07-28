@@ -1,3 +1,9 @@
+## v2.9.2 (2025-07-28)
+
+### Feat
+
+- **middleware**: enhance CSRF protection and documentation
+
 ## v2.9.1 (2025-07-27)
 
 ### Fix
