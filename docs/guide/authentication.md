@@ -1,20 +1,55 @@
 # Authentication in Nexios
 
-## Table of Contents
+**🔒 Secure your API with just one line of code!**
 
-1. [Authentication Middleware](#authentication-middleware)
-2. [Built-in User Classes](#built-in-user-classes)
-   - [BaseUser](#baseuser)
-   - [SimpleUser](#simpleuser)
-   - [UnauthenticatedUser](#unauthenticateduser)
-3. [Authentication Backends](#authentication-backends)
-   - [JWT Backend](#jwt-backend)
-   - [Session Backend](#session-backend)
-4. [Protecting Routes with @auth Decorator](#protecting-routes-with-auth-decorator)
-5. [Using Multiple Authentication Backends](#using-multiple-authentication-backends)
-6. [Practical Examples](#practical-examples)
-7. [Custom Authentication Backends](#custom-authentication-backends)
-8. [Protecting Routes with @auth Decorator](#protecting-routes-with-auth-decorator-1)
+Nexios makes authentication simple yet powerful. Here's all you need to get started:
+
+```python
+from nexios import Nexios, Request
+from nexios.auth.decorators import auth
+
+app = NexiosApp()
+
+# Public route - accessible to everyone
+@app.get("/public")
+async def public_data():
+    return {"message": "Hello, world! 👋"}
+
+# Protected route - requires authentication
+@app.get("/profile")
+@auth()  # That's it! Your route is now protected
+async def user_profile(request: Request):
+    return {
+        "message": f"Welcome back, {request.user.display_name}!",
+        "user_id": request.user.identity,
+        "is_authenticated": True
+    }
+
+# Admin-only route - requires JWT authentication
+@app.get("/admin/dashboard")
+@auth(["jwt"])  # Only JWT-authenticated users can access
+async def admin_dashboard(request: Request):
+    return {
+        "message": "🔑 Admin access granted",
+        "admin_features": ["user_management", "analytics", "settings"]
+    }
+
+# Protected API endpoint with role-based access
+@app.get("/api/secure-data")
+@auth(["jwt", "api-key"])  # Multiple auth methods supported
+async def secure_data(request: Request):
+    return {"data": "🔒 Ultra-secure data!"}
+```
+
+### 🔥 Key Features at a Glance
+
+- **One-line protection**: Just add `@auth()` to secure any route
+- **Multiple auth methods**: JWT, Session, API Key, or bring your own
+- **Role-based access control**: Easily implement user permissions
+- **Built-in security**: Protection against common web vulnerabilities
+- **Flexible & extensible**: Customize to fit any use case
+
+## Table of Contents
 
 ## Authentication Middleware
 
