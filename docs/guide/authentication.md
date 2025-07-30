@@ -537,13 +537,13 @@ app.add_middleware(AuthenticationMiddleware(backend=api_key_backend))
 # Protect routes with API key
 @app.get("/api/data")
 @auth(["api-key"])
-async def get_data(request: Request):
+async def get_data(request: Request, response: Response):
     return {"data": "sensitive data"}
 
 # Or require specific permissions
 @app.post("/api/data")
 @auth(["api-key"])
-async def post_data(request: Request):
+async def post_data(request: Request, response: Response):
     if "write:data" not in request.user.permissions:
         return {"error": "Insufficient permissions"}, 403
 

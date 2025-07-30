@@ -408,7 +408,7 @@ class Request(HTTPConnection):
         Handles both URL-encoded and multipart form data.
         Uses the existing form_data property which already handles all form types.
         """
-        if not hasattr(self, "_form"):
+        if not hasattr(self, "_form") or self._form is None:
             form_data = await self.form_data
             self._form = form_data
         return self._form

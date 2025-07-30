@@ -180,3 +180,62 @@ async def test_valid_method(test_client):
     # Test invalid method
     response = await client.delete("/test-valid")
     assert response.status_code == 405
+
+
+async def test_form_urlencoded(test_client):
+    client, app = test_client
+
+    @app.post("/test-form-urlencoded")
+    async def handler(req: Request, res: Response):
+        form_data = await req.form
+        return res.json({"form": dict(form_data)})
+
+    response = await client.post(
+        "/test-form-urlencoded",
+        data={"username": "testuser", "password": "testpass"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    data = response.json()
+    assert data["form"]["username"] == "testuser"
+    assert data["form"]["password"] == "testpass"
+
+
+async def test_form_multipart(test_client):
+    client, app = test_client
+
+    @app.post("/test-form-multipart")
+    async def handler(req: Request, res: Response):
+        form_data = await req.form
+        files = await req.files
+        return res.json({
+            "form": dict(form_data),
+            "files": {k: v.filename for k, v in files.items()}
+        })
+
+    # Create a sample file to upload
+    files = {"file": ("test.txt", b"test content", "text/plain")}
+    
+    response = await client.post(
+        "/test-form-multipart",
+        data={"field1": "value1"},
+        files=files,
+    )
+    data = response.json()
+    assert data["form"]["field1"] == "value1"
+    assert data["files"]["file"] == "test.txt"
+
+
+async def test_form_empty(test_client):
+    client, app = test_client
+
+    @app.post("/test-form-empty")
+    async def handler(req: Request, res: Response):
+        form_data = await req.form
+        return res.json({"form": dict(form_data)})
+
+    response = await client.post(
+        "/test-form-empty",
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    data = response.json()
+    assert data["form"] == {}
