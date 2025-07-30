@@ -2,6 +2,14 @@
 
 Nexios provides a powerful templating system built on top of Jinja2, offering features like template inheritance, context management, custom filters, and more.
 
+## Prerequisites
+
+Before using templating features, you need to install the required dependencies:
+
+```bash
+pip install nexios[templating]
+```
+
 ## Quick Start
 
 ```python
@@ -16,16 +24,18 @@ engine.setup_environment()
 async def home(request, response):
     return await render("home.html", {"title": "Welcome"}, request=request)
 ```
+
 ::: tip Tip
 Without setting up the templating engine , the render function throws a Notimpemented error
 
 :::
+
 ## Customizing Default Configuration
 
 There are several ways to customize the templating system:
 
-
 ### 1. Using setup_environment
+
 The simplest way is to set template options in your app configuration:
 
 ```py
@@ -38,8 +48,8 @@ template_config = TemplateConfig(
 engine.setup_environment(template_config)
 ```
 
-
 ### 2. Using App Config
+
 You can also nexios app config optionally
 
 ```python
@@ -57,10 +67,6 @@ config = MakeConfig(
 
 app = NexiosApp(config = config)
 ```
-
-
-
-
 
 ### 3. Runtime Configuration Updates
 
@@ -83,52 +89,50 @@ engine.env.globals.update({
 })
 
 engine.config.template_dir = Path("new_templates")
-engine._setup_environment()  
+engine._setup_environment()
 ```
 
 ## Configuration Options
 
 The `TemplateConfig` class supports the following options:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| template_dir | str/Path | "templates" | Template directory path |
-| cache_size | int | 100 | Maximum templates to cache |
-| auto_reload | bool | True | Reload changed templates |
-| encoding | str | "utf-8" | Template file encoding |
-| enable_async | bool | True | Enable async rendering |
-| trim_blocks | bool | True | Strip first newline after block |
-| lstrip_blocks | bool | True | Strip leading spaces and tabs |
-| custom_filters | Dict[str, callable] | {} | Custom template filters |
-| custom_globals | Dict[str, Any] | {} | Global template variables |
+| Option         | Type                | Default     | Description                     |
+| -------------- | ------------------- | ----------- | ------------------------------- |
+| template_dir   | str/Path            | "templates" | Template directory path         |
+| cache_size     | int                 | 100         | Maximum templates to cache      |
+| auto_reload    | bool                | True        | Reload changed templates        |
+| encoding       | str                 | "utf-8"     | Template file encoding          |
+| enable_async   | bool                | True        | Enable async rendering          |
+| trim_blocks    | bool                | True        | Strip first newline after block |
+| lstrip_blocks  | bool                | True        | Strip leading spaces and tabs   |
+| custom_filters | Dict[str, callable] | {}          | Custom template filters         |
+| custom_globals | Dict[str, Any]      | {}          | Global template variables       |
 
 ## Template Inheritance
 
 Base template (`base.html`):
+
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>{% block title %}{% endblock %}</title>
-</head>
-<body>
+  </head>
+  <body>
     <nav>{% block nav %}{% endblock %}</nav>
     <main>{% block content %}{% endblock %}</main>
     <footer>{% block footer %}{% endblock %}</footer>
-</body>
+  </body>
 </html>
 ```
 
 Child template:
+
 ```html
-{% extends "base.html" %}
-
-{% block title %}Welcome{% endblock %}
-
-{% block content %}
-    <h1>{{ title }}</h1>
-    {{ content }}
-{% endblock %}
+{% extends "base.html" %} {% block title %}Welcome{% endblock %} {% block
+content %}
+<h1>{{ title }}</h1>
+{{ content }} {% endblock %}
 ```
 
 ## Context Middleware
@@ -178,16 +182,19 @@ from nexios.templating.utils import (
 ## Best Practices
 
 1. **Template Organization**
+
    - Keep templates in a dedicated directory
    - Use meaningful names and subdirectories
    - Follow a consistent naming convention
 
 2. **Context Management**
+
    - Use middleware for global context
    - Keep context processors focused and lightweight
    - Cache expensive context operations
 
 3. **Performance**
+
    - Enable template caching in production
    - Use async rendering for I/O operations
    - Minimize template complexity
@@ -230,8 +237,7 @@ def truncate(text: str, length: int = 100, suffix: str = "...") -> str
 def format_datetime(value: datetime, fmt: str = "%Y-%m-%d %H:%M:%S") -> str
 def static_hash(filepath: str) -> str
 def merge_dicts(*dicts: Dict[str, Any]) -> Dict[str, Any]
-``` 
-
+```
 
 ## Advanced Templating
 
@@ -260,9 +266,9 @@ config = TemplateConfig(
 ```
 
 Usage in templates:
+
 ```html
-{{ post.content|markdown }}
-{{ product.price|currency("€") }}
+{{ post.content|markdown }} {{ product.price|currency("€") }}
 ```
 
 ## Macros
@@ -270,22 +276,23 @@ Usage in templates:
 Create reusable template components:
 
 ```html
-{# macros/forms.html #}
-{% macro input(name, value='', type='text', label='') %}
-    <div class="form-group">
-        {% if label %}
-        <label for="{{ name }}">{{ label }}</label>
-        {% endif %}
-        <input type="{{ type }}" name="{{ name }}" 
-               value="{{ value }}" id="{{ name }}">
-    </div>
-{% endmacro %}
-
-{# Usage in templates #}
-{% from "macros/forms.html" import input %}
+{# macros/forms.html #} {% macro input(name, value='', type='text', label='') %}
+<div class="form-group">
+  {% if label %}
+  <label for="{{ name }}">{{ label }}</label>
+  {% endif %}
+  <input
+    type="{{ type }}"
+    name="{{ name }}"
+    value="{{ value }}"
+    id="{{ name }}"
+  />
+</div>
+{% endmacro %} {# Usage in templates #} {% from "macros/forms.html" import input
+%}
 <form method="post">
-    {{ input('username', label='Username') }}
-    {{ input('password', type='password', label='Password') }}
+  {{ input('username', label='Username') }} {{ input('password',
+  type='password', label='Password') }}
 </form>
 ```
 
@@ -309,10 +316,10 @@ config = TemplateConfig(
 ```
 
 Usage in templates:
+
 ```html
-{% set posts = await get_posts(user.id) %}
-{% for post in posts %}
-    <article>{{ post.title }}</article>
+{% set posts = await get_posts(user.id) %} {% for post in posts %}
+<article>{{ post.title }}</article>
 {% endfor %}
 ```
 
@@ -328,11 +335,11 @@ from nexios.cache import cached
 class ContextBuilder:
     def __init__(self):
         self.processors = []
-    
+
     def add(self, processor):
         self.processors.append(processor)
         return self
-    
+
     async def build(self, request) -> Dict[str, Any]:
         context = {}
         for proc in self.processors:
@@ -391,19 +398,14 @@ config = TemplateConfig(
 ```
 
 Usage in templates:
+
 ```html
-{% set cache_key = 'sidebar_' + user.id %}
-{% set cached = await cached_fragment(cache_key) %}
-{% if cached %}
-    {{ cached }}
-{% else %}
-    {% set content %}
-        {# Expensive sidebar rendering #}
-        <aside>...</aside>
-    {% endset %}
-    {{ cache.set(cache_key, content, ttl=300) }}
-    {{ content }}
-{% endif %}
+{% set cache_key = 'sidebar_' + user.id %} {% set cached = await
+cached_fragment(cache_key) %} {% if cached %} {{ cached }} {% else %} {% set
+content %} {# Expensive sidebar rendering #}
+<aside>...</aside>
+{% endset %} {{ cache.set(cache_key, content, ttl=300) }} {{ content }} {% endif
+%}
 ```
 
 ## Error Handling
@@ -467,4 +469,4 @@ async def test_context_middleware(client: TestClient):
     response = await client.get("/")
     assert response.status_code == 200
     assert "Welcome, Test User!" in response.text
-``` 
+```

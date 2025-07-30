@@ -40,16 +40,42 @@ dependencies = [
     "python-multipart>=0.0.6",
     "typing-extensions==4.12.2",
     "pydantic>=2.0,<3.0",
-    "click>=8.1.3",
+    "typing-extensions>=4.0.0;python_version<'3.10'"
 ]
 
 [project.optional-dependencies]
 templating = ["jinja2>=3.1.6"]
 jwt = ["pyjwt>=2.7.0"]
 granian = ["granian>=1.2.0"]
-mailer = ["jinja2>=3.1.6", "click>=8.1.3"]
-all = ["granian>=1.2.0", "pyjwt>=2.7.0", "jinja2>=3.1.6", "click>=8.1.3"]
+cli = ["click>=8.1.3"]  
+
+# Feature groups
+http = [
+    "uvicorn>=0.27.0",
+    "anyio>=4.0.0",
+    "itsdangerous>=2.1.2",
+    "python-multipart>=0.0.6"
+]
+
+all = [
+    "uvicorn>=0.27.0",
+    "anyio>=4.0.0",
+    "itsdangerous>=2.1.2",
+    "python-multipart>=0.0.6",
+    "jinja2>=3.1.6",
+    "pyjwt>=2.7.0",
+    "granian>=1.2.0",
+    "click>=8.1.3"
+]
 dev = [
+    "uvicorn>=0.27.0",
+    "anyio>=4.0.0",
+    "itsdangerous>=2.1.2",
+    "python-multipart>=0.0.6",
+    "jinja2>=3.1.6",
+    "pyjwt>=2.7.0",
+    "granian>=1.2.0",
+    "click>=8.1.3",
     "mypy>=1.15.0",
     "pytest>=8.3.4,<8.5.0",
     "mkdocs>=1.2.3",
@@ -58,12 +84,8 @@ dev = [
     "typing-extensions==4.12.2",
     "pytest-asyncio>=0.25.3,<0.27.0",
     "pyjwt>=2.7.0",
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
-    "pytest-cov>=4.0.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "ruff"
+    "isort>=5.13.2",
+    "flake8>=7.0.0"
 ]
 
 [project.scripts]
@@ -73,7 +95,6 @@ nexios = "nexios.cli:cli"
 asyncio_mode = "auto"
 asyncio_fixture_scope = "function"
 addopts = "--ignore=benchmarks"
-
 
 [tool.mypy]
 python_version = "3.13"
@@ -98,8 +119,6 @@ include_trailing_comma = true
 force_grid_wrap = 0
 use_parentheses = true
 ensure_newline_before_comments = true
-line_length = 88
-skip = [".git", "__pycache__", "build", "dist", ".venv", ".pytest_cache", "htmlcov", "node_modules", "templates", "docs"]
 
 [tool.flake8]
 max-line-length = 88
@@ -195,7 +214,3 @@ version_files = [
 ]
 tag_format = "v$version"
 update_changelog_on_bump = true
-
-
-
-

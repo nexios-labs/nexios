@@ -102,7 +102,10 @@ class NexiosApp(object):
     ):
         self.config = config or DEFAULT_CONFIG
         self.dependencies = dependencies or []
-        from nexios.cli.utils import get_config as get_nexios_config
+        try:
+            from nexios.cli.utils import get_config as get_nexios_config
+        except ImportError:
+            get_nexios_config = lambda: {}
         from nexios.config import get_config, set_config
 
         try:
