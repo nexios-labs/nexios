@@ -1,3 +1,14 @@
+## v2.9.3 (2025-07-30)
+
+### Feat
+
+- Add multipart form data support
+
+### Refactor
+
+- **deps**: clean dependecy
+- **docs**: refactor auth docs
+
 ## v2.9.2 (2025-07-28)
 
 ### Feat
