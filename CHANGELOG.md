@@ -1,8 +1,8 @@
 ## v2.9.3 (2025-07-30)
 
-### Feat
+### Fix
 
-- Add multipart form data support
+- **multipart**: Fix multipart form data support
 
 ### Refactor
 
