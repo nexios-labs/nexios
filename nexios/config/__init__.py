@@ -5,15 +5,20 @@ from .base import DEFAULT_SERVER_CONFIG, SERVER_VALIDATION, MakeConfig
 _global_config = None
 
 
-def set_config(config: MakeConfig) -> None:
+def set_config(config: MakeConfig = None, **kwargs: Any) -> None:
     global _global_config
-    _global_config = config
+    if config is not None:
+        _global_config = config
+    elif kwargs:
+        if _global_config is None:
+            _global_config = MakeConfig()
+        for key, value in kwargs.items():
+            _global_config._set_config(key, value)
 
 
 def get_config() -> MakeConfig:
     if _global_config is None:
         raise RuntimeError("Configuration has not been initialized.")
-        # return {}
     return _global_config
 
 
