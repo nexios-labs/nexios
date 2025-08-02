@@ -5,7 +5,7 @@ from functools import wraps
 from nexios.decorators import RouteDecorator
 from nexios.http import Request, Response
 
-from .exceptions import AuthenticationFailed,PermissionDenied
+from .exceptions import AuthenticationFailed, PermissionDenied
 
 
 class auth(RouteDecorator):
