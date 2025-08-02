@@ -1,9 +1,11 @@
+from nexios.application import NexiosApp
 import pytest
 
 from nexios import get_application
 from nexios.auth.backends.jwt import create_jwt, decode_jwt
 from nexios.auth.base import AuthenticationBackend, SimpleUser
-from nexios.auth.decorator import auth
+from nexios.auth.decorator import auth, has_permission
+from nexios.auth.exceptions import PermissionDenied
 from nexios.config.base import MakeConfig
 from nexios.http import Request, Response
 from nexios.testing import Client
@@ -261,3 +263,71 @@ async def test_custom_auth_backend(test_client):
 
     response = await client.get("/custom-protected")
     assert response.status_code == 401
+
+
+async def test_has_permission_decorator(test_client):
+    """Test the has_permission decorator with SimpleUser."""
+    from nexios.auth.base import SimpleUser
+    from nexios.auth.middleware import AuthenticationMiddleware
+    from nexios.auth.decorator import has_permission
+    from nexios.auth.exceptions import PermissionDenied
+
+    app = NexiosApp()
+    client = Client(app)
+
+    class CustomBackend(AuthenticationBackend):
+        async def authenticate(self, request: Request, response: Response):
+            return SimpleUser(username="testuser", permissions=["posts.view", "posts.edit"]),"custom"
+    
+    app.add_middleware(AuthenticationMiddleware(backend=CustomBackend()))
+    # Mock request with the test user
+    @app.get("/protected-route")
+    @has_permission("posts.view")
+    async def protected_route(request, response):
+        return {"message": "Access granted"}
+
+    # Test with user having the required permission
+    
+    response = await client.get("/protected-route")
+    assert response.status_code == 200
+    assert (response.json()) == {"message": "Access granted"}
+
+    # Test with user missing required permission
+    @app.get("/admin-route")
+    @has_permission("admin.access")
+    async def admin_route(request, response):
+        return {"message": "Admin access"}
+
+    response = await client.get("/admin-route")
+    assert response.status_code == 403  # Forbidden
+    assert "Permission denied" in (response.text)
+
+    # Test with multiple required permissions (all must be present)
+    @app.get("/edit-route")
+    @has_permission(["posts.view", "posts.edit"])
+    async def edit_route(request, response):
+        return {"message": "Edit access"}
+
+    response = await client.get("/edit-route")
+    assert response.status_code == 200
+    assert ( response.json()) == {"message": "Edit access"}
+
+    # Test with unauthenticated user
+    @app.get("/public-route")
+    @has_permission("any.permission")
+    async def public_route(request, response):
+        return {"message": "Public access"}
+
+    response = await client.get("/public-route")
+    assert response.status_code == 403  # Forbidden
+    assert "Permission denied" in (response.text)
+
+    # Test with no required permissions (should allow any authenticated user)
+    @app.get("/any-auth-route")
+    @has_permission()
+    async def any_auth_route(request, response):
+        return {"message": "Any authenticated access"}
+
+    response = await client.get("/any-auth-route")
+    assert response.status_code == 200
+    assert (response.json()) == {"message": "Any authenticated access"}
