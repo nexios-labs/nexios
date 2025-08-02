@@ -1,3 +1,15 @@
+## v2.10.0 (2025-08-02)
+
+### Feat
+
+- **auth**: introduce new has_permission decorator
+- **config**: allow set_config to auto initalize MakeConfig class when kwargs is passed in
+
+### Fix
+
+- **docs**: fix issues in docs
+- **di**: fix context initalization in all middleware instaces
+
 ## v2.9.3 (2025-07-30)
 
 ### Fix
