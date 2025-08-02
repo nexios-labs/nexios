@@ -4,43 +4,57 @@
 
 Nexios makes authentication simple yet powerful. Here's all you need to get started:
 
-```python
-from nexios import Nexios
+::: code-group
+
+```python [Simple Example]
+from nexios import NexiosApp
 from nexios.http import Request, Response
 from nexios.auth.decorators import auth
 
 app = NexiosApp()
 
-# Public route - accessible to everyone
 @app.get("/public")
-async def public_data(request :Request, response :Response):
-    return {"message": "Hello, world! "}
+async def public_data(request: Request, response: Response):
+    return {"message": "Hello, world!"}
 
-# Protected route - requires authentication
 @app.get("/profile")
-@auth()  # That's it! Your route is now protected
-async def user_profile(request: Request, response :Response):
+@auth()
+async def user_profile(request: Request, response: Response):
     return {
         "message": f"Welcome back, {request.user.display_name}!",
         "user_id": request.user.identity,
         "is_authenticated": request.user.is_authenticated
     }
+```
 
-# Admin-only route - requires JWT authentication
+```python [Scope Specific]
+from nexios import NexiosApp
+from nexios.auth.decorators import auth
+
+app = NexiosApp()
+
 @app.get("/admin/dashboard")
-@auth(["jwt"])  # Only JWT-authenticated users can access
-async def admin_dashboard(request: Request):
+@auth(["jwt"])
+async def admin_dashboard(request: Request, response: Response):
     return {
-        "message": " Admin access granted",
+        "message": "Admin access granted",
         "admin_features": ["user_management", "analytics", "settings"]
     }
-
-# Protected API endpoint with role-based access
-@app.get("/api/secure-data")
-@auth(["jwt", "api-key"])  # Multiple auth methods supported
-async def secure_data(request: Request):
-    return {"data": " Ultra-secure data!"}
 ```
+
+```python [With Authorization]
+from nexios import NexiosApp
+from nexios.auth.decorators import has_permission
+
+app = NexiosApp()
+
+@app.get("/api/secure-data")
+@has_permission("api.read")
+async def secure_data(request: Request, response: Response):
+    return {"data": "Ultra-secure data!"}
+```
+
+:::
 
 ### Key Features at a Glance
 
