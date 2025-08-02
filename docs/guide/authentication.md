@@ -390,9 +390,6 @@ app.add_middleware(
 
 In this setup, the `JWTAuthBackend` is tried first. If it fails to authenticate the request, the `SessionAuthBackend` provides a fallback mechanism.
 
-````
-
-
 **Key Points:**
 
 1. Backends are tried in the order they are specified
@@ -418,7 +415,7 @@ async def admin_dashboard(request, response):
 @has_permission(["content.edit", "content.publish"])
 async def edit_content(request, response):
     return {"message": "Content editing interface"}
-````
+```
 
 ### Permission Checking with SimpleUser
 
