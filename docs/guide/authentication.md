@@ -357,24 +357,41 @@ async def admin_route(request: Request, response: Response):
 
 Nexios supports multiple authentication backends, which are tried in order until one succeeds.
 
-```python
-# First try JWT auth
-app.add_middleware(
-    AuthenticationMiddleware,
-    backend=JWTAuthBackend(
-        secret_key="jwt-secret",
-        authenticate_func=load_user_from_jwt
-    )
-)
+When using multiple authentication backends in Nexios, the system attempts to authenticate requests using each backend in the order they are defined. This approach provides a fallback strategy where if one backend fails to authenticate the user, the next available backend is tried.
 
-# Fall back to session auth
+Here's how it works:
+
+1. **Order of Evaluation**: The backends are configured in a list, and they are evaluated in the order they appear. The system will attempt to authenticate using the first backend, and if authentication fails, it will proceed to the next backend.
+
+2. **Successful Authentication**: As soon as a backend successfully authenticates a user, the process stops, and the user is considered authenticated. The authenticated user object is attached to the request.
+
+3. **Fallback Mechanism**: If a backend fails to authenticate, the system automatically falls back to the next backend in the list. This continues until a backend successfully authenticates the user or all backends have been tried.
+
+4. **Unauthenticated Request**: If none of the backends can authenticate the request, the `request.user` defaults to an `UnauthenticatedUser`. This means the request does not have a valid authenticated user, and access to secured routes will be denied.
+
+5. **Logging and Debugging**: It's advisable to log authentication attempts, especially when multiple backends are used, to diagnose issues with the authentication flow.
+
+The following example demonstrates setting up multiple backends:
+
+```python
 app.add_middleware(
     AuthenticationMiddleware,
-    backend=SessionAuthBackend(
-        authenticate_func=load_user_from_session
-    )
+    backends=[
+        JWTAuthBackend(
+            secret_key="jwt-secret",
+            authenticate_func=load_user_from_jwt
+        ),
+        SessionAuthBackend(
+            authenticate_func=load_user_from_session
+        )
+    ]
 )
 ```
+
+In this setup, the `JWTAuthBackend` is tried first. If it fails to authenticate the request, the `SessionAuthBackend` provides a fallback mechanism.
+
+````
+
 
 **Key Points:**
 
@@ -401,7 +418,7 @@ async def admin_dashboard(request, response):
 @has_permission(["content.edit", "content.publish"])
 async def edit_content(request, response):
     return {"message": "Content editing interface"}
-```
+````
 
 ### Permission Checking with SimpleUser
 

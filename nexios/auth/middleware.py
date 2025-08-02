@@ -15,28 +15,33 @@ class AuthenticationMiddleware(BaseMiddleware):
     """
     Middleware responsible for handling user authentication.
 
-    This middleware intercepts incoming HTTP requests, calls the authentication
-    backend to verify user credentials, and attaches the authenticated user to
-    the request scope.
+    This middleware intercepts incoming HTTP requests, processes them through one or more
+    authentication backends, and attaches the authenticated user to the request scope.
+    Processing stops at the first backend that successfully authenticates the user.
 
     Attributes:
-        backend (AuthenticationBackend): The authentication backend used to verify users.
+        backends (list[AuthenticationBackend]): List of authentication backends to try.
     """
 
     def __init__(
         self,
         backend: Annotated[
-            AuthenticationBackend,
-            Doc("The authentication backend responsible for verifying users."),
+            typing.Union[AuthenticationBackend, typing.List[AuthenticationBackend]],
+            Doc("Single backend or list of backends to use for authentication."),
         ],
     ) -> None:
         """
-        Initializes the authentication middleware with a specified backend.
+        Initialize the authentication middleware with one or more backends.
 
         Args:
-            backend (AuthenticationBackend): An instance of the authentication backend.
+            backends: Single backend or list of backends to use for authentication.
+                     Each backend will be tried in order until one successfully
+                     authenticates the user or all backends are exhausted.
         """
-        self.backend = backend
+        if isinstance(backend, AuthenticationBackend):
+            self.backends = [backend]
+        else:
+            self.backends = backend
 
     async def process_request(
         self,
@@ -53,38 +58,41 @@ class AuthenticationMiddleware(BaseMiddleware):
         call_next: typing.Callable[..., typing.Awaitable[typing.Any]],
     ) -> None:
         """
-        Processes an incoming request by authenticating the user.
+        Process an incoming request through all authentication backends until one succeeds.
 
-        This method calls the authentication backend, determines if the user is authenticated,
-        and attaches the authenticated user to the request. If authentication fails, the request
-        is assigned an `UnauthenticatedUser` instance.
+        This method iterates through each backend in order, attempting to authenticate
+        the request. If a backend successfully authenticates the user, the user and
+        authentication method are stored in the request scope and processing stops.
+        If no backend authenticates the user, an unauthenticated user is set.
 
         Args:
-            request (Request): The HTTP request object.
-            response (Response): The HTTP response object.
-
-        Side Effects:
-            - Sets `request.user` to an authenticated user or `UnauthenticatedUser`.
-            - Updates `request.scope["user"]` with the user object.
-
+            request: The incoming HTTP request.
+            response: The HTTP response that will be sent.
+            call_next: The next middleware or route handler in the chain.
         """
-        if not inspect.iscoroutinefunction(self.backend.authenticate):
-            user: typing.Tuple[BaseUser, str] = self.backend.authenticate(
-                request, response
-            )  # type:ignore
-        else:
-            user: typing.Tuple[BaseUser, str] = await self.backend.authenticate(
-                request, response
-            )  # type:ignore
+        # Try each backend until one successfully authenticates the user
+        for backend in self.backends:
+            try:
+                if inspect.iscoroutinefunction(backend.authenticate):
+                    user = await backend.authenticate(request, response)
+                else:
+                    user = backend.authenticate(request, response)  # type: ignore
 
-        if user is None:  # type:ignore
+                if user is not None:
+                    # Authentication successful, store user and auth type
+                    request.scope["user"] = user[0]
+                    request.scope["auth"] = user[-1]
+                    break
+
+            except Exception as e:
+                # Log the error but continue to the next backend
+                request.app.logger.error(
+                    f"Error in {backend.__class__.__name__} authentication: {str(e)}"
+                )
+                continue
+        else:
+            # No backend authenticated the user
             request.scope["user"] = UnauthenticatedUser()
             request.scope["auth"] = "no-auth"
-            await call_next()
-
-            return
-
-        request.scope["user"] = user[0]
-        request.scope["auth"] = user[-1]
 
         await call_next()
