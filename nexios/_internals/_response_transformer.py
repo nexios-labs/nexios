@@ -6,6 +6,7 @@ from nexios.http.response import BaseResponse
 from nexios.types import ASGIApp, Receive, Scope, Send
 from nexios.utils.async_helpers import is_async_callable
 from nexios.utils.concurrency import run_in_threadpool
+from nexios.dependencies import Context,current_context
 
 
 async def request_response(
@@ -20,12 +21,24 @@ async def request_response(
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         request = Request(scope, receive, send)
         response_manager = Response(request)
-        if is_async_callable(func):
-            func_result = await func(request, response_manager, **request.path_params)
-        else:
-            func_result = await run_in_threadpool(
-                func, request, response_manager, **request.path_params
+        ctx = Context(
+            request=request,
+            response=response_manager,
+            user=getattr(request, "user", None),
+            app=request.app,
+            base_app=getattr(request, "base_app", None),
             )
+        token = current_context.set(ctx)
+        try:
+           
+            if is_async_callable(func):
+                func_result = await func(request, response_manager, **request.path_params)
+            else:
+                func_result = await run_in_threadpool(
+                    func, request, response_manager, **request.path_params
+                )
+        finally:
+            current_context.reset(token)
         if isinstance(func_result, (dict, list, str)):
             response_manager.json(func_result)
 

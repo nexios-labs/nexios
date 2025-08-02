@@ -213,7 +213,7 @@ class Routes(BaseRoute):
                 matched_params[key] = self.route_info.convertor[  # type: ignore
                     key
                 ].convert(value)
-            is_method_allowed = method.lower() in [m.lower() for m in self.methods]
+            is_method_allowed = method.lower() in (m.lower() for m in self.methods)
             return match, matched_params, is_method_allowed
         return None, None, False
 
@@ -264,7 +264,7 @@ class Routes(BaseRoute):
         Returns:
             Response: The processed HTTP response object.
         """
-
+        
         async def apply_middleware(app: ASGIApp) -> ASGIApp:
             middleware: typing.List[Middleware] = []
             for mdw in self.middleware:

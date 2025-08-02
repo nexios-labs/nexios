@@ -39,6 +39,19 @@ class AuthenticationFailed(AuthException):
         super().__init__(401, detail, headers)
 
 
+class PermissionDenied(AuthException):
+    """
+    Raised when a user does not have the required permission.
+    """
+
+    def __init__(
+        self,
+        detail: str = "Permission denied",
+        headers: Optional[HeadersType] = None,
+    ) -> None:
+        super().__init__(403, detail, headers)
+
+
 async def AuthErrorHandler(
     req: Request, res: NexiosResponse, exc: HTTPException
 ) -> Any:

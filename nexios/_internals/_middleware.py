@@ -148,96 +148,88 @@ class ASGIRequestResponseBridge:
         response = Response(request=request)
 
         # Set the context for this request
-        ctx = Context(
-            request=request,
-            response=response,
-            user=getattr(request, "user", None),
-            app=request.app,
-            base_app=getattr(request, "base_app", None),
-        )
-        token = current_context.set(ctx)
-        try:
-            wrapped_receive = request.wrapped_receive
-            response_sent = anyio.Event()
+        
+        
+        wrapped_receive = request.wrapped_receive
+        response_sent = anyio.Event()
 
-            async def call_next(
-                *_,
-            ) -> Response:  # Why cant this be flexible , i mean ☺️🤷‍♀️
-                app_exc: Exception | None = None
+        async def call_next(
+            *_,
+        ) -> Response:  # Why cant this be flexible , i mean ☺️🤷‍♀️
+            app_exc: Exception | None = None
 
-                async def receive_or_disconnect() -> Message:
-                    if response_sent.is_set():
-                        return {"type": "http.disconnect"}
-                    async with anyio.create_task_group() as task_group:
-
-                        async def wrap(
-                            func: typing.Callable[[], typing.Awaitable[T]],
-                        ) -> T:
-                            result = await func()
-                            task_group.cancel_scope.cancel()
-                            return result
-
-                        task_group.start_soon(wrap, response_sent.wait)
-                        message = await wrap(wrapped_receive)
-                    if response_sent.is_set():
-                        return {"type": "http.disconnect"}
-                    return message
-
-                async def send_no_error(message: Message) -> None:
-                    try:
-                        await send_stream.send(message)
-                    except anyio.BrokenResourceError:
-                        raise RuntimeError("No response returned")
-
-                async def coro() -> None:
-                    nonlocal app_exc
-                    with send_stream:
-                        try:
-                            await self.app(scope, receive_or_disconnect, send_no_error)
-                        except Exception as exc:
-                            app_exc = exc
-
-                task_group.start_soon(coro)
-                try:
-                    message = await recv_stream.receive()
-                    info = message.get("info", None)
-                    if message["type"] == "http.response.debug" and info is not None:
-                        message = await recv_stream.receive()
-                except anyio.EndOfStream:
-                    if app_exc is not None:
-                        raise app_exc
-                    raise RuntimeError("Client disconnected before response was sent")
-                assert message["type"] == "http.response.start"
-
-                async def body_stream() -> typing.AsyncGenerator[bytes, None]:
-                    async for message in recv_stream:
-                        assert message["type"] == "http.response.body"
-                        body = message.get("body", b"")
-                        if body:
-                            yield body
-                        if not message.get("more_body", False):
-                            break
-                    if app_exc is not None:
-                        raise app_exc
-
-                response_ = response.stream(
-                    iterator=body_stream(), status_code=message["status"]
-                )  # type: ignore
-                response_._response._headers = message["headers"]  # type: ignore
-                return response
-
-            streams: anyio.create_memory_object_stream[Message] = (
-                anyio.create_memory_object_stream()
-            )  # type: ignore
-            send_stream, recv_stream = streams
-            with recv_stream, send_stream, collapse_excgroups():
+            async def receive_or_disconnect() -> Message:
+                if response_sent.is_set():
+                    return {"type": "http.disconnect"}
                 async with anyio.create_task_group() as task_group:
-                    await self.dispatch_func(request, response, call_next)  # type: ignore
-                    await response.get_response()(scope, wrapped_receive, send)
-                    response_sent.set()
-                    recv_stream.close()
-        finally:
-            current_context.reset(token)
+
+                    async def wrap(
+                        func: typing.Callable[[], typing.Awaitable[T]],
+                    ) -> T:
+                        result = await func()
+                        task_group.cancel_scope.cancel()
+                        return result
+
+                    task_group.start_soon(wrap, response_sent.wait)
+                    message = await wrap(wrapped_receive)
+                if response_sent.is_set():
+                    return {"type": "http.disconnect"}
+                return message
+
+            async def send_no_error(message: Message) -> None:
+                try:
+                    await send_stream.send(message)
+                except anyio.BrokenResourceError:
+                    raise RuntimeError("No response returned")
+
+            async def coro() -> None:
+                nonlocal app_exc
+                with send_stream:
+                    try:
+                        await self.app(scope, receive_or_disconnect, send_no_error)
+                    except Exception as exc:
+                        app_exc = exc
+
+            task_group.start_soon(coro)
+            try:
+                message = await recv_stream.receive()
+                info = message.get("info", None)
+                if message["type"] == "http.response.debug" and info is not None:
+                    message = await recv_stream.receive()
+            except anyio.EndOfStream:
+                if app_exc is not None:
+                    raise app_exc
+                raise RuntimeError("Client disconnected before response was sent")
+            assert message["type"] == "http.response.start"
+
+            async def body_stream() -> typing.AsyncGenerator[bytes, None]:
+                async for message in recv_stream:
+                    assert message["type"] == "http.response.body"
+                    body = message.get("body", b"")
+                    if body:
+                        yield body
+                    if not message.get("more_body", False):
+                        break
+                if app_exc is not None:
+                    raise app_exc
+
+            response_ = response.stream(
+                iterator=body_stream(), status_code=message["status"]
+            )  # type: ignore
+            response_._response._headers = message["headers"]  # type: ignore
+            return response
+
+        streams: anyio.create_memory_object_stream[Message] = (
+            anyio.create_memory_object_stream()
+        )  # type: ignore
+        send_stream, recv_stream = streams
+        with recv_stream, send_stream, collapse_excgroups():
+            async with anyio.create_task_group() as task_group:
+                await self.dispatch_func(request, response, call_next)  # type: ignore
+                await response.get_response()(scope, wrapped_receive, send)
+                response_sent.set()
+                recv_stream.close()
+    
 
 
 WebSocketDispatchFunction = typing.Callable[
