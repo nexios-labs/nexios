@@ -18,10 +18,10 @@ class FileRouterConfig(TypedDict):
 
 class FileRouter:
     """
-    from nexios import get_application
+    from nexios import NexiosApp
     from nexios.plugins import FileRouterPlugin
 
-    app = get_application()
+    app = NexiosApp()
 
     FileRouter(app, config={"root": "./routes"})
     """
