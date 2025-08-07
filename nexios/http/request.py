@@ -96,7 +96,6 @@ class HTTPConnection(object):
 
     def __iter__(self) -> typing.Iterator[str]:
         return iter(self.scope)
-
     def __len__(self) -> int:
         return len(self.scope)
 
@@ -225,7 +224,6 @@ async def empty_send(message: Message) -> typing.NoReturn:
 
 
 class Request(HTTPConnection):
-    _form: typing.Union[FormData, None, typing.Dict[str, typing.Any]]  # type: ignore
 
     def __init__(
         self, scope: Scope, receive: Receive = empty_receive, send: Send = empty_send
@@ -318,6 +316,7 @@ class Request(HTTPConnection):
         max_files: typing.Optional[int] = 1000,
         max_fields: typing.Optional[int] = 1000,
     ) -> FormData:
+        print(self._form)
         if self._form is None:  # type:ignore
             assert parse_options_header is not None, (
                 "The `python-multipart` library must be installed to use form parsing."
@@ -338,6 +337,7 @@ class Request(HTTPConnection):
                     self._form = {}  # type: ignore
             elif content_type == b"application/x-www-form-urlencoded":
                 form_parser = FormParser(self.headers, self.stream())
+                
                 self._form = await form_parser.parse()
             else:
                 self._form: FormData = FormData()

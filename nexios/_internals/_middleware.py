@@ -7,7 +7,6 @@ from typing import Any, Protocol
 
 import anyio
 
-from nexios.dependencies import Context, current_context
 from nexios.http.request import ClientDisconnect, Request
 from nexios.http.response import NexiosResponse as Response
 from nexios.types import ASGIApp, Message, Receive, Scope, Send

@@ -39,6 +39,7 @@ class TemplateContextMiddleware(BaseMiddleware):
             {
                 "request": request,
                 "url_for": request.app.url_for,
+                "csrf_token":request.state.csrf_token,
             }
         )
 

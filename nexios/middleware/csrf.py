@@ -16,6 +16,7 @@ class CSRFMiddleware(BaseMiddleware):
 
     def __init__(self) -> None:
         app_config = get_config()
+
         self.use_csrf = app_config.csrf_enabled or False
         if self.use_csrf:
             assert app_config.secret_key is not None, ""
@@ -56,16 +57,20 @@ class CSRFMiddleware(BaseMiddleware):
         if not self.use_csrf:
             await call_next()
             return
+        csrf_token = self._generate_csrf_token()
+        request.state.csrf_token = csrf_token
         csrf_cookie = request.cookies.get(self.cookie_name)
         if request.method.upper() in self.safe_methods:
             await call_next()
             return
-        print(csrf_cookie)
         if self._url_is_required(request.url.path) or (
             self._url_is_exempt(request.url.path)
             and self._has_sensitive_cookies(request.cookies)
         ):
             submitted_csrf_token = request.headers.get(self.header_name)
+            if not submitted_csrf_token and request.headers.get("content-type", "").startswith("application/x-www-form-urlencoded"):
+                form = await request.form
+                submitted_csrf_token = form.get("csrftoken")
             if not csrf_cookie:
                 response.delete_cookie(
                     self.cookie_name, self.cookie_path, self.cookie_domain
@@ -89,7 +94,7 @@ class CSRFMiddleware(BaseMiddleware):
         """
         if not self.use_csrf:
             return
-        csrf_token = self._generate_csrf_token()
+        csrf_token = request.state.csrf_token   
 
         response.set_cookie(
             key=self.cookie_name,
