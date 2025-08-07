@@ -1,124 +1,22 @@
-# Routing 
+# Routing
 
 Nexios provides a powerful and flexible routing system that supports path parameters, query parameters, and various HTTP methods. The routing system is designed to be intuitive, performant, and extensible.
 
 ::: tip Routing Fundamentals
 Routing in Nexios follows these principles:
+
 - **Declarative**: Routes are defined using decorators or the Routes class
 - **Type-safe**: Path parameters are automatically converted to the correct type
 - **Flexible**: Support for complex URL patterns and custom converters
 - **Performant**: Fast route matching with optimized algorithms
 - **Extensible**: Easy to add custom path converters and middleware
 - **Modular**: Support for routers and route grouping
-:::
-
-::: tip Route Organization Best Practices
-1. **Group related routes** in separate modules or routers
-2. **Use descriptive route names** that indicate the resource and action
-3. **Follow REST conventions** for API design
-4. **Keep routes focused** on a single responsibility
-5. **Use consistent URL patterns** across your application
-6. **Document your routes** with docstrings and OpenAPI annotations
-7. **Use route names** for URL generation and reverse lookups
-:::
-
-## Core Routing Components
-
-## The `Routes` Class
-
-The `Routes` class is the fundamental building block of Nexios routing. It encapsulates all routing information for an API endpoint, including path handling, validation, OpenAPI documentation, and request processing.
-
-```python
-from nexios.routing import Routes
-
-# Basic route creation
-route = Routes(
-    path="/users/{user_id:int}",
-    handler=get_user_handler,
-    methods=["GET"],
-    name="get_user",
-    summary="Get user by ID",
-    description="Retrieves a user by their unique identifier"
-)
-```
-
-### Routes Class Constructor
-
-```python
-Routes(
-    path: str,                                    # URL path pattern
-    handler: Optional[HandlerType] = None,        # Request handler function
-    methods: Optional[List[str]] = None,          # HTTP methods (default: ["GET"])
-    name: Optional[str] = None,                   # Route name for URL generation
-    summary: Optional[str] = None,                # Brief endpoint summary
-    description: Optional[str] = None,            # Detailed endpoint description
-    responses: Optional[Dict[int, Any]] = None,   # Response schemas by status code
-    request_model: Optional[Type[BaseModel]] = None,  # Pydantic model for validation
-    middleware: List[Any] = [],                   # Route-specific middleware
-    tags: Optional[List[str]] = None,             # OpenAPI tags for grouping
-    security: Optional[List[Dict[str, List[str]]]] = None,  # Security requirements
-    operation_id: Optional[str] = None,           # Unique operation identifier
-    deprecated: bool = False,                     # Mark as deprecated
-    parameters: List[Parameter] = [],             # Additional OpenAPI parameters
-    exclude_from_schema: bool = False,            # Hide from OpenAPI docs
-    **kwargs: Dict[str, Any]                      # Additional metadata
-)
-```
-
-::: tip Routes Class Benefits
-- **Complete Control**: Full control over route configuration
-- **OpenAPI Integration**: Automatic OpenAPI documentation generation
-- **Validation**: Built-in request validation with Pydantic models
-- **Middleware**: Route-specific middleware support
-- **Metadata**: Rich metadata for documentation and tooling
-- **Type Safety**: Full type hint support
-:::
-
-## The `Router` Class
-
-The `Router` class allows you to group related routes together and apply common configuration to all routes in the group.
-
-```python
-from nexios.routing import Router
-
-# Create a router with prefix and common configuration
-user_router = Router(
-    prefix="/users",
-    tags=["Users"],
-    responses={401: {"description": "Unauthorized"}}
-)
-
-# Add routes to the router
-@user_router.get("/")
-async def list_users(request, response):
-    return response.json({"users": []})
-
-@user_router.post("/")
-async def create_user(request, response):
-    data = await request.json
-    return response.json(data, status_code=201)
-
-# Mount the router to the main app
-app.mount_router(user_router)
-```
-
-### Router Class Constructor
-
-```python
-Router(
-    prefix: Optional[str] = None,                 # URL prefix for all routes
-    routes: Optional[List[Routes]] = None,        # Initial routes to add
-    tags: Optional[List[str]] = None,             # Default tags for all routes
-    exclude_from_schema: bool = False,            # Hide all routes from docs
-    name: Optional[str] = None                    # Router name
-)
-```
+  :::
 
 ## Basic Routing
 
-## HTTP Methods
-
 ::: code-group
+
 ```python [Basic Routes]
 from nexios import NexiosApp
 
@@ -175,9 +73,111 @@ async def items_options(request, response):
 
 # If you forget to return a response, Nexios will raise an error indicating the handler did not return a response object.
 ```
+
 :::
 
+## The `Routes` Class
+
+The `Routes` class is the fundamental building block of Nexios routing. It encapsulates all routing information for an API endpoint, including path handling, validation, OpenAPI documentation, and request processing.
+
+```python
+from nexios.routing import Routes
+
+# Basic route creation
+route = Routes(
+    path="/users/{user_id:int}",
+    handler=get_user_handler,
+    methods=["GET"],
+    name="get_user",
+    summary="Get user by ID",
+    description="Retrieves a user by their unique identifier"
+)
+```
+
+## `Routes` Class Constructor
+
+The `Routes` constructor is used to define a route within the Nexios application. It takes several parameters:
+
+- **path**: A string that specifies the URL path pattern. It can include path parameters with type annotations, like `/users/{user_id:int}`.
+- **handler**: An optional request handler function that processes incoming requests matching the route.
+- **methods**: A list of HTTP methods (e.g., `["GET", "POST"]`) that the route accepts. If not specified, it defaults to `["GET"]`.
+- **name**: An optional name for the route, used for URL generation.
+- **summary**: A brief description of the endpoint, useful for documentation.
+- **description**: A detailed explanation of the endpoint's functionality.
+- **responses**: A dictionary that maps HTTP status codes to response schemas.
+- **request_model**: An optional Pydantic model for validating and parsing request data.
+- **middleware**: A list of middleware functions specific to the route.
+- **tags**: A list of OpenAPI tags for categorizing the endpoint in documentation.
+- **security**: A list of security requirements for accessing the route.
+- **operation_id**: A unique identifier for the operation, useful for documentation and client generation.
+- **deprecated**: A boolean indicating whether the route is deprecated.
+- **parameters**: A list of additional OpenAPI parameters for the route.
+- **exclude_from_schema**: A boolean indicating whether to exclude the route from OpenAPI documentation.
+- **kwargs**: Additional metadata for the route.
+
+```python
+Routes(
+    path: str,                                    # URL path pattern
+    handler: Optional[HandlerType] = None,        # Request handler function
+    methods: Optional[List[str]] = None,          # HTTP methods (default: ["GET"])
+    name: Optional[str] = None,                   # Route name for URL generation
+    summary: Optional[str] = None,                # Brief endpoint summary
+    description: Optional[str] = None,            # Detailed endpoint description
+    responses: Optional[Dict[int, Any]] = None,   # Response schemas by status code
+    request_model: Optional[Type[BaseModel]] = None,  # Pydantic model for validation
+    middleware: List[Any] = [],                   # Route-specific middleware
+    tags: Optional[List[str]] = None,             # OpenAPI tags for grouping
+    security: Optional[List[Dict[str, List[str]]]] = None,  # Security requirements
+    operation_id: Optional[str] = None,           # Unique operation identifier
+    deprecated: bool = False,                     # Mark as deprecated
+    parameters: List[Parameter] = [],             # Additional OpenAPI parameters
+    exclude_from_schema: bool = False,            # Hide from OpenAPI docs
+    **kwargs: Dict[str, Any]                      # Additional metadata
+)
+```
+
+## The `Router` Class
+
+The `Router` class allows you to group related routes together and apply common configuration to all routes in the group.
+
+```python
+from nexios.routing import Router
+
+# Create a router with prefix and common configuration
+user_router = Router(
+    prefix="/users",
+    tags=["Users"],
+    responses={401: {"description": "Unauthorized"}}
+)
+
+# Add routes to the router
+@user_router.get("/")
+async def list_users(request, response):
+    return response.json({"users": []})
+
+@user_router.post("/")
+async def create_user(request, response):
+    data = await request.json
+    return response.json(data, status_code=201)
+
+# Mount the router to the main app
+app.mount_router(user_router)
+```
+
+### Router Class Constructor
+
+```python
+Router(
+    prefix: Optional[str] = None,                 # URL prefix for all routes
+    routes: Optional[List[Routes]] = None,        # Initial routes to add
+    tags: Optional[List[str]] = None,             # Default tags for all routes
+    exclude_from_schema: bool = False,            # Hide all routes from docs
+    name: Optional[str] = None                    # Router name
+)
+```
+
 ::: tip HTTP Method Best Practices
+
 - **GET**: For retrieving data (should be idempotent)
 - **POST**: For creating new resources
 - **PUT**: For replacing entire resources (idempotent)
@@ -185,18 +185,7 @@ async def items_options(request, response):
 - **DELETE**: For removing resources
 - **HEAD**: For metadata without body
 - **OPTIONS**: For CORS preflight requests
-:::
-
-::: tip Status Code Guidelines
-- **200**: Success (GET, PUT, PATCH)
-- **201**: Created (POST)
-- **204**: No Content (DELETE)
-- **400**: Bad Request (validation errors)
-- **401**: Unauthorized (authentication required)
-- **403**: Forbidden (insufficient permissions)
-- **404**: Not Found (resource doesn't exist)
-- **500**: Internal Server Error (server errors)
-:::
+  :::
 
 ## Advanced Route Registration
 
@@ -275,12 +264,13 @@ app.add_route(
 ```
 
 ::: tip When to Use `app.add_route()`
+
 - **Dynamic Route Creation**: When routes need to be created programmatically
 - **Complex Configuration**: When you need full control over route options
 - **Route Factories**: When generating routes from data or configuration
 - **Testing**: When you need to test route registration logic
 - **Plugins**: When building plugins that register routes
-:::
+  :::
 
 ## Path Parameters
 
@@ -289,6 +279,7 @@ app.add_route(
 Nexios provides several built-in path converters for validating and converting URL parameters:
 
 ::: code-group
+
 ```python [Basic Types]
 @app.get("/users/{user_id:int}")
 async def get_user(request, response):
@@ -337,18 +328,19 @@ async def get_order(request, response):
 
 # If price or order_id are not valid numbers, Nexios will return a 422 error.
 ```
+
 :::
 
 ### Available Converters
 
-| Converter | Type | Pattern | Description |
-|-----------|------|---------|-------------|
-| `str` | String | `[^/]+` | Any string without slashes |
-| `path` | String | `.*` | Any string including slashes |
-| `int` | Integer | `[0-9]+` | Positive integers |
-| `float` | Float | `[0-9]+(\.[0-9]+)?` | Positive floats |
-| `uuid` | UUID | `[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}` | UUID format |
-| `slug` | String | `[a-z0-9]+(?:-[a-z0-9]+)*` | URL-friendly strings |
+| Converter | Type    | Pattern                                                                           | Description                  |
+| --------- | ------- | --------------------------------------------------------------------------------- | ---------------------------- |
+| `str`     | String  | `[^/]+`                                                                           | Any string without slashes   |
+| `path`    | String  | `.*`                                                                              | Any string including slashes |
+| `int`     | Integer | `[0-9]+`                                                                          | Positive integers            |
+| `float`   | Float   | `[0-9]+(\.[0-9]+)?`                                                               | Positive floats              |
+| `uuid`    | UUID    | `[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}` | UUID format                  |
+| `slug`    | String  | `[a-z0-9]+(?:-[a-z0-9]+)*`                                                        | URL-friendly strings         |
 
 ## Custom Path Converters
 
@@ -388,16 +380,19 @@ async def get_user_by_email(request, response):
 To create a custom converter:
 
 1. Subclass `Convertor` with the desired type:
+
 ```python
 class MyConvertor(Convertor[YourType]):
     regex = "your-regex-pattern"
 ```
 
 2. Implement the required methods:
+
    - `convert(self, value: str) -> YourType`: Converts string to your type
    - `to_string(self, value: YourType) -> str`: Converts your type to string
 
 3. Register the converter:
+
 ```python
 register_url_convertor("converter_name", MyConvertor())
 ```
@@ -432,12 +427,13 @@ Custom converters must be registered before they can be used in routes. It's rec
 
 ::: tip Best Practices
 When creating custom converters:
+
 1. Use clear and efficient regex patterns
 2. Validate input in both `convert` and `to_string` methods
 3. Provide meaningful error messages
 4. Consider performance implications
 5. Test thoroughly with edge cases
-:::
+   :::
 
 ## Router Organization
 
@@ -527,6 +523,7 @@ app.mount_router(api_router)
 ```
 
 This creates the following URL structure:
+
 - `/api/v1/users/` - List users (v1)
 - `/api/v1/users/{user_id}` - Get user (v1)
 - `/api/v1/posts/` - List posts (v1)
@@ -780,12 +777,12 @@ class UserWithStats(BaseModel):
     email: EmailStr
     posts_count: int
     followers_count: int
-    
+
     @computed_field
     @property
     def total_engagement(self) -> int:
         return self.posts_count + self.followers_count
-    
+
     @computed_field
     @property
     def engagement_rate(self) -> float:
@@ -994,14 +991,14 @@ You can create routes programmatically:
 ```python
 def create_crud_routes(resource_name: str, model_class):
     """Create CRUD routes for a resource"""
-    
+
     routes = []
-    
+
     # List route
     async def list_handler(request, response):
         items = await model_class.all()
         return response.json({f"{resource_name}": items})
-    
+
     routes.append(Routes(
         path=f"/{resource_name}",
         handler=list_handler,
@@ -1014,13 +1011,13 @@ def create_crud_routes(resource_name: str, model_class):
             400: ErrorResponse
         }
     ))
-    
+
     # Create route
     async def create_handler(request, response):
         data = await request.json
         item = await model_class.create(**data)
         return response.json(item, status_code=201)
-    
+
     routes.append(Routes(
         path=f"/{resource_name}",
         handler=create_handler,
@@ -1034,13 +1031,13 @@ def create_crud_routes(resource_name: str, model_class):
             409: ErrorResponse
         }
     ))
-    
+
     # Get route
     async def get_handler(request, response):
         item_id = request.path_params.id
         item = await model_class.get(item_id)
         return response.json(item)
-    
+
     routes.append(Routes(
         path=f"/{resource_name}/{{id:int}}",
         handler=get_handler,
@@ -1053,7 +1050,7 @@ def create_crud_routes(resource_name: str, model_class):
             404: ErrorResponse
         }
     ))
-    
+
     return routes
 
 # Example model class with response model
@@ -1063,17 +1060,17 @@ class UserModel:
         name: str
         email: str
         created_at: datetime
-    
+
     @classmethod
     async def all(cls):
         # Implementation
         pass
-    
+
     @classmethod
     async def create(cls, **data):
         # Implementation
         pass
-    
+
     @classmethod
     async def get(cls, id: int):
         # Implementation
@@ -1136,14 +1133,14 @@ for route_config in routes_config:
     module_name, handler_name = route_config["handler"].rsplit(".", 1)
     module = __import__(module_name, fromlist=[handler_name])
     handler = getattr(module, handler_name)
-    
+
     route = Routes(
         path=route_config["path"],
         handler=handler,
         methods=route_config["methods"],
         name=route_config["name"]
     )
-    
+
     app.add_route(route)
 
 # If a dynamically imported handler does not exist or fails to import, Nexios will raise an ImportError at startup.
@@ -1236,4 +1233,3 @@ app.router._clear_cache()  # Internal method, use with caution
 8. **Monitor Performance**: Track route performance in production
 9. **Version APIs**: Use versioning for API evolution
 10. **Security First**: Apply appropriate security measures to routes
-
