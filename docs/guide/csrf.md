@@ -118,6 +118,131 @@ Nexios provides flexible configuration to customize CSRF protection for your app
   - Must match your form field names
   - Example: `"_csrf_token"`
 
+## Using CSRF with Templates
+
+When working with Nexios templates, you can easily include CSRF tokens in your forms. The CSRF token is automatically added to the request state and can be accessed in your templates.
+
+### 1. Basic Form with CSRF Token
+
+First, ensure you have a template file (e.g., `templates/login.html`):
+
+```html
+<!-- templates/login.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Login</title>
+  </head>
+  <body>
+    <h1>Login</h1>
+    <form method="post" action="/login">
+      <input type="hidden" name="csrftoken" value="{{ csrf_token }}" />
+
+      <div class="form-group">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required />
+      </div>
+
+      <button type="submit">Login</button>
+    </form>
+  </body>
+</html>
+```
+
+### 2. Route Handler with Template Rendering
+
+In your route handler, use the `render` function to render the template with the CSRF token:
+
+```python
+from nexios.templating import render
+
+@app.get("/login")
+async def login_get(request, response):
+    # The CSRF token is automatically available in the template context
+    return await render("login.html", request=request)
+
+@app.post("/login")
+async def login_post(request, response):
+    form = await request.form()
+    # CSRF validation happens automatically via the middleware
+
+    # Your login logic here
+    if form.get("username") == "admin" and form.get("password") == "password":
+        return "Login successful!"
+    return "Invalid credentials"
+```
+
+### 3. Using Template Context Middleware (Recommended)
+
+For better organization, use the `TemplateContextMiddleware` to automatically inject the CSRF token into all your templates:
+
+```python
+from nexios.templating.middleware import TemplateContextMiddleware
+
+# Add this before your route definitions
+app.add_middleware(TemplateContextMiddleware())
+
+# Now all templates will have access to the CSRF token as `{{ csrf_token }}`
+```
+
+### 4. AJAX Requests with CSRF
+
+For AJAX requests, include the CSRF token in your JavaScript:
+
+```javascript
+// Include this in your base template
+<script>
+    // Get CSRF token from meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Example AJAX request
+    async function submitForm() {
+        const response = await fetch('/api/endpoint', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ data: 'example' })
+        });
+        return await response.json();
+    }
+</script>
+```
+
+### 5. Customizing the CSRF Field Name
+
+If you need to use a different field name for the CSRF token in your forms, you can customize it in your configuration:
+
+```python
+config = MakeConfig(
+    # ... other config
+    csrf_form_field="custom_csrf_field",  # Default is "csrftoken"
+)
+```
+
+Then update your form to use the custom field name:
+
+```html
+<form method="post">
+  <input type="hidden" name="custom_csrf_field" value="{{ csrf_token }}" />
+  <!-- form fields -->
+</form>
+```
+
+## Best Practices
+
+1. **Always use HTTPS** in production to protect the CSRF token in transit.
+2. **Don't expose the CSRF token** in logs or error messages.
+3. **Use the TemplateContextMiddleware** to automatically include the CSRF token in all templates.
+4. **Protect all state-changing endpoints** (POST, PUT, DELETE, PATCH) with CSRF tokens.
+5. **Use the same-site cookie attribute** to provide additional protection against CSRF attacks.
+
 ## Client-Side Implementation
 
 ### 1. HTML Forms
@@ -159,3 +284,19 @@ For AJAX requests, you'll need to:
 
 1. Extract the CSRF token from cookies
 2. Include it in the request headers
+
+```javascript
+// Example AJAX request
+async function submitForm() {
+  const csrfToken = document.cookie.match(/csrftoken=([^\s]*)/)[1];
+  const response = await fetch("/api/endpoint", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": csrfToken,
+    },
+    body: JSON.stringify({ data: "example" }),
+  });
+  return await response.json();
+}
+```
