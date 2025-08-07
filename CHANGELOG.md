@@ -1,3 +1,11 @@
+## v2.10.1 (2025-08-07)
+
+### Fix
+
+- **csrf**: improve CSRF protection and token handling
+- **docs**: fix routing docs orgnization
+- **docs**:  fix websockets documentation on channels
+
 ## v2.10.0 (2025-08-02)
 
 ### Feat

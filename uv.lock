@@ -191,11 +191,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/08/b8/7ddd1e8ba9701dea08ce22029917140e6f66a859427406579fd8d0ca7274/coverage-7.9.1-py3-none-any.whl", hash = "sha256:66b974b145aa189516b6bf2d8423e888b742517d37872f6ee4c5be0073bd9a3c", size = 204000, upload-time = "2025-06-13T13:02:27.173Z" },
 ]
 
-[package.optional-dependencies]
-toml = [
-    { name = "tomli", marker = "python_full_version <= '3.11'" },
-]
-
 [[package]]
 name = "exceptiongroup"
 version = "1.3.0"
@@ -597,12 +592,10 @@ wheels = [
 
 [[package]]
 name = "nexios"
-version = "2.8.0.dev2"
+version = "2.10.0"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
-    { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "click", version = "8.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "itsdangerous" },
     { name = "pydantic" },
     { name = "python-multipart" },
@@ -612,36 +605,52 @@ dependencies = [
 
 [package.optional-dependencies]
 all = [
+    { name = "anyio" },
     { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "click", version = "8.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "granian" },
+    { name = "itsdangerous" },
     { name = "jinja2" },
     { name = "pyjwt" },
+    { name = "python-multipart" },
+    { name = "uvicorn" },
+]
+cli = [
+    { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "click", version = "8.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
 ]
 dev = [
+    { name = "anyio" },
     { name = "black" },
+    { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "click", version = "8.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "coverage" },
+    { name = "granian" },
     { name = "httpx" },
     { name = "isort" },
+    { name = "itsdangerous" },
+    { name = "jinja2" },
     { name = "mkdocs" },
     { name = "mypy" },
     { name = "pyjwt" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
+    { name = "python-multipart" },
     { name = "ruff" },
     { name = "typing-extensions" },
+    { name = "uvicorn" },
 ]
 granian = [
     { name = "granian" },
 ]
+http = [
+    { name = "anyio" },
+    { name = "itsdangerous" },
+    { name = "python-multipart" },
+    { name = "uvicorn" },
+]
 jwt = [
     { name = "pyjwt" },
-]
-mailer = [
-    { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "click", version = "8.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-    { name = "jinja2" },
 ]
 templating = [
     { name = "jinja2" },
@@ -650,18 +659,25 @@ templating = [
 [package.metadata]
 requires-dist = [
     { name = "anyio", specifier = "==4.3.0" },
+    { name = "anyio", marker = "extra == 'all'", specifier = ">=4.0.0" },
+    { name = "anyio", marker = "extra == 'dev'", specifier = ">=4.0.0" },
+    { name = "anyio", marker = "extra == 'http'", specifier = ">=4.0.0" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=23.0.0" },
-    { name = "click", specifier = ">=8.1.3" },
     { name = "click", marker = "extra == 'all'", specifier = ">=8.1.3" },
-    { name = "click", marker = "extra == 'mailer'", specifier = ">=8.1.3" },
+    { name = "click", marker = "extra == 'cli'", specifier = ">=8.1.3" },
+    { name = "click", marker = "extra == 'dev'", specifier = ">=8.1.3" },
     { name = "coverage", marker = "extra == 'dev'", specifier = ">=6.3,<8.0" },
     { name = "granian", marker = "extra == 'all'", specifier = ">=1.2.0" },
+    { name = "granian", marker = "extra == 'dev'", specifier = ">=1.2.0" },
     { name = "granian", marker = "extra == 'granian'", specifier = ">=1.2.0" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.23.3,<0.29.0" },
-    { name = "isort", marker = "extra == 'dev'", specifier = ">=5.12.0" },
+    { name = "isort", marker = "extra == 'dev'", specifier = ">=5.13.2" },
     { name = "itsdangerous", specifier = ">=2.1.2" },
+    { name = "itsdangerous", marker = "extra == 'all'", specifier = ">=2.1.2" },
+    { name = "itsdangerous", marker = "extra == 'dev'", specifier = ">=2.1.2" },
+    { name = "itsdangerous", marker = "extra == 'http'", specifier = ">=2.1.2" },
     { name = "jinja2", marker = "extra == 'all'", specifier = ">=3.1.6" },
-    { name = "jinja2", marker = "extra == 'mailer'", specifier = ">=3.1.6" },
+    { name = "jinja2", marker = "extra == 'dev'", specifier = ">=3.1.6" },
     { name = "jinja2", marker = "extra == 'templating'", specifier = ">=3.1.6" },
     { name = "mkdocs", marker = "extra == 'dev'", specifier = ">=1.2.3" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.15.0" },
@@ -669,18 +685,22 @@ requires-dist = [
     { name = "pyjwt", marker = "extra == 'all'", specifier = ">=2.7.0" },
     { name = "pyjwt", marker = "extra == 'dev'", specifier = ">=2.7.0" },
     { name = "pyjwt", marker = "extra == 'jwt'", specifier = ">=2.7.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.4,<8.5.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.25.3,<0.27.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "python-multipart", specifier = ">=0.0.6" },
-    { name = "ruff", marker = "extra == 'dev'" },
+    { name = "python-multipart", marker = "extra == 'all'", specifier = ">=0.0.6" },
+    { name = "python-multipart", marker = "extra == 'dev'", specifier = ">=0.0.6" },
+    { name = "python-multipart", marker = "extra == 'http'", specifier = ">=0.0.6" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.0.256" },
     { name = "typing-extensions", specifier = "==4.12.2" },
+    { name = "typing-extensions", marker = "python_full_version < '3.10'", specifier = ">=4.0.0" },
     { name = "typing-extensions", marker = "extra == 'dev'", specifier = "==4.12.2" },
     { name = "uvicorn", specifier = ">=0.27.0" },
+    { name = "uvicorn", marker = "extra == 'all'", specifier = ">=0.27.0" },
+    { name = "uvicorn", marker = "extra == 'dev'", specifier = ">=0.27.0" },
+    { name = "uvicorn", marker = "extra == 'http'", specifier = ">=0.27.0" },
 ]
-provides-extras = ["templating", "jwt", "granian", "mailer", "all", "dev"]
+provides-extras = ["templating", "jwt", "granian", "cli", "http", "all", "dev"]
 
 [[package]]
 name = "packaging"
@@ -879,20 +899,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/8e/c4/453c52c659521066969523e87d85d54139bbd17b78f09532fb8eb8cdb58e/pytest_asyncio-0.26.0.tar.gz", hash = "sha256:c4df2a697648241ff39e7f0e4a73050b03f123f760673956cf0d72a4990e312f", size = 54156, upload-time = "2025-03-25T06:22:28.883Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/20/7f/338843f449ace853647ace35870874f69a764d251872ed1b4de9f234822c/pytest_asyncio-0.26.0-py3-none-any.whl", hash = "sha256:7b51ed894f4fbea1340262bdae5135797ebbe21d8638978e35d31c6d19f72fb0", size = 19694, upload-time = "2025-03-25T06:22:27.807Z" },
-]
-
-[[package]]
-name = "pytest-cov"
-version = "6.2.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "coverage", extra = ["toml"] },
-    { name = "pluggy" },
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/18/99/668cade231f434aaa59bbfbf49469068d2ddd945000621d3d165d2e7dd7b/pytest_cov-6.2.1.tar.gz", hash = "sha256:25cc6cc0a5358204b8108ecedc51a9b57b34cc6b8c967cc2c01a4e00d8a67da2", size = 69432, upload-time = "2025-06-12T10:47:47.684Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/bc/16/4ea354101abb1287856baa4af2732be351c7bee728065aed451b678153fd/pytest_cov-6.2.1-py3-none-any.whl", hash = "sha256:f5bc4c23f42f1cdd23c70b1dab1bbaef4fc505ba950d53e0081d0730dd7e86d5", size = 24644, upload-time = "2025-06-12T10:47:45.932Z" },
 ]
 
 [[package]]
