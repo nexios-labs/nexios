@@ -146,7 +146,6 @@ class ASGIRequestResponseBridge:
         request = _CachedRequest(scope, receive)
         response = Response(request=request)
 
-        # Set the context for this request
         
         
         wrapped_receive = request.wrapped_receive
