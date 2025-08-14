@@ -1,28 +1,66 @@
-# Request Models
+# Request Models in Nexios
 
-Request models in Nexios are built using Pydantic's BaseModel to provide robust request validation, automatic OpenAPI documentation, and type-safe request handling. This documentation covers how to define and use request models in your API endpoints.
+Request models are the backbone of robust, secure, and well-documented APIs. In Nexios, request models are built using Pydantic's `BaseModel`, which provides automatic validation, serialization, and OpenAPI integration.
+
+---
+
+## Why Use Request Models?
+
+- **Automatic data validation**: Ensure incoming data matches your expectations.
+- **Clear API documentation**: Models are reflected in your OpenAPI docs.
+- **Type safety**: IDE autocompletion and fewer runtime errors.
+
+---
 
 ## Defining Request Models
-Request models are standard Pydantic models that define the expected structure of incoming request data.
-To define a request model in your API endpoint, you can use the `request_model` argument in the `@app.get` or `@app.post` decorators. Here's an example:
 
+Request models are standard Pydantic models that define the expected structure of incoming request data. You can use them for POST, PUT, and PATCH endpoints, or any route that expects a JSON body.
 
 ```python
 from nexios import NexiosApp
 from pydantic import BaseModel
 
-class User(BaseModel):
+class UserCreateRequest(BaseModel):
     name: str
-    age : int
+    age: int
+    email: str
 
 app = NexiosApp()
 
-@app.post("/users", request_model=User)
-async def get_users(req, res):
+@app.post("/users", request_model=UserCreateRequest, summary="Create a new user")
+async def create_user(req, res):
+    data = req.body  # Already validated as UserCreateRequest
+    # process user creation
     ...
 ```
 
+![Request Body Example](./request-body.png)
 
-<img src="./request-body.png">
+---
 
-For more information on how to use request models, please refer to the [Pydantic documentation](https://pydantic-docs.helpmanual.io/)
+## Advanced Usage
+
+- Use nested models for complex payloads.
+- Add field descriptions and examples for better docs:
+
+```python
+class Address(BaseModel):
+    street: str
+    city: str
+    country: str
+
+class UserWithAddress(BaseModel):
+    name: str
+    address: Address
+```
+
+---
+
+## Best Practices
+
+- Always validate incoming data with request models.
+- Document required and optional fields.
+- Use Pydantic features like validators, default values, and constraints.
+- Keep models in a dedicated `models.py` for larger projects.
+
+For more details on Pydantic models, see the [Pydantic documentation](https://pydantic-docs.helpmanual.io/).

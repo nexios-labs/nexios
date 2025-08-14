@@ -1,100 +1,123 @@
-# Nexios Framework: OpenAPI Authentication Guide
+# OpenAPI Authentication in Nexios
 
-Nexios supports OpenAPI authentication, which allows you to secure your API endpoints with JSON Web Tokens (JWT) or other authentication mechanisms. Here's how you can set up OpenAPI authentication in your Nexios application 
+Securing your API is essential for protecting user data and enabling safe integrations. Nexios supports multiple authentication schemes and provides first-class OpenAPI documentation for each.
 
-## basic setup
+---
 
-By default already provide `bearerAuth` in OpenAPI documentation .
+## 1. Why Secure Your API?
+
+APIs without authentication are vulnerable to abuse and data leaks. Always protect sensitive endpoints!
+
+**Example:**
+
+```python
+@app.get("/public")
+async def public_info(req, res):
+    return {"info": "Anyone can see this."}
+
+@app.get("/private", security=[{"bearerAuth": []}])
+async def private_info(req, res):
+    return {"info": "Only authenticated users see this."}
+```
+
+---
+
+## 2. Bearer (JWT) Authentication
+
+JWT (JSON Web Token) is the default method. Nexios includes a `bearerAuth` scheme automatically.
+
+### How to Require JWT Auth
 
 ```python
 from nexios import NexiosApp
+
 app = NexiosApp()
 
-@app.get("/", security=[{"bearerAuth": []}])
-async def get_root(req, res):
-    return {"message": "Hello, world!"}
+@app.get("/profile", security=[{"bearerAuth": []}], summary="Get user profile (JWT required)")
+async def get_profile(req, res):
+    # req.user is set after authentication
+    ...
 ```
 
-<img src="./bearerAuth.png">
+**What does this look like in docs?**
+![Bearer Auth Example](./bearerAuth.png)
 
-## Adding Multi  Security Schemes
+### Multiple JWT-Protected Endpoints
 
 ```python
-from nexios import NexiosApp
-app = NexiosApp()
+@app.get("/settings", security=[{"bearerAuth": []}])
+async def settings(req, res): ...
 
-@app.get("/", security=[{"bearerAuth": []}, {"apiKey": []}])
-async def get_root(req, res):
-    return {"message": "Hello, world!"}
+@app.post("/posts", security=[{"bearerAuth": []}])
+async def create_post(req, res): ...
 ```
-::: warning ⚠️ Warning
-You most register security scheme before using it.
-:::
-## Registering Security Schemes
-::: tip 💡Tip
-You can also access the openapi config from `app.docs.cofig` object.
-:::
+
+### Customizing Bearer Scheme
 
 ```python
-from nexios.openapi.models import  APIKey
-
+from nexios.openapi.models import HTTPBearer
 app.docs.add_security_scheme(
-    "apiKeyAuth",
-    APIKey(
-    name="X-API-KEY",
-    **{
-        "in": "header",
-        "description": "My API key",
-        "type": "apiKey"
-    }
-)
-)
-```
-
-::: warning ⚠️ Warning
-
-Note : The dict used indead of passing the argugument directly. because `in` is a reserved keyword in python.
-
-:::
-
-### Authentication Types
-
-JWT Bearer Authentication
-The most common method for modern APIs. Clients include a token in the Authorization header.
-
-```python 
-app.docs.config.add_security_scheme(
-    "jwtAuth",  # Unique identifier
+    "jwtAuth",
     HTTPBearer(
         type="http",
         scheme="bearer",
         bearerFormat="JWT",
-        description="Requires valid JWT token in Authorization header"
+        description="JWT token required in Authorization header"
     )
 )
-
 ```
 
-### API Key Authentication
-For simpler authentication needs, using keys in headers, queries, or cookies.
+---
+
+## 3. API Key Authentication (Header, Query, Cookie)
+
+API keys are great for simple, programmatic access. You must register the scheme first.
+
+### Register an API Key Scheme
 
 ```python
-app.docs.config.add_security_scheme(
+from nexios.openapi.models import APIKey
+app.docs.add_security_scheme(
     "apiKeyAuth",
     APIKey(
-        name="X-API-KEY",  # Header/parameter name
-        **{
-            "in": "header",  # Can be "header", "query", or "cookie"
-            "description": "Access with your API key"
-        }
+        name="X-API-KEY",
+        **{"in": "header", "description": "Your API access key", "type": "apiKey"}
     )
 )
 ```
 
-## OAuth2 Authentication
+### Require API Key on an Endpoint
 
-```py
-app.docs.config.add_security_scheme(
+```python
+@app.get("/admin", security=[{"apiKeyAuth": []}], summary="Admin access (API Key)")
+async def admin_panel(req, res):
+    ...
+```
+
+### Use API Key in Query or Cookie
+
+```python
+APIKey(
+    name="api_key",
+    **{"in": "query", "description": "API key as query parameter", "type": "apiKey"}
+)
+APIKey(
+    name="session_id",
+    **{"in": "cookie", "description": "Session cookie", "type": "apiKey"}
+)
+```
+
+---
+
+## 4. OAuth2 Authentication (with Scopes)
+
+OAuth2 is for delegated, third-party access. Nexios supports all flows.
+
+### Register OAuth2 Password Flow
+
+```python
+from nexios.openapi.models import OAuth2, OAuthFlows, OAuthFlowPassword
+app.docs.add_security_scheme(
     "oauth2",
     OAuth2(
         flows=OAuthFlows(
@@ -102,8 +125,8 @@ app.docs.config.add_security_scheme(
                 tokenUrl="/auth/token",
                 scopes={
                     "read": "Read access",
-                    "write": " Write access",
-                    "admin": " Admin privileges"
+                    "write": "Write access",
+                    "admin": "Admin privileges"
                 }
             )
         ),
@@ -112,18 +135,42 @@ app.docs.config.add_security_scheme(
 )
 ```
 
-
-
-## OAuth2 Scoped Routes
-Require specific permissions:
-
-
+### Require OAuth2 with Scopes
 
 ```python
-from nexios import NexiosApp
-app = NexiosApp()
-
-@app.get("/", security=[{"oauth2": ["read"]}])
-async def get_root(req, res):
-    return {"message": "Hello, world!"}
+@app.get("/admin", security=[{"oauth2": ["admin"]}], summary="Admin-only endpoint")
+async def admin_dashboard(req, res):
+    ...
 ```
+
+---
+
+## 5. Combining Security Schemes
+
+You can require multiple or alternative auth methods.
+
+**Example: JWT _or_ API Key**
+
+```python
+@app.get("/superuser", security=[{"bearerAuth": []}, {"apiKeyAuth": []}])
+async def superuser_panel(req, res):
+    ...
+```
+
+---
+
+## 6. Best Practices & Troubleshooting
+
+- Register all security schemes before referencing them.
+- Use clear, descriptive names for each scheme.
+- Document which endpoints require which auth.
+- For public APIs, prefer OAuth2 for flexibility.
+- Test your docs UI to ensure all auth flows work as expected.
+
+---
+
+**See also:**
+
+- [Request Parameters](./request-parameters.md)
+- [Response Models](./response-models.md)
+- [Customizing OpenAPI](./customizing-openapi-configuration.md)
