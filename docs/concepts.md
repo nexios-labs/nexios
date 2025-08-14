@@ -1,191 +1,235 @@
-# Core Concepts
+# Nexios Core Concepts
 
-This guide explains the core concepts and architecture of the Nexios framework.
+Nexios is a modern, async-first Python web framework built on ASGI. It combines high performance, developer-friendly features, and a clean, maintainable architecture. This page introduces the fundamental concepts that make Nexios powerful and easy to use.
+
+## Framework Philosophy
+
+Nexios is designed around several core principles:
+
+### 1. **Simplicity First**
+
+Nexios prioritizes simplicity in its API. Common tasks are straightforward, while advanced features remain accessible.
+
+```python
+@app.get("/users/{user_id}")
+async def get_user(request, response user_id):
+    return {"id": user_id, "name": "John Doe"}
+
+# Simple middleware addition
+app.add_middleware(CORSMiddleware())
+```
+
+### 2. **Performance by Default**
+
+Every design decision in Nexios considers performance. The framework is optimized for high-throughput applications without sacrificing developer experience.
+
+### 3. **Type Safety Throughout**
+
+Full type hint support means better IDE integration, fewer runtime errors, and more maintainable code.
+
+```python
+from nexios.http import Request, Response
+from typing import Dict, Any
+
+@app.get("/api/data")
+async def get_data(request: Request, response: Response):
+    return {"status": "success"}
+```
+
+### 4. **Production Ready**
+
+Built-in features for security, monitoring, and deployment mean you can focus on business logic rather than infrastructure.
+
+### 5. **Developer Experience**
+
+Excellent tooling, clear error messages, and comprehensive documentation make development enjoyable and efficient.
+
+---
+
+## Understanding ASGI
+
+ASGI (Asynchronous Server Gateway Interface) is the foundation that enables Nexios to handle concurrent connections efficiently.
+
+### What is ASGI?
+
+ASGI defines how web servers communicate with Python web applications. It improves on WSGI by supporting:
+
+- **Async/await** for non-blocking operations
+- **Concurrent requests**
+- **WebSocket support**
+- **HTTP/2 support**
+- **Lifespan protocol** for startup/shutdown
+
+### ASGI vs WSGI
+
+| Feature     | WSGI                       | ASGI                              |
+| ----------- | -------------------------- | --------------------------------- |
+| Concurrency | Synchronous, one at a time | Asynchronous, concurrent requests |
+| WebSockets  | Not supported              | Native support                    |
+| HTTP/2      | Limited support            | Full support                      |
+| Performance | Good for simple apps       | Excellent for high-load apps      |
+| Complexity  | Simple                     | More complex, more powerful       |
+
+::: tip Why ASGI Matters
+ASGI enables Nexios to:
+
+- Handle thousands of concurrent connections
+- Provide real-time features (WebSockets)
+- Scale efficiently
+- Support modern web standards
+  :::
+
+---
 
 ## Framework Architecture
 
-```mermaid
-graph TD
-    A["Client Request"] --> B["Router Layer"]
-    B --> C["Middleware Chain"]
-    C --> D["Route Handler"]
-    D --> E["Response"]
-    D --> F["Database"]
-    D --> G["External Services"]
-    
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-    style E fill:#bbf,stroke:#333,stroke-width:2px
-```
+Nexios uses a layered architecture:
 
-## Key Components
+### 1. ASGI Foundation Layer
 
-### 1. Router
-The router is responsible for URL pattern matching and request routing. Nexios uses a tree-based router for efficient routing:
+Handles the low-level ASGI protocol and provides the interface between your app and the web server.
 
 ```python
-from nexios import NexiosApp
+async def __call__(self, scope, receive, send):
+    if scope["type"] == "http":
+        await self.handle_http_request(scope, receive, send)
+    elif scope["type"] == "websocket":
+        await self.handle_websocket(scope, receive, send)
+```
 
-app = NexiosApp()
+### 2. Middleware Layer
 
-@app.get("/users/{user_id}")
+Middleware allows you to add cross-cutting concerns (security, CORS, sessions, logging).
+
+```python
+from nexios.middleware import CORSMiddleware, SecurityMiddleware
+
+app.add_middleware(CORSMiddleware())
+app.add_middleware(SecurityMiddleware())
+```
+
+### 3. Routing Layer
+
+Routes map HTTP requests to handler functions.
+
+```python
+@app.get("/users/{user_id:int}")
 async def get_user(request, response):
-    user_id = request.path_params.user_id
-    return response.json({"user_id": user_id})
+    user_id = request.path_params.user_id  # Already an int
+    return response.json({"id": user_id})
 ```
 
-### 2. Middleware
-Middleware provides a way to process requests/responses before/after they reach route handlers:
+### 4. Handler & Response Layer
+
+Handlers process requests and return responses. Nexios automatically serializes responses.
 
 ```python
-from nexios import Middleware
-from nexios.exceptions import HTTPException
-
-class AuthMiddleware(Middleware):
-    async def process_request(self, request):
-        token = request.headers.get("Authorization")
-        if not token:
-            raise HTTPException(401, "Authorization token required")
-        request.user = await validate_token(token)
+@app.get("/api/data")
+async def get_data(request, response):
+    return response.json({"status": "success"})
 ```
 
-### 3. Request Lifecycle
+---
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant Router
-    participant Middleware
-    participant Handler
-    participant Database
-    
-    Client->>Router: HTTP Request
-    Router->>Middleware: Process Request
-    Middleware->>Handler: Handled Request
-    Handler->>Database: Query Data
-    Database-->>Handler: Return Data
-    Handler-->>Client: HTTP Response
-```
+## Dependency Injection
 
-### 4. Database Integration
-Nexios provides built-in database support with async drivers:
+Nexios supports dependency injection for clean, testable code.
 
 ```python
-from nexios.db import Database
+from nexios import Depend
 
-db = Database("postgresql://user:pass@localhost/db")
+async def get_database():
+    return Database()
 
-async def get_users():
-    return await db.fetch_all("SELECT * FROM users")
+async def get_current_user(request, db=Depend(get_database)):
+    token = request.headers.get("Authorization")
+    if not token:
+        raise HTTPException(401, "Unauthorized")
+    user = await db.get_user_by_token(token)
+    if not user:
+        raise HTTPException(401, "Invalid token")
+    return user
+
+@app.get("/profile")
+async def get_profile(request, response, user=Depend(get_current_user)):
+    return response.json({"id": user.id, "name": user.name})
 ```
 
-## Security Best Practices
+---
 
-::: warning
-Always validate and sanitize user inputs to prevent injection attacks:
-```python
-from nexios.validation import validate_input
+## Performance Considerations
 
-@app.post("/users")
-async def create_user(request, response):
-    data = await validate_input(await request.json, UserSchema)
-    # Proceed with validated data
-    return response.json({"status": "success", "data": data})
-```
-:::
+- **Use async for I/O**: Always use async database drivers and HTTP clients.
+- **Avoid blocking operations**: Blocking code will block the event loop.
+- **Connection pooling**: Reuse connections for better performance.
+- **Cache expensive operations**: Use caching for repeated computations.
 
-## WebSocket Support
+---
 
-Nexios provides first-class WebSocket support:
+## Security
 
-```python
-@app.ws_route("/ws")
-async def websocket_endpoint(websocket):
-    await websocket.accept()
-    try:
-        while True:
-            data = await websocket.receive_json()
-            await websocket.send_json({"message": "Received"})
-    except Exception as e:
-        print(f"WebSocket error: {e}")
-    finally:
-        await websocket.close()
-```
+Nexios includes built-in security features:
 
-## Authentication
+- CORS protection
+- CSRF protection
+- Security headers
+- Input validation
+- Authentication (multiple backends)
 
-::: tip
-Nexios supports multiple authentication methods:
-- Session-based authentication
-- JWT authentication
-- OAuth2 integration
-:::
+::: warning Security Best Practices
 
-```python
-from nexios.auth.backends.jwt import JWTAuthBackend
-from nexios.auth.middleware import AuthenticationMiddleware
+- Validate all inputs
+- Use HTTPS in production
+- Implement proper authentication
+- Rate limit to prevent abuse
+- Log security events
+  :::
 
-# Setup JWT authentication
-async def get_user_from_payload(**payload):
-    # Your user lookup logic here
-    return {"username": payload.get("sub")}
-
-jwt_backend = JWTAuthBackend(authenticate_func=get_user_from_payload)
-auth_middleware = AuthenticationMiddleware(backend=jwt_backend)
-
-@app.get("/protected")
-async def protected_route(request, response):
-    user = request.user  # Authenticated user
-    return response.json({"message": f"Hello {user.username}"})
-```
-
-## Performance Optimization
-
-- Built-in caching support
-- Async I/O operations
-- Connection pooling
-- Request queuing
-
-## Error Handling
-
-```python
-from nexios.exceptions import HTTPException
-
-@app.exception_handler(404)
-async def not_found(request, response, exc):
-    return response.json({"error": "Resource not found"}, status_code=404)
-
-@app.exception_handler(Exception)
-async def server_error(request, response, exc):
-    # Log the error
-    import logging
-    logging.error(f"Server error: {exc}")
-    return response.json({"error": "Internal server error"}, status_code=500)
-```
+---
 
 ## Testing
 
-Nexios includes a test client for easy testing:
+Nexios makes testing easy with built-in tools.
 
 ```python
-from nexios.testing import TestClient
+import pytest
+from nexios.testing import Client
 
-async def test_endpoint():
-    client = TestClient(app)
-    response = await client.get("/api/users")
+@pytest.fixture
+def client():
+    return Client(app)
+
+def test_get_user(client):
+    response = client.get("/users/123")
     assert response.status_code == 200
+    assert response.json()["id"] == 123
 ```
 
-## Deployment
+---
 
-::: tip Best Practices
-- Use ASGI servers (Uvicorn/Hypercorn)
-- Implement health checks
-- Set up monitoring
-- Use environment variables for configuration
-:::
+## Why Use Nexios?
+
+- **Simple**: Intuitive API, minimal boilerplate.
+- **Fast**: ASGI-based, async-first, optimized routing.
+- **Flexible**: Custom middleware, authentication, database, and more.
+- **Modern**: Built for Python 3.9+, uses type hints, async/await.
+- **Production Ready**: Security, monitoring, and deployment features included.
+
+---
 
 ## Next Steps
 
-- [API Examples](./api-examples.md)
-- [Markdown Examples](./markdown-examples.md)
-- [Documentation Guide](./docs.md)
+Explore more advanced topics:
+
+1. **Routing**: Advanced features and patterns
+2. **Middleware**: Custom middleware for your needs
+3. **Authentication**: User authentication and authorization
+4. **WebSockets**: Real-time features
+5. **Templating**: Render HTML templates
+6. **Testing**: Comprehensive tests
+
+Each topic builds on these concepts, giving you a solid foundation for scalable, modern Python web apps.
+
+---
+
+If you’d like me to revise, expand, or focus on a specific section, let me know!
