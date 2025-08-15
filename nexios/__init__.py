@@ -54,7 +54,7 @@ Common Patterns:
 
     @app.post("/items")
     async def create_item(request, response):
-        item = Item(**await request.json())
+        item = Item(**await request.json)
         return response.json(item)
 
 3. Custom Middleware:

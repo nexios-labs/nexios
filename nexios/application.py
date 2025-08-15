@@ -757,7 +757,7 @@ class NexiosApp(object):
                 Async handler function for POST requests.
                 Example:
                 async def create_user(request, response):
-                    user_data = request.json()
+                    user_data = request.json
                     return response.json(user_data, status=201)
             """
             ),
@@ -895,7 +895,7 @@ class NexiosApp(object):
             1. Simple POST endpoint:
             @router.post("/messages")
             async def create_message(request, response):
-                message = await Message.create(**request.json())
+                message = await Message.create(**request.json)
                 return response.json(message, status=201)
 
             2. POST with request validation:
@@ -1291,7 +1291,7 @@ class NexiosApp(object):
             @router.put("/users/{id}")
             async def update_user(request, response):
                 user_id = request.path_params['id']
-                await User.update(user_id, **request.json())
+                await User.update(user_id, **request.json)
                 return response.json({"status": "updated"})
 
             2. PUT with full resource replacement:
@@ -1493,7 +1493,7 @@ class NexiosApp(object):
             @router.patch("/users/{id}")
             async def update_user(request, response):
                 user_id = request.path_params['id']
-                await User.partial_update(user_id, **request.json())
+                await User.partial_update(user_id, **request.json)
                 return response.json({"status": "updated"})
 
             2. PATCH with JSON Merge Patch:
@@ -1513,7 +1513,8 @@ class NexiosApp(object):
             @router.patch("/profile")
             async def update_profile(request, response):
                 allowed_fields = {'bio', 'avatar_url'}
-                updates = {k: v for k, v in request.json().items()
+                data = await request.json
+                updates = {k: v for k, v in data.items()
                         if k in allowed_fields}
                 await Profile.update(request.user.id, **updates)
                 return response.json(updates)

@@ -806,7 +806,7 @@ class Router(BaseRouter):
                 Async handler function for POST requests.
                 Example:
                 async def create_user(request, response):
-                    user_data = request.json()
+                    user_data = request.json
                     return response.json(user_data, status=201)
             """
             ),
@@ -944,7 +944,7 @@ class Router(BaseRouter):
             1. Simple POST endpoint:
             @router.post("/messages")
             async def create_message(request, response):
-                message = await Message.create(**request.json())
+                message = await Message.create(**request.json)
                 return response.json(message, status=201)
 
             2. POST with request validation:
@@ -1340,7 +1340,7 @@ class Router(BaseRouter):
             @router.put("/users/{id}")
             async def update_user(request, response):
                 user_id = request.path_params['id']
-                await User.update(user_id, **request.json())
+                await User.update(user_id, **request.json)
                 return response.json({"status": "updated"})
 
             2. PUT with full resource replacement:
@@ -1542,7 +1542,7 @@ class Router(BaseRouter):
             @router.patch("/users/{id}")
             async def update_user(request, response):
                 user_id = request.path_params['id']
-                await User.partial_update(user_id, **request.json())
+                await User.partial_update(user_id, **request.json)
                 return response.json({"status": "updated"})
 
             2. PATCH with JSON Merge Patch:
@@ -1562,7 +1562,7 @@ class Router(BaseRouter):
             @router.patch("/profile")
             async def update_profile(request, response):
                 allowed_fields = {'bio', 'avatar_url'}
-                updates = {k: v for k, v in request.json().items()
+                updates = {k: v for k, v in request.json.items()
                         if k in allowed_fields}
                 await Profile.update(request.user.id, **updates)
                 return response.json(updates)
