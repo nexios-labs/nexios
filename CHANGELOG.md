@@ -3,7 +3,7 @@
 ### Fix
 
 - **auth**: add Callable import to jwt backend
-- **request**: change request.json() to request.json
+- **request**: review request.json
 
 ## v2.10.1 (2025-08-07)
 
@@ -11,7 +11,7 @@
 
 - **csrf**: improve CSRF protection and token handling
 - **docs**: fix routing docs orgnization
-- **docs**:  fix websockets documentation on channels
+- **docs**: fix websockets documentation on channels
 
 ## v2.10.0 (2025-08-02)
 
