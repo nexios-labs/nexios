@@ -2,7 +2,7 @@ try:
     import jwt
 except ImportError:
     jwt = None
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable
 
 from nexios.auth.base import AuthenticationBackend, UnauthenticatedUser
 from nexios.config import get_config
