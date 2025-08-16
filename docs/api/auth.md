@@ -1,231 +1,229 @@
 # Authentication API Reference
 
-The Authentication API in Nexios provides a flexible and secure way to handle user authentication in your applications. It includes base classes for implementing custom authentication backends and utilities for managing authentication state.
+## Overview
+
+Nexios provides a robust authentication system that supports various authentication mechanisms. This document covers how to implement and customize authentication in your Nexios application.
+
+## Table of Contents
+
+- [Authentication Backend](#authentication-backend)
+- [Built-in Authentication Classes](#built-in-authentication-classes)
+- [Custom Authentication](#custom-authentication)
+- [Error Handling](#error-handling)
+- [Security Considerations](#security-considerations)
+- [Best Practices](#best-practices)
 
 ## Authentication Backend
 
 The `AuthenticationBackend` class is the foundation for implementing custom authentication in Nexios applications.
 
+### Base Class
+
 ```python
+from typing import Any, Optional
 from nexios.auth import AuthenticationBackend
 from nexios.http import Request, Response
 
 class CustomAuthBackend(AuthenticationBackend):
     async def authenticate(self, req: Request, res: Response) -> Any:
-        # Implement your authentication logic here
-        pass
+        """
+        Authenticate a request and return a user object.
+
+        Args:
+            req: The incoming HTTP request
+            res: The HTTP response that may be modified during authentication
+
+        Returns:
+            Any: The authenticated user object if authentication succeeds
+
+        Raises:
+            AuthenticationError: If authentication fails
+        """
+        raise NotImplementedError("Subclasses must implement authenticate()")
 ```
 
-### Methods
-
-#### `authenticate(req: Request, res: Response) -> Any`
-
-Authenticates a user based on the request. This method must be implemented by all authentication backends.
-
-**Parameters:**
-- `req` (Request): The incoming HTTP request containing authentication details
-- `res` (Response): The HTTP response object that may be modified during authentication
-
-**Returns:**
-- Any: An authenticated user instance if authentication succeeds
-
-**Raises:**
-- `AuthenticationError`: If authentication fails
-
-**Example:**
-```python
-class JWTBackend(AuthenticationBackend):
-    async def authenticate(self, req: Request, res: Response) -> User:
-        auth_header = req.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            raise AuthenticationError(401, "Invalid authentication credentials")
-            
-        token = auth_header.split(" ")[1]
-        try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-            user = await get_user_by_id(payload["user_id"])
-            if not user:
-                raise AuthenticationError(401, "User not found")
-            return user
-        except jwt.InvalidTokenError:
-            raise AuthenticationError(401, "Invalid token")
-```
-
-## Authentication Exceptions
-
-### `AuthenticationError`
-
-Base exception class for all authentication-related errors.
-
-```python
-from nexios.auth import AuthenticationError
-
-# Raise with status code and detail
-raise AuthenticationError(401, "Invalid credentials")
-
-# Raise with additional headers
-raise AuthenticationError(
-    401,
-    "Invalid credentials",
-    headers={"WWW-Authenticate": "Bearer"}
-)
-```
-
-**Parameters:**
-- `status_code` (int): HTTP status code for the error
-- `detail` (str): Error message
-- `headers` (Optional[Dict[str, Any]]): Optional headers for the response
-
-## Using Authentication in Routes
-
-### Basic Authentication
-
-```python
-from nexios.auth import AuthenticationBackend
-from nexios.dependencies import Depends
-
-class BasicAuth(AuthenticationBackend):
-    async def authenticate(self, req: Request, res: Response) -> User:
-        auth = req.headers.get("Authorization")
-        if not auth or not auth.startswith("Basic "):
-            raise AuthenticationError(401, "Invalid credentials")
-            
-        credentials = base64.b64decode(auth.split(" ")[1]).decode()
-        username, password = credentials.split(":")
-        
-        user = await verify_credentials(username, password)
-        if not user:
-            raise AuthenticationError(401, "Invalid credentials")
-            
-        return user
-
-# Use in routes
-@app.get("/protected")
-async def protected_route(
-    request: Request,
-    response: Response,
-    user: User = Depends(BasicAuth())
-):
-    return response.json({"message": f"Hello, {user.username}!"})
-```
+## Built-in Authentication Classes
 
 ### JWT Authentication
 
 ```python
-class JWTAuth(AuthenticationBackend):
-    async def authenticate(self, req: Request, res: Response) -> User:
-        token = req.headers.get("Authorization", "").replace("Bearer ", "")
-        if not token:
-            raise AuthenticationError(401, "Missing token")
-            
+import jwt
+from datetime import datetime, timedelta
+from typing import Optional
+
+class JWTBackend(AuthenticationBackend):
+    def __init__(self, secret_key: str, algorithm: str = "HS256"):
+        self.secret_key = secret_key
+        self.algorithm = algorithm
+
+    async def authenticate(self, req: Request, res: Response) -> dict:
+        """
+        Authenticate using JWT token from Authorization header.
+
+        Token format: "Bearer <token>"
+        """
+        auth_header = req.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            raise AuthenticationError(401, "Missing or invalid authorization header")
+
+        token = auth_header.split(" ")[1]
         try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-            user = await get_user_by_id(payload["user_id"])
-            if not user:
-                raise AuthenticationError(401, "User not found")
-            return user
-        except jwt.InvalidTokenError:
-            raise AuthenticationError(401, "Invalid token")
+            payload = jwt.decode(
+                token,
+                self.secret_key,
+                algorithms=[self.algorithm]
+            )
+            return payload
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationError(401, "Token has expired")
+        except jwt.InvalidTokenError as e:
+            raise AuthenticationError(401, f"Invalid token: {str(e)}")
 
-# Use in routes
-@app.get("/api/protected")
-async def protected_api(
-    request: Request,
-    response: Response,
-    user: User = Depends(JWTAuth())
-):
-    return response.json({"user": user.dict()})
+    def create_token(self, data: dict, expires_delta: Optional[timedelta] = None) -> str:
+        """
+        Create a new JWT token.
+
+        Args:
+            data: Data to include in the token
+            expires_delta: Optional expiration time delta (default: 15 minutes)
+
+        Returns:
+            str: Encoded JWT token
+        """
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.utcnow() + expires_delta
+        else:
+            expire = datetime.utcnow() + timedelta(minutes=15)
+
+        to_encode.update({"exp": expire})
+        return jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
 ```
 
-### Session-Based Authentication
+### Session Authentication
 
 ```python
-class SessionAuth(AuthenticationBackend):
-    async def authenticate(self, req: Request, res: Response) -> User:
-        session_id = req.cookies.get("session_id")
+class SessionAuthBackend(AuthenticationBackend):
+    def __init__(self, session_store: Any, session_cookie: str = "session_id"):
+        self.session_store = session_store
+        self.session_cookie = session_cookie
+
+    async def authenticate(self, req: Request, res: Response) -> dict:
+        """
+        Authenticate using session cookie.
+        """
+        session_id = req.cookies.get(self.session_cookie)
         if not session_id:
-            raise AuthenticationError(401, "No session")
-            
-        session = await get_session(session_id)
-        if not session or session.expired:
-            raise AuthenticationError(401, "Invalid session")
-            
-        user = await get_user_by_id(session.user_id)
-        if not user:
-            raise AuthenticationError(401, "User not found")
-            
-        return user
+            raise AuthenticationError(401, "No session cookie found")
 
-# Use in routes
-@app.get("/dashboard")
-async def dashboard(
-    request: Request,
-    response: Response,
-    user: User = Depends(SessionAuth())
-):
-    return response.json({"dashboard": await get_user_dashboard(user.id)})
+        session_data = await self.session_store.get(session_id)
+        if not session_data:
+            raise AuthenticationError(401, "Invalid or expired session")
+
+        return session_data
 ```
 
-## Best Practices
+## Using Authentication in Routes
 
-1. **Always Use HTTPS**: Ensure all authentication-related endpoints are served over HTTPS.
-
-2. **Implement Rate Limiting**: Protect authentication endpoints from brute force attacks.
+### Basic Usage
 
 ```python
-from nexios.middleware import RateLimitMiddleware
+from nexios import NexiosApp
+from nexios.auth import AuthenticationError
+from nexios.middleware import AuthMiddleware
 
+app = NexiosApp()
+
+# Initialize authentication backend
+auth_backend = JWTBackend(secret_key="your-secret-key")
+
+# Add authentication middleware
 app.add_middleware(
-    RateLimitMiddleware,
-    rate_limit=5,  # requests
-    time_window=60  # seconds
+    AuthMiddleware,
+    backend=auth_backend,
+    exclude_paths=["/login", "/docs", "/openapi.json"]
+)
+
+# Protected route
+@app.get("/protected")
+async def protected_route(request, response, user: dict = Depends(auth_backend)):
+    return response.json({"message": f"Hello, {user['username']}!"})
+
+# Login route
+@app.post("/login")
+async def login(request, response):
+    credentials = await request.json()
+    user = await verify_credentials(credentials["username"], credentials["password"])
+
+    if not user:
+        raise AuthenticationError(401, "Invalid credentials")
+
+    token = auth_backend.create_token(
+        {"user_id": user["id"], "username": user["username"]},
+        expires_delta=timedelta(days=1)
+    )
+
+    return response.json({"access_token": token, "token_type": "bearer"})
+```
+
+## Error Handling
+
+### AuthenticationError
+
+```python
+from nexios.auth import AuthenticationError
+
+# Basic usage
+raise AuthenticationError(401, "Invalid credentials")
+
+# With additional headers (e.g., for WWW-Authenticate)
+raise AuthenticationError(
+    401,
+    "Bearer token required",
+    headers={"WWW-Authenticate": "Bearer realm=\"api\""}
 )
 ```
 
-3. **Secure Password Storage**: Use strong hashing algorithms for password storage.
+## Security Considerations
 
-```python
-from passlib.hash import bcrypt
+1. **Token Security**
 
-def hash_password(password: str) -> str:
-    return bcrypt.hash(password)
+   - Always use HTTPS in production
+   - Set appropriate token expiration times
+   - Store tokens securely (httpOnly, Secure, SameSite flags for cookies)
 
-def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.verify(password, hashed)
-```
+2. **Password Security**
 
-4. **Token Expiration**: Implement token expiration and refresh mechanisms.
+   - Never store plain text passwords
+   - Use strong hashing algorithms (bcrypt, Argon2)
+   - Implement rate limiting on authentication endpoints
 
-```python
-class JWTAuth(AuthenticationBackend):
-    async def authenticate(self, req: Request, res: Response) -> User:
-        token = req.headers.get("Authorization", "").replace("Bearer ", "")
-        if not token:
-            raise AuthenticationError(401, "Missing token")
-            
-        try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-            if payload["exp"] < time.time():
-                raise AuthenticationError(401, "Token expired")
-            # ... rest of the authentication logic
-        except jwt.InvalidTokenError:
-            raise AuthenticationError(401, "Invalid token")
-```
+3. **Session Security**
+   - Use secure, httpOnly cookies for session IDs
+   - Implement proper session expiration
+   - Rotate session IDs after login
 
-5. **Logging and Monitoring**: Implement comprehensive logging for authentication events.
+## Best Practices
 
-```python
-import logging
+1. **Token Management**
 
-logger = logging.getLogger("auth")
+   - Use short-lived access tokens with refresh tokens
+   - Implement token revocation
+   - Log token usage for security monitoring
 
-class LoggingAuth(AuthenticationBackend):
-    async def authenticate(self, req: Request, res: Response) -> User:
-        try:
-            # ... authentication logic
-            logger.info(f"User {user.id} authenticated successfully")
-            return user
-        except AuthenticationError as e:
-            logger.warning(f"Authentication failed: {str(e)}")
-            raise
-``` 
+2. **Error Handling**
+
+   - Use specific error messages for debugging
+   - Log authentication failures
+   - Implement account lockout after multiple failed attempts
+
+3. **Performance**
+
+   - Cache authentication results when possible
+   - Use efficient session storage backends
+   - Consider stateless authentication for microservices
+
+4. **Testing**
+   - Test all authentication flows
+   - Test edge cases (expired tokens, invalid formats)
+   - Test with different user roles and permissions

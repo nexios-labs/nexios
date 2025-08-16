@@ -293,19 +293,14 @@ async def load_user_from_jwt(payload: dict) -> SimpleUser:
     return None
 
 jwt_backend = JWTAuthBackend(
-    secret_key="your-secret-key",
-    algorithm="HS256",
+
     authenticate_func=load_user_from_jwt,
-    user_key="sub"  # JWT claim containing user ID
 )
 ```
 
 **Key Parameters:**
 
-- `secret_key`: For verifying token signatures
-- `algorithm`: Hashing algorithm (e.g., "HS256", "RS256")
 - `authenticate_func`: Function that loads user from JWT payload
-- `user_key`: JWT claim containing user identifier
 
 ### Session Backend
 

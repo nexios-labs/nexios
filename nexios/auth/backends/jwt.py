@@ -51,7 +51,7 @@ def decode_jwt(
 
 
 class JWTAuthBackend(AuthenticationBackend):
-    def __init__(self, authenticate_func):  # type:ignore
+    def __init__(self, authenticate_func: Callable[[Dict[str, Any]], Any]):  # type:ignore
         self.authenticate_func = authenticate_func
 
     async def authenticate(self, request: Request, response: Response) -> Any:  # type:ignore
