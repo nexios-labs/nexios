@@ -1,3 +1,10 @@
+## v2.10.2 (2025-08-16)
+
+### Fix
+
+- **auth**: add Callable import to jwt backend
+- **request**: change request.json() to request.json
+
 ## v2.10.1 (2025-08-07)
 
 ### Fix
