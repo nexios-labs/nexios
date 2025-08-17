@@ -1206,30 +1206,191 @@ app = NexiosApp(config=config)
 
 ## Performance Considerations
 
-## Route Optimization
+## Route Grouping with `Group`
 
-1. **Order Routes by Specificity**: More specific routes should come before general ones
-2. **Use Efficient Converters**: Custom converters should be optimized
-3. **Limit Route Complexity**: Avoid overly complex regex patterns
-4. **Cache Route Lookups**: For frequently accessed routes
+The `Group` class in Nexios provides a powerful way to organize related routes and middleware under a common path prefix. It's particularly useful for:
 
-## Route Caching
+- Grouping related routes under a common path prefix
+- Applying middleware to a set of routes
+- Mounting external ASGI applications with a path prefix
+- Creating reusable route collections
+
+### Basic Group Usage
 
 ```python
-# Routes are automatically cached for performance
-# You can clear the cache if needed (though this is rarely necessary)
-app.router._clear_cache()  # Internal method, use with caution
+from nexios.routing import Group, Routes
+from nexios import NexiosApp
+
+app = NexiosApp()
+
+# Create a group of routes
+user_group = Group(
+    path="/users",
+    routes=[
+        Routes(path="/", methods=["GET"], handler=list_users),
+        Routes(path="/{user_id}", methods=["GET"], handler=get_user),
+        Routes(path="/", methods=["POST"], handler=create_user),
+    ]
+)
+
+app.add_route(user_group)
 ```
 
-## Best Practices Summary
+This creates the following endpoints:
 
-1. **Use Descriptive Names**: Route names should clearly indicate their purpose
-2. **Group Related Routes**: Use routers to organize related functionality
-3. **Validate Inputs**: Use Pydantic models for request validation
-4. **Document Routes**: Provide comprehensive OpenAPI documentation
-5. **Handle Errors**: Implement proper error handling for all routes
-6. **Use Type Hints**: Leverage type hints for better IDE support
-7. **Test Routes**: Write tests for route functionality and edge cases
-8. **Monitor Performance**: Track route performance in production
-9. **Version APIs**: Use versioning for API evolution
-10. **Security First**: Apply appropriate security measures to routes
+- `GET /users/` - List all users
+- `GET /users/{user_id}` - Get a specific user
+- `POST /users/` - Create a new user
+
+### Groups with Middleware
+
+You can apply middleware to all routes within a group:
+
+```python
+
+
+async def auth_middleware(request, response,  next):
+    if not request.user.is_authenticated:
+        return response.json({"error": "Unauthorized"}, status_code=401)
+    return await next()
+user_group = Group(path="/users")
+api_group = Group(
+    path="/api",
+    middleware=[auth_middleware],
+    routes=[
+        Routes(path="/dashboard", methods=["GET"], handler=get_dashboard),
+        Routes(path="/profile", methods=["GET"], handler=get_profile),
+    ]
+)
+```
+
+### Mounting External ASGI Applications
+
+Groups can be used to mount external ASGI applications:
+
+```python
+from fastapi import FastAPI
+from nexios.routing import Group
+
+fastapi_app = FastAPI()
+
+@fastapi_app.get("/items")
+async def read_items():
+    return [{"item_id": "Foo"}]
+
+# Mount the FastAPI app under /external
+group = Group(path="/external", app=fastapi_app)
+app.add_route(group)
+```
+
+### Nested Groups
+
+Groups can be nested to create hierarchical route structures:
+
+```python
+api_v1 = Group(
+    path="/v1",
+    routes=[
+        Routes(path="/status", methods=["GET"], handler=get_status)
+    ]
+)
+
+auth_group = Group(
+    path="/auth",
+    middleware=[(auth_middleware, {}, {})],
+    routes=[
+        Routes(path="/login", methods=["POST"], handler=login),
+        Routes(path="/register", methods=["POST"], handler=register),
+    ]
+)
+
+# Nest the auth group under the API v1 group
+api_v1.routes.append(auth_group)
+app.add_route(api_v1)
+```
+
+This creates the following endpoints:
+
+- `GET /v1/status`
+- `POST /v1/auth/login`
+- `POST /v1/auth/register`
+
+### Group vs Router
+
+While both `Group` and `Router` can be used to organize routes, they serve different purposes:
+
+| Feature         | Group | Router |
+| --------------- | ----- | ------ |
+| Path prefixing  | ✅    | ✅     |
+| Middleware      | ✅    | ❌     |
+| Mount ASGI apps | ✅    | ❌     |
+| Nested routing  | ✅    | ✅     |
+| Route methods   | ❌    | ✅     |
+| Standalone app  | ❌    | ✅     |
+
+### Best Practices
+
+1. **Use Groups for**:
+
+   - Applying common middleware to a set of routes
+   - Mounting external ASGI applications
+   - Creating reusable route collections
+
+2. **Use Routers for**:
+
+   - Organizing related routes with a common prefix
+   - Creating modular, self-contained route collections
+   - Versioning APIs
+
+3. **Naming**:
+
+   - Use descriptive names that reflect the group's purpose
+   - Prefix group names with their domain (e.g., `user_auth_group`, `admin_api_group`)
+
+4. **Middleware**:
+   - Apply middleware at the most specific level possible
+   - Document any middleware applied to a group
+
+### Complete Example
+
+```python
+from nexios import NexiosApp
+from nexios.routing import Group, Routes
+from nexios.middleware import Middleware
+
+app = NexiosApp()
+
+# Middleware
+auth_middleware = Middleware(AuthenticationMiddleware, required=True)
+logging_middleware = Middleware(LoggingMiddleware)
+
+# API v1 Group
+api_v1 = Group(
+    path="/api/v1",
+    middleware=[(logging_middleware, {}, {})],
+    routes=[]
+)
+
+# Users Group
+users_group = Group(
+    path="/users",
+    middleware=[(auth_middleware, {}, {})],
+    routes=[
+        Routes(path="/", methods=["GET"], handler=list_users),
+        Routes(path="/{user_id}", methods=["GET"], handler=get_user),
+        Routes(path="/", methods=["POST"], handler=create_user),
+    ]
+)
+
+# Mount users group under API v1
+api_v1.routes.append(users_group)
+
+# Mount API v1 to the main app
+app.add_route(api_v1)
+```
+
+This creates the following endpoints with their respective middleware:
+
+- `GET /api/v1/users/` - Logging + Auth
+- `GET /api/v1/users/{user_id}` - Logging + Auth
+- `POST /api/v1/users/` - Logging + Auth
