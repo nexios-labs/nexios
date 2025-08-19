@@ -38,18 +38,14 @@ export default defineConfig({
 
     sidebar: {
       '/guide/': [
-        {
-          text: 'Guide',
-          collapsed: false,
-          items: [
-            { text: 'Getting Started', link: '/guide/getting-started' },
-            { text: 'CLI', link: '/guide/cli' },
-            { text: "What is Asgi?", link: '/guide/asgi' },
-            { text : "Async Python", link: '/guide/async-python' },
-            { text : "Why Nexios?", link: '/guide/why-nexios' },
-            { text : "Core Concepts", link: '/guide/concepts' },
-          ]
-        },
+        
+        { text: 'Getting Started', link: '/guide/getting-started' },
+        { text: 'CLI', link: '/guide/cli' },
+        { text: "What is Asgi?", link: '/guide/asgi' },
+        { text : "Async Python", link: '/guide/async-python' },
+        { text : "Why Nexios?", link: '/guide/why-nexios' },
+        { text : "Core Concepts", link: '/guide/concepts' },
+        {text: 'Migrating To Nexios',link: '/guide/migrating-to-nexios'},
         {
           text: 'Core Concepts',
           collapsed: false,

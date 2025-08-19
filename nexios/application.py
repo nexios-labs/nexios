@@ -42,6 +42,7 @@ from .types import (
     Scope,
     Send,
     WsHandlerType,
+    WsMiddlewareType
 )
 
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
@@ -372,10 +373,14 @@ class NexiosApp(object):
 
     def add_ws_route(
         self,
-        route: Annotated[
+        route: Optional[
+            Annotated[
             WebsocketRoutes,
             Doc("An instance of the Routes class representing a WebSocket route."),
-        ],
+        ]] = None,
+        path: Optional[str] = None,
+        handler: Optional[WsHandlerType] = None,
+        middleware: List[WsMiddlewareType] = [],
     ) -> None:
         """
         Adds a WebSocket route to the application.
@@ -394,7 +399,10 @@ class NexiosApp(object):
             app.add_ws_route(route)
             ```
         """
-        self.ws_router.add_ws_route(route)
+        if route:
+            self.ws_router.add_ws_route(route)
+        else:
+            self.ws_router.add_ws_route(WebsocketRoutes(path, handler, middleware=middleware))
 
     def mount_router(self, router: Router, path: Optional[str] = None) -> None:
         """
