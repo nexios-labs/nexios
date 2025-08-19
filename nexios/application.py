@@ -359,7 +359,7 @@ class NexiosApp(object):
             ```python
             def logging_middleware(request: Request, response: Response, next_call: Callable) -> Response:
                 print(f"Request received: {request.method} {request.url}")
-                return next_call(request, response)
+                return next_call()
 
             app.add_middleware(logging_middleware)
             ```
