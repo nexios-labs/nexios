@@ -178,6 +178,7 @@ class HTTPConnection(object):
             # Create a state instance with a reference to the dict in which it should
             # store info
             self._state = State(self.scope["state"])
+            self._state.update(self.scope.get("global_state",{}))
         return self._state
 
     @property

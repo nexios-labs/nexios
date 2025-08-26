@@ -631,6 +631,12 @@ class State:
     def __delattr__(self, key: typing.Any) -> None:
         del self._state[key]
 
+    def __str__(self) -> str:
+        return f"<State data={self._state}>"
+
+    def update(self, values :Dict[str,Any]):
+        for key, value in values.items():
+            self._state[key] = value
 
 class RouteParam:
     def __init__(self, data: Dict[str, Any]) -> None:

@@ -131,6 +131,7 @@ class NexiosApp(object):
         self.router = self.app
         self.route = self.router.route
         self.lifespan_context: Optional[lifespan_manager] = lifespan
+        self.state = {}
 
         openapi_config: Dict[str, Any] = self.config.to_dict().get("openapi", {})  # type:ignore
         self.openapi_config = OpenAPIConfig(
@@ -272,7 +273,8 @@ class NexiosApp(object):
                         if self.lifespan_context:
                             # If a lifespan context manager is provided, use it
                             self.lifespan_manager: Any = self.lifespan_context(self)
-                            await self.lifespan_manager.__aenter__()
+                            returned_state = await self.lifespan_manager.__aenter__()
+                            self.state.update(returned_state)
                         else:
                             # Otherwise, fall back to the default startup handlers
                             await self._startup()
@@ -528,6 +530,8 @@ class NexiosApp(object):
         """ASGI application callable"""
         scope["app"] = self
         scope["base_app"] = self
+        scope['global_state'] = self.state
+
         if scope["type"] == "lifespan":
             await self.handle_lifespan(receive, send)
         elif scope["type"] == "http":
