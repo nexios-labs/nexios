@@ -40,7 +40,6 @@ async def create_user(request: Request, response: Response):
 
 ```
 
-
 ## Custom Validators
 
 Creating custom validation logic:
@@ -51,27 +50,27 @@ from typing import Any
 
 class PasswordValidator(BaseModel):
     password: str
-    
+
     @validator("password")
     def validate_password(cls, v: str) -> str:
         if len(v) < 8:
             raise ValueError("Password too short")
-        
+
         if not any(c.isupper() for c in v):
             raise ValueError(
                 "Password must contain uppercase letter"
             )
-        
+
         if not any(c.islower() for c in v):
             raise ValueError(
                 "Password must contain lowercase letter"
             )
-        
+
         if not any(c.isdigit() for c in v):
             raise ValueError(
                 "Password must contain number"
             )
-        
+
         return v
 
 class UserRegistration(BaseModel):
@@ -79,13 +78,13 @@ class UserRegistration(BaseModel):
     email: EmailStr
     password: str
     confirm_password: str
-    
+
     @validator("confirm_password")
     def passwords_match(cls, v: str, values: dict[str, Any]) -> str:
         if "password" in values and v != values["password"]:
             raise ValueError("Passwords do not match")
         return v
-    
+
     @validator("password")
     def strong_password(cls, v: str) -> str:
         PasswordValidator(password=v)
@@ -100,20 +99,20 @@ async def register(data: UserRegistration):
 def validate_phone(v: str) -> str:
     if not v.startswith("+"):
         raise ValueError("Phone must start with +")
-    
+
     digits = v[1:]
     if not digits.isdigit():
         raise ValueError("Invalid phone number")
-    
+
     if not 10 <= len(digits) <= 15:
         raise ValueError("Invalid phone length")
-    
+
     return v
 
 class Contact(BaseModel):
     name: str
     phone: str
-    
+
     _validate_phone = validator("phone", allow_reuse=True)(
         validate_phone
     )
@@ -134,14 +133,14 @@ async def validation_error_handler(
     exc: ValidationError
 ) :
     errors = []
-    
+
     for error in exc.errors():
         errors.append({
             "field": " -> ".join(str(x) for x in error["loc"]),
             "message": error["msg"],
             "type": error["type"]
         })
-    
+
     return response.json(
         content={
             "detail": "Validation error",
@@ -173,12 +172,12 @@ class Item(BaseModel):
 class Discount(BaseModel):
     type: str  # "percentage" or "fixed"
     value: Decimal
-    
+
     @validator("value")
     def validate_discount(cls, v: Decimal, values: dict[str, Any]) -> Decimal:
         if "type" not in values:
             raise ValueError("Discount type required")
-        
+
         if values["type"] == "percentage":
             if not 0 <= v <= 100:
                 raise ValueError(
@@ -189,19 +188,21 @@ class Discount(BaseModel):
                 raise ValueError(
                     "Fixed discount must be positive"
                 )
-        
+
         return v
 ```
 
 ## 📝 Practice Exercise
 
 1. Create a validation system for:
+
    - User registration
    - Product creation
    - Order processing
    - Payment validation
 
 2. Implement custom validators for:
+
    - Complex passwords
    - Phone numbers
    - Credit cards
@@ -214,12 +215,14 @@ class Discount(BaseModel):
    - Error logging
 
 ## 📚 Additional Resources
+
 - [Pydantic Documentation](https://pydantic-docs.helpmanual.io/)
 - [Error Handling](../../guide/error-handling.md)
 
-
 ## 🎯 Next Steps
+
 Tomorrow in [Day 12: File Uploads](../day12/index.md), we'll explore:
+
 - File upload handling
 - Multipart form data
 - File validation
@@ -232,6 +235,7 @@ Welcome to Day 11! Today we'll learn how to deploy Nexios applications to produc
 ## Understanding Deployment
 
 Key aspects of deployment:
+
 - Server configuration
 - Environment management
 - Process management
@@ -275,7 +279,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost"
     secret_key: str
     allowed_hosts: list = ["*"]
-    
+
     class Config:
         env_file = ".env"
 
@@ -350,7 +354,7 @@ CMD ["gunicorn", "app.main:app", "-c", "gunicorn.conf.py"]
 
 ```yaml
 # docker-compose.yml
-version: '3.8'
+version: "3.8"
 
 services:
   web:
@@ -409,7 +413,7 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         # WebSocket support
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -507,9 +511,9 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'nexios_app'
+  - job_name: "nexios_app"
     static_configs:
-      - targets: ['localhost:8000']
+      - targets: ["localhost:8000"]
 ```
 
 ### 2. Application Metrics
@@ -532,11 +536,11 @@ REQUEST_LATENCY = Histogram(
 # Middleware
 async def metrics_middleware(request: Request, response: Response, call_next):
     REQUEST_COUNT.inc()
-    
+
     start_time = time.time()
     response = await call_next()
     duration = time.time() - start_time
-    
+
     REQUEST_LATENCY.observe(duration)
     return response
 
@@ -547,7 +551,7 @@ app.add_middleware(metrics_middleware)
 
 ### 1. HAProxy Configuration
 
-```haproxy
+```txt
 # /etc/haproxy/haproxy.cfg
 global
     log /dev/log local0
@@ -590,41 +594,41 @@ name: Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    - name: Run tests
-      run: |
-        pytest
-    
-    - name: Deploy to server
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          cd /path/to/app
-          git pull origin main
-          source venv/bin/activate
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
-          python scripts/migrate.py
-          sudo systemctl restart nexios_app
+
+      - name: Run tests
+        run: |
+          pytest
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /path/to/app
+            git pull origin main
+            source venv/bin/activate
+            pip install -r requirements.txt
+            python scripts/migrate.py
+            sudo systemctl restart nexios_app
 ```
 
 ## Mini-Project: Complete Deployment Setup
@@ -632,6 +636,7 @@ jobs:
 Create a complete deployment setup for a Nexios application:
 
 1. Application Structure:
+
 ```
 myapp/
 ├── app/
@@ -664,6 +669,7 @@ myapp/
 ```
 
 2. Main Application:
+
 ```python
 # app/main.py
 from nexios import NexiosApp
@@ -694,11 +700,11 @@ REQUEST_LATENCY = Histogram(
 @app.middleware("http")
 async def metrics_middleware(request, response, call_next):
     REQUEST_COUNT.inc()
-    
+
     start_time = time.time()
     response = await call_next()
     duration = time.time() - start_time
-    
+
     REQUEST_LATENCY.observe(duration)
     return response
 
@@ -718,6 +724,7 @@ if __name__ == "__main__":
 ```
 
 3. Deployment Script:
+
 ```bash
 #!/bin/bash
 # scripts/deploy.sh
@@ -792,12 +799,14 @@ echo -e "${GREEN}Deployment completed successfully!${NC}"
 ## Homework
 
 1. Create a complete deployment pipeline:
+
    - Automated testing
    - Docker builds
    - Database migrations
    - Zero-downtime deployment
 
 2. Set up monitoring:
+
    - Application metrics
    - System metrics
    - Log aggregation
@@ -811,4 +820,4 @@ echo -e "${GREEN}Deployment completed successfully!${NC}"
 
 ## Next Steps
 
-Tomorrow, we'll explore security best practices in [Day 12: Security](../day12/index.md). 
+Tomorrow, we'll explore security best practices in [Day 12: Security](../day12/index.md).

@@ -230,16 +230,26 @@ async def chat_room(websocket, room_id: str):
 ::: code-group
 
 ```python [Basic Middleware]
+
+async def basic_middleware(request, response, call_next):
+  print("do something before handler")
+  await call_next()
+  print("do something after handler")
+
+
+app.add_middleware(basic_middleware())
+```
+
+```python [Class Based Middleware]
 from nexios.middleware import BaseMiddleware
+class BasicMiddleware(BaseMiddleware):
 
-class LoggingMiddleware(BaseMiddleware):
-    async def __call__(self, request, response, call_next):
-        print(f"Request to {request.url}")
-        response = await call_next()
-        print(f"Response status: {response.status_code}")
-        return response
+  async def process_request(request, response, call_next):
+    print("do something before handler")
+    await call_next()
+  async def process_response(request, response, call_next):
+    print("do something after handler")
 
-app.add_middleware(LoggingMiddleware())
 ```
 
 ```python [Auth Middleware]

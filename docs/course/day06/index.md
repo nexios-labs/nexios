@@ -38,7 +38,7 @@ app = NexiosApp(config=config)
 
 Create a `.env` file in your project root:
 
-```env
+```txt
 # Application Settings
 APP_NAME=My Nexios App
 DEBUG=true
@@ -162,10 +162,10 @@ def validate_config(config_dict):
     """Validate configuration values"""
     required_keys = ["SECRET_KEY", "DATABASE_URL"]
     missing_keys = [key for key in required_keys if not config_dict.get(key)]
-    
+
     if missing_keys:
         raise ValueError(f"Missing required configuration: {missing_keys}")
-    
+
     return config_dict
 
 # Create configuration with validation
@@ -254,7 +254,7 @@ myapp/
 
 Make sure to add `.env` files to your `.gitignore`:
 
-```gitignore
+```txt
 # Environment files
 .env
 .env.local
@@ -262,8 +262,3 @@ Make sure to add `.env` files to your `.gitignore`:
 .env.production
 .env.test
 ```
-
-
-
-
-
