@@ -1,8 +1,8 @@
 import contextvars
-import inspect
 from functools import wraps
+import inspect
 from inspect import Parameter, signature
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 
 from nexios.utils.async_helpers import is_async_callable
 from nexios.utils.concurrency import run_in_threadpool
