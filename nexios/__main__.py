@@ -1,4 +1,4 @@
-__version__: str = "2.10.2"
+__version__: str = "2.10.3"
 
 # Version bump test - this comment will be removed after testing
 ascii_art = f"""

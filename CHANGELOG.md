@@ -1,3 +1,14 @@
+## v2.10.3 (2025-08-28)
+
+### Feat
+
+- **application**: add global state support
+- **websocket**: enhance websocket route addition and update docs
+
+### Fix
+
+- **docs**: correct logging_middleware function parameters
+
 ## v2.10.2 (2025-08-16)
 
 ### Fix
