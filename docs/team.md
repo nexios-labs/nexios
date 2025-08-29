@@ -28,7 +28,7 @@ const maintainers = [
     avatar: 'https://avatars.githubusercontent.com/u/55154055?v=4',
     name: "Mohammed Al-Ameen",
     title: 'Core Developer',
-    desc: 'Leads database integration and authentication systems development.',
+    desc: 'Creator of the nexios file router system',
     links: [
       { icon: 'github', link: 'https://github.com/struckchure' },
       { icon: 'twitter', link: 'https://x.com/struckchure' }
