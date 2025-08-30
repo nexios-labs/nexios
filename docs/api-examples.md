@@ -189,7 +189,7 @@ app = NexiosApp()
 async def error_route(req, res):
     raise HTTPException(400, "This is a bad request!")
 
-@app.exception_handler(HTTPException)
+@app.add_exception_handler(HTTPException)
 async def handle_http_exception(req, res, exc):
     return res.json({"error": exc.detail}, status_code=exc.status_code)
 ```
@@ -370,25 +370,22 @@ from nexios.http.response import (
 
 app = NexiosApp()
 
+
+class XMLResponse(BaseResponse):
+    media_type = "application/xml"
+
+    def __init__(self, content, *args, **kwargs):
+        import xml.etree.ElementTree as ET
+        xml_content = ET.tostring(content, encoding="unicode")
+        super().__init__(content=xml_content, *args, **kwargs)
+
 @app.get("/json")
 async def json_handler(req, res):
     return JSONResponse({"message": "Hello, World!"})
 
-@app.get("/html")
-async def html_handler(req, res):
-    return HTMLResponse("<h1>Hello, World!</h1>")
-
-@app.get("/text")
-async def text_handler(req, res):
-    return PlainTextResponse("Hello, World!", content_type="text/plain")
-
-@app.get("/file")
-async def file_handler(req, res):
-    return FileResponse("examples/responses/example_004.py", content_disposition_type="attachment")
-
-@app.get("/raw")
-async def raw_handler(req, res):
-    return BaseResponse(b"Hello, World!", content_type="text/plain")
+@app.get("/xml")
+async def xml_handler(req, res):
+    return XMLResponse({"message": "Hello, World!"})
 ```
 
 ---

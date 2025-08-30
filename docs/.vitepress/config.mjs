@@ -30,8 +30,8 @@ export default defineConfig({
 
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
-      { text: 'API Reference', link: '/api/application' },
       { text: 'Examples', link: '/api-examples' },
+      { text: "Discussions", link:"https://github.com/orgs/nexios-labs/discussions"},
       { text: 'Team', link: 'team' },
       { text: 'Course', link: '/course/index' },
     ],
@@ -124,23 +124,6 @@ export default defineConfig({
           items: [
             { text: 'Async Python', link: '/architecture/async-python' },
             { text: 'Asgi', link: '/architecture/asgi' },
-          ]
-        }
-      ],
-
-      '/api/': [
-        {
-          text: 'API Reference',
-          items: [
-            { text: 'Application', link: '/api/application' },
-            { text: 'Authentication', link: '/api/auth' },
-            { text: 'Dependencies', link: '/api/dependencies' },
-            { text: 'Middleware', link: '/api/middleware' },
-            { text: 'Request', link: '/api/request' },
-            { text: 'Response', link: '/api/response' },
-            { text: 'Routing', link: '/api/routing' },
-            { text: 'WebSocket Channels', link: '/api/websocket_channels' },
-            { text: 'Exceptions', link: '/api/exceptions' },
           ]
         }
       ],
