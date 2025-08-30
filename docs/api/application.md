@@ -157,12 +157,7 @@ The application automatically generates OpenAPI documentation.
 app = NexiosApp(
     title="My API",
     version="1.0.0",
-    description="My awesome API",
-    openapi_config={
-        "swagger_url": "/docs",
-        "redoc_url": "/redoc",
-        "openapi_url": "/openapi.json"
-    }
+    description="My awesome API"
 )
 ```
 
