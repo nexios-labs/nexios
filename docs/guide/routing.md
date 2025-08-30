@@ -63,12 +63,12 @@ async def handle_items(request, response):
 ```python [Head/Options]
 @app.head("/status")
 async def status(request, response):
-    response.header("X-API-Version", "1.0")
+    response.set_header("X-API-Version", "1.0")
     return response.json(None)
 
 @app.options("/items")
 async def items_options(request, response):
-    response.header("Allow", "GET, POST, PUT, DELETE")
+    response.set_header("Allow", "GET, POST, PUT, DELETE")
     return response.json(None)
 
 # If you forget to return a response, Nexios will raise an error indicating the handler did not return a response object.
