@@ -6,9 +6,9 @@
 
 <p align="center">
   <a href="">
-    <img alt=Support height="350" src="https://nexios-docs.netlify.app/icon.svg"> 
+    <img alt=Support height="350" src="https://nexios-docs.netlify.app/logo.png"> 
     </p>
-    <h1 align="center">Nexios 2.9.x<br></h1>
+    <h1 align="center">Nexios 2.10.x<br></h1>
     
    </a>
 </p>
@@ -122,14 +122,7 @@ async def get_user(request: Request, response: Response, user: Depend(get_user))
 
 Visit http://localhost:4000/docs to view the Swagger API documentation.
 
-### Testimonies
 
-> "Adopting Nexios at our startup has been a practical and effective choice. In a fast-moving development environment, we needed something lightweight and efficient — Nexios met that need.
->
-> Its clean architecture and compatibility with different ORMs helped our team work more efficiently and keep things maintainable. One of its strengths is how straightforward it is — minimal overhead, just the tools we need to build and scale our backend services.
->
-> Credit to Dunamis for introducing Nexios to the team. It’s now a steady part of our stack, and it’s serving us well.
-> — Joseph Mmadubuike , Chief Technology Officer buzzbuntu.com
 
 ## See the full docs
 
