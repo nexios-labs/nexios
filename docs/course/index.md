@@ -6,7 +6,7 @@ hero:
   text: "Master Web Development with Nexios Framework"
   tagline: A comprehensive journey from basics to production-ready applications
   image:
-    src: /icon.svg
+    src: /logo.png
     alt: Nexios Logo
   actions:
     - theme: brand

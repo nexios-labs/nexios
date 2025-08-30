@@ -43,19 +43,18 @@ Before you begin with Nexios, ensure you have the following:
 - **pip, poetry, or uv** - For package management
 - **Basic understanding of async/await** - While not strictly required, it helps
 
-::: tip Python Version Requirements
-Nexios requires Python 3.9+ because it leverages several modern Python features:
 
-- **Type annotations with generics** (Python 3.9+)
-- **Async context managers** (Python 3.7+)
-- **Pattern matching** (Python 3.10+)
-- **Union types and other type system improvements** (Python 3.9+)
-- **Better async/await support** (Python 3.7+)
+| Feature                                                                     | Supported in |
+| ---------------------------------------------------------------------------- | ------------ |
+| Type annotations with generics                                                | 3.9+         |
+| Async context managers                                                       | 3.7+         |
+| Pattern matching                                                             | 3.10+        |
+| Union types and other type system improvements                               | 3.9+         |
+| Better async/await support                                                   | 3.7+         |
 
-If you're using an older Python version, consider upgrading to take advantage of these features.
-:::
 
-::: tip Async/Await Fundamentals
+### Async/Await Fundamentals
+
 If you're new to async/await in Python, here are the key concepts you'll encounter:
 
 - `async def`: Defines an asynchronous function that can be awaited
@@ -64,7 +63,7 @@ If you're new to async/await in Python, here are the key concepts you'll encount
 - `async for`: Asynchronous iteration over async iterables
 
 Nexios uses async/await extensively for handling concurrent requests efficiently. Don't worry if this is new to you - we'll cover it in detail throughout the documentation.
-:::
+
 
 ## Installation
 
@@ -132,33 +131,14 @@ pipenv install nexios
 # Activate environment
 pipenv shell
 ```
-:::
 
-::: tip Package Manager Comparison
-**uv (Recommended):**
-- ⚡ Fastest installation and dependency resolution
-- 🔧 Built-in virtual environment management
-- 🔄 Compatible with pip and pip-tools
-- 📦 Excellent for both development and production
-- 🚀 Written in Rust for maximum performance
 
-**pip:**
-- 📚 Standard Python package manager
-- 🔧 Widely supported and documented
-- ✅ Good for simple projects
-- 🐌 Slower than modern alternatives
-
-**poetry:**
-- 🎯 Advanced dependency management
-- 📁 Built-in project scaffolding
-- 🔒 Lock file for reproducible builds
-- 🏗️ Good for complex projects
-
-**pipenv:**
-- 🔗 Combines pip and virtualenv
-- 🔄 Automatic dependency resolution
-- 🛠️ Good for development workflows
-:::
+| Package Manager  | Fastest Installation | Virtual Environment | Compatible with pip | Production | Written in Rust |
+|------------------|---------------------|--------------------|--------------------|------------|----------------|
+| uv (Recommended) | ⚡                   | 🔧                  | 🔄                  | 🚀         | ✅            |
+| pip              | 🐌                   | ✅                  | ✅                  | ✅         |                |
+| poetry           |                     | ✅                  |                     | ✅         |                |
+| pipenv           |                     | ✅                  | ✅                  | ✅         |                |
 
 ::: tip Virtual Environments
 Always use virtual environments to isolate your project dependencies. This prevents conflicts between different projects and keeps your system Python clean.

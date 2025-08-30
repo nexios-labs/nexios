@@ -7,7 +7,7 @@ hero:
   tagline: Nexios is a fast, minimalist Python framework for building async APIs with clean architecture, zero boilerplate, and a Pythonic feel.
 
   image:
-    src: /icon.svg
+    src: /logo.png
     alt: Nexios
   actions:
     - theme: brand

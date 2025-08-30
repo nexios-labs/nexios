@@ -2,11 +2,11 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/./icon.svg' }],
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/./logo.png' }],
     ['meta', { name: 'theme-color', content: '#ff7e17' }],
-    ['meta', { property: 'og:title', content: "28 Days of Nexios" }],
+    ['meta', { property: 'og:title', content: "Nexios - Python Web Framework" }],
     ['meta', { property: 'og:description', content: "Master Nexios in 28 Days - Comprehensive Web Development Course" }],
-    ['meta', { property: 'og:image', content: "./icon.svg" }],
+    ['meta', { property: 'og:image', content: "/./logo.png" }],
     ['meta', { property: 'og:type', content: 'website' }],
   ],
 
@@ -15,8 +15,8 @@ export default defineConfig({
 
   themeConfig: {
     siteTitle: 'Nexios',
-    logo: '/icon.svg',
-    favicon: '/icon.svg',
+    logo: '/logo.png',
+    favicon: '/logo.png',
     themeSwitcher: true,
 
     socialLinks: [
