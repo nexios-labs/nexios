@@ -90,7 +90,7 @@ export default defineConfig({
             { text: 'File Router', link: '/guide/file-router' },
             { text: 'Concurrency Utilities', link: '/guide/concurrency' },
             { text: 'Security', link: '/guide/security' },
-
+            { text: 'Pydantic Integration', link: '/guide/pydantic-integration' },
           ]
         },
         {
