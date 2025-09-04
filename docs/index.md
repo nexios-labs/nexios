@@ -153,9 +153,8 @@ from nexios import NexiosApp
 app = NexiosApp()
 
 @app.get("/users/{user_id:int}")
-async def get_user(request, response):
-    user_id = request.path_params.user_id  # Automatically int
-    return response.json({"id": user_id})
+async def get_user(request, response, user_id: int):
+    return response.json({"id": user_id}) # user_id is automatically converted to int
 ```
 
 ```python [With Validation]
