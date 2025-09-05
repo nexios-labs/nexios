@@ -195,6 +195,58 @@ class ErrorCatchingMiddleware(BaseMiddleware):
 
 ---
 
+## **Using make_response in Middleware**
+
+The `make_response` method in Nexios allows you to create custom response objects within your middleware. This is particularly useful when you need to:
+
+- Create custom response types not directly supported by the built-in response methods
+- Implement response transformations or wrappers
+- Handle specific response formatting requirements
+
+### **Basic Usage**
+
+```python
+from nexios.http.response import JSONResponse, HTMLResponse
+
+async def custom_response_middleware(req, res, next):
+    # Create a custom JSON response
+    res.make_response(JSONResponse({"message": "Hello, World!"}))
+    
+    
+
+    # Note: If you don't return the response, the original response will be used
+    # If you need to continue with the normal flow, call await next()
+```
+
+
+
+### **Example: Custom Error Response**
+
+```python
+from nexios.http.response import JSONResponse
+
+async def error_handler_middleware(req, res, next):
+    try:
+        await next()
+    except Exception as e:
+        # Create a custom error response
+        error_response = res.make_response(
+            JSONResponse(
+            {
+                "error": {
+                    "type": type(e).__name__,
+                    "message": str(e),
+                    "code": getattr(e, "code", "UNKNOWN_ERROR")
+                }
+            },
+            status_code=getattr(e, "status_code", 500)
+            )
+        )
+        return error_response
+
+    return res
+```
+
 ## **Route-Specific Middleware**
 
 Route-specific middleware applies only to a particular route. This is useful for applying middleware logic to specific endpoints without affecting the entire application.
