@@ -930,7 +930,6 @@ class NexiosResponse:
     def paginate(
         self,
         items: List[Any],
-        total_items: Optional[int] = None,
         strategy: Union[str, BasePaginationStrategy] = "page_number",
         data_handler: type[SyncListDataHandler] = SyncListDataHandler,
         **kwargs: Dict[str, Any],
@@ -971,7 +970,6 @@ class NexiosResponse:
     async def apaginate(
         self,
         items: List[Any],
-        total_items: Optional[int] = None,
         strategy: Union[str, BasePaginationStrategy] = "page_number",
         data_handler: type[AsyncListDataHandler] = AsyncListDataHandler,
         **kwargs: Dict[str, Any],
@@ -996,7 +994,7 @@ class NexiosResponse:
             else:
                 raise ValueError(f"Unknown pagination strategy: {strategy}")
 
-        _data_handler = AsyncListDataHandler(items)
+        _data_handler = data_handler(items)
         request = self._request  # You'll need to store the request in the response
 
         paginator = AsyncPaginator(

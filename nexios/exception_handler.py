@@ -39,7 +39,7 @@ async def wrap_http_exceptions(
     try:
         return await call_next()
     except Exception as exc:
-        handler: typing.Any[ExceptionHandlerType, None] = None  # type: ignore
+        handler: typing.Union[ExceptionHandlerType, None] = None  # type: ignore
 
         if isinstance(exc, HTTPException):
             handler: typing.Optional[ExceptionHandlerType] = status_handlers.get(

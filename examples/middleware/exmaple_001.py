@@ -9,6 +9,8 @@ async def logging_middleware(req, res, cnext):
     return response
 
 
+
+#class based middleware 
 class LoggingMiddleware(BaseMiddleware):
     async def process_request(self, req, res, cnext):
         print(f"Request: {req.method} {req.url}")
@@ -19,7 +21,7 @@ class LoggingMiddleware(BaseMiddleware):
 
 app = NexiosApp()
 app.add_middleware(LoggingMiddleware())
-
+app.add_middleware(logging_middleware)
 
 @app.get("/")
 async def index(req, res):
