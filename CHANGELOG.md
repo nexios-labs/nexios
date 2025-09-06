@@ -1,3 +1,18 @@
+## v2.11.0 (2025-09-06)
+
+### Feat
+
+- **examples**: add class-based middleware example
+- **docs**: add Pydantic Integration link to sidebar
+- **readme**: update version and logo in readme
+- **docs**: update branding and add documentation styles
+
+### Refactor
+
+- **nexios**: make code more concise and remove unused imports
+- **examples**: update database examples for async support
+- **docs**: update route parameter handling in example
+
 ## v2.10.3 (2025-08-28)
 
 ### Feat
