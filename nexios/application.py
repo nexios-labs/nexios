@@ -106,7 +106,8 @@ class NexiosApp(object):
         try:
             from nexios.cli.utils import get_config as get_nexios_config
         except ImportError:
-            get_nexios_config = lambda: {}
+            def get_nexios_config():
+                return {}
         from nexios.config import get_config, set_config
 
         try:

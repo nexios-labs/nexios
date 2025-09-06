@@ -8,7 +8,7 @@ from typing_extensions import Annotated, Doc
 from nexios.http import Request, Response
 from nexios.middleware.base import BaseMiddleware
 
-from .base import AuthenticationBackend, BaseUser, UnauthenticatedUser
+from .base import AuthenticationBackend, UnauthenticatedUser
 
 
 class AuthenticationMiddleware(BaseMiddleware):
