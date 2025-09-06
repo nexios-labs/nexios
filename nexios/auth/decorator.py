@@ -89,7 +89,7 @@ class has_permission(RouteDecorator):
             for permission in self.permissions:
                 if not user.has_permission(permission):
                     raise PermissionDenied
-            
+
             if inspect.iscoroutinefunction(handler):
                 return await handler(*args, **kwargs)
             return handler(*args, **kwargs)

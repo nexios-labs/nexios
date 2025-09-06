@@ -32,12 +32,13 @@ async def request_response(
             user=getattr(request, "user", None),
             app=request.app,
             base_app=getattr(request, "base_app", None),
-            )
+        )
         token = current_context.set(ctx)
         try:
-           
             if is_async_callable(func):
-                func_result = await func(request, response_manager, **request.path_params)
+                func_result = await func(
+                    request, response_manager, **request.path_params
+                )
             else:
                 func_result = await run_in_threadpool(
                     func, request, response_manager, **request.path_params

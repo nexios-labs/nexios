@@ -42,7 +42,7 @@ from .types import (
     Scope,
     Send,
     WsHandlerType,
-    WsMiddlewareType
+    WsMiddlewareType,
 )
 
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
@@ -106,8 +106,10 @@ class NexiosApp(object):
         try:
             from nexios.cli.utils import get_config as get_nexios_config
         except ImportError:
+
             def get_nexios_config():
                 return {}
+
         from nexios.config import get_config, set_config
 
         try:
@@ -378,9 +380,10 @@ class NexiosApp(object):
         self,
         route: Optional[
             Annotated[
-            WebsocketRoutes,
-            Doc("An instance of the Routes class representing a WebSocket route."),
-        ]] = None,
+                WebsocketRoutes,
+                Doc("An instance of the Routes class representing a WebSocket route."),
+            ]
+        ] = None,
         path: Optional[str] = None,
         handler: Optional[WsHandlerType] = None,
         middleware: List[WsMiddlewareType] = [],
@@ -405,7 +408,9 @@ class NexiosApp(object):
         if route:
             self.ws_router.add_ws_route(route)
         else:
-            self.ws_router.add_ws_route(WebsocketRoutes(path, handler, middleware=middleware))
+            self.ws_router.add_ws_route(
+                WebsocketRoutes(path, handler, middleware=middleware)
+            )
 
     def mount_router(self, router: Router, path: Optional[str] = None) -> None:
         """
@@ -531,7 +536,7 @@ class NexiosApp(object):
         """ASGI application callable"""
         scope["app"] = self
         scope["base_app"] = self
-        scope['global_state'] = self.state
+        scope["global_state"] = self.state
 
         if scope["type"] == "lifespan":
             await self.handle_lifespan(receive, send)

@@ -264,7 +264,7 @@ class Routes(BaseRoute):
         Returns:
             Response: The processed HTTP response object.
         """
-        
+
         async def apply_middleware(app: ASGIApp) -> ASGIApp:
             middleware: typing.List[Middleware] = []
             for mdw in self.middleware:

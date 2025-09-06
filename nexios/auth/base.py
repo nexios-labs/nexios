@@ -122,9 +122,9 @@ class BaseUser:
             str: The unique identifier of the user.
         """
         raise NotImplementedError()
-    def has_permission(self, permission :str):
-        """checks if the request user has the provided permission"""
 
+    def has_permission(self, permission: str):
+        """checks if the request user has the provided permission"""
 
 
 class SimpleUser(BaseUser):
@@ -135,9 +135,9 @@ class SimpleUser(BaseUser):
     """
 
     def __init__(
-        self, 
+        self,
         username: Annotated[str, Doc("The username of the authenticated user.")],
-        permissions = Annotated[str, Doc("Array of user User Permissions")]
+        permissions=Annotated[str, Doc("Array of user User Permissions")],
     ) -> None:
         """
         Initializes a simple authenticated user.
@@ -173,6 +173,7 @@ class SimpleUser(BaseUser):
             str: The username of the authenticated user.
         """
         return self.username
+
     def has_permission(self, permission: str):
         return permission in self.permissions
 

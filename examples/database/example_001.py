@@ -2,8 +2,8 @@ import sqlite3
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Optional
 
-from nexios import NexiosApp, Depends
-from nexios.types import State, Request, Response
+from nexios import Depends, NexiosApp
+from nexios.types import Request, Response, State
 
 # Database setup
 DB_PATH = "example.db"
@@ -51,13 +51,13 @@ async def lifespan(app: NexiosApp) -> AsyncGenerator[State, None]:
     # Startup: Initialize database connection
     db = Database(DB_PATH)
     await db.connect()
-    
+
     # Make database available to routes
     state = State()
     state.db = db
-    
+
     yield state  # Application runs here
-    
+
     # Cleanup: Close database connection
     await db.close()
 
@@ -72,9 +72,7 @@ async def get_db(state: State) -> Database:
 
 @app.get("/todos")
 async def list_todos(
-    request: Request, 
-    response: Response, 
-    db: Database = Depends(get_db)
+    request: Request, response: Response, db: Database = Depends(get_db)
 ):
     conn = db.get_connection()
     todos = conn.execute("SELECT * FROM todos ORDER BY created_at DESC").fetchall()
@@ -93,9 +91,7 @@ async def list_todos(
 
 @app.post("/todos")
 async def create_todo(
-    request: Request, 
-    response: Response, 
-    db: Database = Depends(get_db)
+    request: Request, response: Response, db: Database = Depends(get_db)
 ):
     data = await request.json
     title = data.get("title")
@@ -125,14 +121,11 @@ async def create_todo(
 
 @app.put("/todos/{todo_id}")
 async def update_todo(
-    request: Request, 
-    response: Response, 
-    todo_id: str,
-    db: Database = Depends(get_db)
+    request: Request, response: Response, todo_id: str, db: Database = Depends(get_db)
 ):
     data = await request.json
     conn = db.get_connection()
-    
+
     # Check if todo exists
     todo = conn.execute("SELECT * FROM todos WHERE id = ?", (todo_id,)).fetchone()
 
@@ -169,13 +162,10 @@ async def update_todo(
 
 @app.delete("/todos/{todo_id}")
 async def delete_todo(
-    request: Request,
-    response: Response,
-    todo_id: str,
-    db: Database = Depends(get_db)
+    request: Request, response: Response, todo_id: str, db: Database = Depends(get_db)
 ):
     conn = db.get_connection()
-    
+
     # Check if todo exists
     todo = conn.execute("SELECT * FROM todos WHERE id = ?", (todo_id,)).fetchone()
 

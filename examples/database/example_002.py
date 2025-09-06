@@ -12,14 +12,15 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from nexios import NexiosApp, Depends
-from nexios.types import State, Request, Response
+from nexios import Depends, NexiosApp
+from nexios.types import Request, Response, State
 
 # Database configuration
 DATABASE_URL = "sqlite+aiosqlite:///./example_async.db"
 
 # Declarative base class
 Base = declarative_base()
+
 
 # SQLAlchemy setup
 class Database:
@@ -39,7 +40,7 @@ class Database:
                 ),
                 scopefunc=lambda: None,  # This is a simple implementation
             )
-            
+
             # Create tables
             async with self.engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
@@ -76,13 +77,13 @@ async def lifespan(app: NexiosApp) -> AsyncGenerator[State, None]:
     # Startup: Initialize database connection
     db = Database(DATABASE_URL)
     await db.connect()
-    
+
     # Make database available to routes
     state = State()
     state.db = db
-    
+
     yield state  # Application runs here
-    
+
     # Cleanup: Close database connection
     await db.close()
 
@@ -101,10 +102,10 @@ async def get_db_session(state: State) -> AsyncSession:
 async def create_note(
     request: Request,
     response: Response,
-    session: AsyncSession = Depends(get_db_session)
+    session: AsyncSession = Depends(get_db_session),
 ):
     data = await request.json()
-    
+
     note = Note(
         title=data["title"],
         content=data["content"],
@@ -131,7 +132,7 @@ async def create_note(
 async def list_notes(
     request: Request,
     response: Response,
-    session: AsyncSession = Depends(get_db_session)
+    session: AsyncSession = Depends(get_db_session),
 ):
     show_private = request.query_params.get("show_private", "false").lower() == "true"
 
@@ -161,7 +162,7 @@ async def get_note(
     request: Request,
     response: Response,
     note_id: int,
-    session: AsyncSession = Depends(get_db_session)
+    session: AsyncSession = Depends(get_db_session),
 ):
     note = await session.get(Note, note_id)
 
@@ -188,7 +189,7 @@ async def update_note(
     request: Request,
     response: Response,
     note_id: int,
-    session: AsyncSession = Depends(get_db_session)
+    session: AsyncSession = Depends(get_db_session),
 ):
     data = await request.json()
     note = await session.get(Note, note_id)
@@ -224,7 +225,7 @@ async def delete_note(
     request: Request,
     response: Response,
     note_id: int,
-    session: AsyncSession = Depends(get_db_session)
+    session: AsyncSession = Depends(get_db_session),
 ):
     note = await session.get(Note, note_id)
 

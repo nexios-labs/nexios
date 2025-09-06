@@ -634,9 +634,10 @@ class State:
     def __str__(self) -> str:
         return f"<State data={self._state}>"
 
-    def update(self, values :Dict[str,Any]):
+    def update(self, values: Dict[str, Any]):
         for key, value in values.items():
             self._state[key] = value
+
 
 class RouteParam:
     def __init__(self, data: Dict[str, Any]) -> None:

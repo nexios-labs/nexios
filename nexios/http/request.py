@@ -96,6 +96,7 @@ class HTTPConnection(object):
 
     def __iter__(self) -> typing.Iterator[str]:
         return iter(self.scope)
+
     def __len__(self) -> int:
         return len(self.scope)
 
@@ -178,7 +179,7 @@ class HTTPConnection(object):
             # Create a state instance with a reference to the dict in which it should
             # store info
             self._state = State(self.scope["state"])
-            self._state.update(self.scope.get("global_state",{}))
+            self._state.update(self.scope.get("global_state", {}))
         return self._state
 
     @property
@@ -225,7 +226,6 @@ async def empty_send(message: Message) -> typing.NoReturn:
 
 
 class Request(HTTPConnection):
-
     def __init__(
         self, scope: Scope, receive: Receive = empty_receive, send: Send = empty_send
     ):
@@ -338,7 +338,7 @@ class Request(HTTPConnection):
                     self._form = {}  # type: ignore
             elif content_type == b"application/x-www-form-urlencoded":
                 form_parser = FormParser(self.headers, self.stream())
-                
+
                 self._form = await form_parser.parse()
             else:
                 self._form: FormData = FormData()

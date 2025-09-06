@@ -277,9 +277,15 @@ async def test_has_permission_decorator(test_client):
 
     class CustomBackend(AuthenticationBackend):
         async def authenticate(self, request: Request, response: Response):
-            return SimpleUser(username="testuser", permissions=["posts.view", "posts.edit"]),"custom"
-    
+            return (
+                SimpleUser(
+                    username="testuser", permissions=["posts.view", "posts.edit"]
+                ),
+                "custom",
+            )
+
     app.add_middleware(AuthenticationMiddleware(backend=CustomBackend()))
+
     # Mock request with the test user
     @app.get("/protected-route")
     @has_permission("posts.view")
@@ -287,7 +293,7 @@ async def test_has_permission_decorator(test_client):
         return {"message": "Access granted"}
 
     # Test with user having the required permission
-    
+
     response = await client.get("/protected-route")
     assert response.status_code == 200
     assert (response.json()) == {"message": "Access granted"}
@@ -310,7 +316,7 @@ async def test_has_permission_decorator(test_client):
 
     response = await client.get("/edit-route")
     assert response.status_code == 200
-    assert ( response.json()) == {"message": "Edit access"}
+    assert (response.json()) == {"message": "Edit access"}
 
     # Test with unauthenticated user
     @app.get("/public-route")

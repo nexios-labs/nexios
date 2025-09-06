@@ -68,7 +68,9 @@ class CSRFMiddleware(BaseMiddleware):
             and self._has_sensitive_cookies(request.cookies)
         ):
             submitted_csrf_token = request.headers.get(self.header_name)
-            if not submitted_csrf_token and request.headers.get("content-type", "").startswith("application/x-www-form-urlencoded"):
+            if not submitted_csrf_token and request.headers.get(
+                "content-type", ""
+            ).startswith("application/x-www-form-urlencoded"):
                 form = await request.form
                 submitted_csrf_token = form.get("csrftoken")
             if not csrf_cookie:
@@ -94,7 +96,7 @@ class CSRFMiddleware(BaseMiddleware):
         """
         if not self.use_csrf:
             return
-        csrf_token = request.state.csrf_token   
+        csrf_token = request.state.csrf_token
 
         response.set_cookie(
             key=self.cookie_name,

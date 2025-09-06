@@ -207,14 +207,16 @@ async def test_form_multipart(test_client):
     async def handler(req: Request, res: Response):
         form_data = await req.form
         files = await req.files
-        return res.json({
-            "form": dict(form_data),
-            "files": {k: v.filename for k, v in files.items()}
-        })
+        return res.json(
+            {
+                "form": dict(form_data),
+                "files": {k: v.filename for k, v in files.items()},
+            }
+        )
 
     # Create a sample file to upload
     files = {"file": ("test.txt", b"test content", "text/plain")}
-    
+
     response = await client.post(
         "/test-form-multipart",
         data={"field1": "value1"},

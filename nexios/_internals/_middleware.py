@@ -146,8 +146,6 @@ class ASGIRequestResponseBridge:
         request = _CachedRequest(scope, receive)
         response = Response(request=request)
 
-        
-        
         wrapped_receive = request.wrapped_receive
         response_sent = anyio.Event()
 
@@ -227,7 +225,6 @@ class ASGIRequestResponseBridge:
                 await response.get_response()(scope, wrapped_receive, send)
                 response_sent.set()
                 recv_stream.close()
-    
 
 
 WebSocketDispatchFunction = typing.Callable[

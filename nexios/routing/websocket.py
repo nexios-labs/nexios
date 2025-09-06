@@ -95,9 +95,10 @@ class WSRouter(BaseRouter):
         self,
         route: Optional[
             Annotated[
-            WebsocketRoutes,
-            Doc("An instance of the Routes class representing a WebSocket route."),
-        ]] = None,
+                WebsocketRoutes,
+                Doc("An instance of the Routes class representing a WebSocket route."),
+            ]
+        ] = None,
         path: Optional[str] = None,
         handler: Optional[WsHandlerType] = None,
         middleware: List[WsMiddlewareType] = [],
@@ -122,7 +123,9 @@ class WSRouter(BaseRouter):
         if route:
             self.ws_router.add_ws_route(route)
         else:
-            self.ws_router.add_ws_route(WebsocketRoutes(path, handler, middleware=middleware))
+            self.ws_router.add_ws_route(
+                WebsocketRoutes(path, handler, middleware=middleware)
+            )
 
     def add_ws_middleware(self, middleware: type[ASGIApp]) -> None:  # type: ignore[override]
         """Add middleware to the WebSocket router"""
