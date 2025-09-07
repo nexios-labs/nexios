@@ -9,6 +9,10 @@ from nexios.http import Request, Response
 from nexios.middleware.base import BaseMiddleware
 
 from .base import AuthenticationBackend, UnauthenticatedUser
+from nexios import logging
+
+
+logger = logging.get_logger(__name__)
 
 
 class AuthenticationMiddleware(BaseMiddleware):
@@ -86,7 +90,7 @@ class AuthenticationMiddleware(BaseMiddleware):
 
             except Exception as e:
                 # Log the error but continue to the next backend
-                request.app.logger.error(
+                logger.error(
                     f"Error in {backend.__class__.__name__} authentication: {str(e)}"
                 )
                 continue
