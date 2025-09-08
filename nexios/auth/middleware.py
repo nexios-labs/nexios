@@ -12,7 +12,7 @@ from .base import AuthenticationBackend, UnauthenticatedUser
 from nexios import logging
 
 
-logger = logging.get_logger(__name__)
+logger = logging.create_logger(__name__)
 
 
 class AuthenticationMiddleware(BaseMiddleware):
