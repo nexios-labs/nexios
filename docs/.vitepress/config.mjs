@@ -29,23 +29,37 @@ export default defineConfig({
     },
 
     nav: [
+      { text: 'Intro', link: '/intro' },
       { text: 'Guide', link: '/guide/getting-started' },
       { text: 'Examples', link: '/api-examples' },
+      { text : "Community", link:"/community"},
       { text: "Discussions", link:"https://github.com/orgs/nexios-labs/discussions"},
       { text: 'Team', link: 'team' },
       { text: 'Course', link: '/course/index' },
     ],
 
     sidebar: {
+      '/intro/': [
+        { text: 'What is Nexios?', link: '/intro' },
+        { text: "What is Asgi?", link: '/intro/asgi' },
+        { text: 'Nexios And FastAPI', link: '/intro/nexios-and-fastapi' },
+        { text: "Quick Start", link: '/intro/quick-start' },
+        { text : "Core Concepts", link: '/intro/concepts' },
+        { text : "Async Python", link: '/intro/async-python' },
+        {text: 'Migrating To Nexios',link: '/intro/migrating-to-nexios'},
+      ],
+      '/community/': [
+        { text: 'Welcome', link: '/community' },
+        { text: 'FAQ', link: '/community/faq' },
+        { text : "Contribution Guide", link:"/community/contribution-guide"},
+        { text: 'Discussions', link: 'https://github.com/orgs/nexios-labs/discussions' },
+        { text: 'Team', link: '/team' },
+      ],
       '/guide/': [
         
         { text: 'Getting Started', link: '/guide/getting-started' },
         { text: 'CLI', link: '/guide/cli' },
-        { text: "What is Asgi?", link: '/guide/asgi' },
-        { text : "Async Python", link: '/guide/async-python' },
         { text : "Why Nexios?", link: '/guide/why-nexios' },
-        { text : "Core Concepts", link: '/guide/concepts' },
-        {text: 'Migrating To Nexios',link: '/guide/migrating-to-nexios'},
         {
           text: 'Core Concepts',
           collapsed: false,

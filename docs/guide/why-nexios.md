@@ -47,7 +47,7 @@ class UserService:
 async def get_user(
     request, 
     response,
-    user_service: UserService = Depend()
+    user_service = Depend(UserService)
 ):
     user = await user_service.get_user(
         request.path_params.user_id
