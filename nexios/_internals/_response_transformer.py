@@ -7,6 +7,8 @@ from nexios.http.response import BaseResponse
 from nexios.types import ASGIApp, Receive, Scope, Send
 from nexios.utils.async_helpers import is_async_callable
 from nexios.utils.concurrency import run_in_threadpool
+from pydantic import BaseModel
+from enum import Enum
 
 
 async def request_response(
@@ -45,11 +47,15 @@ async def request_response(
                 )
         finally:
             current_context.reset(token)
-        if isinstance(func_result, (dict, list, str)):
+        if isinstance(func_result, (dict, list, str, int, float, type(None))):
             response_manager.json(func_result)
 
         elif isinstance(func_result, BaseResponse):
             response_manager.make_response(func_result)
+        elif isinstance(func_result, BaseModel):
+            response_manager.json(func_result.model_dump())
+        elif isinstance(func_result, Enum):
+            response_manager.json(func_result.value)
         response = response_manager.get_response()
         return await response(scope, receive, send)
 

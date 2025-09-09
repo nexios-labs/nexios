@@ -1,103 +1,153 @@
-# Nexios CLI & Configuration Guide
+# Nexios CLI Guide
 
-Nexios provides a powerful, unified CLI for development, debugging, and deployment. The CLI is fully driven by a single configuration file: `nexios.config.py`.
+Nexios provides a powerful command-line interface (CLI) that makes it easy to develop, test, and deploy your applications. This guide will walk you through using the CLI, starting with basic commands and gradually introducing the configuration system.
 
-## Prerequisites
+## 🚀 Getting Started
 
-Before using the Nexios CLI, you need to install the required dependencies:
+### Installation
+
+First, install the Nexios CLI with the `cli` extra:
 
 ```bash
 pip install nexios[cli]
 ```
 
-This will install `click`, which is required for all CLI functionality.
+### Basic Commands
 
----
+Nexios CLI works right away without any configuration. Try these basic commands:
 
-## 📦 Project Configuration: `nexios.config.py`
+```bash
+# Show help and available commands
+nexios --help
 
-All CLI and server options are set as **plain variables** in `nexios.config.py` at your project root. This file is the single source of truth for how your app is run, introspected, and debugged.
+# Run a simple application (defaults to main:app on port 8000)
+nexios run
 
-### Example: Minimal Development Config
+# Run in development mode with auto-reload
+nexios dev
+
+# List all registered routes
+nexios urls
+
+# Check if a specific route exists
+nexios ping /api/status
+
+# Start an interactive Python shell with your app loaded
+nexios shell
+```
+
+## ⚙️ Configuration with nexios.config.py
+
+As your project grows, you'll want to customize how Nexios runs your application. This is where `nexios.config.py` comes in.
+
+### Creating a Basic Config
+
+Create a `nexios.config.py` file in your project root. Here's a minimal example:
 
 ```python
 # nexios.config.py
-app_path = "main:app"      # Path to your app instance (module:variable)
-server = "uvicorn"         # Server to use (uvicorn, granian, gunicorn)
-port = 8000                # Port to bind
-host = "127.0.0.1"         # Host to bind
-reload = True              # Enable auto-reload (dev only)
+app_path = "main:app"  # Path to your FastAPI/Starlette app
+port = 8000           # Default port
+host = "127.0.0.1"    # Default host
 ```
 
-### Example: Production with Gunicorn
+### How Configuration Works
 
-```python
-# nexios.config.py
-app_path = "myproject.main:app"
-server = "gunicorn"
-port = 80
-host = "0.0.0.0"
-workers = 4
-log_level = "info"
-```
+1. **Automatic Loading**: When you run any `nexios` command, it automatically looks for `nexios.config.py` in your current directory.
+2. **Simple Variables**: Configuration is done through Python variables, making it easy to understand and modify.
+3. **Type Safety**: The CLI validates your configuration when your application starts.
 
-### Example: Custom Command
+### Common Configuration Options
+
+Here are the most frequently used configuration options:
+
+- `app_path` (required): Path to your application instance in `module:app` format
+- `host`: The host to bind to (default: "127.0.0.1")
+- `port`: The port to run on (default: 8000)
+- `reload`: Enable auto-reload in development (default: False in production, True in `nexios dev`)
+
+### Development vs Production
+
+#### Development Configuration
 
 ```python
 # nexios.config.py
 app_path = "src.main:app"
-custom_command = "gunicorn -w 8 -b 0.0.0.0:8080 src.main:app"
+host = "127.0.0.1"
+port = 5000
+reload = True  # Enable auto-reload
+log_level = "debug"
 ```
 
----
-
-## 🔑 Supported Config Variables
-
-| Variable         | Type | Description                                                                |
-| ---------------- | ---- | -------------------------------------------------------------------------- |
-| `app_path`       | str  | **Required.** Path to your app instance, e.g. `main:app` or `src.main:app` |
-| `server`         | str  | Server to use: `uvicorn`, `granian`, or `gunicorn`                         |
-| `port`           | int  | Port to bind the server to                                                 |
-| `host`           | str  | Host to bind the server to                                                 |
-| `reload`         | bool | Enable auto-reload (dev only, uvicorn)                                     |
-| `workers`        | int  | Number of worker processes (granian/gunicorn)                              |
-| `log_level`      | str  | Log level for the server                                                   |
-| `custom_command` | str  | If set, this command is run instead of built-in server logic               |
-| ...              | ...  | Any other variables you want to use in your project                        |
-
----
-
-## 🚀 CLI Commands & How They Use Config
-
-All CLI commands automatically load `nexios.config.py` and use the variables you set:
-
-- **`nexios run`**: Starts your app using `app_path` and all other config. If `custom_command` is set, it is used. If `server` is `gunicorn`, Gunicorn is used. Otherwise, Uvicorn or Granian is used.
-- **`nexios dev`**: Like `run`, but always enables debug, reload, and verbose logging.
-- **`nexios urls`**: Lists all registered routes. Uses `app_path` to load your app instance for introspection.
-- **`nexios ping /route`**: Checks if a route exists. Uses `app_path` to load your app instance.
-- **`nexios shell`**: Starts an interactive shell with your app loaded, using `app_path`.
-
-You do **not** need to define an `app` variable in your config unless you want to use it for advanced scripting. The CLI will always use `app_path` to find and load your app instance.
-
----
-
-## 🧑‍💻 Example Workflows
-
-### 1. **Development**
+#### Production Configuration
 
 ```python
 # nexios.config.py
-app_path = "main:app"
-server = "uvicorn"
-port = 5050
-host = "127.0.0.1"
-reload = True
+app_path = "myapp.main:app"
+host = "0.0.0.0"
+port = 80
+workers = 4  # For production servers that support workers
+log_level = "info"
 ```
 
-```bash
-nexios run
-nexios dev
-nexios shell
+## 🔄 How Commands Use the Config
+
+Each Nexios command uses the configuration in different ways:
+
+### `nexios run`
+- Uses: `app_path`, `host`, `port`, `server`, `workers`, `log_level`
+- Example: `nexios run --port 8080` (overrides config port)
+
+### `nexios dev`
+- Always enables `reload` and debug mode
+- Uses same config as `run` but with development defaults
+
+### `nexios urls` and `nexios ping`
+- Uses: `app_path` to load your application
+- Example: `nexios urls` shows all routes
+
+## 🛠 Advanced Configuration
+
+### Custom Server Command
+
+For complete control, you can specify a custom command:
+
+```python
+# nexios.config.py
+custom_command = "gunicorn -w 4 -k uvicorn.workers.UvicornWorker myapp.main:app"
+```
+
+### Environment Variables
+
+You can use environment variables in your config:
+
+```python
+import os
+
+app_path = os.getenv("APP_PATH", "main:app")
+port = int(os.getenv("PORT", "8000"))
+```
+
+### Multiple Environments
+
+Handle different environments in one config file:
+
+```python
+import os
+
+env = os.getenv("ENV", "development")
+
+if env == "production":
+    app_path = "myapp.main:app"
+    host = "0.0.0.0"
+    port = 80
+    log_level = "warning"
+else:  # development
+    app_path = "main:app"
+    host = "127.0.0.1"
+    port = 8000
+    reload = True
+    log_level = "debug"
 nexios urls
 nexios ping /about
 ```

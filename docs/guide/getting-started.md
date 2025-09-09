@@ -204,6 +204,9 @@ You can run your Nexios application in several ways:
 python main.py
 ```
 
+```bash [Nexios CLI (Requires Click)]
+nexios run --reload
+```
 ```bash [With uvicorn (recommended)]
 uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
@@ -226,19 +229,9 @@ For development, we recommend using `uvicorn` with the `--reload` flag. This wil
 
 ### Testing Your Application
 
-Once your application is running, you can test it:
+Once your application is running, you can test it by opening your browser and navigating to `http://localhost:8000/docs`.
 
-```bash
-# Test with curl
-curl http://localhost:8000/
-
-# Expected response:
-# {"message": "Hello from Nexios!", "status": "success"}
-
-# If the server is not running or the port is wrong, you'll get a connection error.
-```
-
-Or simply open your browser and navigate to `http://localhost:8000/`.
+nexios provide an intaractive  API documentation interface. This allows you to test your API endpoints and explore the available routes.
 
 ## Understanding the Code
 
@@ -283,34 +276,17 @@ if __name__ == "__main__":
 # If you run this in production, make sure to use uvicorn or another ASGI server for better performance and reliability.
 ```
 
+
 ## Next Steps
 
 Congratulations! You've successfully created and run your first Nexios application. Here's what you can explore next:
 
-### 1. **Routing Fundamentals**
-Learn how to create different types of routes and handle various HTTP methods:
-- [Routing Guide](/guide/routing) - Complete routing system overview
-- [HTTP Methods](/guide/routing#http-methods) - GET, POST, PUT, DELETE, etc.
-- [Path Parameters](/guide/routing#path-parameters) - Dynamic URL segments
-
-### 2. **Request and Response Handling**
-Understand how to work with incoming requests and outgoing responses:
-- [Request Information](/guide/request-info) - Accessing request data
-- [Sending Responses](/guide/sending-responses) - Different response types
-- [Request Inputs](/guide/request-inputs) - Query parameters, headers, etc.
-
-### 3. **Core Concepts**
-Dive deeper into Nexios architecture and concepts:
-- [Core Concepts](/guide/concepts) - Framework architecture overview
-- [Async Python](/guide/async-python) - Understanding async/await
-- [Configuration](/guide/configuration) - Application configuration
-
-### 4. **Advanced Features**
-Explore more advanced features as you become comfortable with the basics:
-- [Middleware](/guide/middleware) - Request/response processing
-- [Authentication](/guide/authentication) - User authentication and authorization
-- [WebSockets](/guide/websockets) - Real-time communication
-- [Templating](/guide/templating) - HTML template rendering
+| Section                                                                           | Description                                                                                                                                                                                                                                                      |
+|----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Routing Fundamentals](/guide/routing)                           | Learn how to create different types of routes and handle various HTTP methods:<br>- [HTTP Methods](/guide/routing#http-methods)<br>- [Path Parameters](/guide/routing#path-parameters)                                                                        |
+| [Request and Response Handling](/guide/request-info)             | Understand how to work with incoming requests and outgoing responses:<br>- [Request Information](/guide/request-info)<br>- [Sending Responses](/guide/sending-responses)<br>- [Request Inputs](/guide/request-inputs) |
+| [Core Concepts](/guide/concepts)                                | Dive deeper into Nexios architecture and concepts:<br>- [Framework Architecture](/guide/concepts)<br>- [Async Python](/guide/async-python)<br>- [Configuration](/guide/configuration)                                            |
+| [Advanced Features](/guide/middleware)                           | Explore more advanced features as you become comfortable with the basics:<br>- [Middleware](/guide/middleware)<br>- [Authentication](/guide/authentication)<br>- [WebSockets](/guide/websockets)<br>- [Templating](/guide/templating) |
 
 ## Common Questions
 

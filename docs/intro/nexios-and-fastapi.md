@@ -68,12 +68,13 @@ from nexios import NexiosApp
 
 app = NexiosApp()
 
-@app.middleware
-async def log_requests(request, call_next):
+async def log_requests(request, response, call_next):
     print(f"Incoming: {request.path}")
-    response = await call_next(request)
+    response = await call_next()
     print(f"Completed: {request.path}")
     return response
+
+app.add_middleware(log_requests)
 ```
 
 ---

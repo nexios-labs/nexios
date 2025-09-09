@@ -21,20 +21,20 @@ Get up and running with Nexios in minutes. This guide will walk you through crea
    ```
 
 ## Your First Application
+A simple Nexios one file  application will look like this:
 
-1. Create a new file `main.py`:
-   ```python
-   from nexios import Nexios
-   from nexios.http import Response,Request
+```python
+from nexios import Nexios
+from nexios.http import Response,Request
 
-   app = Nexios()
+app = Nexios()
 
-   @app.get("/")
-   async def home(request:Request,response:Response):
-       return response.json({"message": "Welcome to Nexios!"})
+@app.get("/")
+async def home(request:Request,response:Response):
+    return response.json({"message": "Welcome to Nexios!"})
 
-   if __name__ == "__main__":
-       import uvicorn
+if __name__ == "__main__":
+    import uvicorn
        uvicorn.run(app, host="0.0.0.0", port=8000)
    ```
 
