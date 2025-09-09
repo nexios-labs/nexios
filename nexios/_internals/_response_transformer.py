@@ -47,7 +47,7 @@ async def request_response(
                 )
         finally:
             current_context.reset(token)
-        if isinstance(func_result, (dict, list, str, int, float, type(None))):
+        if isinstance(func_result, (dict, list, str, int, float)):
             response_manager.json(func_result)
 
         elif isinstance(func_result, BaseResponse):
