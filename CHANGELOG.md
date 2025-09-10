@@ -1,3 +1,14 @@
+## v2.11.1 (2025-09-10)
+
+### Fix
+
+- **_response_transformer**: remove None type from json response check
+- **auth**: update logging method in middleware
+
+### Refactor
+
+- **auth**: replace request-specific logger with module-level logger
+
 ## v2.11.0 (2025-09-06)
 
 ### Feat

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nexios"
-version = "2.11.0"
+version = "2.11.1"
 description = "Nexios is a modern, high-performance ASGI web framework for Python with multi-server support with zero overhead."
 authors = [
     {name = "Chidebele Dunamis", email = "techwithdunamix@gmail.com"}
@@ -208,7 +208,7 @@ known-first-party = ["nexios"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "2.11.0"
+version = "2.11.1"
 version_files = [
     "pyproject.toml:version",
     "nexios/__main__.py:__version__"
