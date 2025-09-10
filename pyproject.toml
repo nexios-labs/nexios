@@ -38,10 +38,10 @@ dependencies = [
     "anyio==4.3.0",
     "itsdangerous>=2.1.2",
     "python-multipart>=0.0.6",
-    "typing-extensions==4.12.2",
     "pydantic>=2.0,<3.0",
-    "typing-extensions>=4.0.0;python_version<'3.10'"
+    "typing-extensions>=4.12.2; python_version<'3.10'",
 ]
+
 
 [project.optional-dependencies]
 templating = ["jinja2>=3.1.6"]
