@@ -160,7 +160,7 @@ The above user management classes should be used in the `authenticate_func` of a
 from nexios.auth.backends.session import SessionAuthBackend
 from nexios.auth.base import SimpleUser
 
-async def load_user_from_session(session_data: dict) -> SimpleUser:
+async def load_user_from_session(**session_data: dict) -> SimpleUser:
     """Load user from session data"""
     if "user" in session_data:
         return SimpleUser(username=session_data["user"]["username"])
@@ -171,6 +171,10 @@ session_backend = SessionAuthBackend(
     user_key="user"  # Key in session where user data is stored
 )
 ```
+
+::: tip
+the `authenticate_func` for `SessionAuthBackend` and `JWTAuthBackend` should take a mapping of the session data as a keyword argument
+:::
 
 ## Fine-Grained Permission Control
 
@@ -309,7 +313,7 @@ Handles session-based authentication.
 ```python
 from nexios.auth.backends.session import SessionAuthBackend
 
-async def load_user_from_session(session_data: dict) -> SimpleUser:
+async def load_user_from_session(**session_data: dict) -> SimpleUser: #enforce keyword arguments is a mapping
     """Load user from session data"""
     if "user" in session_data:
         return SimpleUser(username=session_data["user"]["username"])
