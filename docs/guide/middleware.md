@@ -151,7 +151,7 @@ class ExampleMiddleware(BaseMiddleware):
     async def process_request(self, req, res, cnext):
         """Executed before the request handler."""
         print("Processing Request:", req.method, req.url)
-        await cnext(req, res)  # Pass control to the next middleware or handler
+        await cnext()  # Pass control to the next middleware or handler
         # If you use the wrong parameter order in your methods, Nexios will raise an error at startup.
         # If you forget to call await cnext(req, res), the request will not reach the handler and the client will not receive a response.
 
@@ -258,7 +258,7 @@ async def auth_middleware(req, res, cnext):
     if not req.headers.get("Authorization"):
         return res.json({"error": "Unauthorized"}, status_code=401)
     await cnext(req, res)
-    # If you forget to call await cnext(req, res) in route-specific middleware, the request will not reach the handler and the client will not receive a response.
+    # If you forget to call await cnext() in route-specific middleware, the request will not reach the handler and the client will not receive a response.
 
 @app.route("/profile", "GET", middleware=[auth_middleware])
 async def get_profile(req, res):
@@ -268,7 +268,7 @@ async def get_profile(req, res):
 **⚙️ Execution Order:**\
 `auth_middleware → get_profile handler → response sent`
 
-# If you forget to call await cnext(req, res) in route-specific middleware, the request will not reach the handler.
+# If you forget to call await cnext() in route-specific middleware, the request will not reach the handler.
 
 ---
 
@@ -390,7 +390,7 @@ from nexios.middleware.utils import use_for_route
 @use_for_route("/dashboard")
 async def log_middleware(req, res, cnext):
     print(f"User accessed {req.path.url}")
-    await cnext(req, res)  # Proceed to the next function (handler or middleware)
+    await cnext()  # Proceed to the next function (handler or middleware)
 ```
 
 ---

@@ -179,16 +179,16 @@ Custom error templates and handling:
 from nexios.templating import render
 from nexios.exceptions import TemplateError
 
-@app.exception_handler(404)
-async def not_found(request, exc):
+@app.app_exception_handler(404)
+async def not_found(request: Request, response: Response, exc: Exception):
     return await render(
         "errors/404.html",
         {"path": request.url.path},
         status_code=404
     )
 
-@app.exception_handler(TemplateError)
-async def template_error(request, exc):
+@app.app_exception_handler(TemplateError)
+async def template_error(request: Request, response: Response, exc: Exception):
     return await render(
         "errors/template.html",
         {

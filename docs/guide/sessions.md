@@ -20,7 +20,7 @@ app = NexiosApp()
 app.config.secret_key = "your-secure-secret-key"
 
 # Add the session middleware
-app.add_middleware(SessionMiddleware)
+app.add_middleware(SessionMiddleware())
 ```
 
 With this minimal setup, Nexios will use the default cookie-based session backend. Your routes can now access the session through the request object:
