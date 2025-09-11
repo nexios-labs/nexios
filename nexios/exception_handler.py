@@ -10,6 +10,7 @@ from nexios.exceptions import HTTPException, NotFoundException
 from nexios.handlers.not_found import handle_404_error
 from nexios.http import Request, Response
 from nexios.types import ExceptionHandlerType
+from nexios._internals._response_transformer import _process_response
 
 logger = logging.getLogger("nexios")
 
@@ -47,7 +48,7 @@ async def wrap_http_exceptions(
             )  # type: ignore
 
             if handler:
-                return await handler(request, response, exc)  # type: ignore
+                return _process_response(response, await handler(request, response, exc))  # type: ignore
 
         if handler is None:  # type: ignore
             handler = _lookup_exception_handler(exception_handlers, exc)
@@ -55,7 +56,7 @@ async def wrap_http_exceptions(
                 error = traceback.format_exc()
                 logger.error(error)
                 raise exc
-            return await handler(request, response, exc)
+            return _process_response(response, await handler(request, response, exc))
 
 
 class ExceptionMiddleware:

@@ -11,6 +11,24 @@ from pydantic import BaseModel
 from enum import Enum
 
 
+def _process_response(
+    response_manager: Response, func_result: typing.Any
+) -> Response:
+    """
+    Process the response from the function
+    """
+    if isinstance(func_result, (dict, list, str, int, float)):
+        response_manager.json(func_result)
+
+    elif isinstance(func_result, BaseResponse):
+        response_manager.make_response(func_result)
+    elif isinstance(func_result, BaseModel):
+        response_manager.json(func_result.model_dump())
+    elif isinstance(func_result, Enum):
+        response_manager.json(func_result.value)
+    return response_manager.get_response()
+
+
 async def request_response(
     func: typing.Callable[[Request, Response], typing.Awaitable[Response]],
 ) -> ASGIApp:
@@ -47,16 +65,7 @@ async def request_response(
                 )
         finally:
             current_context.reset(token)
-        if isinstance(func_result, (dict, list, str, int, float)):
-            response_manager.json(func_result)
-
-        elif isinstance(func_result, BaseResponse):
-            response_manager.make_response(func_result)
-        elif isinstance(func_result, BaseModel):
-            response_manager.json(func_result.model_dump())
-        elif isinstance(func_result, Enum):
-            response_manager.json(func_result.value)
-        response = response_manager.get_response()
+        response =  _process_response(response_manager, func_result)
         return await response(scope, receive, send)
 
     return app
