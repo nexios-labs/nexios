@@ -181,3 +181,24 @@ async def test_combined_exception_handling(async_client: Tuple[Client, NexiosApp
     response = await client.get("/test-combined")
     assert response.status_code == 400
     assert response.json() == {"custom": True}
+
+
+async def test_exception_handler_returning_jsonable_object(async_client: Tuple[Client, NexiosApp]):
+    client, app = async_client
+
+    class CustomError(Exception):
+        pass
+
+    async def custom_handler(req: Request, res: Response, exc: CustomError):
+        res.status(400)
+        return {"custom": True}
+
+    app.add_exception_handler(CustomError, custom_handler)
+
+    @app.get("/test-dict-return")
+    async def test_route(req: Request, res: Response):
+        raise CustomError("Dict return test")
+
+    response = await client.get("/test-dict-return")
+    assert response.status_code == 400
+    assert response.json() == {"custom": True}
