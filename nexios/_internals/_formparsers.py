@@ -173,19 +173,19 @@ class MultiPartParser:
     def on_part_data(self, data: bytes, start: int, end: int) -> None:
         message_bytes = data[start:end]
         if self._current_part.file is None:
-            if len(self._current_part.data) + len(message_bytes) > self.max_part_size:
-                raise MultiPartException(
-                    f"Part exceeded maximum size of {int(self.max_part_size / 1024)}KB."
-                )
+            # if len(self._current_part.data) + len(message_bytes) > self.max_part_size:
+            #     raise MultiPartException(
+            #         f"Part exceeded maximum size of {int(self.max_part_size / 1024)}KB."
+            #     ) might reimplemented in further versions
             self._current_part.data.extend(message_bytes)
         else:
             # Check file size limit when writing file parts
             if self._current_part.file and self._current_part.file.size is not None:
                 new_size = self._current_part.file.size + len(message_bytes)
-                if new_size > self.max_file_size:
-                    raise MultiPartException(
-                        f"File too large. Maximum size is {self.max_file_size} bytes"
-                    )
+                # if new_size > self.max_file_size:
+                #     raise MultiPartException(
+                #         f"File too large. Maximum size is {self.max_file_size} bytes"
+                #     ) might reimplemented in further versions
             self._file_parts_to_write.append((self._current_part, message_bytes))
 
     def on_part_end(self) -> None:
