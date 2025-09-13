@@ -3,15 +3,11 @@ from __future__ import annotations
 import typing
 from typing import Any, Dict, ItemsView, Iterator, KeysView, Sequence, ValuesView
 from urllib.parse import SplitResult, parse_qsl, urlencode, urlsplit
-
 from nexios.utils.concurrency import run_in_threadpool
-from fastapi._compat import (
-    PYDANTIC_V2,
-    CoreSchema,
-    GetJsonSchemaHandler,
-    JsonSchemaValue,
-    with_info_plain_validator_function,
-)
+from pydantic import GetJsonSchemaHandler,GetCoreSchemaHandler
+import pydantic
+from pydantic_core import core_schema
+
 
 Scope = typing.MutableMapping[str, typing.Any]
 Message = typing.MutableMapping[str, typing.Any]
@@ -766,41 +762,31 @@ class UploadedFile:
             f"size={self.size!r}, "
             f"headers={self.headers!r})"
         )
-    
     @classmethod
-    def __get_validators__(cls: Type["UploadedFile"]) -> Iterable[Callable[..., Any]]:
-        yield cls.validate
-
-    @classmethod
-    def validate(cls: Type["UploadedFile"], v: Any) -> Any:
-        if not isinstance(v, StarletteUploadFile):
-            raise ValueError(f"Expected UploadFile, received: {type(v)}")
-        return v
-
-    @classmethod
-    def _validate(cls, __input_value: Any, _: Any) -> "UploadedFile":
-        if not isinstance(__input_value, StarletteUploadFile):
-            raise ValueError(f"Expected UploadedFile, received: {type(__input_value)}")
-        return cast(UploadFile, __input_value)
-
-    if not PYDANTIC_V2:
-
-        @classmethod
-        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
-            field_schema.update({"type": "string", "format": "binary"})
+    def __get_pydantic_core_schema__(
+        cls, source: Any, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        # treat this type as bytes in validation
+        return core_schema.no_info_after_validator_function(
+            cls,
+            core_schema.bytes_schema()
+        )
 
     @classmethod
     def __get_pydantic_json_schema__(
-        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
-        return {"type": "string", "format": "binary"}
+        # represent in OpenAPI as a file upload
+        return {
+            "type": "string",
+            "format": "binary",
+        }
 
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: Type[Any], handler: Callable[[Any], CoreSchema]
-    ) -> CoreSchema:
-        return with_info_plain_validator_function(cls._validate)
+    
+    
+ 
 
+    
 
 class FormData(
     MultiDict[str, typing.Union[UploadedFile, str, Sequence[Any]]]  # type:ignore
