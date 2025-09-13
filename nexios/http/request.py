@@ -317,7 +317,6 @@ class Request(HTTPConnection):
         max_files: typing.Optional[int] = 1000,
         max_fields: typing.Optional[int] = 1000,
     ) -> FormData:
-        print(self._form)
         if self._form is None:  # type:ignore
             assert parse_options_header is not None, (
                 "The `python-multipart` library must be installed to use form parsing."
@@ -377,7 +376,6 @@ class Request(HTTPConnection):
         if "http.response.push" in self.scope.get("extensions", {}):
             raw_headers: list[tuple[bytes, bytes]] = []
             for name in SERVER_PUSH_HEADERS_TO_COPY:
-                print(name)
                 for value in self.headers.getlist(name):
                     raw_headers.append(
                         (name.encode("latin-1"), value.encode("latin-1"))
