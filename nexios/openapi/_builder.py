@@ -139,6 +139,7 @@ class APIDocumentation:
         description: Optional[str] = None,
         parameters: Optional[List[Parameter]] = None,
         request_body: Optional[Type[BaseModel]] = None,
+        request_content_type: str = "application/json",
         responses: Optional[Union[BaseModel, Dict[int, BaseModel]]] = None,
         tags: Optional[List[str]] = None,
         security: Optional[List[Dict[str, List[str]]]] = None,
@@ -172,7 +173,7 @@ class APIDocumentation:
             if request_body:
                 request_body_spec = RequestBody(
                     content={
-                        "application/json": MediaType(  # type:ignore
+                        request_content_type: MediaType(  # type:ignore
                             schema=Schema(  # type:ignore
                                 **request_body.model_json_schema()
                             )
@@ -183,7 +184,7 @@ class APIDocumentation:
                 if method.upper() not in ["GET", "DELETE"]:
                     request_body_spec = RequestBody(
                         content={
-                            "application/json": MediaType(  # type:ignore
+                            request_content_type: MediaType(  # type:ignore
                                 schema=Schema(
                                     example={
                                         "example": "This is an example request body"

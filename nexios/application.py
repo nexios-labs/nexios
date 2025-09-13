@@ -10,6 +10,7 @@ from typing import (
     Type,
     Union,
 )
+from typing import Literal
 
 from pydantic import BaseModel
 from typing_extensions import Annotated, Doc
@@ -332,6 +333,7 @@ class NexiosApp(object):
                     summary=route.summary or "",
                     description=route.description,
                     request_body=route.request_model,
+                    request_content_type=getattr(route, "request_content_type", "application/json"),
                     parameters=parameters,  # type:ignore
                     deprecated=route.deprecated,
                     operation_id=route.operation_id,
@@ -833,6 +835,10 @@ class NexiosApp(object):
             """
             ),
         ] = None,
+        request_content_type: Annotated[
+            Literal["application/json", "multipart/form-data", "application/x-www-form-urlencoded"],
+            Doc("Content type for the request body in OpenAPI docs. Defaults to 'application/json'."),
+        ] = "application/json",
         middleware: Annotated[
             List[Any],
             Doc(
@@ -947,6 +953,7 @@ class NexiosApp(object):
             description=description,
             responses=responses,
             request_model=request_model,
+            request_content_type=request_content_type,
             middleware=middleware,
             tags=tags,
             security=security,
@@ -1345,6 +1352,7 @@ class NexiosApp(object):
             description=description,
             responses=responses,
             request_model=request_model,
+            request_content_type=request_content_type,
             middleware=middleware,
             tags=tags,
             security=security,
@@ -1546,6 +1554,7 @@ class NexiosApp(object):
             description=description,
             responses=responses,
             request_model=request_model,
+            request_content_type=request_content_type,
             middleware=middleware,
             tags=tags,
             security=security,

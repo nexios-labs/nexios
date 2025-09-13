@@ -15,6 +15,7 @@ from typing import (
     Pattern,
     Type,
     Union,
+    Literal,
 )
 
 from pydantic import BaseModel
@@ -139,6 +140,12 @@ class Routes(BaseRoute):
                 "A Pydantic model representing the expected request payload. Defines the structure and validation rules for incoming request data."
             ),
         ] = None,
+        request_content_type: Annotated[
+            Literal["application/json", "multipart/form-data", "application/x-www-form-urlencoded"],
+            Doc(
+                "Content type for the request body in OpenAPI docs. Defaults to 'application/json'."
+            ),
+        ] = "application/json",
         tags: Optional[List[str]] = None,
         security: Optional[List[Dict[str, List[str]]]] = None,
         operation_id: Optional[str] = None,
@@ -187,6 +194,7 @@ class Routes(BaseRoute):
         self.description = description
         self.responses = responses
         self.request_model = request_model
+        self.request_content_type = request_content_type
         self.kwargs = kwargs
         self.tags = tags
         self.security = security
@@ -418,6 +426,10 @@ class Router(BaseRouter):
             """
             ),
         ] = None,
+        request_content_type: Annotated[
+            Literal["application/json", "multipart/form-data", "application/x-www-form-urlencoded"],
+            Doc("Content type for the request body in OpenAPI docs. Defaults to 'application/json'."),
+        ] = "application/json",
         middleware: Annotated[
             List[Any],
             Doc(
@@ -522,6 +534,7 @@ class Router(BaseRouter):
                 description=description,
                 responses=responses,
                 request_model=request_model,
+                request_content_type=request_content_type,
                 middleware=middleware,
                 tags=tags,
                 security=security,
@@ -864,6 +877,10 @@ class Router(BaseRouter):
             """
             ),
         ] = None,
+        request_content_type: Annotated[
+            Literal["application/json", "multipart/form-data", "application/x-www-form-urlencoded"],
+            Doc("Content type for the request body in OpenAPI docs. Defaults to 'application/json'."),
+        ] = "application/json",
         middleware: Annotated[
             List[Any],
             Doc(
@@ -978,6 +995,7 @@ class Router(BaseRouter):
             description=description,
             responses=responses,
             request_model=request_model,
+            request_content_type=request_content_type,
             middleware=middleware,
             tags=tags,
             security=security,
@@ -1376,6 +1394,7 @@ class Router(BaseRouter):
             description=description,
             responses=responses,
             request_model=request_model,
+            request_content_type=request_content_type,
             middleware=middleware,
             tags=tags,
             security=security,
@@ -1576,6 +1595,7 @@ class Router(BaseRouter):
             description=description,
             responses=responses,
             request_model=request_model,
+            request_content_type=request_content_type,
             middleware=middleware,
             tags=tags,
             security=security,
