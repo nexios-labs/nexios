@@ -1,3 +1,20 @@
+## v2.11.2 (2025-09-14)
+
+### Feat
+
+- **docs**: update theme colors and button styles
+- **nexios**: add request_content_type parameter for OpenAPI documentation
+
+### Fix
+
+- **http**: remove debug prints and improve UploadedFile class
+
+### Refactor
+
+- **nexios**: update UploadedFile for Pydantic 2 compatibility
+- **parser**: comment out size checks for parts and files
+- **response**: extract response processing logic into a separate function
+
 ## v2.11.1 (2025-09-10)
 
 ### Fix
