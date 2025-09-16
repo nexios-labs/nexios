@@ -1,3 +1,9 @@
+## v2.11.3 (2025-09-16)
+
+### Fix
+
+- **application**: check returned state before updating app state
+
 ## v2.11.2 (2025-09-14)
 
 ### Feat
