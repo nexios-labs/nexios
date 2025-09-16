@@ -278,7 +278,8 @@ class NexiosApp(object):
                             # If a lifespan context manager is provided, use it
                             self.lifespan_manager: Any = self.lifespan_context(self)
                             returned_state = await self.lifespan_manager.__aenter__()
-                            self.state.update(returned_state)
+                            if returned_state:
+                                self.state.update(returned_state)
                         else:
                             # Otherwise, fall back to the default startup handlers
                             await self._startup()
