@@ -1,12 +1,14 @@
 # Sample workflow for building and deploying a VitePress site to GitHub Pages
 #
-name: Deploy Nexios Docs
+name: Deploy VitePress site to Pages
 
 on:
   # Runs on pushes targeting the `main` branch. Change this to `master` if you're
   # using the `master` branch as the default branch.
   push:
     branches: [main]
+    paths:
+      - "docs/**"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -31,22 +33,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Not needed if lastUpdated is not enabled
-      - uses: pnpm/action-setup@v3 # Uncomment this block if you're using pnpm
-        with:
-          version: 9 # Not needed if you've set "packageManager" in package.json
-      # - uses: oven-sh/setup-bun@v1 # Uncomment this if you're using Bun
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm # or pnpm / yarn
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v1 # Uncomment this if you're using Bun
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
+
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        working-directory: ./docs
+        run: bun ci
+
       - name: Build with VitePress
-        run: pnpm run docs:build # or pnpm docs:build / yarn docs:build / bun run docs:build
+        working-directory: ./docs
+        run: bun run docs:build
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

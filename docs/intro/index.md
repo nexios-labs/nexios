@@ -4,7 +4,6 @@ Nexios is a high-performance Python web framework designed for speed, flexibilit
 
 ## Key Features
 
-- **Blazing Fast**: Built on a native Rust engine for maximum performance
 - **Pythonic**: Clean, intuitive API that's easy to learn and use
 - **ASGI Compatible**: Fully compatible with ASGI for async support
 - **RESTful API Ready**: Built-in support for creating RESTful APIs

@@ -6,6 +6,7 @@ from typing import Any, Awaitable, Callable, Dict, Optional
 
 from nexios.middleware import BaseMiddleware
 from nexios.types import Request, Response
+from nexios.utils.async_helpers import is_async_callable
 
 
 class TemplateContextMiddleware(BaseMiddleware):
@@ -32,7 +33,10 @@ class TemplateContextMiddleware(BaseMiddleware):
         context = self.default_context.copy()
 
         if self.context_processor:
-            request_context = await self.context_processor(request)
+            if not is_async_callable(self.context_processor):
+                request_context = self.context_processor(request)
+            else:
+                request_context = await self.context_processor(request)
             context.update(request_context)
 
         context.update(
