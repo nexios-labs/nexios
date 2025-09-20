@@ -9,8 +9,10 @@ export default defineConfig({
     ['meta', { property: 'og:image', content: "/./logo.png" }],
     ['meta', { property: 'og:type', content: 'website' }],
   ],
-
+  
+  
   title: 'Nexios',
+  base: "/nexios/",
   description: 'Nexios is a modern, fast, and secure web framework for Python. It is designed to be easy to use and understand, while also being powerful and flexible.',
 
   themeConfig: {
