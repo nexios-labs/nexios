@@ -217,7 +217,9 @@ async def custom_response_middleware(req, res, next):
     # Note: If you don't return the response, the original response will be used
     # If you need to continue with the normal flow, call await next()
 ```
-
+::: warning ⚠️ Warning
+Avoid raising exceptions in middleware. Instead, handle errors gracefully and return a custom error response. Raising exceptions can lead to unexpected behavior, security issues, or a 500 error for the client.
+:::
 
 
 ### **Example: Custom Error Response**

@@ -136,6 +136,19 @@ async def get_premium_content(request, response):
 In the provided example, we demonstrate how to create a custom exception handler for handling specific exceptions in a Nexios application. We define a custom exception handler `handle_payment_required_exception`, which returns a JSON response with an error message and a status code when a `PaymentRequiredException` is raised. This handler is registered with the application using `app.add_exception_handler()`. This approach allows for granular control over error responses, improving the user experience by providing clear feedback for specific scenarios, such as when a user tries to access premium content without a subscription.
 
 
+## Server Error Handler
+Nexios provides a way to register a custom server error handler using the `server_error_handler` parameter from `NexiosApp`. This allows you to define custom error handling behavior for server errors.
+
+```python
+from nexios import NexiosApp
+from nexios.exceptions import HTTPException
+
+async def server_error_handler(request, response, exception):
+    return response.json({"error": "Internal Server Error"}, status=500)
+
+app = NexiosApp(server_error_handler=server_error_handler)
+```
+
 ## Debug Mode
 Enable debug mode for detailed error responses:
 
@@ -259,4 +272,3 @@ config = MakeConfig({
 
 
 > **Tip:** You can change these settings at runtime by updating your config and calling `set_config()`.
-```

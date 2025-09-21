@@ -869,7 +869,6 @@ class ServerErrorMiddleware(BaseMiddleware):
         self.current_request = request
         # Get debug mode from config
         self.debug = get_config().debug or True
-
         try:
             return await next_middleware()
         except Exception as exc:

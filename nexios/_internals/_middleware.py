@@ -138,6 +138,9 @@ class ASGIRequestResponseBridge:
         self.app = app
         self.dispatch_func = dispatch
 
+    def __str__(self) -> str:
+        return f"ASGIRequestResponseBridge({self.app!r}, {self.dispatch_func!r})"
+    
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
             await self.app(scope, receive, send)

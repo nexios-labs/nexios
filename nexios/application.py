@@ -120,7 +120,6 @@ class NexiosApp(object):
         self.config.update(
             get_nexios_config(),
         )
-        self.server_error_handler = None
         self.ws_router = WSRouter()
         self.ws_routes: List[WebsocketRoutes] = []
         self.http_middleware: List[Middleware] = []
