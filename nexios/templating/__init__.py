@@ -112,7 +112,8 @@ async def render(
         and hasattr(request.state, "template_context")
     ):
         middleware_context = request.state.template_context
-        final_context.update(middleware_context)
+        if middleware_context:
+            final_context.update(middleware_context)
 
     content = await engine.render(template_name, final_context)
     return HTMLResponse(content=content, status_code=status_code, headers=headers)
