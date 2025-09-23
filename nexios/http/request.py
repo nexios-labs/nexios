@@ -587,3 +587,5 @@ class Request(HTTPConnection):
         if not auth.startswith("Bearer "):
             return ""
         return auth[7:]
+
+    
