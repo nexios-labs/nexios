@@ -1,3 +1,10 @@
+## v2.11.4 (2025-09-25)
+
+### Fix
+
+- **dependencies**: improve context passing to dependencies
+- **templating**: update context only if middleware provides it
+
 ## v2.11.3 (2025-09-16)
 
 ### Fix
