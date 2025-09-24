@@ -130,13 +130,23 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
                 dep_kwargs = {}
 
                 # Pass context to dependencies if they accept it
-                if "context" in dep_sig.parameters and "context" not in dep_kwargs:
-                    if ctx is None:
-                        try:
-                            ctx = current_context.get()
-                        except LookupError:
-                            ctx = None
-                    dep_kwargs["context"] = ctx
+                print(dep_sig.parameters)
+
+                # Pass context to dependencies if they have a parameter with Context default
+                for dep_param in dep_sig.parameters.values():
+                    if (
+                        dep_param.default != Parameter.empty
+                        and isinstance(dep_param.default, Context)
+                        and dep_param.name not in dep_kwargs
+                    ):
+                        if ctx is None:
+                            try:
+                                ctx = current_context.get()
+                            except LookupError:
+                                ctx = None
+                        dep_kwargs[dep_param.name] = ctx
+
+                
 
                 for dep_param in dep_sig.parameters.values():
                     if dep_param.name in bound_args.arguments:
