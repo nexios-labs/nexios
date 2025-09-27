@@ -37,7 +37,6 @@ export default defineConfig({
       { text : "Community", link:"/community"},
       { text: "Discussions", link:"https://github.com/orgs/nexios-labs/discussions"},
       { text: 'Team', link: 'team' },
-      { text: 'Course', link: '/course/index' },
     ],
 
     sidebar: {

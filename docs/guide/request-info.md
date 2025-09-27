@@ -118,14 +118,6 @@ async def links_handler(req: Request, res):
     # Returns full URL like "https://example.com/api/resource"
 ```
 
-## Request Validation
-
-```python
-@app.post("/validate")
-async def validate_handler(req: Request, res):
-    if not req.valid():
-        return res.status(400).text("Invalid request")
-```
 
 ## Advanced Features
 
