@@ -130,7 +130,6 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
                 dep_kwargs = {}
 
                 # Pass context to dependencies if they accept it
-                print(dep_sig.parameters)
 
                 # Pass context to dependencies if they have a parameter with Context default
                 for dep_param in dep_sig.parameters.values():
