@@ -1340,6 +1340,15 @@ class Router(BaseRouter):
             """
             ),
         ] = False,
+        request_content_type: Annotated[
+            Optional[Literal["application/json", "application/x-www-form-urlencoded", "multipart/form-data"]],
+            Doc(
+                """
+                Request content type.
+                Example: 'application/json'
+            """
+            ),
+        ] = "application/json",
         **kwargs: Annotated[
             Dict[str, Any],
             Doc(
