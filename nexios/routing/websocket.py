@@ -121,9 +121,9 @@ class WSRouter(BaseRouter):
             ```
         """
         if route:
-            self.ws_router.add_ws_route(route)
+            self.add_ws_route(route)
         else:
-            self.ws_router.add_ws_route(
+            self.add_ws_route(
                 WebsocketRoutes(path, handler, middleware=middleware)
             )
 
