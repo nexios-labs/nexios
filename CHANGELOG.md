@@ -1,3 +1,9 @@
+## v2.11.7 (2025-10-01)
+
+### Fix
+
+- **params**:  fix params mismatch
+
 ## v2.11.6 (2025-10-01)
 
 ### Feat
