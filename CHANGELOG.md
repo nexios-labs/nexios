@@ -1,3 +1,9 @@
+## v2.11.6 (2025-10-01)
+
+### Feat
+
+- **routing**: add request_content_type parameter to router
+
 ## v2.11.5 (2025-10-01)
 
 ### Refactor
