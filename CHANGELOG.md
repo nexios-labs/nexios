@@ -1,3 +1,10 @@
+## v2.11.5 (2025-10-01)
+
+### Refactor
+
+- **routing**: use add_ws_route method directly
+- **dependencies**: remove debug print statement
+
 ## v2.11.4 (2025-09-25)
 
 ### Fix
