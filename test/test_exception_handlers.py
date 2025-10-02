@@ -2,7 +2,7 @@ from typing import Tuple
 
 import pytest
 
-from nexios import NexiosApp, get_application
+from nexios import NexiosApp
 from nexios.exceptions import HTTPException, NotFoundException
 from nexios.http import Request, Response
 from nexios.testing import Client
@@ -10,7 +10,7 @@ from nexios.testing import Client
 
 @pytest.fixture
 async def async_client():
-    app = get_application()  # Fresh app instance for each test
+    app = NexiosApp()  # Fresh app instance for each test
     async with Client(app, log_requests=True) as c:
         yield c, app
 

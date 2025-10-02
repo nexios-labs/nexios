@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from nexios import get_application
+from nexios import NexiosApp
 from nexios.http import Request, Response
 from nexios.middleware.base import BaseMiddleware
 from nexios.middleware.common import CommonMiddleware
@@ -21,7 +21,7 @@ class TestBaseMiddleware:
         middleware = BaseMiddleware()
         assert middleware is not None
 
-    def test_base_middleware_call(self):
+    async def test_base_middleware_call(self):
         """Test BaseMiddleware __call__ method"""
         middleware = BaseMiddleware()
         request = Mock()
@@ -31,7 +31,7 @@ class TestBaseMiddleware:
         async def mock_call_next():
             return response
 
-        result = middleware(request, response, mock_call_next)
+        result = await middleware(request, response, mock_call_next)
         assert result
 
 
@@ -41,7 +41,7 @@ class TestCommonMiddleware:
     @pytest.fixture
     async def app_with_common_middleware(self):
         """Create app with CommonMiddleware"""
-        app = get_application()
+        app = NexiosApp()
         app.add_middleware(CommonMiddleware())
         async with Client(app) as client:
             yield client, app
@@ -99,7 +99,7 @@ class TestCommonMiddleware:
 
         # Test with large content
         large_data = "x" * 1024 * 1024  # 1MB
-        response = await client.post("/test", data=large_data)
+        response = await client.post("/test", content=large_data)
         # Should handle large content appropriately
         assert response.status_code in [200, 413]  # 413 if limit exceeded
 
@@ -110,7 +110,7 @@ class TestCommonMiddleware:
 #     @pytest.fixture
 #     async def app_with_gzip_middleware(self):
 #         """Create app with GzipMiddleware"""
-#         app = get_application()
+#         app = NexiosApp()
 #         app.add_middleware(GZipMiddleware())
 #         async with Client(app) as client:
 #             yield client, app
@@ -202,7 +202,7 @@ class TestSecurityMiddleware:
     @pytest.fixture
     async def app_with_security_middleware(self):
         """Create app with SecurityMiddleware"""
-        app = get_application()
+        app = NexiosApp()
         app.add_middleware(SecurityMiddleware())
         async with Client(app) as client:
             yield client, app
@@ -260,7 +260,7 @@ class TestMiddlewareIntegration:
     @pytest.fixture
     async def app_with_multiple_middleware(self):
         """Create app with multiple middleware"""
-        app = get_application()
+        app = NexiosApp()
         app.add_middleware(SecurityMiddleware())
         # app.add_middleware(GZipMiddleware())
         app.add_middleware(CommonMiddleware())

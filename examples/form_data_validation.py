@@ -1,8 +1,8 @@
 from pydantic import BaseModel, EmailStr, ValidationError
 
-from nexios import get_application
+from nexios import NexiosApp
 
-app = get_application()
+app = NexiosApp()
 
 
 class UserRegistration(BaseModel):

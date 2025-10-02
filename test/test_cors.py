@@ -1,8 +1,8 @@
 # test_cors_with_app.py
 import pytest
 
-from nexios import get_application
-from nexios.config import MakeConfig
+from nexios import NexiosApp
+from nexios.config import MakeConfig, set_config
 from nexios.middleware.cors import CORSMiddleware
 from nexios.testing import Client
 
@@ -22,7 +22,8 @@ async def cors_app():
             }
         }
     )
-    app = get_application(config)
+    set_config(config)
+    app = NexiosApp(config)
 
     # Add test route
     @app.get("/test")
@@ -115,7 +116,8 @@ async def test_preflight_request_disallowed_header(client):
 async def test_wildcard_origin():
     # Test app with wildcard origin
     config = MakeConfig({"cors": {"allow_origins": ["*"], "allow_methods": ["*"]}})
-    app = get_application(config)
+    set_config(config)
+    app = NexiosApp(config)
 
     @app.get("/wildcard")
     async def wildcard_route(req, res):
@@ -139,7 +141,8 @@ async def test_no_cors_headers_without_origin():
     config = MakeConfig(
         {"cors": {"allow_origins": ["http://example.com"], "allow_methods": ["GET"]}}
     )
-    app = get_application(config)
+    set_config(config)
+    app = NexiosApp(config)
 
     @app.get("/no-origin")
     async def no_origin_route(req, res):

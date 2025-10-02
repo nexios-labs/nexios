@@ -1,4 +1,4 @@
-from nexios import get_application
+from nexios import NexiosApp
 from nexios.routing import Router
 
 auth_router = Router()
@@ -16,7 +16,7 @@ async def login(req, res):
     return res.json({"error": "Invalid credentials"}, status_code=401)
 
 
-app = get_application()
+app = NexiosApp()
 app.mount_router("/auth", auth_router)
 
 if __name__ == "__main__":

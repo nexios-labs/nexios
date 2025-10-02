@@ -1,6 +1,6 @@
 import pytest
 
-from nexios import get_application
+from nexios import NexiosApp
 from nexios.http import Request, Response
 from nexios.pagination import AsyncListDataHandler as ListDataHandler
 from nexios.pagination import (
@@ -18,7 +18,7 @@ from nexios.testing import Client
 
 @pytest.fixture
 async def test_client():
-    app = get_application()
+    app = NexiosApp()
     async with Client(app) as client:
         yield client, app
 

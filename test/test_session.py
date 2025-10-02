@@ -2,8 +2,8 @@ from typing import Tuple
 
 import pytest
 
-from nexios import NexiosApp, get_application
-from nexios.config import MakeConfig
+from nexios import NexiosApp
+from nexios.config import MakeConfig, set_config
 from nexios.http import Request, Response
 from nexios.session.file import FileSessionManager
 from nexios.session.middleware import SessionMiddleware
@@ -15,8 +15,7 @@ from nexios.testing import Client
 @pytest.fixture
 async def file_session_client(tmp_path) -> Tuple[Client, NexiosApp]:
     """Client with file-based session configuration"""
-    app = get_application(
-        MakeConfig(
+    config = MakeConfig(
             {
                 "secret_key": "file_session_secret",
                 "session": {
@@ -29,7 +28,8 @@ async def file_session_client(tmp_path) -> Tuple[Client, NexiosApp]:
                 "SESSION_FILE_STORAGE_PATH": str(tmp_path / "sessions"),
             }
         )
-    )
+    set_config(config)
+    app = NexiosApp(config)
     app.add_middleware(SessionMiddleware())
     async with Client(app) as client:
         yield client, app
@@ -38,8 +38,7 @@ async def file_session_client(tmp_path) -> Tuple[Client, NexiosApp]:
 @pytest.fixture
 async def signed_session_client() -> Tuple[Client, NexiosApp]:
     """Client with signed cookie session configuration"""
-    app = get_application(
-        MakeConfig(
+    config = MakeConfig(
             {
                 "secret_key": "signed_session_secret",
                 "session": {
@@ -50,7 +49,8 @@ async def signed_session_client() -> Tuple[Client, NexiosApp]:
                 },
             }
         )
-    )
+    set_config(config)
+    app = NexiosApp(config)
     async with Client(app) as client:
         yield client, app
 
@@ -73,7 +73,9 @@ async def test_session_middleware_initialization(
 
 
 async def test_session_middleware_no_secret_key():
-    app = get_application(MakeConfig({"secret_key": None}))
+    config = MakeConfig({"secret_key": None})
+    set_config(config)
+    app = NexiosApp(config)
 
     @app.get("/test-session")
     async def test_session(req: Request, res: Response):
