@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pytest
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from nexios import NexiosApp
 from nexios.testing import Client
@@ -131,7 +131,7 @@ class TestPydanticErrorHandling:
         async def valid_route(request, response):
             data = await request.json
             user = UserModel(**data)
-            return response.json(user.dict())
+            return response.json(user.model_dump())
 
         # Test valid request
         response = await client.post("/valid", json={"name": "Test User", "age": 25})

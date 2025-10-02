@@ -1,10 +1,10 @@
 import pytest
 
-from nexios import NexiosApp, get_application
+from nexios import NexiosApp
 from nexios.http import Request, Response
 from nexios.testing import Client
 
-app: NexiosApp = get_application()
+app: NexiosApp = NexiosApp()
 
 
 @pytest.fixture(autouse=True)

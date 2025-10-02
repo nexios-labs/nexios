@@ -3,14 +3,14 @@ from typing import Optional
 import pytest
 from pydantic import BaseModel
 
-from nexios import Depend, get_application
+from nexios import Depend, NexiosApp
 from nexios.http import Request, Response
 from nexios.testing import Client
 
 
 @pytest.fixture
 async def di_client():
-    app = get_application()
+    app = NexiosApp()
     async with Client(app) as client:
         yield client, app
 
@@ -243,7 +243,7 @@ async def test_global_dependency(di_client):
     async def global_dep():
         raise CustomError("global-value")
 
-    app = get_application(dependencies=[Depend(global_dep)])
+    app = NexiosApp(dependencies=[Depend(global_dep)])
 
     @app.get("/di/global")
     async def global_route(req: Request, res: Response):

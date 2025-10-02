@@ -1,14 +1,14 @@
 # test_grouping.py
 import pytest
 
-from nexios import get_application
+from nexios import NexiosApp
 from nexios.routing import Group, Routes
 from nexios.testing import Client
 
 
 @pytest.fixture
 async def async_client():
-    app = get_application()
+    app = NexiosApp()
     async with Client(app) as c:
         yield c, app
 

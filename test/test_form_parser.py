@@ -2,7 +2,7 @@ from typing import AsyncGenerator
 
 import pytest
 
-from nexios import get_application
+from nexios import NexiosApp
 from nexios.http import Request, Response
 from nexios.http.formparsers import FormParser, MultiPartException, MultiPartParser
 from nexios.structs import FormData, Headers, UploadedFile
@@ -17,7 +17,7 @@ if not hasattr(MultiPartParser, "max_files"):
     MultiPartParser.max_files = 1000
 
 # Create an application instance for testing
-app = get_application()
+app = NexiosApp()
 
 
 # Define test endpoints for form submission

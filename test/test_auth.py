@@ -1,19 +1,20 @@
 import pytest
 
-from nexios import get_application
 from nexios.application import NexiosApp
 from nexios.auth.backends.jwt import create_jwt, decode_jwt
 from nexios.auth.base import AuthenticationBackend, SimpleUser
 from nexios.auth.decorator import auth, has_permission
 from nexios.auth.exceptions import PermissionDenied
-from nexios.config.base import MakeConfig
+from nexios.config import MakeConfig, set_config
 from nexios.http import Request, Response
 from nexios.testing import Client
 
 
 @pytest.fixture
 async def test_client():
-    app = get_application(MakeConfig({"secret_key": "1234"}))
+    config = MakeConfig({"secret_key": "1234"})
+    set_config(config)
+    app = NexiosApp()
     async with Client(app) as client:
         yield client, app
 

@@ -84,6 +84,8 @@ async def test_websocket_close(mock_websocket):
 
 # Test WebSocket Consumer
 class TestConsumer(WebSocketConsumer):
+    __test__ = False
+
     encoding = "json"
 
     async def on_connect(self, websocket):

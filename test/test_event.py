@@ -4,7 +4,7 @@ from unittest.mock import Mock, call
 
 import pytest
 
-from nexios import get_application
+from nexios import NexiosApp
 from nexios.events import (
     EventEmitter,
     EventPhase,
@@ -15,7 +15,7 @@ from nexios.events import (
 # Fixture for app with event emitter, ensuring clean state
 @pytest.fixture
 def app_with_emitter():
-    app = get_application()
+    app = NexiosApp()
     app.emitter = EventEmitter()
     yield app
     app.emitter.remove_all_events()

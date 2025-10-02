@@ -14,6 +14,8 @@ _RequestData = typing.Mapping[str, typing.Union[str, typing.Iterable[str], bytes
 
 
 class Client(httpx.AsyncClient):
+    __test__ = False
+
     def __init__(
         self,
         app: "NexiosApp",
@@ -76,6 +78,9 @@ class Client(httpx.AsyncClient):
         ] = httpx._client.USE_CLIENT_DEFAULT,  # type: ignore
         extensions: Union[Dict[str, typing.Any], None] = None,
     ) -> httpx.Response:
+        if cookies:
+            self.cookies.update(cookies)
+
         response = await super().request(
             method,
             url,
@@ -85,7 +90,6 @@ class Client(httpx.AsyncClient):
             json=json,
             params=params,
             headers=headers,
-            cookies=cookies,
             auth=auth,
             follow_redirects=follow_redirects,
             timeout=timeout,
@@ -154,7 +158,6 @@ class Client(httpx.AsyncClient):
             json=json,
             params=params,
             headers=headers,
-            cookies=cookies,
             auth=auth,
             follow_redirects=follow_redirects,
             timeout=timeout,

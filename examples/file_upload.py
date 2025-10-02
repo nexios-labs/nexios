@@ -1,6 +1,6 @@
-from nexios import get_application
+from nexios import NexiosApp
 
-app = get_application()
+app = NexiosApp()
 
 
 @app.post("/upload")

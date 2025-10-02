@@ -14,7 +14,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
-from nexios import get_application
+from nexios import NexiosApp
 from nexios.http.request import Request
 from nexios.http.response import Response
 
@@ -98,7 +98,7 @@ async def lifespan_context(app):
 # Create application instances to demonstrate different approaches
 
 # 1. Application with regular startup/shutdown handlers
-regular_app = get_application(title="Regular Handlers Example")
+regular_app = NexiosApp(title="Regular Handlers Example")
 
 
 @regular_app.on_startup()
@@ -130,11 +130,11 @@ async def shutdown_handler2():
 
 
 # 2. Application with custom lifespan context manager
-custom_app = get_application(title="Custom Lifespan Example", lifespan=lifespan_context)
+custom_app = NexiosApp(title="Custom Lifespan Example", lifespan=lifespan_context)
 
 
 # 3. Application demonstrating error handling
-error_app = get_application(title="Error Handling Example")
+error_app = NexiosApp(title="Error Handling Example")
 
 
 @error_app.on_startup()
@@ -153,7 +153,7 @@ async def error_cleanup():
 
 
 # Main application that combines regular handlers and custom lifespan
-app = get_application(title="Nexios Lifespan Demo", lifespan=lifespan_context)
+app = NexiosApp(title="Nexios Lifespan Demo", lifespan=lifespan_context)
 
 
 # Add some regular handlers too (these won't run when custom lifespan is used)

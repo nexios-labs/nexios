@@ -1,6 +1,6 @@
 import pytest
 
-from nexios import get_application
+from nexios import NexiosApp
 from nexios.http import Request, Response
 from nexios.routing import Router, Routes
 from nexios.testing import Client
@@ -8,7 +8,7 @@ from nexios.testing import Client
 
 @pytest.fixture
 async def async_client():
-    app = get_application()  # Fresh app instance for each test
+    app = NexiosApp()  # Fresh app instance for each test
     async with Client(app, log_requests=True) as c:
         yield c, app
 

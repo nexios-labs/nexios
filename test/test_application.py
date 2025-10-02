@@ -1,13 +1,13 @@
 import pytest
 
-from nexios import NexiosApp, get_application
+from nexios import NexiosApp
 from nexios.dependencies import Context, Depend
 from nexios.http import Request, Response
 from nexios.routing import Router
 from nexios.testing import Client
 from nexios.views import APIView
 
-app: NexiosApp = get_application()
+app: NexiosApp = NexiosApp()
 router = Router("/mounted")
 
 
