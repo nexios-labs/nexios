@@ -109,23 +109,30 @@ class WSRouter(BaseRouter):
         This method registers a WebSocket route, allowing the application to handle WebSocket connections.
 
         Args:
-            route (Routes): The WebSocket route configuration.
+            route: Either a pre-constructed WebsocketRoutes instance or None
+            path: The URL path for the WebSocket route (required if route is None)
+            handler: The WebSocket handler function (required if route is None)
+            middleware: List of middleware for this route
 
         Returns:
             None
 
         Example:
             ```python
-            route = Routes("/ws/chat", chat_handler)
+            # Using with a pre-constructed route
+            route = WebsocketRoutes("/ws/chat", chat_handler)
             app.add_ws_route(route)
+            
+            # Or directly with path and handler
+            app.add_ws_route(path="/ws/chat", handler=chat_handler)
             ```
         """
-        if route:
-            self.add_ws_route(route)
+        if route is not None:
+            self.routes.append(route)
+        elif path is not None and handler is not None:
+            self.routes.append(WebsocketRoutes(path, handler, middleware=middleware))
         else:
-            self.add_ws_route(
-                WebsocketRoutes(path, handler, middleware=middleware)
-            )
+            raise ValueError("Either route or both path and handler must be provided")
 
     def add_ws_middleware(self, middleware: type[ASGIApp]) -> None:  # type: ignore[override]
         """Add middleware to the WebSocket router"""
