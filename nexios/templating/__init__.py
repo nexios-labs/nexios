@@ -11,6 +11,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from nexios.config import MakeConfig, get_config
 from nexios.http.response import HTMLResponse
 from nexios.types import Request
+from .middleware import template_context
 
 engine: Union["TemplateEngine", None] = None
 
@@ -30,6 +31,7 @@ class TemplateConfig(MakeConfig):
         custom_filters: Dict[str, Callable[[Any], Any]] = {},
         custom_globals: Dict[str, Any] = {},
     ):
+
         super().__init__(
             {
                 "template_dir": template_dir,
@@ -67,12 +69,12 @@ class TemplateEngine:
             lstrip_blocks=self.config.lstrip_blocks,
         )
 
+
         config_ = self.config.to_dict()
         if config_.get("custom_filters"):
             self.env.filters.update(config_["custom_filters"])
         if config_.get("custom_globals"):
             self.env.globals.update(config_["custom_globals"])
-
         engine = self
 
     async def render(

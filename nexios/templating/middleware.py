@@ -42,7 +42,7 @@ class TemplateContextMiddleware(BaseMiddleware):
         context.update(
             {
                 "request": request,
-                "url_for": request.app.url_for,
+                "url_for": request.base_app.url_for,
                 "csrf_token": request.state.csrf_token,
             }
         )
