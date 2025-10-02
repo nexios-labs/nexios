@@ -1,3 +1,9 @@
+## v2.11.8 (2025-10-02)
+
+### Fix
+
+- **routing**: add request_content_type parameter to Route and Router classes
+
 ## v2.11.7 (2025-10-01)
 
 ### Fix
