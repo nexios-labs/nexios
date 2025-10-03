@@ -1,3 +1,14 @@
+---
+title: Error Handling in Nexios
+description: Nexios provides a robust and flexible error handling system that allows you to manage exceptions gracefully and return appropriate responses to clients. This documentation covers all aspects of error handling in Nexios applications.
+head:
+  - - meta
+    - property: og:title
+      content: Error Handling in Nexios
+  - - meta
+    - property: og:description
+      content: Nexios provides a robust and flexible error handling system that allows you to manage exceptions gracefully and return appropriate responses to clients. This documentation covers all aspects of error handling in Nexios applications.
+---
 # Error Handling
 
 Nexios provides a robust and flexible error handling system that allows you to manage exceptions gracefully and return appropriate responses to clients. This documentation covers all aspects of error handling in Nexios applications.

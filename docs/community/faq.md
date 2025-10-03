@@ -1,6 +1,15 @@
-
-# Frequently Asked Questions
-
+---
+title: Frequently Asked Questions
+icon: faq
+description: >
+    Frequently Asked Questions
+head:
+  - - meta
+    - property: og:title
+      content: Frequently Asked Questions
+    - property: og:description
+      content: Frequently Asked Questions
+---
 ## Framework Design
 
 ### Why isn't Nexios built on Starlette?

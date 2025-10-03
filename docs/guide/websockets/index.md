@@ -1,7 +1,15 @@
-# WebSocket
-
-WebSockets enable real-time, bidirectional communication between clients and servers, making them ideal for applications like chat systems, live dashboards, and notifications. Nexios provides a robust WebSocket implementation with intuitive APIs for managing connections, channels, and groups.
-
+---
+title: WebSockets
+icon: websocket
+description: >
+    WebSockets enable real-time, bidirectional communication between clients and servers, making them ideal for applications like chat systems, live dashboards, and notifications. Nexios provides a robust WebSocket implementation with intuitive APIs for managing connections, channels, and groups.
+head:
+  - - meta
+    - property: og:title
+      content: WebSockets
+    - property: og:description
+      content: WebSockets enable real-time, bidirectional communication between clients and servers, making them ideal for applications like chat systems, live dashboards, and notifications. Nexios provides a robust WebSocket implementation with intuitive APIs for managing connections, channels, and groups.
+---
 ## Basic WebSocket Setup
 
 ```python

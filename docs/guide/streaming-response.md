@@ -1,3 +1,15 @@
+---
+title: Streaming Responses in Nexios
+description: Nexios provides powerful streaming capabilities for handling large datasets, real-time data, and long-polling scenarios. This guide covers how to implement and work with
+head:
+  - - meta
+    - property: og:title
+      content: Streaming Responses in Nexios
+  - - meta
+    - property: og:description
+      content: Nexios provides powerful streaming capabilities for handling large datasets, real-time data, and long-polling scenarios. This guide covers how to implement and work with
+---
+
 # Streaming Responses in Nexios
 
 Nexios provides powerful streaming capabilities for handling large datasets, real-time data, and long-polling scenarios. This guide covers how to implement and work with

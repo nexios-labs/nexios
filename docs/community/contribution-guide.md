@@ -1,5 +1,14 @@
 ---
 title: Contribution Guide
+icon: contribution
+description: >
+    Contribution Guide
+head:
+  - - meta
+    - property: og:title
+      content: Contribution Guide
+    - property: og:description
+      content: Contribution Guide
 ---
 
 If you have any comments or suggestions, please report an [issue](https://github.com/nexios-labs/nexios/issues),

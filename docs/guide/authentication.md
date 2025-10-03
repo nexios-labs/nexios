@@ -1,3 +1,15 @@
+---
+title: Authentication in Nexios
+description: Secure your API with just one line of code!
+head:
+  - - meta
+    - property: og:title
+      content: Authentication in Nexios
+  - - meta
+    - property: og:description
+      content: Secure your API with just one line of code!
+---
+
 # Authentication in Nexios
 
 **Secure your API with just one line of code!**

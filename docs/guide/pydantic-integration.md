@@ -1,7 +1,14 @@
-# Pydantic Integration
-
-Nexios provides seamless integration with Pydantic, offering a flexible way to handle data validation and serialization. Unlike some frameworks that force you to use type hints, Nexios gives you the freedom to choose between dynamic typing and strict type validation.
-
+---
+title: Pydantic Integration
+description: Nexios provides seamless integration with Pydantic, offering a flexible way to handle data validation and serialization. Unlike some frameworks that force you to use type hints, Nexios gives you the freedom to choose between dynamic typing and strict type validation.
+head:
+  - - meta
+    - property: og:title
+      content: Pydantic Integration
+  - - meta
+    - property: og:description
+      content: Nexios provides seamless integration with Pydantic, offering a flexible way to handle data validation and serialization. Unlike some frameworks that force you to use type hints, Nexios gives you the freedom to choose between dynamic typing and strict type validation.
+---
 ## Why Pydantic with Nexios?
 
 - **Flexible Validation**: Use Pydantic when you need it, without being forced into a type-hinted architecture

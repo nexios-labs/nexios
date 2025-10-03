@@ -1,5 +1,14 @@
 ---
+title: Middleware
 icon: jsfiddle
+description: Middleware in Nexios is a powerful feature that allows you to intercept, process, and modify requests and responses as they flow through your application. It acts as a pipeline, enabling you to implement cross-cutting concerns such as logging, authentication, validation, and response modification in a modular and reusable way. This documentation provides a comprehensive guide to understanding and using middleware in Nexios.
+head:
+  - - meta
+    - property: og:title
+      content: Middleware
+  - - meta
+    - property: og:description
+      content: Middleware in Nexios is a powerful feature that allows you to intercept, process, and modify requests and responses as they flow through your application. It acts as a pipeline, enabling you to implement cross-cutting concerns such as logging, authentication, validation, and response modification in a modular and reusable way. This documentation provides a comprehensive guide to understanding and using middleware in Nexios.
 ---
 
 # Middleware

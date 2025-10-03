@@ -1,7 +1,14 @@
-# Handling Request Inputs
-
-In Nexios, processing inputs from HTTP requests is a fundamental aspect of building web applications. This document provides an overview of how to handle and process various types of inputs, such as JSON data, form data, files, and streaming request data.
-
+---
+title: Handling Request Inputs
+description: In Nexios, processing inputs from HTTP requests is a fundamental aspect of building web applications. This document provides an overview of how to handle and process various types of inputs, such as JSON data, form data, files, and streaming request data.
+head:
+  - - meta
+    - property: og:title
+      content: Handling Request Inputs
+  - - meta
+    - property: og:description
+      content: In Nexios, processing inputs from HTTP requests is a fundamental aspect of building web applications. This document provides an overview of how to handle and process various types of inputs, such as JSON data, form data, files, and streaming request data.
+---
 ## JSON Data 
 
 To handle JSON data in a request, you can use the `json` property of the `Request` object. This property asynchronously parses the request body as JSON and returns it as a dictionary.

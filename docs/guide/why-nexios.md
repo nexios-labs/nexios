@@ -1,3 +1,15 @@
+---
+title: Why Nexios?
+description: Nexios is a modern, async-first Python web framework designed with performance, developer experience, and clean architecture in mind. Here's why you might want to choose Nexios for your next project.
+head:
+  - - meta
+    - property: og:title
+      content: Why Nexios?
+  - - meta
+    - property: og:description
+      content: Nexios is a modern, async-first Python web framework designed with performance, developer experience, and clean architecture in mind. Here's why you might want to choose Nexios for your next project.
+---
+
 # Why Nexios?
 
 Nexios is a modern, async-first Python web framework designed with performance, developer experience, and clean architecture in mind. Here's why you might want to choose Nexios for your next project.

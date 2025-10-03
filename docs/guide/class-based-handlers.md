@@ -1,4 +1,14 @@
-
+---
+title: Class-Based Views
+description: Class-Based Views in Nexios offer a structured and modular approach to handling HTTP requests.
+head:
+  - - meta
+    - property: og:title
+      content: Class-Based Views
+  - - meta
+    - property: og:description
+      content: Class-Based Views in Nexios offer a structured and modular approach to handling HTTP requests.
+---
 # Class-Based Views
 
 Class-Based Views in Nexios offer a structured and modular approach to handling HTTP requests. By encapsulating request logic within a class, developers can easily manage middleware, request preprocessing, error handling, and response formatting. The `APIHandler` class serves as the **base class** for creating class-based handlers, providing hooks for handling requests before execution, after execution, and error handling.

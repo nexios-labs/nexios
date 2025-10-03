@@ -1,3 +1,14 @@
+---
+title: Concurrency in Nexios
+description: Learn how to use concurrency utilities in Nexios
+head:
+  - - meta
+    - property: og:title
+      content: Concurrency in Nexios
+  - - meta
+    - property: og:description
+      content: Learn how to use concurrency utilities in Nexios
+---
 # Concurrency Utilities
 
 Nexios provides concurrency utilities to handle common async patterns in web applications. Here's how to use them effectively in your route handlers.

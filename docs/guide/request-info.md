@@ -1,7 +1,14 @@
-# Request Information in Nexios 
-
-Nexios provides a comprehensive `Request` object that gives you access to all the information about the incoming HTTP request. This object is automatically passed to your route handlers and contains methods and properties to access request data.
-
+---
+title: Request Information in Nexios 
+description: Nexios provides a comprehensive `Request` object that gives you access to all the information about the incoming HTTP request. This object is automatically passed to your route handlers and contains methods and properties to access request data.
+head:
+  - - meta
+    - property: og:title
+      content: Request Information in Nexios 
+  - - meta
+    - property: og:description
+      content: Nexios provides a comprehensive `Request` object that gives you access to all the information about the incoming HTTP request. This object is automatically passed to your route handlers and contains methods and properties to access request data.
+---
 ## Basic Request Properties
 
 ```python

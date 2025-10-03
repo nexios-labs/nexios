@@ -1,4 +1,14 @@
-
+---
+title: Cors in Nexios
+description: Learn how to use cors utilities in Nexios
+head:
+  - - meta
+    - property: og:title
+      content: Cors in Nexios
+  - - meta
+    - property: og:description
+      content: Learn how to use cors utilities in Nexios
+---
 # cors
 
 Got it! I’ll go through each CORS configuration setting in **Nexios**, explaining what it does and how it impacts requests.

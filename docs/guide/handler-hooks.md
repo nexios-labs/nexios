@@ -1,7 +1,14 @@
-# Handler Hooks
-
-Nexios provides a set of hooks that allow you to execute code at specific points in the request-response cycle. These hooks can be used to perform tasks such as authentication, logging, and error handling.
-
+---
+title: Handler Hooks
+description: Nexios provides a set of hooks that allow you to execute code at specific points in the request-response cycle. These hooks can be used to perform tasks such as authentication, logging, and error handling.
+head:
+  - - meta
+    - property: og:title
+      content: Handler Hooks
+  - - meta
+    - property: og:description
+      content: Nexios provides a set of hooks that allow you to execute code at specific points in the request-response cycle. These hooks can be used to perform tasks such as authentication, logging, and error handling.
+---
 ## `before_request`
 
 The `before_request` hook is executed before the request is processed. It can be used to perform authentication, log the request, or modify the request object.

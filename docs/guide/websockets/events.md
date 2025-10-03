@@ -1,3 +1,15 @@
+---
+title: Integrating Events with WebSockets in Nexios
+description: Nexios combines WebSockets with a powerful event system to create reactive, real-time applications. This integration lets different parts of your system communicate seamlessly while keeping code clean and maintainable.
+head:
+  - - meta
+    - property: og:title
+      content: Integrating Events with WebSockets in Nexios
+  - - meta
+    - property: og:description
+      content: Nexios combines WebSockets with a powerful event system to create reactive, real-time applications. This integration lets different parts of your system communicate seamlessly while keeping code clean and maintainable.
+---
+
 # **Integrating Events with WebSockets in Nexios**  
 
 Nexios combines WebSockets with a powerful event system to create reactive, real-time applications. This integration lets different parts of your system communicate seamlessly while keeping code clean and maintainable.  

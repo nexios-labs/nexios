@@ -1,7 +1,14 @@
-# Sending Responses
-
-In Nexios, sending responses is a core part of building web applications. The `Response` object provides a powerful and flexible way to construct and send HTTP responses to the client. This guide covers the various methods available for sending responses, from simple JSON to complex file downloads.
-
+---
+title: Sending Responses
+description: In Nexios, sending responses is a core part of building web applications. The `Response` object provides a powerful and flexible way to construct and send HTTP responses to the client. This guide covers the various methods available for sending responses, from simple JSON to complex file downloads.
+head:
+  - - meta
+    - property: og:title
+      content: Sending Responses
+  - - meta
+    - property: og:description
+      content: In Nexios, sending responses is a core part of building web applications. The `Response` object provides a powerful and flexible way to construct and send HTTP responses to the client. This guide covers the various methods available for sending responses, from simple JSON to complex file downloads.
+---
 ## The `Response` Object
 
 The `Response` object is your primary tool for building HTTP responses. It is passed as the second argument (`res`) to your route handlers. One of the key features of the `Response` object is that its methods are **chainable**, allowing you to build a response in a fluent and readable way.

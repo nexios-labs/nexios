@@ -1,5 +1,14 @@
 ---
 icon: gear-code
+title: Configuration Management
+description: Learn how to use configuration utilities in Nexios
+head:
+  - - meta
+    - property: og:title
+      content: Configuration Management
+  - - meta
+    - property: og:description
+      content: Learn how to use configuration utilities in Nexios
 ---
 
 # Configuration Management

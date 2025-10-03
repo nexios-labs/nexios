@@ -1,3 +1,14 @@
+---
+title: Introduction to the Event System
+description: The Nexios event system provides a powerful way to implement loosely coupled, event-driven architectures in your applications. It allows components to communicate without direct dependencies, making your code more maintainable and flexible.
+head:
+  - - meta
+    - property: og:title
+      content: Introduction to the Event System
+  - - meta
+    - property: og:description
+      content: The Nexios event system provides a powerful way to implement loosely coupled, event-driven architectures in your applications. It allows components to communicate without direct dependencies, making your code more maintainable and flexible.
+---
 # Introduction to the Event System
 
 The Nexios event system provides a powerful way to implement loosely coupled, event-driven architectures in your applications. It allows components to communicate without direct dependencies, making your code more maintainable and flexible.

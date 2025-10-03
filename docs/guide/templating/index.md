@@ -1,3 +1,15 @@
+---
+title: Templating
+icon: template
+description: >
+    Nexios provides a powerful templating system built on top of Jinja2, offering features like template inheritance, context management, custom filters, and more.
+head:
+  - - meta
+    - property: og:title
+      content: Templating
+    - property: og:description
+      content: Nexios provides a powerful templating system built on top of Jinja2, offering features like template inheritance, context management, custom filters, and more.
+---
 # Templating
 
 Nexios provides a powerful templating system built on top of Jinja2, offering features like template inheritance, context management, custom filters, and more.

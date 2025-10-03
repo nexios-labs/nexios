@@ -1,3 +1,16 @@
+---
+title: Groups
+icon: websocket
+description: >
+    The **ChannelBox** class in Nexios provides powerful tools for organizing WebSocket channels into groups, enabling features like broadcasting, history tracking, and targeted messaging.  
+head:
+  - - meta
+    - property: og:title
+      content: Groups
+    - property: og:description
+      content: The **ChannelBox** class in Nexios provides powerful tools for organizing WebSocket channels into groups, enabling features like broadcasting, history tracking, and targeted messaging.  
+---
+
 #  Groups
 
 The **ChannelBox** class in Nexios provides powerful tools for organizing WebSocket channels into groups, enabling features like broadcasting, history tracking, and targeted messaging.  

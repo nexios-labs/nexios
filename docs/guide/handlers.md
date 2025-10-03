@@ -1,7 +1,14 @@
-# Handlers
-
-Handlers are the heart of your Nexios application. They define how your application responds to incoming HTTP requests. Every route in your application is handled by a handler function that processes the request and returns a response.
-
+---
+title: Handlers
+description: Handlers are the heart of your Nexios application. They define how your application responds to incoming HTTP requests. Every route in your application is handled by a handler function that processes the request and returns a response.
+head:
+  - - meta
+    - property: og:title
+      content: Handlers
+  - - meta
+    - property: og:description
+      content: Handlers are the heart of your Nexios application. They define how your application responds to incoming HTTP requests. Every route in your application is handled by a handler function that processes the request and returns a response.
+---
 ## Core Requirements
 
 **Critical Requirement**: All Nexios handlers MUST be async functions. This is a strict requirement that cannot be overridden. Synchronous handlers are not supported and will raise errors.

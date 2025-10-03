@@ -1,9 +1,14 @@
-
-
-# Pagination
-
-Nexios provides a flexible and customizable pagination system that makes managing large datasets a breeze. With support for dynamic page sizes, custom query parameters, and seamless API integration, you can create efficient, user-friendly paginated experiences with minimal code.
-
+---
+title: Pagination
+description: Nexios provides a flexible and customizable pagination system that makes managing large datasets a breeze. With support for dynamic page sizes, custom query parameters, and seamless API integration, you can create efficient, user-friendly paginated experiences with minimal code.
+head:
+  - - meta
+    - property: og:title
+      content: Pagination
+  - - meta
+    - property: og:description
+      content: Nexios provides a flexible and customizable pagination system that makes managing large datasets a breeze. With support for dynamic page sizes, custom query parameters, and seamless API integration, you can create efficient, user-friendly paginated experiences with minimal code.
+---
 ## Simple Pagination
 
 Here's a quick example of how to paginate a list of items using `response.paginate()`:

@@ -1,3 +1,14 @@
+---
+title: Nexios CLI Guide
+description: Nexios provides a powerful command-line interface (CLI) that makes it easy to develop, test, and deploy your applications. This guide will walk you through using the CLI, starting with basic commands and gradually introducing the configuration system.
+head:
+  - - meta
+    - property: og:title
+      content: Nexios CLI Guide
+  - - meta
+    - property: og:description
+      content: Nexios provides a powerful command-line interface (CLI) that makes it easy to develop, test, and deploy your applications. This guide will walk you through using the CLI, starting with basic commands and gradually introducing the configuration system.
+---
 # Nexios CLI Guide
 
 Nexios provides a powerful command-line interface (CLI) that makes it easy to develop, test, and deploy your applications. This guide will walk you through using the CLI, starting with basic commands and gradually introducing the configuration system.

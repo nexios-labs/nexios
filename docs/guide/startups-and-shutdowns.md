@@ -1,4 +1,14 @@
-# Startup And Shutdowns ⏻
+---
+title: Startup And Shutdowns ⏻
+description: In ASGI (Asynchronous Server Gateway Interface), startup and shutdown refer to the lifecycle events of an application. These events allow you to perform initialization and cleanup tasks when the application starts up or shuts down.
+head:
+  - - meta
+    - property: og:title
+      content: Startup And Shutdowns ⏻
+  - - meta
+    - property: og:description
+      content: In ASGI (Asynchronous Server Gateway Interface), startup and shutdown refer to the lifecycle events of an application. These events allow you to perform initialization and cleanup tasks when the application starts up or shuts down.
+---
 
 In ASGI (Asynchronous Server Gateway Interface), startup and shutdown refer to the lifecycle events of an application. These events allow you to perform initialization and cleanup tasks when the application starts up or shuts down.
 

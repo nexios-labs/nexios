@@ -1,3 +1,15 @@
+---
+title: Dependency Injection in Nexios
+description: Learn how to use dependency injection in Nexios
+head:
+  - - meta
+    - property: og:title
+      content: Dependency Injection in Nexios
+  - - meta
+    - property: og:description
+      content: Learn how to use dependency injection utilities in Nexios
+---
+
 #  Robust Dependency Injection in Nexios
 
 Nexios provides a modern, flexible, and powerful dependency injection (DI) system inspired by the best of FastAPI and Starlette, but with its own unique features. This guide will help you master DI in Nexios, from simple use cases to advanced patterns.

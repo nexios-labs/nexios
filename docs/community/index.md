@@ -1,3 +1,15 @@
+---
+title: Community
+icon: community
+description: >
+    The Nexios community is a place for developers to connect, share knowledge, and help each other build amazing applications with Nexios.
+head:
+  - - meta
+    - property: og:title
+      content: Community
+    - property: og:description
+      content: The Nexios community is a place for developers to connect, share knowledge, and help each other build amazing applications with Nexios.
+---
 # 👋 Welcome to the Nexios Community!
 
 We're thrilled to have you here! The Nexios community is a place for developers to connect, share knowledge, and help each other build amazing applications with Nexios.

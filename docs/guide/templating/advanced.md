@@ -1,3 +1,15 @@
+---
+title: Advanced Templating
+icon: template
+description: >
+    This guide covers advanced features and patterns for the Nexios templating system.
+head:
+  - - meta
+    - property: og:title
+      content: Advanced Templating
+    - property: og:description
+      content: This guide covers advanced features and patterns for the Nexios templating system.
+---
 # Advanced Templating
 
 This guide covers advanced features and patterns for the Nexios templating system.

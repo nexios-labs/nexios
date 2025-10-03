@@ -32,7 +32,7 @@ class WebsocketRoutes:
         assert callable(handler), "Route handler must be callable"
         assert asyncio.iscoroutinefunction(handler), "Route handler must be async"
         self.raw_path = path
-        self.handler: WsHandlerType = inject_dependencies(handler)
+        self.handler: WsHandlerType = handler
         self.middleware = middleware
         self.route_info = RouteBuilder.create_pattern(path)
         self.pattern = self.route_info.pattern

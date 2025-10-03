@@ -1,6 +1,14 @@
-# Session Management
-
-
+---
+title: Session Management
+description: Session management is a critical component of web applications, allowing you to store and retrieve user data across multiple requests. Nexios provides a robust, flexible session management system that's easy to configure yet powerful enough for complex applications.
+head:
+  - - meta
+    - property: og:title
+      content: Session Management
+  - - meta
+    - property: og:description
+      content: Session management is a critical component of web applications, allowing you to store and retrieve user data across multiple requests. Nexios provides a robust, flexible session management system that's easy to configure yet powerful enough for complex applications.
+---
 
 Session management is a critical component of web applications, allowing you to store and retrieve user data across multiple requests. Nexios provides a robust, flexible session management system that's easy to configure yet powerful enough for complex applications.
 

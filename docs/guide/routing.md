@@ -1,7 +1,14 @@
-# Routing
-
-Nexios provides a powerful and flexible routing system that supports path parameters, query parameters, and various HTTP methods. The routing system is designed to be intuitive, performant, and extensible.
-
+---
+title: Routing
+description: Nexios provides a powerful and flexible routing system that supports path parameters, query parameters, and various HTTP methods. The routing system is designed to be intuitive, performant, and extensible.
+head:
+  - - meta
+    - property: og:title
+      content: Routing
+  - - meta
+    - property: og:description
+      content: Nexios provides a powerful and flexible routing system that supports path parameters, query parameters, and various HTTP methods. The routing system is designed to be intuitive, performant, and extensible.
+---
 ::: tip Routing Fundamentals
 Routing in Nexios follows these principles:
 

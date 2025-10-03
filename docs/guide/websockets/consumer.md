@@ -1,3 +1,15 @@
+---
+title: WebSocket Consumers in Nexios
+description: Nexios provides a powerful `WebSocketConsumer` class that simplifies building robust WebSocket endpoints. This class-based approach offers structure, reusability, and built-in channel management for your real-time applications.
+head:
+  - - meta
+    - property: og:title
+      content: WebSocket Consumers in Nexios
+  - - meta
+    - property: og:description
+      content: Nexios provides a powerful `WebSocketConsumer` class that simplifies building robust WebSocket endpoints. This class-based approach offers structure, reusability, and built-in channel management for your real-time applications.
+---
+
 # **WebSocket Consumers in Nexios**
 
 Nexios provides a powerful `WebSocketConsumer` class that simplifies building robust WebSocket endpoints. This class-based approach offers structure, reusability, and built-in channel management for your real-time applications.

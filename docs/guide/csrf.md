@@ -1,3 +1,14 @@
+---
+title: CSRF in Nexios
+description: Learn how to use csrf utilities in Nexios
+head:
+  - - meta
+    - property: og:title
+      content: CSRF in Nexios
+  - - meta
+    - property: og:description
+      content: Learn how to use csrf utilities in Nexios
+---
 # Understanding CSRF Protection in Nexios
 
 ## What is CSRF?

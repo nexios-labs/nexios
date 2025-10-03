@@ -1,7 +1,14 @@
-# Security Middleware
-
-Nexios provides a comprehensive security middleware that implements various security headers and protections. This guide covers all available security options and best practices.
-
+---
+title: Security Middleware
+description: Nexios provides a comprehensive security middleware that implements various security headers and protections. This guide covers all available security options and best practices.
+head:
+  - - meta
+    - property: og:title
+      content: Security Middleware
+  - - meta
+    - property: og:description
+      content: Nexios provides a comprehensive security middleware that implements various security headers and protections. This guide covers all available security options and best practices.
+---
 ## Quick Start
 
 ```python

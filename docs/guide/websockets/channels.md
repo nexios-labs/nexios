@@ -1,4 +1,16 @@
-## Channels
+---
+title: WebSockets Channels
+description: Nexios provides a powerful command-line interface (CLI) that makes it easy to develop, test, and deploy your applications. This guide will walk you through using the CLI, starting with basic commands and gradually introducing the configuration system.
+head:
+  - - meta
+    - property: og:title
+      content: WebSockets Channels
+  - - meta
+    - property: og:description
+      content: Nexios provides a powerful command-line interface (CLI) that makes it easy to develop, test, and deploy your applications. This guide covers the basics of the CLI, including configuration and advanced usage.
+---
+
+# Channels
 
 WebSocket connections in Nexios are managed using the `Channel` class, which provides enhanced functionality for handling real-time communication. Channels wrap WebSocket connections with additional features like metadata, expiration, and structured message handling.
 

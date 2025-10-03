@@ -1,5 +1,13 @@
 ---
-icon: file
+title: Static Files
+description: Serving static files is a common requirement for web applications. Nexios provides a robust and flexible system for serving static assets like CSS, JavaScript, images, and other file types with security and performance in mind.
+head:
+  - - meta
+    - property: og:title
+      content: Static Files
+  - - meta
+    - property: og:description
+      content: Serving static files is a common requirement for web applications. Nexios provides a robust and flexible system for serving static assets like CSS, JavaScript, images, and other file types with security and performance in mind.
 ---
 
 # Static Files

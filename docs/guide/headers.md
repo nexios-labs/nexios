@@ -1,8 +1,14 @@
-
-# Headers
-
-Headers are a fundamental part of HTTP requests and responses, carrying metadata about the message body, client capabilities, server information, and more. Nexios provides comprehensive tools for working with headers in both requests and responses.
-
+---
+title: Headers
+description: Headers are a fundamental part of HTTP requests and responses, carrying metadata about the message body, client capabilities, server information, and more. Nexios provides comprehensive tools for working with headers in both requests and responses.
+head:
+  - - meta
+    - property: og:title
+      content: Headers
+  - - meta
+    - property: og:description
+      content: Headers are a fundamental part of HTTP requests and responses, carrying metadata about the message body, client capabilities, server information, and more. Nexios provides comprehensive tools for working with headers in both requests and responses.
+---
 ## Request Headers
 
 Access incoming request headers through the `request.headers` property, which provides a case-insensitive dictionary-like interface:

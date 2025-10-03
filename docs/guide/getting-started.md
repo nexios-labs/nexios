@@ -1,11 +1,15 @@
 ---
 icon: down-to-line
+title: Getting Started with Nexios
+description: Welcome to Nexios! This comprehensive guide will walk you through everything you need to know to get started with Nexios, a modern, async-first Python web framework designed for high-performance applications.
+head:
+  - - meta
+    - property: og:title
+      content: Getting Started with Nexios
+  - - meta
+    - property: og:description
+      content: Welcome to Nexios! This comprehensive guide will walk you through everything you need to know to get started with Nexios, a modern, async-first Python web framework designed for high-performance applications.
 ---
-
-# Getting Started with Nexios
-
-Welcome to Nexios! This comprehensive guide will walk you through everything you need to know to get started with Nexios, a modern, async-first Python web framework designed for high-performance applications.
-
 ## What is Nexios?
 
 Nexios is a cutting-edge Python web framework that combines the best of modern web development practices with exceptional performance. Built on ASGI (Asynchronous Server Gateway Interface), Nexios provides a clean, intuitive API that makes building scalable web applications straightforward and enjoyable.

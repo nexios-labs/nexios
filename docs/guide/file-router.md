@@ -1,3 +1,15 @@
+---
+title: Nexios File Router Guide
+description: Nexios provides a powerful file router system that makes it easy to develop, test, and deploy your applications. This guide will walk you through using the file router system, starting with basic commands and gradually introducing the configuration system.
+head:
+  - - meta
+    - property: og:title
+      content: Nexios File Router Guide
+  - - meta
+    - property: og:description
+      content: Nexios provides a powerful file router system that makes it easy to develop, test, and deploy your applications. This guide will walk you through using the file router system, starting with basic commands and gradually introducing the configuration system.
+---
+
 Here's a comprehensive rewrite with clear subheadings and improved explanations, including the dynamic parameter notation change:
 
 ---

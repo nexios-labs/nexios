@@ -1,6 +1,14 @@
 ---
 layout: home
-
+title: Nexios - Async Python Web Framework
+description: Build high-performance async APIs with Nexios, a modern Python web framework featuring clean architecture, zero boilerplate, and excellent developer experience.
+head:
+  - - meta
+    - property: og:title
+      content: Nexios - Async Python Web Framework
+  - - meta
+    - property: og:description
+      content: Build high-performance async APIs with Nexios, a modern Python web framework featuring clean architecture, zero boilerplate, and excellent developer experience.
 hero:
   name: Nexios
   text: Async Python Web Framework

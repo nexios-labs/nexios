@@ -1,3 +1,14 @@
+---
+title: Handling Cookies in Nexios
+description: Learn how to work with cookies in Nexios
+head:
+  - - meta
+    - property: og:title
+      content: Handling Cookies in Nexios
+  - - meta
+    - property: og:description
+      content: Learn how to work with cookies in Nexios
+---
 # Handling Cookies in Nexios
 
 Cookies are an essential part of web development, allowing you to store small pieces of data on the client's browser. Nexios provides comprehensive support for working with cookies in both requests and responses.
