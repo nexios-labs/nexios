@@ -1,3 +1,17 @@
+## v2.11.9 (2025-10-03)
+
+### Feat
+
+- **routing**: enhance WebSocket route registration
+
+### Fix
+
+- Fix all pytest warnings
+
+### Refactor
+
+- **templating**: update template context and middleware
+
 ## v2.11.8 (2025-10-02)
 
 ### Fix
