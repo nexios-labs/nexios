@@ -11,6 +11,7 @@ from typing import (
     Union,
 )
 from typing import Literal
+from nexios.dependencies import Depend
 
 from pydantic import BaseModel
 from typing_extensions import Annotated, Doc
@@ -100,7 +101,7 @@ class NexiosApp(object):
         ] = None,
         lifespan: Optional[lifespan_manager] = None,
         routes: Optional[List[Routes]] = None,
-        dependencies: Optional[list] = None,
+        dependencies: Optional[list[Depend]] = None,
     ):
         self.config = config or DEFAULT_CONFIG
         self.dependencies = dependencies or []
@@ -108,7 +109,7 @@ class NexiosApp(object):
             from nexios.cli.utils import get_config as get_nexios_config
         except ImportError:
 
-            def get_nexios_config():
+            def get_nexios_config() -> Dict[str, Any]:
                 return {}
 
         from nexios.config import get_config, set_config
@@ -128,13 +129,13 @@ class NexiosApp(object):
         self.shutdown_handlers: List[Callable[[], Awaitable[None]]] = []
         self.exceptions_handler = ExceptionMiddleware()
         self.server_error_handler = server_error_handler
-        self._background_tasks = set()
+        self._background_tasks  = set() #type:ignore
 
         self.app = Router(routes=routes, dependencies=self.dependencies)  # type:ignore
         self.router = self.app
         self.route = self.router.route
         self.lifespan_context: Optional[lifespan_manager] = lifespan
-        self.state = {}
+        self.state :Dict[str, Any] = {}
 
         openapi_config: Dict[str, Any] = self.config.to_dict().get("openapi", {})  # type:ignore
         self.openapi_config = OpenAPIConfig(
@@ -407,12 +408,18 @@ class NexiosApp(object):
             app.add_ws_route(route)
             ```
         """
+     
         if route:
-            self.ws_router.add_ws_route(route)
-        else:
-            self.ws_router.add_ws_route(
-                WebsocketRoutes(path, handler, middleware=middleware)
-            )
+            if (not path or path == route.raw_path) and (not handler or handler == route.handler):
+                self.ws_router.add_ws_route(route)
+                return
+
+        if path is None or handler is None:
+            raise ValueError("path and handler are required when 'route' is not provided.")
+
+        self.ws_router.add_ws_route(
+            WebsocketRoutes(path, handler, middleware=middleware)
+        )
 
     def mount_router(self, router: Router, path: Optional[str] = None) -> None:
         """
@@ -749,6 +756,7 @@ class NexiosApp(object):
             description=description,
             responses=responses,
             request_model=request_model,
+            request_content_type="application/json",
             middleware=middleware,
             tags=tags,
             security=security,
@@ -1157,6 +1165,7 @@ class NexiosApp(object):
             deprecated=deprecated,
             parameters=parameters,
             exclude_from_schema=exclude_from_schema,
+            request_content_type="application/json",
             **kwargs,
         )
 
@@ -1299,7 +1308,7 @@ class NexiosApp(object):
             ),
         ] = False,
         request_content_type: Annotated[
-            Optional[Literal["application/json", "application/x-www-form-urlencoded", "multipart/form-data"]],
+            Literal["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
             Doc(
                 """
                 Request content type.
@@ -1511,7 +1520,7 @@ class NexiosApp(object):
             ),
         ] = False,
          request_content_type: Annotated[
-            Optional[Literal["application/json", "application/x-www-form-urlencoded", "multipart/form-data"]],
+            Literal["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
             Doc(
                 """
                 Request content type.
@@ -1774,6 +1783,7 @@ class NexiosApp(object):
             deprecated=deprecated,
             parameters=parameters,
             exclude_from_schema=exclude_from_schema,
+            request_content_type="application/json",
             **kwargs,
         )
 
@@ -1960,6 +1970,7 @@ class NexiosApp(object):
             description=description,
             responses=responses,
             request_model=request_model,
+            request_content_type="application/json",
             middleware=middleware,
             tags=tags,
             security=security,
@@ -2057,6 +2068,15 @@ class NexiosApp(object):
             """
             ),
         ] = None,
+        request_content_type: Annotated[
+            Literal["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
+            Doc(
+                """
+                Request content type.
+                Example: 'application/json'
+            """
+            ),
+        ] = "application/json",
         middleware: Annotated[
             List[Any],
             Doc(
@@ -2161,6 +2181,7 @@ class NexiosApp(object):
                 description=description,
                 responses=responses,
                 request_model=request_model,
+                request_content_type=request_content_type,
                 middleware=middleware,
                 tags=tags,
                 security=security,
@@ -2296,7 +2317,6 @@ class NexiosApp(object):
         host: str = "127.0.0.1",
         port: int = 8000,
         reload: bool = False,
-        **kwargs,
     ):
         """
         Run the application using uvicorn.
@@ -2327,7 +2347,7 @@ class NexiosApp(object):
             import uvicorn
 
             print(f"Starting server with uvicorn: {host}:{port}")
-            uvicorn.run(self, host=host, port=port, reload=reload, **kwargs)
+            uvicorn.run(self, host=host, port=port, reload=reload)
         except ImportError:
             raise RuntimeError(
                 "uvicorn not found. Install it with: pip install uvicorn\n"

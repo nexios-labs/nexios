@@ -2074,6 +2074,10 @@ class Router(BaseRouter):
             Optional[Type[BaseModel]],
             Doc("Pydantic model for request body validation and OpenAPI docs"),
         ] = None,
+        request_content_type: Annotated[
+            Literal["application/json", "multipart/form-data", "application/x-www-form-urlencoded"],
+            Doc("Content type for the request body in OpenAPI docs. Defaults to 'application/json'."),
+        ] = "application/json",
         middleware: Annotated[
             List[MiddlewareType],
             Doc(
@@ -2187,6 +2191,8 @@ class Router(BaseRouter):
                 description=description,
                 responses=responses,
                 request_model=request_model,
+                request_content_type=request_content_type,
+                
                 middleware=middleware,
                 tags=tags,
                 security=security,
