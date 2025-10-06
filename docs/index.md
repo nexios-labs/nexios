@@ -352,3 +352,66 @@ Nexios requires Python 3.9+ for:
 - Type hints
 - Modern language features
   :::
+
+## Nexios CLI
+
+Nexios comes with a powerful command-line interface that makes development and deployment a breeze. The Nexios CLI is your primary tool for managing Nexios applications throughout their lifecycle.
+
+### Key Features
+
+- **Project Scaffolding**: Quickly bootstrap new projects with a modern structure
+- **Development Server**: Run and test your application with hot reload
+- **Code Generation**: Generate components, models, and controllers with a single command
+- **Database Tools**: Handle migrations and database operations
+- **Testing**: Run tests with detailed reporting
+- **Build & Deploy**: Prepare and deploy your application
+
+### Basic Usage
+
+```bash
+# Create a new Nexios project
+nexios new my-awesome-app
+
+```
+
+
+::: danger Important Note
+Do not use the Nexios CLI if you are still learning Python.
+:::
+
+For complete documentation on using the Nexios CLI, check out the [CLI Documentation](/guide/cli).
+
+## The Zen of Nexios
+
+Nexios embraces the Zen of Python, particularly the second principle: "Explicit is better than implicit." Here's how:
+
+- **Explicit Routing**: Every route is explicitly defined, making it clear what endpoints are available
+- **Dependency Injection**: Dependencies are explicitly declared and injected
+- **Type Annotations**: Full support for Python's type hints throughout the framework
+- **Configuration Over Convention**: While we provide sensible defaults, we don't hide important behavior behind "magic"
+
+## Key Features
+
+### Performance Optimized
+- Built on top of Starlette and Uvicorn for exceptional performance
+- Async-first architecture for handling thousands of concurrent connections
+- Middleware system for fine-grained performance optimization
+
+### Developer Experience
+- Automatic API documentation with OpenAPI/Swagger
+- Built-in testing utilities
+- Detailed error messages and stack traces
+- Interactive API documentation at `/docs`
+
+### Extensibility
+- Plugin system for adding custom functionality
+- Support for WebSockets and HTTP/2
+- Custom middleware support
+- Background tasks and scheduled jobs
+
+### Security First
+- Built-in CSRF protection
+- JWT Authentication
+- CORS middleware
+- Secure by default configurations
+
