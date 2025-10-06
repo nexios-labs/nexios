@@ -576,7 +576,6 @@ class Router(BaseRouter):
             return await original_handler(*handler_args, **handler_kwargs)
 
         route.handler = wrapped_handler
-
         self.routes.append(route)
         if getattr(route, "exclude_from_schema", False):
             return

@@ -190,7 +190,7 @@ async def hello_world(request, response):
         "status": "success"
     })
 
-# If you forget to use async def for your handler, Nexios will raise an error at startup.
+# If you forget to use async def for your handler, Nexios will run the handler in a threadpool
 
 # If you define two routes with the same path and method, Nexios will raise a conflict error at startup.
 
