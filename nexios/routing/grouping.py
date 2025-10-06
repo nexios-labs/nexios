@@ -15,11 +15,11 @@ class Group(BaseRoute):
     def __init__(
         self,
         path: str = "",
-        app: ASGIApp | None = None,
-        routes: typing.List[BaseRoute] | None = None,
-        name: str | None = None,
+        app: typing.Optional[ASGIApp] = None,
+        routes: typing.Optional[typing.List[BaseRoute]]  = None,
+        name: typing.Optional[str] = None,
         *,
-        middleware: typing.List[Middleware] | None = None,
+        middleware: typing.List[Middleware] = [],
     ) -> None:
         assert path == "" or path.startswith("/"), "Routed paths must start with '/'"
         assert app is not None or routes is not None, (
@@ -36,9 +36,8 @@ class Group(BaseRoute):
             self._base_app = Router(routes=routes)  # type:ignore
 
         self.app = self._base_app  # type:ignore
-        if middleware is not None:
-            for cls, args, kwargs in reversed(middleware):
-                self.app = cls(self.app, *args, **kwargs)
+        for cls, args, kwargs in reversed(middleware):
+            self.app = cls(self.app, *args, **kwargs)
 
         self.route_info = RouteBuilder.create_pattern(
             self.path.rstrip("/") + "{path:path}"

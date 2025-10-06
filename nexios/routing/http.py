@@ -13,9 +13,11 @@ from typing import (
     List,
     Optional,
     Pattern,
+    Sequence,
     Type,
     Union,
     Literal,
+    cast,
 )
 
 from pydantic import BaseModel
@@ -30,7 +32,7 @@ from nexios._internals._middleware import (
 )
 from nexios._internals._response_transformer import request_response
 from nexios._internals._route_builder import RouteBuilder
-from nexios.dependencies import inject_dependencies
+from nexios.dependencies import inject_dependencies,  Depend
 from nexios.events import AsyncEventEmitter
 from nexios.exceptions import NotFoundException
 from nexios.http import Request, Response
@@ -146,7 +148,7 @@ class Routes(BaseRoute):
                 "Content type for the request body in OpenAPI docs. Defaults to 'application/json'."
             ),
         ] = "application/json",
-        tags: Optional[List[str]] = None,
+        tags: Optional[Sequence[str]] = None,
         security: Optional[List[Dict[str, List[str]]]] = None,
         operation_id: Optional[str] = None,
         deprecated: bool = False,
@@ -225,7 +227,7 @@ class Routes(BaseRoute):
             return match, matched_params, is_method_allowed
         return None, None, False
 
-    def url_path_for(self, _name: str, **path_params: Any) -> URLPath:
+    def url_path_for(self, _name: str, **path_params: Dict[str, Any]) -> URLPath:
         """
         Generate a URL path for the route with the given name and parameters.
 
@@ -261,7 +263,7 @@ class Routes(BaseRoute):
 
         return URLPath(path=path, protocol="http")
 
-    async def handle(self, scope: Scope, receive: Receive, send: Send) -> Any:
+    async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
         """
         Process an incoming request using the route's handler.
 
@@ -299,15 +301,15 @@ class Router(BaseRouter):
     def __init__(
         self,
         prefix: Optional[str] = None,
-        routes: Optional[List[Union[Routes, type[BaseRoute]]]] = None,
-        tags: Optional[List[str]] = None,
+        routes: Optional[Sequence[Union[Routes, type[BaseRoute]]]] = None,
+        tags: Optional[Sequence[str]] = None,
         exclude_from_schema: bool = False,
         name: Optional[str] = None,
-        dependencies: Optional[list] = None,
+        dependencies: Optional[list[Depend]] = None,
     ):
         self.prefix = prefix or ""
         self.prefix.rstrip("/")
-        self.routes = []
+        self.routes  = list(routes or [])
         self.middleware: typing.List[Middleware] = []
         self.sub_routers: Dict[str, Union[Router, ASGIApp]] = {}
         self.route_class = Routes
@@ -549,8 +551,7 @@ class Router(BaseRouter):
             self.routes.append(route)
             return
 
-        route.tags = self.tags + route.tags if route.tags else self.tags
-        # original_handler = route.handler
+        route.tags = list(self.tags).extend(route.tags) if route.tags else self.tags
         if self.exclude_from_schema:
             route.exclude_from_schema = True
         original_handler = route.handler
@@ -785,6 +786,7 @@ class Router(BaseRouter):
                 description=description,
                 responses=responses,
                 request_model=request_model,
+                request_content_type="application/json",
                 middleware=middleware,
                 tags=tags,
                 security=security,
@@ -1192,6 +1194,7 @@ class Router(BaseRouter):
             description=description,
             responses=responses,
             request_model=request_model,
+            request_content_type="application/json",
             middleware=middleware,
             tags=tags,
             security=security,
@@ -1341,7 +1344,7 @@ class Router(BaseRouter):
             ),
         ] = False,
         request_content_type: Annotated[
-            Optional[Literal["application/json", "application/x-www-form-urlencoded", "multipart/form-data"]],
+            Literal["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
             Doc(
                 """
                 Request content type.
@@ -1553,7 +1556,7 @@ class Router(BaseRouter):
             ),
         ] = False,
         request_content_type: Annotated[
-            Optional[Literal["application/json", "application/x-www-form-urlencoded", "multipart/form-data"]],
+            Literal["application/json", "application/x-www-form-urlencoded", "multipart/form-data"],
             Doc(
                 """
                 Request content type.
@@ -1808,6 +1811,7 @@ class Router(BaseRouter):
             description=description,
             responses=responses,
             request_model=request_model,
+            request_content_type="application/json",
             middleware=middleware,
             tags=tags,
             security=security,
@@ -2001,6 +2005,7 @@ class Router(BaseRouter):
             description=description,
             responses=responses,
             request_model=request_model,
+            request_content_type="application/json",
             middleware=middleware,
             tags=tags,
             security=security,
@@ -2221,16 +2226,16 @@ class Router(BaseRouter):
             URLPath: Complete path including all router prefixes
         """
         name_parts = _name.split(".")
-        current_router = self
-        path_segments = []
+        current_router  = cast(Router, self)
+        path_segments :List[str] = []
 
         # First collect all router prefixes
         for part in name_parts[:-1]:
             found = False
-            for mount_path, sub_router in current_router.sub_routers.items():
+            for mount_path, sub_router in current_router.sub_routers.items(): #type:ignore
                 if getattr(sub_router, "name", None) == part:
                     path_segments.append(mount_path.strip("/"))
-                    current_router = sub_router
+                    current_router =  cast(Router, sub_router)
                     found = True
                     break
             if not found:
@@ -2240,8 +2245,11 @@ class Router(BaseRouter):
 
         route_name = name_parts[-1]
         for route in current_router.routes:
-            if route.name == route_name:
-                route_path = route.url_path_for(route_name, **path_params)
+           
+            if  getattr(route, "name", None) is None:
+                continue
+            if getattr(route, "name", None) == route_name:
+                route_path = route.url_path_for(_name=route_name, **path_params)
                 path_segments.append(route_path.strip("/"))
 
                 full_path = "/" + "/".join(filter(None, path_segments))
@@ -2273,17 +2281,17 @@ class Router(BaseRouter):
                 return
 
         path_matched = False
-        allowed_methods_: typing.Set[str] = set()
+        allowed_methods_: typing.List[str] = []
         for route in self.routes:
-            match, matched_params, is_allowed = route.match(url, scope["method"])
+            match, matched_params, is_allowed = route.match(url, scope["method"]) #type:ignore
             if match:
                 path_matched = True
                 if is_allowed:
                     scope["route_params"] = RouteParam(matched_params)
-                    await route.handle(scope, receive, send)
+                    await route.handle(scope, receive, send) #type:ignore
                     return
                 else:
-                    allowed_methods_.update(route.methods)
+                    allowed_methods_.extend(route.methods) #type:ignore
         if path_matched:
             response = JSONResponse(
                 content="Method not allowed",
@@ -2295,7 +2303,7 @@ class Router(BaseRouter):
 
         raise NotFoundException
 
-    def mount_router(self, app: "Router", path: typing.Optional[str] = None) -> None:
+    def mount_router(self, app: "Router", path: typing.Optional[str] = None):
         """
         Mount an ASGI application (e.g., another Router) under a specific path prefix.
 

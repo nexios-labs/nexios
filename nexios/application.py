@@ -325,11 +325,11 @@ class NexiosApp(object):
                     Path(name=x, schema=Schema(type="string"), schema_=None)  # type: ignore
                     for x in route.param_names
                 ]
-                parameters.extend(route.parameters)  # type: ignore
+                parameters.extend(route.parameters)  #  type: ignore
                 docs.document_endpoint(
                     path=re.sub(r"\{(\w+):\w+\}", r"{\1}", route.raw_path),
                     method=method,
-                    tags=route.tags,
+                    tags=route.tags, #  type: ignore
                     security=route.security,
                     summary=route.summary or "",
                     description=route.description,

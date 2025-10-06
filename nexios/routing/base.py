@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional
 
+from nexios.structs import URLPath
 from nexios.types import ASGIApp, Receive, Scope, Send
 
 
@@ -13,36 +13,23 @@ class BaseRouter(ABC):
     Subclasses should implement the `__call__` method to handle specific routing logic.
     """
 
-    def __init__(self, prefix: Optional[str] = None):
-        self.prefix = prefix or ""
-        self.routes: List[Type[BaseRoute]] = []
-        self.middleware: List[Any] = []
-        self.sub_routers: Dict[str, ASGIApp] = {}
-
-        if self.prefix and not self.prefix.startswith("/"):
-            warnings.warn("Router prefix should start with '/'")
-            self.prefix = f"/{self.prefix}"
+ 
 
     @abstractmethod
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         raise NotImplementedError("Subclasses must implement this method")
 
     def add_middleware(self, middleware: Any) -> None:
-        self.middleware.append(middleware)
+        raise NotImplementedError("Subclasses must implement this method")
 
     def build_middleware_stack(self, app: ASGIApp) -> ASGIApp:
-        for mdw in reversed(self.middleware):
-            app = mdw(app)
-        return app
+        raise NotImplementedError("Subclasses must implement this method")
 
-    def mount_router(self, path: str, app: ASGIApp) -> None:
-        path = path.rstrip("/")
-        if not path.startswith("/"):
-            path = f"/{path}"
-        self.sub_routers[path] = app
+       
 
-    def __repr__(self) -> str:
-        return f"<BaseRouter prefix='{self.prefix}' routes={len(self.routes)}>"
+    def mount_router(self, app :Any,path:Optional[str]):
+        ...
+   
 
 
 class BaseRoute(ABC):
@@ -50,15 +37,25 @@ class BaseRoute(ABC):
     Base class for routes. This class should not be instantiated directly.
     Subclasses should implement the `matches` method to handle specific routing logic.
     """
-
     def __init__(
-        self, path: str, methods: Optional[List[str]] = None, **kwargs: Dict[str, Any]
+        self, path: str, methods: List[str] = [], name: Optional[str] = None ,**kwargs: Dict[str, Any]
     ) -> None:
         self.path = path
-        self.methods = methods or []
+        self.methods = methods
+        self.name = name
+  
 
     @abstractmethod
-    def match(self, scope: Scope) -> bool:
+    def match(self, *args: Any, **kwargs: Any) -> Any:
+        """
+        Match a path against this route's pattern.
+        
+        Subclasses can implement this method with any signature that makes sense for the route type.
+        The base implementation doesn't enforce any specific signature to allow for flexibility.
+        
+        Returns:
+            Any: The return type is not enforced, but should be consistent with the route's needs.
+        """
         raise NotImplementedError("Subclasses must implement this method")
 
     @abstractmethod
@@ -66,11 +63,9 @@ class BaseRoute(ABC):
         raise NotImplementedError("Subclasses must implement this method")
 
     @abstractmethod
-    def url_path_for(self, name: str, **path_params: Any) -> str:
+    def url_path_for(self, _name: str, **path_params: Dict[str, Any]) -> URLPath:
         raise NotImplementedError("Subclasses must implement this method")
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if self.match(scope):
-            await self.handle(scope, receive, send)
-        else:
-            raise ValueError("Route does not match the scope")
+        raise NotImplementedError("Subclasses must implement this method")
+
