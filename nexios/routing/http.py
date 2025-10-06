@@ -576,9 +576,6 @@ class Router(BaseRouter):
             return await original_handler(*handler_args, **handler_kwargs)
 
         route.handler = wrapped_handler
-        match = next((r for r in self.routes if r.raw_path == route.raw_path and r.methods == route.methods),None)  #type:ignore
-        if match:
-            raise ValueError("Route already exists")
         self.routes.append(route)
         if getattr(route, "exclude_from_schema", False):
             return
