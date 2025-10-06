@@ -339,3 +339,8 @@ class APIDocumentation:
         self.config.openapi_spec.components.schemas[schema.__name__] = Schema(
             **schema.model_json_schema()
         )
+
+def get_instance() -> APIDocumentation:
+    if APIDocumentation._instance is None: # type: ignore
+        APIDocumentation._instance = APIDocumentation() # type: ignore
+    return APIDocumentation._instance # type: ignore

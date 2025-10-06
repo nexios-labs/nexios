@@ -1,4 +1,3 @@
-import re
 from typing import (
     Any,
     AsyncContextManager,
@@ -30,7 +29,7 @@ from nexios.middleware.errors.server_error_handler import (
 )
 from nexios.openapi._builder import APIDocumentation
 from nexios.openapi.config import OpenAPIConfig
-from nexios.openapi.models import HTTPBearer, Parameter, Path, Schema
+from nexios.openapi.models import HTTPBearer, Parameter
 from nexios.routing.base import BaseRoute
 from nexios.structs import URLPath
 
@@ -268,7 +267,7 @@ class NexiosApp(object):
 
     async def handle_lifespan(self, receive: Receive, send: Send) -> None:
         """Handle ASGI lifespan protocol events."""
-        self._setup_openapi()
+        # self._setup_openapi()
         try:
             while True:
                 message: Message = await receive()
@@ -313,33 +312,7 @@ class NexiosApp(object):
             else:
                 await send({"type": "lifespan.shutdown.failed", "message": str(e)})
 
-    def _setup_openapi(self) -> None:
-        """Set up automatic OpenAPI documentation"""
-        docs = self.docs
-
-        for route in self.get_all_routes():
-            if getattr(route, "exclude_from_schema", False):
-                continue
-            for method in route.methods:
-                parameters = [
-                    Path(name=x, schema=Schema(type="string"), schema_=None)  # type: ignore
-                    for x in route.param_names
-                ]
-                parameters.extend(route.parameters)  #  type: ignore
-                docs.document_endpoint(
-                    path=re.sub(r"\{(\w+):\w+\}", r"{\1}", route.raw_path),
-                    method=method,
-                    tags=route.tags, #  type: ignore
-                    security=route.security,
-                    summary=route.summary or "",
-                    description=route.description,
-                    request_body=route.request_model,
-                    request_content_type=getattr(route, "request_content_type", "application/json"),
-                    parameters=parameters,  # type:ignore
-                    deprecated=route.deprecated,
-                    operation_id=route.operation_id,
-                    responses=route.responses,
-                )(route.handler)
+    
 
     def add_middleware(
         self,
