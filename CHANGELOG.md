@@ -1,3 +1,9 @@
+## v2.11.12 (2025-10-07)
+
+### Refactor
+
+- **config**: update configuration handling and remove validation
+
 ## v2.11.11 (2025-10-07)
 
 ### Feat
