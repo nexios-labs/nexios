@@ -29,10 +29,10 @@
 
 </br>
 
-<h2 align="center"> Star the repo if u like it🌟
-</h2>
+<h2 align="center"> Star the repo if u like it🌟</h2>
 
 Nexios is a high-performance Python web framework. Designed for speed, flexibility, and simplicity, Nexios delivers exceptional performance  while maintaining the simplicity and elegance of Python. It supports RESTful APIs, authentication, and integrates easily with any ORM. Built for modern web development, Nexios allows developers to quickly spin up scalable, modular apps with minimal boilerplate—ideal for startups, rapid prototyping, and custom backend solutions. 
+
 ---
 
 ## `Installation` 📦
