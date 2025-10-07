@@ -1,3 +1,23 @@
+## v2.11.11 (2025-10-07)
+
+### Feat
+
+- **routing**: add exception handling to router
+- **application**: add request_content_type parameter to routing methods
+
+### Fix
+
+- **routing**: improve error handling for existing routes and update documentation
+
+### Refactor
+
+- **exception_handler**: optimize exception handling and middleware initialization (#194)
+- **exception_handler**: optimize exception handling and middleware initialization
+- **openapi**: move OpenAPI documentation setup to routing  (#192)
+- **routing**: remove duplicate route check in Router
+- **openapi**: move OpenAPI documentation setup to routing
+- **router**: reorganize BaseRouter and BaseRoute
+
 ## v2.11.10 (2025-10-04)
 
 ## v2.11.9 (2025-10-03)
