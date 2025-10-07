@@ -1,4 +1,5 @@
 from __future__ import annotations
+from nexios.exception_handler import ExceptionMiddleware
 from nexios.openapi.models import Parameter, Path, Schema
 from nexios.openapi._builder import get_instance
 import copy
@@ -39,7 +40,7 @@ from nexios.exceptions import NotFoundException
 from nexios.http import Request, Response
 from nexios.http.response import JSONResponse
 from nexios.structs import RouteParam, URLPath
-from nexios.types import ASGIApp, HandlerType, MiddlewareType, Receive, Scope, Send
+from nexios.types import ASGIApp, ExceptionHandlerType, HandlerType, MiddlewareType, Receive, Scope, Send
 
 from ._utils import get_route_path
 from .base import BaseRoute, BaseRouter
@@ -318,6 +319,8 @@ class Router(BaseRouter):
         self.name = name
         self.event = AsyncEventEmitter()
         self.dependencies = dependencies or []
+        self.exceptions_handler = ExceptionMiddleware()
+
 
         if self.prefix and not self.prefix.startswith("/"):
             warnings.warn("Router prefix should start with '/'")
@@ -337,10 +340,16 @@ class Router(BaseRouter):
         Returns:
             ASGIApp: The application wrapped with all middleware.
         """
-        for cls, args, kwargs in reversed(self.middleware):
+        middleware = (
+            self.middleware
+            +[Middleware(
+                ASGIRequestResponseBridge,
+                dispatch=self.exceptions_handler,
+            )]
+        )
+        for cls, args, kwargs in reversed(middleware):
             app = cls(app, *args, **kwargs)
         return app
-
     def add_route(
         self,
         route: Annotated[
@@ -599,7 +608,25 @@ class Router(BaseRouter):
                 operation_id=route.operation_id,
                 responses=route.responses,
             )(route.handler)
+    def add_exception_handler(
+        self,
+        exc_class_or_status_code: Union[Type[Exception], int],
+        handler: Optional[ExceptionHandlerType] = None,
+    ) -> Any:
+        if handler is None:
+            # If handler is not given yet, return a decorator
+            def decorator(func: ExceptionHandlerType) -> Any:
+                self.exceptions_handler.add_exception_handler(
+                    exc_class_or_status_code, func
+                )
+                return func
 
+            return decorator
+        else:
+            # Normal direct handler registration
+            self.exceptions_handler.add_exception_handler(
+                exc_class_or_status_code, handler
+            )
     def add_middleware(self, middleware: MiddlewareType) -> None:
         """Add middleware to the router"""
         if callable(middleware):
