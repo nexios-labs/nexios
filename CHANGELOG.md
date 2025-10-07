@@ -1,3 +1,9 @@
+## v2.11.13 (2025-10-07)
+
+### Refactor
+
+- **exception_handler**: remove router-level exception handlers
+
 ## v2.11.12 (2025-10-07)
 
 ### Refactor
