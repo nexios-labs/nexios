@@ -17,7 +17,7 @@ def set_config(config: Optional[MakeConfig] = None, **kwargs: Any) -> None:
 def get_config() -> MakeConfig:
     global _global_config
     if _global_config is None:
-        _global_config = MakeConfig()
+        raise RuntimeError("Nexios config is not initialized")
     return _global_config
 
 

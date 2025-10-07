@@ -21,7 +21,7 @@ from nexios._internals._middleware import (
 from nexios._internals._middleware import DefineMiddleware as Middleware
 from nexios.config import DEFAULT_CONFIG, MakeConfig
 from nexios.events import AsyncEventEmitter
-from nexios.exception_handler import ExceptionHandlerType
+from nexios.exception_handler import ExceptionHandlerType,ExceptionMiddleware
 from nexios.logging import create_logger
 from nexios.middleware.errors.server_error_handler import (
     ServerErrHandlerType,
@@ -130,7 +130,7 @@ class NexiosApp(object):
         self._background_tasks  = set() #type:ignore
 
         self.app = Router(routes=routes, dependencies=self.dependencies)  # type:ignore
-        self.exceptions_handler = self.app.exceptions_handler
+        self.exceptions_handler = ExceptionMiddleware()
         self.router = self.app
         self.route = self.router.route
         self.lifespan_context: Optional[lifespan_manager] = lifespan
