@@ -15,7 +15,6 @@ head:
 
 Middleware in Nexios is a powerful feature that allows you to intercept, process, and modify requests and responses as they flow through your application. It acts as a pipeline, enabling you to implement cross-cutting concerns such as logging, authentication, validation, and response modification in a modular and reusable way. This documentation provides a comprehensive guide to understanding and using middleware in Nexios.
 
-::: tip Middleware Fundamentals
 Middleware in Nexios provides:
 
 - **Request/Response Pipeline**: Process requests before and after handlers
@@ -24,30 +23,9 @@ Middleware in Nexios provides:
 - **Reusability**: Middleware can be shared across different routes
 - **Order Control**: Middleware executes in the order they're added
 - **Error Handling**: Middleware can catch and handle exceptions
-  :::
 
-::: tip Middleware Best Practices
 
-1. **Single Responsibility**: Each middleware should do one thing well
-2. **Order Matters**: Add middleware in logical order (auth before business logic)
-3. **Error Handling**: Always handle exceptions gracefully
-4. **Performance**: Keep middleware lightweight and efficient
-5. **Reusability**: Design middleware to be reusable across projects
-6. **Documentation**: Document what each middleware does and its requirements
-7. **Testing**: Test middleware in isolation and with your application
-   :::
 
-::: tip Common Middleware Patterns
-
-- **Authentication**: Verify user identity and permissions
-- **Logging**: Record request/response information
-- **CORS**: Handle cross-origin requests
-- **Rate Limiting**: Prevent abuse and ensure fair usage
-- **Compression**: Reduce response size for better performance
-- **Security Headers**: Add security-related HTTP headers
-- **Request Validation**: Validate and sanitize request data
-- **Response Transformation**: Modify responses before sending
-  :::
 
 ---
 
@@ -144,6 +122,49 @@ Middleware functions are executed in the order they are added. Ensure that middl
 
 In Nexios, middleware functions rely on a continuation callback (commonly called next, cnext, or callnext) to pass control to the next stage of the request pipeline. This parameter is crucial for request flow but its name is completely flexible — you're free to call it whatever makes sense for your codebase.
 
+## Before and after handler
+For example, let's say we want to log the time it takes for a request to complete. We can write a middleware that will log the time before and after the handler is called:
+
+```python
+from nexios import NexiosApp
+
+app = NexiosApp()
+
+async def log_time(req, res, next):
+    start_time = time.time() #  Get current time Before handler
+    await next()
+    end_time = time.time() # Get current time After handler
+    print(f"Request {req.method} {req.url} took {end_time - start_time} seconds")
+
+app.add_middleware(log_time)
+```
+You can also modify the request and response object before and after handler
+
+```python
+from nexios import NexiosApp
+
+app = NexiosApp()
+
+async def modify_request(req, res, next):
+    req.state.name = "John"
+    
+    await next()
+    res.set_header("X-Custom-Header", "Custom Value") # Set header after handler
+
+app.add_middleware(modify_request)
+
+@app.get("/")
+async def index(req, res):
+    return res.text(f"Hello, {req.state.name}")
+```
+
+
+::: warning ⚠️ Warning
+
+Modifying the response object should be done after the request is processed. It's best to use the `process_response` method of middleware or `callnext`
+
+:::
+
 ## **Class-Based Middleware**
 
 Nexios supports class-based middleware for better organization and reusability. A class-based middleware must inherit from `BaseMiddleware` and implement the following methods:
@@ -180,11 +201,14 @@ class ExampleMiddleware(BaseMiddleware):
    - Used for post-processing tasks like modifying the response or logging.
    - Must return the modified `res` object.
 
-# If you forget to return the response in process_response, the client will not receive the intended response.
 
-# If you use the wrong parameter order in your methods, Nexios will raise an error at startup.
+ If you forget to return the response in process_response, the client will not receive the intended response.
 
-# You can handle errors in middleware by wrapping logic in try/except and returning a custom error response.
+If you use the wrong parameter order in your methods, Nexios will raise an error at startup.
+
+:::  tip Note
+you can handle errors in middleware by wrapping logic in try/except and returning a custom error response.
+:::
 
 ```python
 from nexios.middleware import BaseMiddleware
@@ -241,8 +265,7 @@ async def error_handler_middleware(req, res, next):
         await next()
     except Exception as e:
         # Create a custom error response
-        error_response = res.make_response(
-            JSONResponse(
+        error_response = res.json(
             {
                 "error": {
                     "type": type(e).__name__,
@@ -251,8 +274,8 @@ async def error_handler_middleware(req, res, next):
                 }
             },
             status_code=getattr(e, "status_code", 500)
-            )
         )
+        
         return error_response
 
     return res
@@ -413,11 +436,7 @@ Avoind modifying the request object in middleware. This can lead to unexpected b
 
 :::
 
-::: warning ⚠️ Warning
 
-Modifying the response object should be done after the request is processed. It's best to use the `process_response` method of middleware or `callnext`
-
-:::
 
 ## Raw ASGI Middleware
 
