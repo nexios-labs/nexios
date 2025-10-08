@@ -59,31 +59,24 @@ pip install nexios==2.9.0
 
 ## Features ✨
 
-- [x] **Routing**
+- [x] **Powerful Routing**
 - [x] **Automatic OpenAPI Documentation**
 - [x] **Session Management**
 - [x] **File Router**
-- [x] **Authentication (Limited)**
+- [x] **Authentication**
 - [x] **Event Listener for Signals**
 - [x] **Middleware Support**
+- [x] **Raw ASGI Middleware Support**
 - [x] **Express-like Functionality**
-- [x] **JWT Authentication**
 - [x] **Pydantic Support**
 - [x] **Dependency Injection**
-- [x] **In-built Support for CORS**
-- [x] **Custom Decorators**
+- [x] **In-built Security (CORS, CSRF, SECURE HEADERS)**
 - [x] **WebSocket Support**
 - [x] **Custom Error Handling**
 - [x] **Pagination**
 - [x] **HTTP/2 Support**
 - [x] **High-Performance Async Processing**
 
-### Upcoming Features
-
-- [ ] **Inbuilt Database ORM Integration**
-- [ ] **Asynchronous Task Queue**
-- [ ] **Rate Limiting**
-- [ ] **API Throttling**
 
 ### Basic Example
 

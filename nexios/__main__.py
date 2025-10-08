@@ -2,7 +2,7 @@ __version__: str = "2.11.13"
 
 # Version bump test - this comment will be removed after testing
 ascii_art = f"""
-  _   _                 _
+  _   _                  _
  | \\ | |               (_)
  |  \\| |   ___  __  __  _    ___    ___
  | . ` |  / _ \\ \\ \\/ / | |  / _ \\  / __|
