@@ -9,7 +9,13 @@ head:
     - property: og:description
       content: Nexios provides a set of hooks that allow you to execute code at specific points in the request-response cycle. These hooks can be used to perform tasks such as authentication, logging, and error handling.
 ---
-## `before_request`
+# Handler Hooks `deprecated`
+
+::: danger 🚨Warning
+Handler hooks are deprecated and will be removed in a future release. Use middleware instead.
+:::
+
+## before_request
 
 The `before_request` hook is executed before the request is processed. It can be used to perform authentication, log the request, or modify the request object.
 

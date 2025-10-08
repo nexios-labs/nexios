@@ -334,17 +334,16 @@ async def get_item(request, response, item_id: int):
 If your middleware raises an exception, it will interrupt the request and return a 500 error. Use try/except in middleware for graceful error handling:
 
 ```python
-from nexios.middleware import BaseMiddleware
 
 
-async def FailingMiddleware(self, request, response, call_next):
+async def failing_middleware(self, request, response, call_next):
     try:
         # Your logic here
         return await call_next()
     except Exception as exc:
         return response.json({"error": str(exc)}, status_code=500)
 
-app.add_middleware(FailingMiddleware)
+app.add_middleware(failing_middleware)
 ```
 
 ### What if I try to dynamically import a handler that doesn't exist?

@@ -9,9 +9,123 @@ head:
     - property: og:description
       content: In Nexios, sending responses is a core part of building web applications. The `Response` object provides a powerful and flexible way to construct and send HTTP responses to the client. This guide covers the various methods available for sending responses, from simple JSON to complex file downloads.
 ---
-## The `Response` Object
+# Sending Responses
 
-The `Response` object is your primary tool for building HTTP responses. It is passed as the second argument (`res`) to your route handlers. One of the key features of the `Response` object is that its methods are **chainable**, allowing you to build a response in a fluent and readable way.
+Sending a response is a fundamental aspect of every HTTP request. Nexios offers a well-rounded and robust framework designed to handle this process efficiently, ensuring clarity, flexibility, and performance in every interaction.
+
+## Basic Example
+
+```py
+
+@app.get("/users")
+async def getUsers(request, response):
+    return ["John Doe","Jane Smith"]
+```
+By default nexios turns `JSON-serializable` python data-types returned from route handlers as response which are sent to the client as json response 
+ 
+
+## Returning Various Data Types
+You can return various data types from your route handlers:
+
+::: code-group
+
+
+```py [List]
+@app.get("/users")
+async def getUsers(request, response):
+    return ["John Doe","Jane Smith"]
+```
+
+```py [String]
+@app.get("/users")
+async def getUsers(request, response):
+    return "Hello World"
+```
+
+```py [Dict]
+@app.get("/users")
+async def getUsers(request, response):
+    return {"name": "John Doe", "age": 30}
+```
+
+```py [Int]
+@app.get("/users")
+async def getUsers(request, response):
+    return 200
+```
+
+```py [Enum]
+@app.get("/users")
+async def getUsers(request, response):
+    return StatusCodes.OK
+```
+:::
+
+## The `Response` Object
+for complex responses you can use the `Response` object
+the response object is passed as the second argument to your route handlers
+
+```py
+@app.get("/users")
+async def getUsers(request, response):
+    return response.json(["John Doe","Jane Smith"])
+```
+
+**Other Response Types**
+::: code-group
+
+```py [JSON]
+@app.get("/users")
+async def getUsers(request, response):
+    return response.json(["John Doe","Jane Smith"])
+```
+
+```py [HTML]
+@app.get("/users")
+async def getUsers(request, response):
+    return response.html("Hello World")
+```
+
+```py [Text]
+@app.get("/users")
+async def getUsers(request, response):
+    return response.text("Hello World")
+```
+
+```py [File]
+@app.get("/users")
+async def getUsers(request, response):
+    return response.file("path/to/file.txt")
+```
+
+```py [Redirect]
+@app.get("/users")
+async def getUsers(request, response):
+    return response.redirect("/users")
+```
+
+```py [Streaming]
+@app.get("/users")
+async def getUsers(request, response):
+    async def stream():
+        for i in range(10):
+            yield f"{i}\n"
+    return response.stream(stream())
+```
+:::
+
+## Sending Status Code
+response object has a `status` method that allows you to set the status code of the response.
+
+```py
+@app.get("/users")
+async def getUsers(request, response):
+    return response.status(200).json(["John Doe","Jane Smith"])
+```
+
+::: tip 💡 Recommended
+For clarity and to leverage the full power of Nexios's response handling, we recommend using the `response` object to build your responses, especially when you need to set custom headers, cookies, or status codes.
+:::
 
 ### Chainable Responses
 
@@ -30,7 +144,7 @@ async def home(req, res):
 
 In this example, we set the status code, add a cookie, and send a JSON response all in a single, chained statement.
 
-## Sending Different Types of Responses
+## Sending Different Types of Responses using the object directly 
 
 Nexios provides several methods for sending different types of responses.
 

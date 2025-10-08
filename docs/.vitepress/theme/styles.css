@@ -24,6 +24,16 @@
   --vp-c-danger-2: #2a1e14;
   --vp-c-danger-3: #1a120c;
   --vp-c-danger-soft: rgba(58, 42, 29, 0.2);
+  
+}
+
+details{
+  background-color: transparent !important;
+  border: 1px solid #1a120c !important;
+  color: var(--vp-button-alt-active-bg) !important;
+}
+details *{
+  background-color: transparent !important;
 }
 
 /**

@@ -9,6 +9,8 @@ head:
     - property: og:description
       content: Nexios provides a powerful routing system that allows you to create modular and nested routing structures. Here's an example of how you can use routers and sub-applications in your application
 ---
+# Routers and Sub-Applications
+Nexios provides a powerful routing system that allows you to create modular and nested routing structures. Here's an example of how you can use routers and sub-applications in your application.
 ## Creating a Router and Mounting it to the Main Application
 ```python
 from nexios import NexiosApp

@@ -18,13 +18,11 @@ Nexios is a modern, async-first Python web framework designed with performance, 
 
 ### 1. True Async Performance
 
-::: info Async First
 Unlike other frameworks that add async as an afterthought, Nexios is built from the ground up with async/await:
 - Native ASGI support
 - No sync-to-async bridges
 - Efficient connection pooling
 - Non-blocking I/O throughout
-:::
 
 ```python
 # Everything is async by default
@@ -37,13 +35,12 @@ async def list_users(request, response):
 
 ### 2. Clean Architecture
 
-::: tip Clean Code
 Nexios promotes clean code practices through:
 - Dependency injection
 - Clear separation of concerns
 - Domain-driven design patterns
 - Testable components
-:::
+
 
 ```python
 from nexios import Depend
@@ -59,23 +56,22 @@ class UserService:
 async def get_user(
     request, 
     response,
+    user_id,
     user_service = Depend(UserService)
 ):
     user = await user_service.get_user(
-        request.path_params.user_id
+       user_id
     )
     return response.json(user)
 ```
 
 ### 3. Modern Authentication
 
-::: tip Flexible Auth
 Nexios provides a modern authentication system:
 - Multiple auth backends (JWT, Session, OAuth)
 - Role-based access control
 - Custom authentication flows
 - Secure by default
-:::
 
 ```python
 from nexios.auth.middleware import AuthenticationMiddleware
@@ -102,25 +98,24 @@ async def protected(request, response):
 
 ### 4. Developer Experience
 
-::: tip DX First
 We prioritize developer experience with:
 - Clear error messages
 - Auto-reloading in development
 - Comprehensive type hints
 - Intuitive APIs
 - Excellent documentation
-:::
 
 ```python
-from nexios import NexiosApp, Config
+from nexios import NexiosApp, MakeConfig
 from nexios.middleware import CORSMiddleware
 
 # Clear configuration
 app = NexiosApp(
-    config=Config(
+    config=MakeConfig(
         debug=True,
-        cors_enabled=True,
-        allowed_hosts=["localhost", "api.example.com"]
+       cors = {
+        allowed_origins = ["https//localhost:5000","api.nexios.hub"]
+       }
     )
 )
 
@@ -130,13 +125,12 @@ app.add_middleware(CORSMiddleware())
 
 ### 5. WebSocket Support
 
-::: tip Real-time Ready
+
 First-class WebSocket support for real-time applications:
 - Channels system
 - Pub/sub patterns
 - Authentication
 - Connection management
-:::
 
 ```python
 from nexios.websockets import Channel
@@ -159,7 +153,7 @@ async def chat_room(websocket, room: str):
 
 ### 6. Production Ready
 
-::: tip Enterprise Ready
+
 Built for production use with:
 - Connection pooling
 - Rate limiting
@@ -167,11 +161,10 @@ Built for production use with:
 - Health checks
 - Monitoring hooks
 - Error tracking
-:::
 
 ```python
 from nexios.middleware import (
-    SecurityMiddleware,
+    SecurityMiddleware
 )
 
 # Production configuration

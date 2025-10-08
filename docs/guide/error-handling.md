@@ -13,41 +13,24 @@ head:
 
 Nexios provides a robust and flexible error handling system that allows you to manage exceptions gracefully and return appropriate responses to clients. This documentation covers all aspects of error handling in Nexios applications.
 
-::: tip Error Handling Fundamentals
-Error handling in Nexios provides:
-- **HTTP Exceptions**: Built-in exceptions for common HTTP error scenarios
-- **Custom Exceptions**: Easy creation of application-specific exceptions
-- **Exception Handlers**: Global and route-specific error handling
-- **Debug Mode**: Detailed error information during development
-- **Consistent Responses**: Standardized error response formats
-- **Logging Integration**: Automatic error logging and monitoring
-:::
+## The Basic Idea
+```py
+from nexios.exceptions import HTTPException
 
-::: tip Common Error Patterns
-- **Validation Errors**: 400 Bad Request for invalid input
-- **Authentication Errors**: 401 Unauthorized for missing/invalid credentials
-- **Authorization Errors**: 403 Forbidden for insufficient permissions
-- **Not Found Errors**: 404 Not Found for missing resources
-- **Conflict Errors**: 409 Conflict for resource conflicts
-- **Rate Limit Errors**: 429 Too Many Requests for rate limiting
-- **Server Errors**: 500 Internal Server Error for unexpected errors
-:::
+@app.get("/users/{user_id}")    
+async def get_user(request, response):
+    user = await find_user(request.path_params['user_id'])
+    if not user:
+        raise HTTPException(detail="User not found", status = 404)
+    return response.json(user)
 
-::: tip Error Response Structure
-Consistent error response format:
-```json
-{
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid input data",
-    "details": {
-      "field": "email",
-      "issue": "Invalid email format"
-    }
-  }
-}
 ```
-:::
+
+
+If you raise a non-HTTPException (e.g., raise ValueError("fail")), Nexios will return a 500 Internal Server Error unless you register a handler for that exception type.
+
+
+
 
 ## HTTP Exceptions
 

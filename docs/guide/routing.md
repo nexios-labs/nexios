@@ -9,18 +9,33 @@ head:
     - property: og:description
       content: Nexios provides a powerful and flexible routing system that supports path parameters, query parameters, and various HTTP methods. The routing system is designed to be intuitive, performant, and extensible.
 ---
-::: tip Routing Fundamentals
-Routing in Nexios follows these principles:
+# Routing
 
-- **Declarative**: Routes are defined using decorators or the Routes class
-- **Type-safe**: Path parameters are automatically converted to the correct type
-- **Flexible**: Support for complex URL patterns and custom converters
-- **Performant**: Fast route matching with optimized algorithms
-- **Extensible**: Easy to add custom path converters and middleware
-- **Modular**: Support for routers and route grouping
-  :::
+Nexios provides a powerful and flexible routing system that supports using decorators to define routes or using the `Routes` class. The routing system is designed to be intuitive, performant, and extensible, making it easy to define routes and handle requests.
 
-## Basic Routing
+
+
+
+## Using decorators
+Nexios provides a simple and intuitive way to define routes using decorators. You can use the `@app.get`, `@app.post`, `@app.put`, `@app.delete`, `@app.head`, and `@app.options` etc decorators to define routes.
+
+```python [Basic Routes]
+from nexios import NexiosApp
+
+app = NexiosApp()
+
+@app.get("/")
+async def index(request, response):
+    return response.json({"message": "Hello"})
+
+@app.post("/items")
+async def create_item(request, response):
+    data = await request.json
+    return response.json(data, status_code=201)
+
+```
+
+::: details More Examples
 
 ::: code-group
 
@@ -83,7 +98,31 @@ async def items_options(request, response):
 
 :::
 
-## The `Routes` Class
+## Using `Routes` class and `add_route` method
+Nexios also provides a `Routes` class that allows you to define routes in a more structured way.\
+It's especially useful when you have a lot of routes and want to organize them in a logical manner.
+
+```python
+from nexios import NexiosApp
+from nexios.routing import Routes
+
+app = NexiosApp()
+
+async def get_user_handler(request, response, user_id):
+    return response.json({"user_id": user_id})
+route = Routes(
+    path="/users/{user_id:int}",
+    handler=get_user_handler,
+    methods=["GET"],
+    name="get_user",
+    summary="Get user by ID",
+    description="Retrieves a user by their unique identifier"
+)
+
+app.add_route(route)
+```
+
+
 
 The `Routes` class is the fundamental building block of Nexios routing. It encapsulates all routing information for an API endpoint, including path handling, validation, OpenAPI documentation, and request processing.
 
@@ -143,32 +182,128 @@ Routes(
 )
 ```
 
-## The `Router` Class
+## Creating and Using Routers
 
-The `Router` class allows you to group related routes together and apply common configuration to all routes in the group.
+Routers allow you to organize related routes and apply common configuration:
 
 ```python
 from nexios.routing import Router
 
-# Create a router with prefix and common configuration
-user_router = Router(
-    prefix="/users",
-    tags=["Users"],
-    responses={401: {"description": "Unauthorized"}}
-)
+# Create routers for different API versions
+v1_router = Router(prefix="/api/v1", tags=["API v1"])
+v2_router = Router(prefix="/api/v2", tags=["API v2"])
 
-# Add routes to the router
-@user_router.get("/")
+# Add routes to v1 router
+@v1_router.get("/users")
+async def list_users_v1(request, response):
+    return response.json({"version": "v1", "users": []})
+
+@v1_router.post("/users")
+async def create_user_v1(request, response):
+    data = await request.json
+    return response.json({"version": "v1", "user": data}, status_code=201)
+
+# Add routes to v2 router
+@v2_router.get("/users")
+async def list_users_v2(request, response):
+    return response.json({"version": "v2", "users": []})
+
+@v2_router.post("/users")
+async def create_user_v2(request, response):
+    data = await request.json
+    return response.json({"version": "v2", "user": data}, status_code=201)
+
+# Mount routers to main app
+app.mount_router(v1_router)
+app.mount_router(v2_router)
+```
+
+## Nested Routers
+
+You can create nested routers for complex API structures:
+
+```python
+# Create main API router
+api_router = Router(prefix="/api", tags=["API"])
+
+# Create version-specific routers
+v1_router = Router(prefix="/v1", tags=["v1"])
+v2_router = Router(prefix="/v2", tags=["v2"])
+
+# Create resource-specific routers
+users_router = Router(prefix="/users", tags=["Users"])
+posts_router = Router(prefix="/posts", tags=["Posts"])
+
+# Add routes to resource routers
+@users_router.get("/")
 async def list_users(request, response):
     return response.json({"users": []})
 
-@user_router.post("/")
-async def create_user(request, response):
-    data = await request.json
-    return response.json(data, status_code=201)
+@users_router.get("/{user_id:int}")
+async def get_user(request, response):
+    user_id = request.path_params.user_id
+    return response.json({"id": user_id})
 
-# Mount the router to the main app
-app.mount_router(user_router)
+@posts_router.get("/")
+async def list_posts(request, response):
+    return response.json({"posts": []})
+
+@posts_router.get("/{post_id:int}")
+async def get_post(request, response):
+    post_id = request.path_params.post_id
+    return response.json({"id": post_id})
+
+# Mount resource routers to version routers
+v1_router.mount_router(users_router)
+v1_router.mount_router(posts_router)
+v2_router.mount_router(users_router)
+v2_router.mount_router(posts_router)
+
+# Mount version routers to API router
+api_router.mount_router(v1_router)
+api_router.mount_router(v2_router)
+
+# Mount API router to main app
+app.mount_router(api_router)
+```
+
+This creates the following URL structure:
+
+- `/api/v1/users/` - List users (v1)
+- `/api/v1/users/{user_id}` - Get user (v1)
+- `/api/v1/posts/` - List posts (v1)
+- `/api/v1/posts/{post_id}` - Get post (v1)
+- `/api/v2/users/` - List users (v2)
+- `/api/v2/users/{user_id}` - Get user (v2)
+- `/api/v2/posts/` - List posts (v2)
+- `/api/v2/posts/{post_id}` - Get post (v2)
+
+## Router with Middleware
+
+You can apply middleware to all routes in a router:
+
+```python
+from nexios.middleware import CORSMiddleware
+
+# Create router with middleware
+admin_router = Router(
+    prefix="/admin",
+    tags=["Admin"],
+    middleware=[CORSMiddleware()]
+)
+
+@admin_router.get("/dashboard")
+async def admin_dashboard(request, response):
+    return response.json({"dashboard": "data"})
+
+@admin_router.get("/users")
+async def admin_users(request, response):
+    return response.json({"users": []})
+
+# All routes in admin_router will have CORS middleware applied
+app.mount_router(admin_router)
+
+# If your middleware raises an exception, the request will be interrupted and a 500 error will be returned. Use try/except in middleware for graceful error handling.
 ```
 
 ### Router Class Constructor
@@ -194,96 +329,52 @@ Router(
 - **OPTIONS**: For CORS preflight requests
   :::
 
-## Advanced Route Registration
 
-## Using `app.add_route()`
 
-The `app.add_route()` method provides the most flexible way to register routes, allowing you to specify all route configuration options.
+## Dynamic Route 
+A dynamic route in Nexios is a route pattern that can capture parts of the URL as variables, similar to how Express.js or FastAPI handle route parameters.
 
-```python
+**Basic Concept**
+When you define a route like:
+
+```py
 from nexios import NexiosApp
-from nexios.routing import Routes
 
 app = NexiosApp()
 
-# Method 1: Pass a Routes instance
-async def get_user_handler(request, response):
-    user_id = request.path_params.user_id
-    return response.json({"id": user_id, "name": "John Doe"})
-
-route = Routes(
-    path="/users/{user_id:int}",
-    handler=get_user_handler,
-    methods=["GET"],
-    name="get_user",
-    summary="Get user by ID",
-    description="Retrieves a user by their unique identifier",
-    tags=["Users"],
-    responses={
-        200: UserResponse,
-        404: ErrorResponse
-    }
-)
-
-app.add_route(route)
-
-# Method 2: Pass individual parameters
-async def create_user_handler(request, response):
-    data = await request.json
-    return response.json(data, status_code=201)
-
-app.add_route(
-    path="/users",
-    handler=create_user_handler,
-    methods=["POST"],
-    name="create_user",
-    summary="Create new user",
-    tags=["Users"],
-    responses={
-        201: UserResponse,
-        400: ErrorResponse
-    }
-)
+@app.get("/users/{user_id}")
+async def get_user(request, response, user_id):
+    return {"id": user_id}
 ```
+This route will match URLs like:
+- `/users/12`
+- `/users/abc123`
 
-### `app.add_route()` Parameters
-
-```python
-app.add_route(
-    route: Optional[Union[Routes, type[BaseRoute]]] = None,  # Routes instance
-    path: Optional[str] = None,                              # URL path pattern
-    methods: List[str] = ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
-    handler: Optional[HandlerType] = None,                   # Handler function
-    name: Optional[str] = None,                              # Route name
-    summary: Optional[str] = None,                           # Brief summary
-    description: Optional[str] = None,                       # Detailed description
-    responses: Optional[Dict[int, Any]] = None,              # Response schemas
-    request_model: Optional[Type[BaseModel]] = None,         # Request validation model
-    middleware: List[Any] = [],                              # Route middleware
-    tags: Optional[List[str]] = None,                        # OpenAPI tags
-    security: Optional[List[Dict[str, List[str]]]] = None,   # Security requirements
-    operation_id: Optional[str] = None,                      # Operation ID
-    deprecated: bool = False,                                # Mark as deprecated
-    parameters: List[Parameter] = [],                        # Additional parameters
-    exclude_from_schema: bool = False,                       # Hide from docs
-    **kwargs: Dict[str, Any]                                 # Additional metadata
-)
-```
-
-::: tip When to Use `app.add_route()`
-
-- **Dynamic Route Creation**: When routes need to be created programmatically
-- **Complex Configuration**: When you need full control over route options
-- **Route Factories**: When generating routes from data or configuration
-- **Testing**: When you need to test route registration logic
-- **Plugins**: When building plugins that register routes
-  :::
-
-## Path Parameters
-
-## Parameter Types
+and automatically pass the part inside {} (user_id here) as an argument to your function.
 
 Nexios provides several built-in path converters for validating and converting URL parameters:
+
+you can also get the dynamic params from `request.path_params.<dynamic value>`
+```py
+from nexios import NexiosApp
+
+app = NexiosApp()
+
+@app.get("/users/{user_id}")
+async def get_user(request, response):
+    user_id = request.path_params.user_id
+    return {"id": user_id}
+```
+## Route Converters in Nexios
+
+By default, parameters are strings, but converters allow you to enforce/convert the parameter to a type, or alter what the pattern matches.
+The syntax is:
+
+```py
+    Routes("/users/{user_id:int}", handler)
+   Routes("/files/{full_path:path}", handler)
+```
+**Examples**
 
 ::: code-group
 
@@ -432,7 +523,7 @@ async def get_users(request, response):
 Custom converters must be registered before they can be used in routes. It's recommended to register them during application startup.
 :::
 
-::: tip Best Practices
+::: details Best Practices
 When creating custom converters:
 
 1. Use clear and efficient regex patterns
@@ -442,131 +533,7 @@ When creating custom converters:
 5. Test thoroughly with edge cases
    :::
 
-## Router Organization
 
-## Creating and Using Routers
-
-Routers allow you to organize related routes and apply common configuration:
-
-```python
-from nexios.routing import Router
-
-# Create routers for different API versions
-v1_router = Router(prefix="/api/v1", tags=["API v1"])
-v2_router = Router(prefix="/api/v2", tags=["API v2"])
-
-# Add routes to v1 router
-@v1_router.get("/users")
-async def list_users_v1(request, response):
-    return response.json({"version": "v1", "users": []})
-
-@v1_router.post("/users")
-async def create_user_v1(request, response):
-    data = await request.json
-    return response.json({"version": "v1", "user": data}, status_code=201)
-
-# Add routes to v2 router
-@v2_router.get("/users")
-async def list_users_v2(request, response):
-    return response.json({"version": "v2", "users": []})
-
-@v2_router.post("/users")
-async def create_user_v2(request, response):
-    data = await request.json
-    return response.json({"version": "v2", "user": data}, status_code=201)
-
-# Mount routers to main app
-app.mount_router(v1_router)
-app.mount_router(v2_router)
-```
-
-## Nested Routers
-
-You can create nested routers for complex API structures:
-
-```python
-# Create main API router
-api_router = Router(prefix="/api", tags=["API"])
-
-# Create version-specific routers
-v1_router = Router(prefix="/v1", tags=["v1"])
-v2_router = Router(prefix="/v2", tags=["v2"])
-
-# Create resource-specific routers
-users_router = Router(prefix="/users", tags=["Users"])
-posts_router = Router(prefix="/posts", tags=["Posts"])
-
-# Add routes to resource routers
-@users_router.get("/")
-async def list_users(request, response):
-    return response.json({"users": []})
-
-@users_router.get("/{user_id:int}")
-async def get_user(request, response):
-    user_id = request.path_params.user_id
-    return response.json({"id": user_id})
-
-@posts_router.get("/")
-async def list_posts(request, response):
-    return response.json({"posts": []})
-
-@posts_router.get("/{post_id:int}")
-async def get_post(request, response):
-    post_id = request.path_params.post_id
-    return response.json({"id": post_id})
-
-# Mount resource routers to version routers
-v1_router.mount_router(users_router)
-v1_router.mount_router(posts_router)
-v2_router.mount_router(users_router)
-v2_router.mount_router(posts_router)
-
-# Mount version routers to API router
-api_router.mount_router(v1_router)
-api_router.mount_router(v2_router)
-
-# Mount API router to main app
-app.mount_router(api_router)
-```
-
-This creates the following URL structure:
-
-- `/api/v1/users/` - List users (v1)
-- `/api/v1/users/{user_id}` - Get user (v1)
-- `/api/v1/posts/` - List posts (v1)
-- `/api/v1/posts/{post_id}` - Get post (v1)
-- `/api/v2/users/` - List users (v2)
-- `/api/v2/users/{user_id}` - Get user (v2)
-- `/api/v2/posts/` - List posts (v2)
-- `/api/v2/posts/{post_id}` - Get post (v2)
-
-## Router with Middleware
-
-You can apply middleware to all routes in a router:
-
-```python
-from nexios.middleware import CORSMiddleware
-
-# Create router with middleware
-admin_router = Router(
-    prefix="/admin",
-    tags=["Admin"],
-    middleware=[CORSMiddleware()]
-)
-
-@admin_router.get("/dashboard")
-async def admin_dashboard(request, response):
-    return response.json({"dashboard": "data"})
-
-@admin_router.get("/users")
-async def admin_users(request, response):
-    return response.json({"users": []})
-
-# All routes in admin_router will have CORS middleware applied
-app.mount_router(admin_router)
-
-# If your middleware raises an exception, the request will be interrupted and a 500 error will be returned. Use try/except in middleware for graceful error handling.
-```
 
 ## Route Metadata and Documentation
 
@@ -852,64 +819,7 @@ async def get_user(request, response):
     return response.json({"id": user_id, "name": "John Doe", "email": "john@example.com"})
 ```
 
-## Request Validation
 
-You can use Pydantic models for request validation:
-
-```python
-from pydantic import BaseModel, EmailStr
-from typing import Optional
-
-class UserCreate(BaseModel):
-    name: str
-    email: EmailStr
-    age: Optional[int] = None
-
-class UserUpdate(BaseModel):
-    name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    age: Optional[int] = None
-
-class UserResponse(BaseModel):
-    id: int
-    name: str
-    email: str
-    age: Optional[int] = None
-
-class ErrorResponse(BaseModel):
-    error: str
-    code: str
-    details: Optional[dict] = None
-
-@app.post(
-    "/users",
-    request_model=UserCreate,
-    summary="Create new user",
-    responses={
-        201: UserResponse,
-        400: ErrorResponse
-    }
-)
-async def create_user(request, response):
-    data = await request.json
-    # Data is automatically validated against UserCreate model
-    return response.json(data, status_code=201)
-
-@app.patch(
-    "/users/{user_id:int}",
-    request_model=UserUpdate,
-    summary="Update user",
-    responses={
-        200: UserResponse,
-        404: ErrorResponse
-    }
-)
-async def update_user(request, response):
-    user_id = request.path_params.user_id
-    data = await request.json
-    # Data is automatically validated against UserUpdate model
-    return response.json({"id": user_id, **data})
-```
 
 ## Security Requirements
 
@@ -1092,26 +1002,7 @@ for route in user_routes + post_routes:
     app.add_route(route)
 ```
 
-## Conditional Routes
 
-You can create routes conditionally based on configuration:
-
-```python
-# Only add admin routes in development
-if app.config.debug:
-    @app.get("/admin/debug", name="debug_info")
-    async def debug_info(request, response):
-        return response.json({
-            "config": app.config.to_dict(),
-            "routes": [r.raw_path for r in app.get_all_routes()]
-        })
-
-# Add feature flags
-if app.config.get("enable_analytics"):
-    @app.get("/analytics", name="analytics")
-    async def analytics(request, response):
-        return response.json({"analytics": "data"})
-```
 
 ## Dynamic Route Registration
 
@@ -1358,46 +1249,4 @@ While both `Group` and `Router` can be used to organize routes, they serve diffe
    - Apply middleware at the most specific level possible
    - Document any middleware applied to a group
 
-### Complete Example
 
-```python
-from nexios import NexiosApp
-from nexios.routing import Group, Routes
-from nexios.middleware import Middleware
-
-app = NexiosApp()
-
-# Middleware
-auth_middleware = Middleware(AuthenticationMiddleware, required=True)
-logging_middleware = Middleware(LoggingMiddleware)
-
-# API v1 Group
-api_v1 = Group(
-    path="/api/v1",
-    middleware=[(logging_middleware, {}, {})],
-    routes=[]
-)
-
-# Users Group
-users_group = Group(
-    path="/users",
-    middleware=[(auth_middleware, {}, {})],
-    routes=[
-        Routes(path="/", methods=["GET"], handler=list_users),
-        Routes(path="/{user_id}", methods=["GET"], handler=get_user),
-        Routes(path="/", methods=["POST"], handler=create_user),
-    ]
-)
-
-# Mount users group under API v1
-api_v1.routes.append(users_group)
-
-# Mount API v1 to the main app
-app.add_route(api_v1)
-```
-
-This creates the following endpoints with their respective middleware:
-
-- `GET /api/v1/users/` - Logging + Auth
-- `GET /api/v1/users/{user_id}` - Logging + Auth
-- `POST /api/v1/users/` - Logging + Auth
