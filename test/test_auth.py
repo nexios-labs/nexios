@@ -1,8 +1,10 @@
+from nexios.auth.middleware import AuthenticationMiddleware
 import pytest
 
 from nexios.application import NexiosApp
 from nexios.auth.backends.jwt import create_jwt, decode_jwt
-from nexios.auth.base import AuthenticationBackend, SimpleUser
+from nexios.auth.backends.base import AuthenticationBackend
+from nexios.auth.users.simple import SimpleUser
 from nexios.auth.decorator import auth, has_permission
 from nexios.auth.exceptions import PermissionDenied
 from nexios.config import MakeConfig, set_config
@@ -268,10 +270,7 @@ async def test_custom_auth_backend(test_client):
 
 async def test_has_permission_decorator(test_client):
     """Test the has_permission decorator with SimpleUser."""
-    from nexios.auth.base import SimpleUser
-    from nexios.auth.decorator import has_permission
-    from nexios.auth.exceptions import PermissionDenied
-    from nexios.auth.middleware import AuthenticationMiddleware
+
 
     app = NexiosApp()
     client = Client(app)

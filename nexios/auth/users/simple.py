@@ -11,7 +11,7 @@ class SimpleUser(BaseUser):
     def __init__(
         self,
         username: Annotated[str, Doc("The username of the authenticated user.")],
-        permissions:Annotated[list[str], Doc("Array of user User Permissions")],
+        permissions:Annotated[list[str], Doc("Array of user User Permissions")] = [],
     ) -> None:
         """
         Initializes a simple authenticated user.

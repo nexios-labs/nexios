@@ -23,10 +23,10 @@ class AuthenticationBackend:
 
     async def authenticate(
         self,
-        req: Annotated[
+        request: Annotated[
             Request, Doc("The incoming HTTP request containing authentication details.")
         ],
-        res: Annotated[
+        response: Annotated[
             Response,
             Doc("The HTTP response object that may be modified during authentication."),
         ],

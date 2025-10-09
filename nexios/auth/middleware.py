@@ -9,7 +9,8 @@ from nexios import logging
 from nexios.http import Request, Response
 from nexios.middleware.base import BaseMiddleware
 
-from .base import AuthenticationBackend, UnauthenticatedUser
+from .base import AuthenticationBackend
+from .users.simple import UnauthenticatedUser
 
 logger = logging.create_logger(__name__)
 
@@ -41,7 +42,7 @@ class AuthenticationMiddleware(BaseMiddleware):
                      Each backend will be tried in order until one successfully
                      authenticates the user or all backends are exhausted.
         """
-        if isinstance(backend, AuthenticationBackend):
+        if not isinstance(backend, list):
             self.backends = [backend]
         else:
             self.backends = backend
