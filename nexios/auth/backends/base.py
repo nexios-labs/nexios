@@ -5,6 +5,12 @@ import typing
 from typing_extensions import Annotated, Doc
 
 from nexios.http import Request, Response
+
+
+
+
+
+
 class AuthenticationBackend:
     """
     Base class for authentication backends in Nexios.
@@ -17,10 +23,10 @@ class AuthenticationBackend:
 
     async def authenticate(
         self,
-        request: Annotated[
+        req: Annotated[
             Request, Doc("The incoming HTTP request containing authentication details.")
         ],
-        response: Annotated[
+        res: Annotated[
             Response,
             Doc("The HTTP response object that may be modified during authentication."),
         ],

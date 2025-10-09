@@ -4,10 +4,10 @@ except ImportError:
     jwt = None
 from typing import Any, Callable, Dict, List, Optional
 
-from nexios.auth.base import AuthenticationBackend, UnauthenticatedUser
+from nexios.auth.base import AuthenticationBackend
 from nexios.config import get_config
 from nexios.http import Request, Response
-
+from nexios.auth.users.simple import UnauthenticatedUser
 
 def create_jwt(
     payload: Dict[str, Any], secret: Optional[str] = None, algorithm: str = "HS256"
@@ -70,7 +70,7 @@ class JWTAuthBackend(AuthenticationBackend):
         except ValueError as _:
             return None
 
-        user: Any = await self.authenticate_func(**payload)
+        user = await self.authenticate_func(**payload) # type: ignore
         if not user:
             return UnauthenticatedUser()
 

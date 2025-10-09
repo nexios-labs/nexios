@@ -1,10 +1,8 @@
 from typing import Any, Awaitable, Callable
-
 from typing_extensions import Annotated, Doc
-
-from nexios.auth.base import AuthenticationBackend, UnauthenticatedUser
+from nexios.auth.base import AuthenticationBackend
 from nexios.http import Request, Response
-
+from nexios.auth.users.simple import UnauthenticatedUser
 
 class APIKeyAuthBackend(AuthenticationBackend):
     """

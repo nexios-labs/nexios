@@ -1,7 +1,8 @@
 from typing import Any, Callable
 
-from nexios.auth.base import AuthenticationBackend, UnauthenticatedUser
+from nexios.auth.base import AuthenticationBackend
 from nexios.http import Request, Response
+from nexios.auth.users.simple import UnauthenticatedUser
 
 
 class SessionAuthBackend(AuthenticationBackend):
