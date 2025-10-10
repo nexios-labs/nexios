@@ -29,7 +29,7 @@ class AuthenticationMiddleware(BaseMiddleware):
     def __init__(
         self,
         user_model: Annotated[
-            BaseUser,
+            type[BaseUser],
             Doc("The user model to use for authentication."),
         ],
         backend: Annotated[
@@ -87,7 +87,7 @@ class AuthenticationMiddleware(BaseMiddleware):
 
                 if auth_result.success:
                     # Authentication successful, store user and auth type
-                    request.scope["user"] = self.user_model.load_user(auth_result.identity)
+                    request.scope["user"] = await self.user_model.load_user(auth_result.identity)
                     request.scope["auth"] = auth_result.scope
                     break
 

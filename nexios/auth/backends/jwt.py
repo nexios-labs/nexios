@@ -70,8 +70,4 @@ class JWTAuthBackend(AuthenticationBackend):
         except ValueError as _:
             return AuthResult(success=False, identity="", scope="")
 
-        user = await self.authenticate_func(**payload) # type: ignore
-        if not user:
-            return AuthResult(success=False, identity="", scope="")
-
         return AuthResult(success=True, identity=payload.get("id", ""), scope="jwt")

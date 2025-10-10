@@ -62,6 +62,6 @@ class BaseUser:
         raise NotImplementedError()
 
     @classmethod
-    def load_user(cls, identity: Annotated[str, Doc("The unique identifier of the user.")]) -> "BaseUser":
+    async def load_user(cls, identity: Annotated[str, Doc("The unique identifier of the user.")]) -> "BaseUser":
         """loads a user by identity"""
         raise NotImplementedError()

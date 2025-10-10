@@ -12,15 +12,16 @@ from nexios._internals._formparsers import (
     MultiPartParser,
     UploadedFile,
 )
-from nexios.session.base import BaseSessionInterface
 from nexios.structs import URL, Address, FormData, Headers, QueryParams, State
 from nexios.utils.async_helpers import (
     AwaitableOrContextManager,
     AwaitableOrContextManagerWrapper,
 )
+from nexios.session.base import BaseSessionInterface
 
 if typing.TYPE_CHECKING:
     from nexios import NexiosApp
+    from nexios.auth.users.base import BaseUser
 
 
 try:
@@ -432,15 +433,13 @@ class Request(HTTPConnection):
         return typing.cast(BaseSessionInterface, self.scope["session"])
 
     @property
-    def user(self):
+    def user(self) -> typing.Optional[BaseUser]:
         return self.scope.get("user", None)
 
     def url_for(self, _name: str, **path_params: typing.Dict[str, typing.Any]) -> str:
         return self.base_app.url_for(_name, **path_params)
 
-    @user.setter
-    def user(self, value: str):
-        self.scope["user"] = value
+ 
 
     def __str__(self) -> str:
         return f"<Request {self.method} {self.url}>"
