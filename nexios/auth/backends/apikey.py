@@ -1,9 +1,8 @@
-from typing import Any, Awaitable, Callable
+from typing import Any
 from typing_extensions import Annotated, Doc
 from nexios.auth.base import AuthenticationBackend
 from nexios.http import Request, Response
-from nexios.auth.users.simple import UnauthenticatedUser
-
+from nexios.auth.model import AuthResult
 class APIKeyAuthBackend(AuthenticationBackend):
     """
     Authentication backend for API key-based authentication.
@@ -16,30 +15,30 @@ class APIKeyAuthBackend(AuthenticationBackend):
         header_name (str): The HTTP header used to pass the API key (default: "X-API-Key").
     """
 
-    def __init__(
-        self,
-        authenticate_func: Annotated[
-            Callable[..., Awaitable[Any]],
-            Doc(
-                "Function that takes an API key and returns a user object if valid, None otherwise."
-            ),
-        ],
-        header_name: Annotated[
-            str,
-            Doc(
-                'The header name from which the API key is retrieved (default: "X-API-Key").'
-            ),
-        ] = "X-API-Key",
-    ) -> None:
-        """
-        Initializes the APIKeyAuthBackend with an authentication function and optional header name.
+    # def __init__(
+    #     self,
+    #     authenticate_func: Annotated[
+    #         Callable[..., Awaitable[Any]],
+    #         Doc(
+    #             "Function that takes an API key and returns a user object if valid, None otherwise."
+    #         ),
+    #     ],
+    #     header_name: Annotated[
+    #         str,
+    #         Doc(
+    #             'The header name from which the API key is retrieved (default: "X-API-Key").'
+    #         ),
+    #     ] = "X-API-Key",
+    # ) -> None:
+    #     """
+    #     Initializes the APIKeyAuthBackend with an authentication function and optional header name.
 
-        Args:
-            authenticate_func (Callable[..., Awaitable[Any]]): Function to validate API keys.
-            header_name (str, optional): Header key where the API key is expected (default: "X-API-Key").
-        """
-        self.authenticate_func = authenticate_func
-        self.header_name = header_name
+    #     Args:
+    #         authenticate_func (Callable[..., Awaitable[Any]]): Function to validate API keys.
+    #         header_name (str, optional): Header key where the API key is expected (default: "X-API-Key").
+    #     """
+    #     self.authenticate_func = authenticate_func
+    #     self.header_name = header_name
 
     async def authenticate(  # type: ignore[override]
         self,
@@ -73,14 +72,10 @@ class APIKeyAuthBackend(AuthenticationBackend):
             - If no API key is found, sets the `WWW-Authenticate` response header.
         """
         # Retrieve the API key from the request headers
-        api_key = request.headers.get(self.header_name)
+        api_key = request.headers.get("X-API-Key")
         if not api_key:
             response.set_header("WWW-Authenticate", 'APIKey realm="Access to the API"')
-            return None
+            return AuthResult(success=False, identity="", scope="")
 
         # Authenticate the API key using the provided function
-        user = await self.authenticate_func(api_key)
-        if not user:
-            return UnauthenticatedUser()
-
-        return user, "apikey"
+        return AuthResult(success=True, identity=api_key, scope="apikey")

@@ -2,12 +2,12 @@ try:
     import jwt
 except ImportError:
     jwt = None
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from nexios.auth.base import AuthenticationBackend
 from nexios.config import get_config
 from nexios.http import Request, Response
-from nexios.auth.users.simple import UnauthenticatedUser
+from nexios.auth.model import AuthResult
 
 def create_jwt(
     payload: Dict[str, Any], secret: Optional[str] = None, algorithm: str = "HS256"
@@ -51,8 +51,8 @@ def decode_jwt(
 
 
 class JWTAuthBackend(AuthenticationBackend):
-    def __init__(self, authenticate_func: Callable[[Dict[str, Any]], Any]):  # type:ignore
-        self.authenticate_func = authenticate_func
+    # def __init__(self, authenticate_func: Callable[[Dict[str, Any]], Any]):  # type:ignore
+    #     self.authenticate_func = authenticate_func
 
     async def authenticate(self, request: Request, response: Response) -> Any:  # type:ignore
         app_config = get_config()
@@ -62,16 +62,16 @@ class JWTAuthBackend(AuthenticationBackend):
         auth_header = request.headers.get("Authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             response.set_header("WWW-Authenticate", 'Bearer realm="Access to the API"')
-            return None
+            return AuthResult(success=False, identity="", scope="")
 
         token = auth_header.split(" ")[1]
         try:
             payload = decode_jwt(token, self.secret, self.algorithms)
         except ValueError as _:
-            return None
+            return AuthResult(success=False, identity="", scope="")
 
         user = await self.authenticate_func(**payload) # type: ignore
         if not user:
-            return UnauthenticatedUser()
+            return AuthResult(success=False, identity="", scope="")
 
-        return user, "jwt"
+        return AuthResult(success=True, identity=payload.get("id", ""), scope="jwt")

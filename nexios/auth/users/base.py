@@ -60,3 +60,8 @@ class BaseUser:
     def has_permission(self, permission: str) -> bool:
         """checks if the request user has the provided permission"""
         raise NotImplementedError()
+
+    @classmethod
+    def load_user(cls, identity: Annotated[str, Doc("The unique identifier of the user.")]) -> "BaseUser":
+        """loads a user by identity"""
+        raise NotImplementedError()
