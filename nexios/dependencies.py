@@ -9,7 +9,7 @@ from nexios.utils.concurrency import run_in_threadpool
 
 if TYPE_CHECKING:
     from nexios import NexiosApp, Router
-    from nexios.auth.base import BaseUser
+    from nexios.auth.users.base import BaseUser
     from nexios.http import Request
 
 
@@ -28,7 +28,8 @@ class Context:
         user: Optional["BaseUser"] = None,
         base_app: Optional["NexiosApp"] = None,
         app: Optional["Router"] = None,
-        **kwargs,
+        
+        **kwargs: Dict[str, Any],
     ):
         self.request = request
         self.user = user
@@ -57,7 +58,7 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
         params = list(sig.parameters.values())
 
         # Pass context if handler accepts it and not already provided
-        ctx = None
+        ctx: Optional[Context] = None
         try:
             ctx = current_context.get()
         except LookupError:
@@ -69,13 +70,13 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
             ):
                 bound_args.arguments[param.name] = ctx
 
-        cleanup_callbacks = []
+        cleanup_callbacks: List[Callable[[], None]] = []
         # Store cleanup in context if possible
         if ctx is not None:
             if not hasattr(ctx, "_dependency_cleanup"):
-                ctx._dependency_cleanup = []
-            cleanup_callbacks = ctx._dependency_cleanup
-        if ctx.base_app:
+                setattr(ctx, "_dependency_cleanup", [])
+            cleanup_callbacks = getattr(ctx, "_dependency_cleanup")
+        if ctx is not None and ctx.base_app:
             app_dependencies = get_app_dependencies(ctx.base_app.router)
             for dep in app_dependencies:
                 dependency_func = dep.dependency
@@ -189,16 +190,16 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
             for cleanup in cleanup_callbacks:
                 result = cleanup()
                 if inspect.isawaitable(result):
-                    await result
+                    await result # type: ignore[awaitable] #
 
     return wrapped
 
 
 def get_app_dependencies(router: "Router") -> List[Depend]:
-    dependencies = []
+    dependencies: List[Depend] = []
     if hasattr(router, "sub_routers"):
         for child_router in router.sub_routers.values():
-            dependencies.extend(get_app_dependencies(child_router))
+            dependencies.extend(get_app_dependencies(child_router)) # type: ignore[arg-type] #
     if hasattr(router, "dependencies"):
         dependencies.extend(router.dependencies)
     return dependencies

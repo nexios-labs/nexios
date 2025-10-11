@@ -8,11 +8,13 @@ from .base import AuthenticationBackend
 from nexios.config import get_config
 from nexios.http import Request, Response
 from nexios.auth.model import AuthResult
+from datetime import datetime,timedelta,timezone
 
 def create_jwt(
     payload: Dict[str, Any], 
     secret: Optional[str] = None, 
-    algorithm: str = "HS256"
+    algorithm: str = "HS256",
+    expires_in:Optional[timedelta] = None,
 ) -> str:
     """
     Create a JWT token.
@@ -25,7 +27,10 @@ def create_jwt(
     """
     if jwt is None:
         raise ImportError("JWT support is not installed.")
+    
     secret = secret or get_config().secret_key
+    if expires_in and not payload.get("exp"):
+        payload["exp"] = datetime.now(timezone.utc) + expires_in
     return jwt.encode(payload, secret, algorithm=algorithm)  # type:ignore
 
 
@@ -53,8 +58,8 @@ def decode_jwt(
 
 
 class JWTAuthBackend(AuthenticationBackend):
-    # def __init__(self, authenticate_func: Callable[[Dict[str, Any]], Any]):  # type:ignore
-    #     self.authenticate_func = authenticate_func
+    def __init__(self,identifier: str = "id"):  # type:ignore
+        self.identifier = identifier
 
     async def authenticate(self, request: Request, response: Response) -> Any:  # type:ignore
         app_config = get_config()
@@ -72,4 +77,4 @@ class JWTAuthBackend(AuthenticationBackend):
         except ValueError as _:
             return AuthResult(success=False, identity="", scope="")
 
-        return AuthResult(success=True, identity=payload.get("id", ""), scope="jwt")
+        return AuthResult(success=True, identity=payload.get(self.identifier, ""), scope="jwt")

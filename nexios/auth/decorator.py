@@ -87,7 +87,7 @@ class has_permission(RouteDecorator):
 
             user = request.user
             for permission in self.permissions:
-                if not user.has_permission(permission):
+                if user is None or not user.has_permission(permission):
                     raise PermissionDenied
 
             if inspect.iscoroutinefunction(handler):
