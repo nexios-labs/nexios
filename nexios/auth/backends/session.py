@@ -3,6 +3,23 @@ from typing import Any
 from nexios.auth.base import AuthenticationBackend
 from nexios.http import Request, Response
 from nexios.auth.model import AuthResult
+from nexios.auth.users.base import BaseUser
+
+_session_key = "user"
+_identifier = "id"
+def login(request: Request, user: type[BaseUser]):
+    assert "session" in request.scope, "No Session Middleware Installed"
+    if request.session.get(_session_key): 
+        request.session.delete_session(_session_key)
+    request.session[_session_key] = {
+        _identifier: user.identity,
+        "display_name": user.display_name,
+    }
+    
+
+def logout(request: Request):
+    assert "session" in request.scope, "No Session Middleware Installed"
+    request.session.delete_session(_session_key)
 
 
 class SessionAuthBackend(AuthenticationBackend):
@@ -13,19 +30,22 @@ class SessionAuthBackend(AuthenticationBackend):
     This backend checks for authenticated user data in the existing session.
     """
 
-    # def __init__(
-    #     self,
-    #     authenticate_func: Callable[..., Any],
-    #     user_key: str = "user",
-    # ):
-    #     """
-    #     Initialize the session auth backend.
+    def __init__(
+        self,
+        session_key: str = "user",
+        identifier: str = "id"
+    ):
+        """
+        Initialize the session auth backend.
 
-    #     Args:
-    #         user_key (str): The key used to store user data in the session (default: "user")
-    #     """
-    #     self.user_key = user_key
-    #     self.authenticate_func = authenticate_func
+        Args:
+            user_key (str): The key used to store user data in the session (default: "user")
+        """
+        global _session_key
+        global _identifier
+        _session_key = session_key
+        self.key = session_key
+        _identifier = identifier
 
     async def authenticate(self, request: Request, response: Response) -> Any:
         """
@@ -41,9 +61,9 @@ class SessionAuthBackend(AuthenticationBackend):
             AuthResult: An authenticated user object if authentication succeeds.
         """
         assert "session" in request.scope, "No Session Middleware Installed"
-        user_data = request.session.get("user")
-        if not user_data:
+        user = request.session.get(_session_key)
+        if not user:
             return AuthResult(success=False, identity="", scope="")
 
       
-        return AuthResult(success=True, identity=user_data.get("id", ""), scope="session")
+        return AuthResult(success=True, identity=user.get(_identifier, ""), scope="session")
