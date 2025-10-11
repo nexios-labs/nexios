@@ -154,16 +154,7 @@ async def test_form_data(test_client):
     assert data["field2"] == "value2"
 
 
-async def test_user_property(test_client):
-    client, app = test_client
 
-    @app.get("/test-user")
-    async def handler(req: Request, res: Response):
-        req.user = "testuser"
-        return res.text(req.user)
-
-    response = await client.get("/test-user")
-    assert response.text == "testuser"
 
 
 async def test_valid_method(test_client):

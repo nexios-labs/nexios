@@ -4,13 +4,15 @@ except ImportError:
     jwt = None
 from typing import Any, Dict, List, Optional
 
-from nexios.auth.base import AuthenticationBackend
+from .base import AuthenticationBackend
 from nexios.config import get_config
 from nexios.http import Request, Response
 from nexios.auth.model import AuthResult
 
 def create_jwt(
-    payload: Dict[str, Any], secret: Optional[str] = None, algorithm: str = "HS256"
+    payload: Dict[str, Any], 
+    secret: Optional[str] = None, 
+    algorithm: str = "HS256"
 ) -> str:
     """
     Create a JWT token.

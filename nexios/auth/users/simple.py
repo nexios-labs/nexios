@@ -61,7 +61,14 @@ class SimpleUser(BaseUser):
         if permission in self.permissions:
                 return True
         return False 
-
+    @classmethod
+    async def load_user(cls, identity: str):
+        
+        return cls(identity, [identity])
+    @property
+    def identity(self) -> str:
+        return self.username
+  
 class UnauthenticatedUser(BaseUser):
     """
     Represents an unauthenticated user.
@@ -102,3 +109,6 @@ class UnauthenticatedUser(BaseUser):
             str: An empty string.
         """
         return ""
+
+    def has_permission(self, permission: str) -> bool:
+        return False
