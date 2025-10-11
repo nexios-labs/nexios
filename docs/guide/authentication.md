@@ -228,8 +228,180 @@ the `login` function takes the following arguments:
 - `request`: The HTTP request containing the session
 - `user`: The user to login (should be an instance of `BaseUser`)
 
-the `logout` function takes the following arguments:
-- `request`: The HTTP request containing the session
+## API Key Authentication Backend
+
+::: warning API key authentication is a little bit complex
+API key authentication requires careful management of keys, proper storage of hashed keys, and secure transmission. Make sure to follow security best practices when implementing API key authentication.
+:::
+
+Nexios provides a built-in `APIKeyAuthBackend` that you can use to authenticate users with API keys. API keys are useful for server-to-server authentication or when you need to authenticate requests from external services.
+
+### Basic Usage
+
+```python
+from nexios.auth.backends.apikey import APIKeyAuthBackend
+from nexios.auth.base import SimpleUser
+
+class APIKeyUser(SimpleUser):
+    def __init__(self, identity: str, display_name: str):
+        self.identity = identity
+        self.display_name = display_name
+
+    @property
+    def is_authenticated(self) -> bool:
+        return True
+
+    @property
+    def display_name(self) -> str:
+        return self.display_name
+
+    @property
+    def identity(self) -> str:
+        return self.identity
+
+    @classmethod
+    async def load_user(cls, identity: str) -> APIKeyUser:
+        # Verify the API key against your stored hash
+        if db.verify_api_key(identity):
+            return cls(identity=identity, display_name="API User")
+        return None
+
+backend = APIKeyAuthBackend()
+
+app.add_middleware(AuthenticationMiddleware(
+    user_model=APIKeyUser,
+    backend=backend
+))
+```
+
+The `APIKeyAuthBackend` takes the following arguments:
+- `header_name`: The HTTP header used to pass the API key (default: "X-API-Key")
+- `prefix`: The prefix for the API key (default: "key")
+
+### Creating and Verifying API Keys
+
+Nexios provides utility functions to create and verify API keys securely:
+
+```python
+from nexios.auth.backends.apikey import create_api_key, verify_key
+
+# Create a new API key
+api_key, hashed_key = create_api_key()
+print(f"API Key: {api_key}")  # e.g., "key_abc123..."
+print(f"Hashed Key: {hashed_key}")  # Store this in your database
+
+# Verify an API key
+is_valid = verify_key(api_key, stored_hash)
+```
+
+::: warning Important Security Notes
+- Always store the **hashed** version of the API key in your database, never the raw key
+- Use `verify_key()` to check incoming API keys against stored hashes
+- API keys should be transmitted securely (HTTPS only)
+- Consider implementing key rotation and expiration policies
+:::
+
+### Complete Example
+
+Here's a complete example showing how to set up API key authentication:
+
+```python
+from nexios.auth.backends.apikey import APIKeyAuthBackend, create_api_key, verify_key
+from nexios.auth.base import SimpleUser
+from nexios.auth.decorators import auth
+
+class APIKeyUser(SimpleUser):
+    def __init__(self, identity: str, display_name: str, permissions: list = None):
+        self.identity = identity
+        self.display_name = display_name
+        self.permissions = permissions or []
+
+    @property
+    def is_authenticated(self) -> bool:
+        return True
+
+    @property
+    def display_name(self) -> str:
+        return self.display_name
+
+    @property
+    def identity(self) -> str:
+        return self.identity
+
+    def has_permission(self, permission: str) -> bool:
+        return permission in self.permissions
+
+    @classmethod
+    async def load_user(cls, identity: str) -> APIKeyUser:
+        # This method should verify the API key and load user data
+        user_data = db.get_user_by_api_key(identity)
+        if user_data:
+            return cls(
+                identity=user_data["id"],
+                display_name=user_data["name"],
+                permissions=user_data["permissions"]
+            )
+        return None
+
+# Set up the backend
+backend = APIKeyAuthBackend(header_name="X-API-Key")
+
+app.add_middleware(AuthenticationMiddleware(
+    user_model=APIKeyUser,
+    backend=backend
+))
+
+# Protected route - requires valid API key in X-API-Key header
+@app.get("/api/data")
+@auth(scope="apikey")
+async def get_protected_data(request: Request, response: Response):
+    return {
+        "data": "This is protected data",
+        "user": request.user.display_name,
+        "permissions": request.user.permissions
+    }
+
+# Endpoint to create new API keys (protect this endpoint!)
+@app.post("/api/keys")
+@auth()  # Requires authentication to create keys
+async def create_api_key_endpoint(request: Request, response: Response):
+    user_id = request.user.identity
+
+    # Create new API key for the user
+    api_key, hashed_key = create_api_key()
+
+    # Store the hashed key in your database
+    db.store_api_key(user_id, hashed_key)
+
+    # Return the raw API key to the user (they won't see it again!)
+    return {"api_key": api_key}
+```
+
+### Configuration Options
+
+You can customize the API key backend behavior:
+
+```python
+# Use a custom header name
+backend = APIKeyAuthBackend(header_name="Authorization")
+
+# Use a custom prefix
+backend = APIKeyAuthBackend(prefix="myapp")
+
+# Combine both options
+backend = APIKeyAuthBackend(
+    header_name="X-MyApp-API-Key",
+    prefix="myapp"
+)
+```
+
+::: tip Best Practices
+- Use HTTPS for all API communications
+- Implement rate limiting for API key endpoints
+- Log API key usage for security monitoring
+- Rotate API keys regularly
+- Use different API keys for different environments (dev, staging, prod)
+:::
 
 ## Custom Authentication Backend
 You can create a custom authentication backend by implementing the `AuthenticationBackend` interface.  This interface has only one method: `authenticate`. this method should return an `AuthResult` object.
