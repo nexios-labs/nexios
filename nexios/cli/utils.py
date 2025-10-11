@@ -168,7 +168,7 @@ def _load_app_from_string(app_path: str) -> "NexiosApp":
     return app
 
 
-def _load_app_from_path(app_path: str = None, config_path: str = None) -> "NexiosApp":
+def _load_app_from_path(app_path: Optional[str] = None, config_path: Optional[str] = None) -> Optional["NexiosApp"]:
     """
     Load the Nexios app instance from the given app_path (module:app) or config file.
     If not provided, auto-detect using the same logic as _find_app_module.

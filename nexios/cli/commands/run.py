@@ -15,14 +15,14 @@ import click
 from nexios.cli.utils import load_config_module
 
 from ..utils import (
-    _echo_error,
-    _echo_info,
-    _find_app_module,
-    _validate_app_path,
-    _validate_host,
-    _validate_port,
-    _validate_server,
-)
+    _echo_error, # type: ignore
+    _echo_info, # type: ignore
+    _find_app_module, # type: ignore
+    _validate_app_path, # type: ignore
+    _validate_host, # type: ignore
+    _validate_port, # type: ignore
+    _validate_server, # type: ignore
+)# type: ignore
 
 
 @click.command()
@@ -123,7 +123,7 @@ def run(
         if "custom_command" in options and options["custom_command"]:
             custom_cmd = options["custom_command"]
             if isinstance(custom_cmd, (list, tuple)):
-                subprocess.run(custom_cmd, check=True)
+                subprocess.run(custom_cmd, check=True) # type: ignore
             else:
                 # Assume string, run in shell
                 os.system(custom_cmd)

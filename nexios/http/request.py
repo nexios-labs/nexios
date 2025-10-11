@@ -294,7 +294,7 @@ class Request(HTTPConnection):
                 self._json = json.loads(body)
             except json.JSONDecodeError:
                 self._json = {}
-        return self._json
+        return self._json # type: ignore
 
     @property
     async def text(self) -> str:
@@ -408,7 +408,7 @@ class Request(HTTPConnection):
         Handles both URL-encoded and multipart form data.
         Uses the existing form_data property which already handles all form types.
         """
-        if not hasattr(self, "_form") or self._form is None:
+        if not hasattr(self, "_form") or self._form is None: # type: ignore
             form_data = await self.form_data
             self._form = form_data
         return self._form

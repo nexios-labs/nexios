@@ -4,15 +4,16 @@ Nexios CLI - Interactive shell command.
 """
 
 import sys
+from typing import Any, Optional
 
 import click
 
 from nexios.cli.utils import (
-    _echo_error,
-    _echo_info,
-    _echo_warning,
-    _load_app_from_path,
-    load_config_module,
+    _echo_error, # type: ignore
+    _echo_info, # type: ignore
+    _echo_warning, # type: ignore
+    _load_app_from_path, # type: ignore
+    load_config_module, # type: ignore
 )
 
 
@@ -33,7 +34,7 @@ from nexios.cli.utils import (
     is_flag=True,
     help="Force use of IPython shell (default: auto-detect)",
 )
-def shell(app_path: str, config_path: str = None, ipython: bool = False):
+def shell(app_path: str, config_path: Optional[str] = None, ipython: bool = False):
     """
     Start an interactive shell with the Nexios app context loaded.
 
@@ -114,11 +115,11 @@ def shell(app_path: str, config_path: str = None, ipython: bool = False):
         sys.exit(1)
 
 
-def _try_start_ipython_shell(shell_vars: dict) -> bool:
+def _try_start_ipython_shell(shell_vars: dict[str, Any]) -> bool:
     """Try to start IPython shell."""
     try:
-        import IPython  # noqa: F401
-        from IPython.terminal.embed import InteractiveShellEmbed
+        import IPython  # type: ignore # noqa: F401
+        from IPython.terminal.embed import InteractiveShellEmbed # type: ignore
 
         _echo_info("Starting IPython shell...")
         _echo_info(
@@ -148,7 +149,7 @@ Examples:
   print(app.config)
 """
 
-        shell = InteractiveShellEmbed(banner1=banner)
+        shell = InteractiveShellEmbed(banner1=banner) # type: ignore
         shell(local_ns=shell_vars)
         return True
 
@@ -156,7 +157,7 @@ Examples:
         return False
 
 
-def _try_start_regular_shell(shell_vars: dict) -> bool:
+def _try_start_regular_shell(shell_vars: dict[str, Any]) -> bool:
     """Try to start regular Python shell."""
     try:
         import code
