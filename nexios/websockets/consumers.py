@@ -37,7 +37,7 @@ class WebSocketConsumer:
         Convert the WebSocketConsumer class into a Route that can be registered with the app or router.
         """
 
-        async def handler(websocket: WebSocket, **kwargs) -> None:
+        async def handler(websocket: WebSocket, **kwargs:typing.Dict[str, typing.Any]) -> None:
             instance = cls()
             await instance(websocket, **kwargs)
 

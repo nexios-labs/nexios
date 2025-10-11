@@ -56,9 +56,9 @@ class SessionMiddleware(BaseMiddleware):
                 key=self.session_cookie_name,
                 value=session_key,
                 domain=request.session.get_cookie_domain(),
-                path=request.session.get_cookie_path(),
-                httponly=request.session.get_cookie_httponly(),
-                secure=request.session.get_cookie_secure(),
-                samesite=request.session.get_cookie_samesite(),
+                path=request.session.get_cookie_path() or "/",
+                httponly=request.session.get_cookie_httponly() or False,
+                secure=request.session.get_cookie_secure() or False,
+                samesite=request.session.get_cookie_samesite() or "lax", # type: ignore
                 expires=request.session.get_expiration_time(),
             )

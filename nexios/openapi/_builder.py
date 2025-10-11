@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 from uuid import uuid4
 
 from pydantic import BaseModel
@@ -30,12 +30,12 @@ if TYPE_CHECKING:
 class APIDocumentation:
     _instance = None
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args:list[Any], **kwargs:dict[str, Any]):
         if not cls._instance:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(
+    def __init__( # type: ignore
         self,
         app: Optional["NexiosApp"] = None,  # noqa: F821
         config: Optional[OpenAPIConfig] = None,
@@ -164,7 +164,7 @@ class APIDocumentation:
         :param external_docs: External documentation reference
         """
 
-        def decorator(func):
+        def decorator(func : Callable[..., Any]):
             # Prepare request body specification
             request_body_spec = None
 
@@ -272,8 +272,8 @@ class APIDocumentation:
                 responses_spec["200"] = OpenAPIResponse(
                     description="Successful Response",
                     content={
-                        "application/json": MediaType(  # type:ignore
-                            schema=Schema(
+                        "application/json": MediaType(  
+                            schema=Schema( # type:ignore
                                 example={"example": "This is an example response"},
                                 type="object",
                             )  # type:ignore
@@ -317,7 +317,7 @@ class APIDocumentation:
             setattr(self.config.openapi_spec.paths[path], method.lower(), operation)
 
             @wraps(func)
-            async def wrapper(*args, **kwargs):
+            async def wrapper(*args : list[Any], **kwargs : dict[str, Any]) -> Any:
                 return await func(*args, **kwargs)
 
             return wrapper
