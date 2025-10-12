@@ -3,7 +3,9 @@ name: Run Tox Tests
 on:
   push:
     branches:
-      - main
+      - v2
+      - v3
+      
   pull_request:
 
 jobs:
