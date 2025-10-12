@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Home & Getting Started -->
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/</loc>
+    <lastmod>2025-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/getting-started</loc>
+    <lastmod>2025-10-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/installation</loc>
+    <lastmod>2025-10-05</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/quickstart</loc>
+    <lastmod>2025-10-05</lastmod>
+    <changefreq>monthly</changefreq>
+  </url>
+
+  <!-- Core Concepts -->
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/concepts/overview</loc>
+    <lastmod>2025-10-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/concepts/asgi</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/concepts/dependency-injection</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/concepts/middleware</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+
+  <!-- Guides -->
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/guides/routing</loc>
+    <lastmod>2025-10-05</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/guides/request-handling</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/guides/response-handling</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/guides/websockets</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/guides/authentication</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/guides/authorization</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/guides/validation</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/guides/error-handling</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+
+  <!-- Advanced Topics -->
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/advanced/middleware-custom</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/advanced/dependency-injection-advanced</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/advanced/background-tasks</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/advanced/performance-optimization</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/advanced/security-best-practices</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+
+  <!-- API Reference -->
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/api/reference</loc>
+    <lastmod>2025-10-05</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/api/applications</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/api/requests</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/api/responses</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/api/routing</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/api/websockets</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/api/middleware</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+
+  <!-- Examples -->
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/examples/rest-api</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/examples/websocket-chat</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/examples/authentication</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/examples/file-uploads</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+
+  <!-- Community & Support -->
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/community/contributing</loc>
+    <lastmod>2025-10-05</lastmod>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/community/code-of-conduct</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/community/faq</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/community/support</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+
+  <!-- Blog & News -->
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/blog</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/blog/announcements</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/blog/tutorials</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/blog/releases</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+
+  <!-- Additional Pages -->
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/showcase</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/benchmarks</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/roadmap</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+  <url>
+    <loc>https://nexios-labs.github.io/nexios/404</loc>
+    <lastmod>2025-10-05</lastmod>
+  </url>
+</urlset>

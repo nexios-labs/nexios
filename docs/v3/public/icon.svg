@@ -1,0 +1,76 @@
+<svg width="200" height="200" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Glossy gradient -->
+    <linearGradient id="hexGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00E49C"/>
+      <stop offset="100%" stop-color="#009E6F"/>
+    </linearGradient>
+
+    <!-- Gloss reflection on top -->
+    <linearGradient id="glassGloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5"/>
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Soft drop shadow -->
+    <filter id="drop" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.2"/>
+    </filter>
+
+    <!-- Inner shadow for the circle -->
+    <filter id="insetShadow">
+      <feOffset dx="0" dy="1"/>
+      <feGaussianBlur stdDeviation="1.5" result="offset-blur"/>
+      <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"/>
+      <feFlood flood-color="black" flood-opacity="0.2" result="color"/>
+      <feComposite operator="in" in="color" in2="inverse" result="shadow"/>
+      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+    </filter>
+  </defs>
+
+  <!-- Rounded hexagon path -->
+  <path d="
+    M60,10
+    C62,10 65,11 67,13
+    L100,35
+    C102,36 103,38 103,40
+    L103,80
+    C103,82 102,84 100,85
+    L67,107
+    C65,109 62,110 60,110
+    C58,110 55,109 53,107
+    L20,85
+    C18,84 17,82 17,80
+    L17,40
+    C17,38 18,36 20,35
+    L53,13
+    C55,11 58,10 60,10
+    Z"
+    fill="url(#hexGradient)"
+    filter="url(#drop)"
+  />
+
+  <!-- Gloss layer on top -->
+  <path d="
+    M60,10
+    C62,10 65,11 67,13
+    L100,35
+    C102,36 103,38 103,40
+    L103,80
+    C103,82 102,84 100,85
+    L67,107
+    C65,109 62,110 60,110
+    C58,110 55,109 53,107
+    L20,85
+    C18,84 17,82 17,80
+    L17,40
+    C17,38 18,36 20,35
+    L53,13
+    C55,11 58,10 60,10
+    Z"
+    fill="url(#glassGloss)"
+  />
+
+  <!-- Center circle with soft shadow -->
+  <circle cx="60" cy="60" r="16" fill="white" filter="url(#insetShadow)" />
+</svg>

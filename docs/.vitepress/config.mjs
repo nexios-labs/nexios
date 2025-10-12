@@ -37,6 +37,13 @@ export default defineConfig({
       { text : "Community", link:"/community"},
       { text: "Discussions", link:"https://github.com/orgs/nexios-labs/discussions"},
       { text: 'Team', link: 'team' },
+      {
+        text: 'version',
+        items: [
+          { text: 'v2', link: '/v2/' },
+          { text: 'v3', link: '/v3/' }
+        ]
+      }
     ],
 
     sidebar: {
