@@ -1,15 +1,22 @@
 ## `NEXIOS`
 
+> warning ⚠️ **IMPORTANT NOTICE: v3 Branch is Experimental**
+The `v3` branch contains experimental features and is **NOT yet stable** for production use. For stable releases, please use the `v2` branch or the latest stable release from PyPI.
+
+- **v2 Branch**: [Switch to v2 branch](https://github.com/nexios-labs/nexios/tree/v2) for production-ready features
+
+
+Breaking changes may occur in v3 until it reaches stable release. Use at your own risk!
+
 <div align="left">
 
 <a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Fira+Code&pause=1000&color=4CAF50&center=true&width=435&lines=Nexios+ASGI+Framework;Fast%2C+Simple%2C+Flexible" alt="Typing SVG" /></a>
 
 <p align="center">
-  <a href="">
-    <img alt=Support height="350" src="https://nexios-docs.netlify.app/logo.png"> 
+    <img alt=Support height="350" src="https://nexios-docs.netlify.app/logo.png">
     </p>
     <h1 align="center">Nexios 2.11.x<br></h1>
-    
+
    </a>
 </p>
 
