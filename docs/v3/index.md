@@ -20,13 +20,13 @@ hero:
   actions:
     - theme: brand
       text: Get Started
-      link: /guide/getting-started
+      link: /v3/guide/getting-started
     - theme: alt
       text: View on GitHub
       link: https://github.com/nexios-labs/nexios
     - theme: alt
       text: Why Nexios?
-      link: /guide/why-nexios
+      link: /v3/guide/why-nexios
 
 features:
   - icon: ⚡
@@ -379,7 +379,7 @@ nexios new my-awesome-app
 Do not use the Nexios CLI if you are still learning Python.
 :::
 
-For complete documentation on using the Nexios CLI, check out the [CLI Documentation](/guide/cli).
+For complete documentation on using the Nexios CLI, check out the [CLI Documentation](/v3/guide/cli).
 
 ## The Zen of Nexios
 

@@ -287,10 +287,10 @@ Congratulations! You've successfully created and run your first Nexios applicati
 
 | Section                                                                           | Description                                                                                                                                                                                                                                                      |
 |----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [Routing Fundamentals](/guide/routing)                           | Learn how to create different types of routes and handle various HTTP methods:<br>- [HTTP Methods](/guide/routing#http-methods)<br>- [Path Parameters](/guide/routing#path-parameters)                                                                        |
-| [Request and Response Handling](/guide/request-info)             | Understand how to work with incoming requests and outgoing responses:<br>- [Request Information](/guide/request-info)<br>- [Sending Responses](/guide/sending-responses)<br>- [Request Inputs](/guide/request-inputs) |
-| [Core Concepts](/guide/concepts)                                | Dive deeper into Nexios architecture and concepts:<br>- [Framework Architecture](/guide/concepts)<br>- [Async Python](/guide/async-python)<br>- [Configuration](/guide/configuration)                                            |
-| [Advanced Features](/guide/middleware)                           | Explore more advanced features as you become comfortable with the basics:<br>- [Middleware](/guide/middleware)<br>- [Authentication](/guide/authentication)<br>- [WebSockets](/guide/websockets)<br>- [Templating](/guide/templating) |
+| [Routing Fundamentals](/v3/guide/routing)                           | Learn how to create different types of routes and handle various HTTP methods:<br>- [HTTP Methods](/v3/guide/routing#http-methods)<br>- [Path Parameters](/v3/guide/routing#path-parameters)                                                                        |
+| [Request and Response Handling](/v3/guide/request-info)             | Understand how to work with incoming requests and outgoing responses:<br>- [Request Information](/v3/guide/request-info)<br>- [Sending Responses](/v3/guide/sending-responses)<br>- [Request Inputs](/v3/guide/request-inputs) |
+| [Core Concepts](/v3/guide/concepts)                                | Dive deeper into Nexios architecture and concepts:<br>- [Framework Architecture](/v3/guide/concepts)<br>- [Async Python](/v3/guide/async-python)<br>- [Configuration](/v3/guide/configuration)                                            |
+| [Advanced Features](/v3/guide/middleware)                           | Explore more advanced features as you become comfortable with the basics:<br>- [Middleware](/v3/guide/middleware)<br>- [Authentication](/v3/guide/authentication)<br>- [WebSockets](/v3/guide/websockets)<br>- [Templating](/v3/guide/templating) |
 
 ## Common Questions
 
@@ -378,6 +378,6 @@ Remember, everyone starts somewhere! Don't hesitate to ask questions and experim
 
 ---
 
-Now that you have the basics down, let's explore more advanced features. Start with the [Routing Guide](/guide/routing) to learn how to create more complex applications, or jump into [Core Concepts](/guide/concepts) to understand how Nexios works under the hood.
+Now that you have the basics down, let's explore more advanced features. Start with the [Routing Guide](/v3/guide/routing) to learn how to create more complex applications, or jump into [Core Concepts](/v3/guide/concepts) to understand how Nexios works under the hood.
 
 

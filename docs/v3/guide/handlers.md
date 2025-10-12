@@ -62,7 +62,7 @@ app.add_route(Routes("/dynamic", dynamic_handler))  # Handles All Methods by def
 ```
 
 ## Handlers with path params
-As seen at [`Dynamic Routing`](/guide/routing#dynamic-route) a nexios handler can optionally take an extra argument when a the route definition contains a dynamic value
+As seen at [`Dynamic Routing`](/v3/guide/routing#dynamic-route) a nexios handler can optionally take an extra argument when a the route definition contains a dynamic value
 
 ```py
 from nexios import NexiosApp

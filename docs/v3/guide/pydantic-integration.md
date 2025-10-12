@@ -194,5 +194,5 @@ myapp/
 ## Next Steps
 
 - [Pydantic Documentation](https://pydantic-docs.helpmanual.io/)
-- [Nexios Error Handling](/guide/error-handling)
+- [Nexios Error Handling](/v3/guide/error-handling)
 - [API Reference](/api-reference)

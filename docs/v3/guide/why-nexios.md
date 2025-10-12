@@ -239,7 +239,7 @@ Nexios is particularly well-suited for:
 
 ## Getting Started
 
-Ready to try Nexios? Check out our [Quick Start Guide](/guide/getting-started) or dive into the [Examples](/api-examples/).
+Ready to try Nexios? Check out our [Quick Start Guide](/v3/guide/getting-started) or dive into the [Examples](/api-examples/).
 
 ::: tip Community
 Join our growing community:

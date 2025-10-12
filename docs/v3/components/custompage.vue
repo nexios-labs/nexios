@@ -11,7 +11,7 @@
       <p class="subtext">
         Nexios is the minimal yet powerful backend framework that gets out of your way — fast, clean, async-firsta.
       </p>
-      <a href="/guide/getting-started" class="btn">Get Started</a>
+      <a href="/v3/guide/getting-started" class="btn">Get Started</a>
     </main>
 
     <footer class="footer">

@@ -38,10 +38,11 @@ export default defineConfig({
       { text: "Discussions", link:"https://github.com/orgs/nexios-labs/discussions"},
       { text: 'Team', link: 'team' },
       {
-        text: 'version',
+        text: '2.11.*',
         items: [
-          { text: 'v2', link: '/v2/' },
-          { text: 'v3', link: '/v3/' }
+          { text: 'v3', link: '/v3/' },
+          { text: 'Changelog', link: 'https://github.com/nexios-labs/nexios/blob/v3/CHANGELOG.md' },
+          { text: 'Contributing', link: '/community/contribution-guide' },
         ]
       }
     ],
@@ -139,51 +140,83 @@ export default defineConfig({
           ]
         }
       ],
-
-      '/architecture/': [
+      '/v3/guide/': [
+        
+        { text: 'Getting Started', link: '/v3/guide/getting-started' },
+        { text: 'CLI', link: '/v3/guide/cli' },
+        { text : "Why Nexios?", link: '/v3/guide/why-nexios' },
         {
-          text: 'Architecture',
+          text: 'Core Concepts',
+          collapsed: false,
           items: [
-            { text: 'Async Python', link: '/architecture/async-python' },
-            { text: 'Asgi', link: '/architecture/asgi' },
+            { text: 'Routing', link: '/v3/guide/routing' },
+            { text: 'Handlers', link: '/v3/guide/handlers' },
+            { text: 'Startups and Shutdowns', link: '/v3/guide/startups-and-shutdowns' },
+            { text: 'Request Inputs', link: '/v3/guide/request-inputs' },
+            { text: 'Configuration', link: '/v3/guide/configuration' },
+            { text: 'Sending Responses', link: '/v3/guide/sending-responses' },
+            { text: 'Routers and Subapps', link: '/v3/guide/routers-and-subapps' },
+            { text: 'Middleware', link: '/v3/guide/middleware' },
+          ] 
+        },
+        {
+          text: 'Request Lifecycle',
+          collapsed: false,
+          items: [
+            { text: 'Cookies', link: '/v3/guide/cookies' },
+            { text: 'Headers', link: '/v3/guide/headers' },
+            { text: 'Sessions', link: '/v3/guide/sessions' },
+            { text: 'Request Info', link: '/v3/guide/request-info' },
           ]
-        }
-      ],
-      '/course/': [
+        },
         {
-          text: 'Course',
+          text: 'Advanced Topics',
+          collapsed: false,
           items: [
-            { text: 'Day 1: Welcome & Your First Nexios App', link: '/course/day01' },
-            { text: 'Day 2: Routing: Mapping URLs to Code', link: '/course/day02' },
-            { text: 'Day 3: Async, Request & Response Essentials', link: '/course/day03' },
-            { text: 'Day 4: Class-Based Views & APIHandler', link: '/course/day04' },
-            { text: 'Day 5: Middleware: Built-in & Custom', link: '/course/day05' },
-            { text: 'Day 6: Environment & CORS Configuration', link: '/course/day06' },
-            { text: 'Day 7: Project: Mini To-Do API', link: '/course/day07' },
-            { text: 'Day 8: JWT Authentication (Part 1)', link: '/course/day08' },
-            { text: 'Day 9: JWT Authentication (Part 2)', link: '/course/day09' },
-            { text: 'Day 10: Testing Nexios Applications', link: '/course/day10' },
-            { text: 'Day 11: Request Validation with Pydantic', link: '/course/day11' },
-            { text: 'Day 12: File Uploads & Multipart Data', link: '/course/day12' },
-            { text: 'Day 13: WebSocket Basics', link: '/course/day13' },
-            { text: 'Day 14: Real-Time Chat App with ChannelBox', link: '/course/day14' },
-            { text: 'Day 15: Background Tasks & Scheduling', link: '/course/day15' },
-            { text: 'Day 16: Real-Time Application Patterns', link: '/course/day16' },
-            { text: 'Day 17: Advanced Middleware Techniques', link: '/course/day17' },
-            { text: 'Day 18: Custom Decorators & Utilities', link: '/course/day18' },
-            { text: 'Day 19: Dependency Injection in Nexios', link: '/course/day19' },
-            { text: 'Day 20: Concurrency & Async Utilities', link: '/course/day20' },
-            { text: 'Day 21: Project: Real-Time Chat Application', link: '/course/day21' },
-            { text: 'Day 22: Testing Strategies & Best Practices', link: '/course/day22' },
-            { text: 'Day 23: Logging & Monitoring', link: '/course/day23' },
-            { text: 'Day 24: Performance Optimization', link: '/course/day24' },
-            { text: 'Day 25: Event System & WebSocket Events', link: '/course/day25' },
-            { text: 'Day 26: Deployment Strategies', link: '/course/day26' },
-            { text: 'Day 27: Docker & Containerization', link: '/course/day27' },
-            { text: 'Day 28: Project: Production-Ready API', link: '/course/day28' },
+            { text: 'Error Handling', link: '/v3/guide/error-handling' },
+            { text: 'Pagination', link: '/v3/guide/pagination' },
+            { text: 'Authentication', link: '/v3/guide/authentication' },
+            { text: "Handler Hooks", link: '/v3/guide/handler-hooks' },
+            { text: 'Class Based Handlers', link: '/v3/guide/class-based-handlers' },
+            { text: 'Events', link: '/v3/guide/events' },
+            { text: 'Streaming Response',  link: '/v3/guide/streaming-response' },
+            { text: 'Dependency Injection', link: '/v3/guide/dependency-injection' },
+            { text : "Templating", link:"/v3/guide/templating/index"},
+            { text: 'Static Files', link: '/v3/guide/static-files' },
+            { text: 'File Upload', link: '/v3/guide/file-upload' },
+            { text: 'Cors', link: '/v3/guide/cors' },
+            { text: 'CSRF', link: '/v3/guide/csrf' },
+            { text: 'File Router', link: '/v3/guide/file-router' },
+            { text: 'Concurrency Utilities', link: '/v3/guide/concurrency' },
+            { text: 'Security', link: '/v3/guide/security' },
+            { text: 'Pydantic Integration', link: '/v3/guide/pydantic-integration' },
+          ]
+        },
+        {
+          text: 'Websockets',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/v3/guide/websockets/index' },
+            { text: 'Channels', link: '/v3/guide/websockets/channels' },
+            { text: 'Groups', link: '/v3/guide/websockets/groups' },
+            { text: 'Events', link: '/v3/guide/websockets/events' },
+            { text: 'Consumer', link: '/v3/guide/websockets/consumer' },
+          ]
+        },
+        {
+          text: 'OpenAPI',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/v3/guide/openapi/index' },
+            { text: 'Response Models with Pydantic', link: '/v3/guide/openapi/response-models' },
+            { text: 'Request Schemas', link: '/v3/guide/openapi/request-schemas' },
+            { text: 'Request Parameters', link: '/v3/guide/openapi/request-parameters' },
+            { text: 'Customizing OpenAPI Config', link: '/v3/guide/openapi/customizing-openapi-configuration' },
+            { text: 'Authentication Docs', link: '/v3/guide/openapi/authentication-documentation' },
           ]
         }
       ]
+     
     }
   },
 
