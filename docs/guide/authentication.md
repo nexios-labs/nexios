@@ -14,7 +14,7 @@ head:
 
 **Secure your API with just one line of code!**
 
-Nexios makes authentication simple yet powerful. Here's all you need to get started:
+Nexios makes authentication simple yet powerful. Here's what you need to get started:
 
 ::: code-group
 
