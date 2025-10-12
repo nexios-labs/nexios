@@ -120,7 +120,73 @@ app.add_middleware(AuthenticationMiddleware(
 - `load_user` is a class method that is responsible for loading the user from the authentication backend it can be from a database or any other source.
 now you can access the user via `request.user` and the authentication type via `request.scope["auth"]` if the user is authenticated.
 
-::
+## Checking Authentication Status
+
+Once authentication middleware is set up, you can check if a user is authenticated using the `is_authenticated` property on the request user object:
+
+```python
+@app.get("/profile")
+@auth()
+async def user_profile(request: Request, response: Response):
+    return {
+        "message": f"Welcome back, {request.user.display_name}!",
+        "user_id": request.user.identity,
+        "is_authenticated": request.user.is_authenticated
+    }
+```
+
+### Implementing is_authenticated in Custom User Models
+
+When creating custom user models, you need to implement the `is_authenticated` property:
+
+```python
+from nexios.auth.base import BaseUser
+
+class User(BaseUser):
+    def __init__(self, identity: str, display_name: str, last_login_ip: str):
+        self.identity = identity
+        self.display_name = display_name
+        self.last_login_ip = last_login_ip
+
+    @property
+    def is_authenticated(self) -> bool:
+        return True  # Return True for authenticated users
+
+    @property
+    def display_name(self) -> str:
+        return self.display_name
+
+    @property
+    def identity(self) -> str:
+        return self.identity
+
+    @property
+    def last_login_ip(self) -> str:
+        return self.last_login_ip
+
+    @classmethod
+    async def load_user(cls, identity: str) -> User:
+        user = db.get_user_by_id(identity)
+        if user:
+            return cls(
+                identity=user.id,
+                display_name=user.display_name,
+                last_login_ip=user.last_login_ip
+            )
+        return None
+```
+
+### Key Points:
+
+- **`is_authenticated` is a property**, not a method - access it without parentheses
+- **Return `True`** for authenticated users, `False` for unauthenticated users
+- The authentication middleware automatically handles attaching the user to `request.user`
+- If authentication fails, an `UnauthenticatedUser` instance is attached instead
+- The property should always return a boolean value
+
+This allows you to easily check authentication status in your route handlers and implement proper access control.
+
+:::
 
 ## JWT Authentication Backend
 Nexios provides a built-in `JWTAuthBackend` that you can use to authenticate users with JSON Web Tokens (JWT).
