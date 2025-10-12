@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 import typing
 
 from typing_extensions import Annotated, Doc
@@ -9,7 +8,8 @@ from nexios import logging
 from nexios.http import Request, Response
 from nexios.middleware.base import BaseMiddleware
 
-from .base import AuthenticationBackend, UnauthenticatedUser
+from nexios.auth.backends.base import AuthenticationBackend
+from nexios.auth.users.simple import UnauthenticatedUser,BaseUser
 
 logger = logging.create_logger(__name__)
 
@@ -28,6 +28,10 @@ class AuthenticationMiddleware(BaseMiddleware):
 
     def __init__(
         self,
+        user_model: Annotated[
+            type[BaseUser],
+            Doc("The user model to use for authentication."),
+        ],
         backend: Annotated[
             typing.Union[AuthenticationBackend, typing.List[AuthenticationBackend]],
             Doc("Single backend or list of backends to use for authentication."),
@@ -41,10 +45,11 @@ class AuthenticationMiddleware(BaseMiddleware):
                      Each backend will be tried in order until one successfully
                      authenticates the user or all backends are exhausted.
         """
-        if isinstance(backend, AuthenticationBackend):
+        if not isinstance(backend, list):
             self.backends = [backend]
         else:
             self.backends = backend
+        self.user_model = user_model
 
     async def process_request(
         self,
@@ -76,15 +81,14 @@ class AuthenticationMiddleware(BaseMiddleware):
         # Try each backend until one successfully authenticates the user
         for backend in self.backends:
             try:
-                if inspect.iscoroutinefunction(backend.authenticate):
-                    user = await backend.authenticate(request, response)
-                else:
-                    user = backend.authenticate(request, response)  # type: ignore
+              
+                auth_result = await backend.authenticate(request, response)
+                
 
-                if user is not None:
+                if auth_result.success:
                     # Authentication successful, store user and auth type
-                    request.scope["user"] = user[0]
-                    request.scope["auth"] = user[-1]
+                    request.scope["user"] = await self.user_model.load_user(auth_result.identity)
+                    request.scope["auth"] = auth_result.scope
                     break
 
             except Exception as e:
@@ -96,6 +100,6 @@ class AuthenticationMiddleware(BaseMiddleware):
         else:
             # No backend authenticated the user
             request.scope["user"] = UnauthenticatedUser()
-            request.scope["auth"] = "no-auth"
+            request.scope["auth"] = None
 
         await call_next()

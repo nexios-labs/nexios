@@ -5,7 +5,6 @@ from typing import Any, Dict, ItemsView, Iterator, KeysView, Sequence, ValuesVie
 from urllib.parse import SplitResult, parse_qsl, urlencode, urlsplit
 from nexios.utils.concurrency import run_in_threadpool
 from pydantic import GetJsonSchemaHandler,GetCoreSchemaHandler
-import pydantic
 from pydantic_core import core_schema
 
 

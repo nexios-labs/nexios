@@ -1,10 +1,13 @@
 from __future__ import annotations
-
-import typing
-
 from typing_extensions import Annotated, Doc
-
 from nexios.http import Request, Response
+from nexios.auth.model import AuthResult
+
+
+
+
+
+
 class AuthenticationBackend:
     """
     Base class for authentication backends in Nexios.
@@ -25,7 +28,7 @@ class AuthenticationBackend:
             Doc("The HTTP response object that may be modified during authentication."),
         ],
     ) -> Annotated[
-        typing.Any,
+        AuthResult,
         Doc("Returns an authenticated user instance or raises an AuthenticationError."),
     ]:
         """
@@ -39,7 +42,7 @@ class AuthenticationBackend:
             res (Response): The HTTP response object.
 
         Returns:
-            Any: An authenticated user object if authentication succeeds.
+            AuthResult: An authenticated user object if authentication succeeds.
 
         Raises:
             AuthenticationError: If authentication fails.

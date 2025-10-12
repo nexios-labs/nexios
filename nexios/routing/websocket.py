@@ -6,7 +6,6 @@ from typing import Any, Callable, Dict, List, Optional
 from typing_extensions import Annotated, Doc
 
 from nexios._internals._route_builder import RouteBuilder
-from nexios.dependencies import inject_dependencies
 from nexios.types import (
     ASGIApp,
     Receive,

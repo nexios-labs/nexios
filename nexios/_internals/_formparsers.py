@@ -180,8 +180,8 @@ class MultiPartParser:
             self._current_part.data.extend(message_bytes)
         else:
             # Check file size limit when writing file parts
-            if self._current_part.file and self._current_part.file.size is not None:
-                new_size = self._current_part.file.size + len(message_bytes)
+            # if self._current_part.file and self._current_part.file.size is not None:
+                # new_size = self._current_part.file.size + len(message_bytes)
                 # if new_size > self.max_file_size:
                 #     raise MultiPartException(
                 #         f"File too large. Maximum size is {self.max_file_size} bytes"

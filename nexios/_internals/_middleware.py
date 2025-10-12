@@ -213,14 +213,14 @@ class ASGIRequestResponseBridge:
                     raise app_exc
 
             response_ = response.stream(
-                iterator=body_stream(), status_code=message["status"]
+                iterator=body_stream(), status_code=message["status"] # type: ignore
             )  # type: ignore
             response_._response._headers = message["headers"]  # type: ignore
             return response
 
-        streams: anyio.create_memory_object_stream[Message] = (
+        streams: anyio.create_memory_object_stream[Message] = ( # type: ignore
             anyio.create_memory_object_stream()
-        )  # type: ignore
+        )  
         send_stream, recv_stream = streams
         with recv_stream, send_stream, collapse_excgroups():
             async with anyio.create_task_group() as task_group:

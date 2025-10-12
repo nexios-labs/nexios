@@ -14,12 +14,12 @@ from nexios.utils.concurrency import run_in_threadpool
 
 def _process_response(
     response_manager: Response, func_result: typing.Any
-) -> Response:
+) -> BaseResponse:
     """
     Process the response from the function
     """
     if isinstance(func_result, (dict, list, str, int, float)):
-        response_manager.json(func_result)
+        response_manager.json(typing.cast(typing.Any, func_result))
 
     elif isinstance(func_result, BaseResponse):
         response_manager.make_response(func_result)
@@ -40,16 +40,15 @@ async def request_response(
     assert asyncio.iscoroutinefunction(func), "Endpoints must be async"
 
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
-        response_manager = Response._instance
+        response_manager = Response._instance # type: ignore[reportPrivateUsage]
         if not response_manager:
             request = Request(scope, receive, send)
             response_manager = Response(request)
         else:
-            request = response_manager._request
+            request = response_manager._request # type: ignore[reportPrivateUsage]
 
         ctx = Context(
             request=request,
-            response=response_manager,
             user=getattr(request, "user", None),
             app=request.app,
             base_app=getattr(request, "base_app", None),

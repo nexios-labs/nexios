@@ -22,7 +22,7 @@ class APIView:
 
     @classmethod
     def as_route(
-        cls, path: str, methods: Optional[List[str]] = None, **kwargs
+        cls, path: str, methods: Optional[List[str]] = None, **kwargs: Dict[str, Any]
     ) -> Route:
         """
         Convert the APIView class into a Route that can be registered with the app or router.
@@ -34,15 +34,15 @@ class APIView:
                 if name in cls.__dict__
             ]
 
-        async def handler(req: Request, res: Response, **kwargs) -> Response:
+        async def handler(req: Request, res: Response, **kwargs: Dict[str, Any]) -> Response:
             instance = cls()
             return await instance.dispatch(req, res, **kwargs)
 
         return Route(
-            path, handler, methods=methods, middleware=cls.middleware, **kwargs
+            path, handler, methods=methods, middleware=cls.middleware, **kwargs #  type: ignore
         )
 
-    async def dispatch(self, req: Request, res: Response, **kwargs) -> Response:
+    async def dispatch(self, req: Request, res: Response, **kwargs: Dict[str, Any]) -> Response:
         """
         Dispatch the request to the appropriate handler method.
         """
@@ -60,7 +60,7 @@ class APIView:
             raise e
 
     async def method_not_allowed(
-        self, req: Request, res: Response, **kwargs
+        self, req: Request, res: Response
     ) -> Response:
         """
         Handle requests with unsupported HTTP methods.

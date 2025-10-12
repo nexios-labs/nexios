@@ -12,15 +12,16 @@ from nexios._internals._formparsers import (
     MultiPartParser,
     UploadedFile,
 )
-from nexios.session.base import BaseSessionInterface
 from nexios.structs import URL, Address, FormData, Headers, QueryParams, State
 from nexios.utils.async_helpers import (
     AwaitableOrContextManager,
     AwaitableOrContextManagerWrapper,
 )
+from nexios.session.base import BaseSessionInterface
 
 if typing.TYPE_CHECKING:
     from nexios import NexiosApp
+    from nexios.auth.users.base import BaseUser
 
 
 try:
@@ -293,7 +294,7 @@ class Request(HTTPConnection):
                 self._json = json.loads(body)
             except json.JSONDecodeError:
                 self._json = {}
-        return self._json
+        return self._json # type: ignore
 
     @property
     async def text(self) -> str:
@@ -407,7 +408,7 @@ class Request(HTTPConnection):
         Handles both URL-encoded and multipart form data.
         Uses the existing form_data property which already handles all form types.
         """
-        if not hasattr(self, "_form") or self._form is None:
+        if not hasattr(self, "_form") or self._form is None: # type: ignore
             form_data = await self.form_data
             self._form = form_data
         return self._form
@@ -432,15 +433,13 @@ class Request(HTTPConnection):
         return typing.cast(BaseSessionInterface, self.scope["session"])
 
     @property
-    def user(self):
+    def user(self) -> typing.Optional[BaseUser]:
         return self.scope.get("user", None)
 
     def url_for(self, _name: str, **path_params: typing.Dict[str, typing.Any]) -> str:
         return self.base_app.url_for(_name, **path_params)
 
-    @user.setter
-    def user(self, value: str):
-        self.scope["user"] = value
+ 
 
     def __str__(self) -> str:
         return f"<Request {self.method} {self.url}>"

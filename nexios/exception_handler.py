@@ -10,7 +10,7 @@ from nexios.exceptions import HTTPException, NotFoundException
 from nexios.handlers.not_found import handle_404_error
 from nexios.http import Request, Response
 from nexios.types import ExceptionHandlerType
-from nexios._internals._response_transformer import _process_response
+from nexios._internals._response_transformer import _process_response # type: ignore[import] #
 
 logger = logging.getLogger("nexios")
 

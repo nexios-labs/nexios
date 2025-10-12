@@ -81,7 +81,7 @@ class BaseSessionInterface:
     def is_empty(self):
         return self._session_cache.items().__len__() == 0
 
-    async def save(self):
+    async def save(self) -> None:
         raise NotImplementedError
 
     def get_cookie_name(self) -> str:

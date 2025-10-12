@@ -65,7 +65,7 @@ class OpenAPIConfig:
         if not self.openapi_spec.components.schemas:
             self.openapi_spec.components.schemas = {}
 
-        if isinstance(schema, type) and issubclass(schema, BaseModel):
+        if isinstance(schema, type) and issubclass(schema, BaseModel): # type: ignore
             self.openapi_spec.components.schemas[name] = Schema(
                 **schema.model_json_schema()
             )
@@ -100,7 +100,7 @@ class OpenAPIConfig:
         if not self.openapi_spec.components.examples:
             self.openapi_spec.components.examples = {}
 
-        self.openapi_spec.components.examples[name] = example
+        self.openapi_spec.components.examples[name] = example # type: ignore
 
     def add_tag(self, tag: Tag):
         """Add a tag to the OpenAPI specification"""
