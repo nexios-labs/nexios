@@ -178,19 +178,19 @@ class BaseResponse:
             cache_control.append("public")
 
         cache_control.append(f"max-age={max_age}")
-        self.headers["cache-control"] = ", ".join(cache_control)
+        self.set_header("cache-control", ", ".join(cache_control))
 
         etag = self._generate_etag()
-        self.headers["etag"] = etag
+        self.set_header("etag", etag)
 
         expires = datetime.utcnow() + timedelta(seconds=max_age)  # type: ignore
-        self.headers["expires"] = formatdate(expires.timestamp(), usegmt=True)
+        self.set_header("expires", formatdate(expires.timestamp(), usegmt=True))
 
     def disable_caching(self) -> None:
         """Disable caching for this response."""
-        self.headers["cache-control"] = "no-store, no-cache, must-revalidate, max-age=0"
-        self.headers["pragma"] = "no-cache"
-        self.headers["expires"] = "0"
+        self.set_header("cache-control", "no-store, no-cache, must-revalidate, max-age=0")
+        self.set_header("pragma", "no-cache")
+        self.set_header("expires", "0")
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """Make the response callable as an ASGI application."""
