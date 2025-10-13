@@ -18,7 +18,9 @@ def _process_response(
     """
     Process the response from the function
     """
-    if isinstance(func_result, (dict, list, str, int, float)):
+    if isinstance(func_result, str):
+        response_manager.text(func_result)
+    elif isinstance(func_result, (dict, list, int, float)):
         response_manager.json(typing.cast(typing.Any, func_result))
 
     elif isinstance(func_result, BaseResponse):

@@ -37,7 +37,7 @@ class APIDocumentation:
 
     def __init__( # type: ignore
         self,
-        app: Optional["NexiosApp"] = None,  # noqa: F821
+        app: Optional["NexiosApp"] = None, 
         config: Optional[OpenAPIConfig] = None,
         swagger_url: str = "/docs",
         redoc_url: str = "/redoc",

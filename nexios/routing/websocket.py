@@ -82,7 +82,7 @@ class WSRouter(BaseRouter):
         middleware: Optional[List[Any]] = [],
         routes: Optional[List[WebsocketRoutes]] = [],
     ):
-        self.prefix = prefix or ""
+        self.prefix = prefix
         self.routes: List[WebsocketRoutes] = routes or []
         self.middleware: List[Callable[[ASGIApp], ASGIApp]] = []
         self.sub_routers: Dict[str, ASGIApp] = {}

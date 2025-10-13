@@ -427,6 +427,10 @@ class NexiosApp(object):
             WSRouter,
             Doc("An instance of Router containing multiple routes to be mounted."),
         ],
+        path: Annotated[
+            Optional[str],
+            Doc("The path to mount the router at."),
+        ] = None,
     ) -> None:
         """
         Mounts a router and all its routes to the application.
@@ -452,6 +456,8 @@ class NexiosApp(object):
             app.mount_ws_router(chat_router)  # Mounts the user routes into the main app
             ```
         """
+        if not router.prefix:
+            router.prefix = path
         self.ws_router.mount_router(router)
 
     async def handle_websocket(

@@ -11,7 +11,7 @@ from nexios.testing import Client as TestClient
 @pytest.fixture
 def template_engine():
     config = TemplateConfig(
-        template_dir=Path("test/templates"),
+        template_dir=Path("tests/templates"),
         custom_filters={"currency": lambda value, symbol="$": f"{symbol}{value:,.2f}"},
     )
     engine = TemplateEngine()

@@ -2256,8 +2256,8 @@ class Router(BaseRouter):
         # First collect all router prefixes
         for part in name_parts[:-1]:
             found = False
-            for mount_path, sub_router in current_router.sub_routers.items(): #type:ignore
-                if getattr(sub_router, "name", None) == part:
+            for mount_path, sub_router in current_router.sub_routers.items():
+                if mount_path.strip("/") == part:
                     path_segments.append(mount_path.strip("/"))
                     current_router =  cast(Router, sub_router)
                     found = True

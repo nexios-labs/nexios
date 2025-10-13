@@ -80,12 +80,12 @@ async def run_in_threadpool(func: Callable[..., T], *args: Any, **kwargs: Any) -
 
 async def run_until_first_complete(
     *args: Union[
-        Tuple[Callable[[], Coroutine[Any, Any, T]], dict],
+        Tuple[Callable[[], Coroutine[Any, Any, T]], dict[Any,Any]],
         Callable[[], Coroutine[Any, Any, T]],
     ],
 ) -> T:
     """Run multiple coroutines and return when the first one completes."""
-    tasks: List[asyncio.Task] = []
+    tasks: List[asyncio.Task[Any]] = []
     for item in args:
         if callable(item):
             task = asyncio.create_task(item())
@@ -93,7 +93,6 @@ async def run_until_first_complete(
             func, kwargs = item
             task = asyncio.create_task(func(**kwargs))
         tasks.append(task)
-
     try:
         done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         # Get the result or raise exception from the first completed task
