@@ -211,11 +211,10 @@ def test_request_bearer_token_with_spaces(test_client_factory: Callable[[NexiosA
         assert data["has_token"] is True
 
 
+# ========== AJAX Detection Tests ==========
 
-
-
-def test_request_is_ajax_false(test_client_factory: Callable[[NexiosApp], TestClient]):
-    """Test non-AJAX request"""
+def test_request_is_ajax(test_client_factory: Callable[[NexiosApp], TestClient]):
+    """Test AJAX request detection"""
     app = NexiosApp()
     
     @app.get("/test")
@@ -223,8 +222,10 @@ def test_request_is_ajax_false(test_client_factory: Callable[[NexiosApp], TestCl
         return response.json({"is_ajax": request.is_ajax})
     
     with test_client_factory(app) as client:
-        resp = client.get("/test")
-        assert resp.json()["is_ajax"] is False
+        resp = client.get("/test", headers={"X-Requested-With": "XMLHttpRequest"})
+        assert resp.json()["is_ajax"] is True
+
+
 
 
 def test_request_is_ajax_case_insensitive(test_client_factory: Callable[[NexiosApp], TestClient]):
