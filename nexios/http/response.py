@@ -183,7 +183,7 @@ class BaseResponse:
         etag = self._generate_etag()
         self.set_header("etag", etag)
 
-        expires = datetime.utcnow() + timedelta(seconds=max_age)  # type: ignore
+        expires = datetime.now(timezone.utc) + timedelta(seconds=max_age) 
         self.set_header("expires", formatdate(expires.timestamp(), usegmt=True))
 
     def disable_caching(self) -> None:
