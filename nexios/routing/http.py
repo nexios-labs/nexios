@@ -587,9 +587,11 @@ class Router(BaseRouter):
                 for x in route.param_names
             ]
             parameters.extend(route.parameters)  #  type: ignore
-            print(self.root_path + re.sub(r"\{(\w+):\w+\}", r"{\1}", route.raw_path))
+            # Construct full path including router prefix and root_path
+            full_path = self.prefix + self.root_path + re.sub(r"\{(\w+):\w+\}", r"{\1}", route.raw_path)
+            print(full_path)
             docs.document_endpoint(
-                path=self.root_path + re.sub(r"\{(\w+):\w+\}", r"{\1}", route.raw_path),
+                path=full_path,
                 method=method,
                 tags=route.tags, #  type: ignore
                 security=route.security,
