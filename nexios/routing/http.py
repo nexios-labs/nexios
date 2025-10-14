@@ -318,6 +318,7 @@ class Router(BaseRouter):
         self.name = name
         self.event = AsyncEventEmitter()
         self.dependencies = dependencies or []
+        self.root_path = ""
 
 
         if self.prefix and not self.prefix.startswith("/"):
@@ -586,8 +587,9 @@ class Router(BaseRouter):
                 for x in route.param_names
             ]
             parameters.extend(route.parameters)  #  type: ignore
+            print(self.root_path + re.sub(r"\{(\w+):\w+\}", r"{\1}", route.raw_path))
             docs.document_endpoint(
-                path=re.sub(r"\{(\w+):\w+\}", r"{\1}", route.raw_path),
+                path=self.root_path + re.sub(r"\{(\w+):\w+\}", r"{\1}", route.raw_path),
                 method=method,
                 tags=route.tags, #  type: ignore
                 security=route.security,
@@ -2300,6 +2302,7 @@ class Router(BaseRouter):
         for mount_path, sub_app in self.sub_routers.items():
             if url.startswith(mount_path):
                 scope["path"] = url[len(mount_path) :]
+                scope["root_path"] = scope.get("root_path", "") + mount_path
                 await sub_app(scope, receive, send)
 
                 return
@@ -2335,9 +2338,10 @@ class Router(BaseRouter):
             path: The path prefix under which the app will be mounted.
             app: The ASGI application (e.g., another Router) to mount.
         """
-
         if not path:
             path = app.prefix
+        if path:
+            setattr(app, "prefix", path)
         path = path.rstrip("/")
 
         if path == "":
@@ -2350,6 +2354,8 @@ class Router(BaseRouter):
             raise ValueError("Router with prefix exists !")
 
         self.sub_routers[path] = app
+        self.root_path = self.root_path + path
+        print(self.root_path)
 
     def get_all_routes(self) -> List[Routes]:
         """Returns a flat list of all HTTP routes in this router and all nested sub-routers"""
