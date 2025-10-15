@@ -2332,19 +2332,14 @@ class Router(BaseRouter):
 
         raise NotFoundException
 
-    def mount_router(self, app: "Router", path: typing.Optional[str] = None):
+    def mount_router(self, app: "Router"):
         """
-        Mount an ASGI application (e.g., another Router) under a specific path prefix.
+        Mount an ASGI application (e.g., another Router) using its prefix.
 
         Args:
-            path: The path prefix under which the app will be mounted.
             app: The ASGI application (e.g., another Router) to mount.
         """
-        if not path:
-            path = app.prefix
-        if path:
-            setattr(app, "prefix", path)
-        path = path.rstrip("/")
+        path = app.prefix
 
         if path == "":
             self.sub_routers[path] = app
@@ -2356,7 +2351,7 @@ class Router(BaseRouter):
             raise ValueError("Router with prefix exists !")
 
         self.sub_routers[path] = app
-        self.root_path = self.root_path + path
+        self.root_path = self.root_path + path.strip("/")
         print(self.root_path)
 
     def get_all_routes(self) -> List[Routes]:

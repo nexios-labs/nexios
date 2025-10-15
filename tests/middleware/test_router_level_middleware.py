@@ -15,7 +15,7 @@ from nexios.testclient import TestClient
 def test_router_level_middleware_basic(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test basic router-level middleware"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     executed = []
     
@@ -31,7 +31,7 @@ def test_router_level_middleware_basic(test_client_factory: Callable[[NexiosApp]
         executed.append("handler")
         return response.json({"message": "ok"})
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.get("/api/test")
@@ -43,8 +43,8 @@ def test_router_level_middleware_basic(test_client_factory: Callable[[NexiosApp]
 def test_router_level_middleware_isolated(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test that router middleware only applies to that router"""
     app = NexiosApp()
-    router1 = Router()
-    router2 = Router()
+    router1 = Router(prefix="/api1")
+    router2 = Router(prefix="/api2")
     
     executed = []
     
@@ -63,8 +63,8 @@ def test_router_level_middleware_isolated(test_client_factory: Callable[[NexiosA
     async def handler2(request: Request, response: Response):
         return response.json({"router": "2"})
     
-    app.mount_router(router1, path="/api1")
-    app.mount_router(router2, path="/api2")
+    app.mount_router(router1)
+    app.mount_router(router2)
     
     with test_client_factory(app) as client:
         # Router1 route should trigger middleware
@@ -79,11 +79,11 @@ def test_router_level_middleware_isolated(test_client_factory: Callable[[NexiosA
         assert resp2.status_code == 200
         assert "router1_middleware" not in executed
 
-
+    
 def test_router_level_middleware_multiple(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test multiple router-level middleware"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     execution_order = []
     
@@ -107,7 +107,7 @@ def test_router_level_middleware_multiple(test_client_factory: Callable[[NexiosA
         execution_order.append("handler")
         return response.json({"message": "ok"})
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.get("/api/test")
@@ -123,7 +123,7 @@ def test_router_level_middleware_multiple(test_client_factory: Callable[[NexiosA
 def test_router_level_middleware_with_prefix(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test router middleware with path prefix"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     async def add_prefix_header(request: Request, response: Response, call_next):
         await call_next()
@@ -140,7 +140,7 @@ def test_router_level_middleware_with_prefix(test_client_factory: Callable[[Nexi
     async def get_posts(request: Request, response: Response):
         return response.json({"posts": []})
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp1 = client.get("/api/users")
@@ -153,8 +153,8 @@ def test_router_level_middleware_with_prefix(test_client_factory: Callable[[Nexi
 def test_router_level_middleware_auth(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test router-level authentication middleware"""
     app = NexiosApp()
-    protected_router = Router()
-    public_router = Router()
+    protected_router = Router(prefix="/api")
+    public_router = Router(prefix="/public")
     
     async def auth_middleware(request: Request, response: Response, call_next):
         token = request.headers.get("Authorization")
@@ -173,8 +173,8 @@ def test_router_level_middleware_auth(test_client_factory: Callable[[NexiosApp],
     async def public_handler(request: Request, response: Response):
         return response.json({"message": "Public resource"})
     
-    app.mount_router(protected_router, path="/api")
-    app.mount_router(public_router, path="/public")
+    app.mount_router(protected_router)
+    app.mount_router(public_router)
     
     with test_client_factory(app) as client:
         # Protected route without auth
@@ -193,7 +193,7 @@ def test_router_level_middleware_auth(test_client_factory: Callable[[NexiosApp],
 def test_router_level_middleware_modifies_response(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test router middleware modifying response"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     async def json_wrapper_middleware(request: Request, response: Response, call_next):
         await call_next()
@@ -207,7 +207,7 @@ def test_router_level_middleware_modifies_response(test_client_factory: Callable
     async def get_data(request: Request, response: Response):
         return response.json({"value": 42})
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.get("/api/data")
@@ -220,7 +220,7 @@ def test_router_level_middleware_modifies_response(test_client_factory: Callable
 def test_router_and_app_middleware_combined(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test router middleware combined with app middleware"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     execution_order = []
     
@@ -244,7 +244,7 @@ def test_router_and_app_middleware_combined(test_client_factory: Callable[[Nexio
         execution_order.append("handler")
         return response.json({"message": "ok"})
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.get("/api/test")
@@ -257,8 +257,8 @@ def test_router_and_app_middleware_combined(test_client_factory: Callable[[Nexio
 def test_multiple_routers_different_middleware(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test multiple routers with different middleware"""
     app = NexiosApp()
-    router1 = Router()
-    router2 = Router()
+    router1 = Router(prefix="/api1")
+    router2 = Router(prefix="/api2")
     
     async def router1_middleware(request: Request, response: Response, call_next):
         await call_next()
@@ -281,8 +281,8 @@ def test_multiple_routers_different_middleware(test_client_factory: Callable[[Ne
     async def handler2(request: Request, response: Response):
         return response.json({"router": "2"})
     
-    app.mount_router(router1, path="/api1")
-    app.mount_router(router2, path="/api2")
+    app.mount_router(router1)
+    app.mount_router(router2)
     
     with test_client_factory(app) as client:
         resp1 = client.get("/api1/route")
@@ -297,8 +297,8 @@ def test_multiple_routers_different_middleware(test_client_factory: Callable[[Ne
 def test_router_middleware_state_isolation(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test that router middleware state is isolated"""
     app = NexiosApp()
-    router1 = Router()
-    router2 = Router()
+    router1 = Router(prefix="/api1")
+    router2 = Router(prefix="/api2")
     
     async def router1_state_middleware(request: Request, response: Response, call_next):
         request.state.router_name = "router1"
@@ -321,8 +321,8 @@ def test_router_middleware_state_isolation(test_client_factory: Callable[[Nexios
     async def handler2(request: Request, response: Response):
         return response.json({"router": request.state.router_name})
     
-    app.mount_router(router1, path="/api1")
-    app.mount_router(router2, path="/api2")
+    app.mount_router(router1)
+    app.mount_router(router2)
     
     with test_client_factory(app) as client:
         resp1 = client.get("/api1/test")
@@ -335,7 +335,7 @@ def test_router_middleware_state_isolation(test_client_factory: Callable[[Nexios
 def test_router_middleware_error_handling(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test router middleware handling errors"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     async def error_handler_middleware(request: Request, response: Response, call_next):
         try:
@@ -350,7 +350,7 @@ def test_router_middleware_error_handling(test_client_factory: Callable[[NexiosA
     async def error_handler(request: Request, response: Response):
         raise ValueError("Router error")
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.get("/api/error")
@@ -363,8 +363,8 @@ def test_router_middleware_error_handling(test_client_factory: Callable[[NexiosA
 def test_router_middleware_with_nested_routers(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test middleware with nested routers"""
     app = NexiosApp()
-    parent_router = Router()
-    child_router = Router()
+    parent_router = Router(prefix="/api")
+    child_router = Router(prefix="/child")
     
     async def parent_middleware(request: Request, response: Response, call_next):
         request.scope["parent"] = True
@@ -386,8 +386,8 @@ def test_router_middleware_with_nested_routers(test_client_factory: Callable[[Ne
             "child": request.scope.get("child", False)
         })
     
-    parent_router.mount_router(child_router, path="/child")
-    app.mount_router(parent_router, path="/api")
+    parent_router.mount_router(child_router)
+    app.mount_router(parent_router)
     
     with test_client_factory(app) as client:
         resp = client.get("/api/child/test")

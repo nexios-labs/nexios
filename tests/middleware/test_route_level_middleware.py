@@ -214,7 +214,7 @@ def test_route_with_app_middleware(test_client_factory: Callable[[NexiosApp], Te
 def test_route_with_router_and_app_middleware(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test route middleware with both router and app middleware"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     execution_order = []
     
@@ -242,7 +242,7 @@ def test_route_with_router_and_app_middleware(test_client_factory: Callable[[Nex
     
     route = Routes("/test", handler, middleware=[route_middleware])
     router.add_route(route)
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.get("/api/test")

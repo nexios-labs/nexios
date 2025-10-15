@@ -27,7 +27,7 @@ class BaseRouter(ABC):
 
        
 
-    def mount_router(self, app :Any,path:Optional[str]):
+    def mount_router(self, app: Any):
         ...
    
 

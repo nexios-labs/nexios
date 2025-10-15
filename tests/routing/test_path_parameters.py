@@ -43,13 +43,13 @@ def test_multiple_path_parameters(test_client_factory: Callable[[NexiosApp], Tes
 def test_path_parameter_with_router(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test path parameters on mounted router"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     @router.get("/products/{product_id}")
     async def get_product(request: Request, response: Response, product_id: str):
         return response.json({"product_id": product_id})
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.get("/api/products/abc123")
@@ -160,13 +160,13 @@ def test_url_for_with_multiple_parameters(test_client_factory: Callable[[NexiosA
 def test_url_for_on_router(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test URL generation on router"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     @router.get("/products/{product_id}", name="get-product")
     async def get_product(request: Request, response: Response, product_id: str):
         return response.json({"product_id": product_id})
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         url = app.url_for("api.get-product", product_id="abc")

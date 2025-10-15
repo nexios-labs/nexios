@@ -185,13 +185,13 @@ def test_basic_route_with_app(test_client_factory: Callable[[NexiosApp], TestCli
 def test_router_mounted_to_app(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test router mounted to application"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     @router.get("/users")
     async def get_users(request: Request, response: Response):
         return response.json({"users": ["Alice", "Bob"]})
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.get("/api/users")

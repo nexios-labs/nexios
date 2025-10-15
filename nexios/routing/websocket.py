@@ -242,19 +242,14 @@ class WSRouter(BaseRouter):
         """
         self.app = middleware_cls(self.app)
 
-    def mount_router(  # type:ignore
-        self, app: "WSRouter", path: typing.Optional[str] = None
-    ) -> None:  # type:ignore
+    def mount_router(self, app: "WSRouter") -> None:  # type:ignore
         """
-        Mount an ASGI application (e.g., another Router) under a specific path prefix.
+        Mount an ASGI application (e.g., another Router) using its prefix.
 
         Args:
-            path: The path prefix under which the app will be mounted.
             app: The ASGI application (e.g., another Router) to mount.
         """
-
-        if not path:
-            path = app.prefix
+        path = app.prefix
         path = path.rstrip("/")
 
         if path == "":

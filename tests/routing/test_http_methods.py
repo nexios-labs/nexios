@@ -28,13 +28,13 @@ def test_get_method(test_client_factory: Callable[[NexiosApp], TestClient]):
 def test_get_with_router(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test GET method on router"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     @router.get("/products")
     async def get_products(request: Request, response: Response):
         return response.json({"products": []})
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.get("/api/products")
@@ -62,14 +62,14 @@ def test_post_method(test_client_factory: Callable[[NexiosApp], TestClient]):
 def test_post_with_router(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test POST method on router"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     @router.post("/users")
     async def create_user(request: Request, response: Response):
         data = await request.json
         return response.json({"user": data, "id": 123})
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.post("/api/users", json={"username": "alice"})
@@ -98,13 +98,13 @@ def test_put_method(test_client_factory: Callable[[NexiosApp], TestClient]):
 def test_put_with_router(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test PUT method on router"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     @router.put("/products/{product_id}")
     async def update_product(request: Request, response: Response, product_id: str):
         return response.json({"product_id": product_id, "status": "updated"})
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.put("/api/products/456")
@@ -131,13 +131,13 @@ def test_delete_method(test_client_factory: Callable[[NexiosApp], TestClient]):
 def test_delete_with_router(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test DELETE method on router"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     @router.delete("/users/{user_id}")
     async def delete_user(request: Request, response: Response, user_id: str):
         return response.json({"message": f"User {user_id} deleted"})
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.delete("/api/users/999")
@@ -166,14 +166,14 @@ def test_patch_method(test_client_factory: Callable[[NexiosApp], TestClient]):
 def test_patch_with_router(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test PATCH method on router"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     @router.patch("/settings")
     async def patch_settings(request: Request, response: Response):
         data = await request.json
         return response.json({"settings": data})
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.patch("/api/settings", json={"theme": "dark"})
@@ -200,13 +200,13 @@ def test_head_method(test_client_factory: Callable[[NexiosApp], TestClient]):
 def test_head_with_router(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test HEAD method on router"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     @router.head("/status")
     async def head_status(request: Request, response: Response):
         return response.status(200)
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.head("/api/status")
@@ -231,13 +231,13 @@ def test_options_method(test_client_factory: Callable[[NexiosApp], TestClient]):
 def test_options_with_router(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test OPTIONS method on router"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     @router.options("/resources")
     async def options_resources(request: Request, response: Response):
         return response.status(200)
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.options("/api/resources")
@@ -312,7 +312,7 @@ def test_method_not_allowed(test_client_factory: Callable[[NexiosApp], TestClien
 def test_all_router_method_decorators(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test all HTTP method decorators on router"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     @router.get("/get")
     async def get_handler(request: Request, response: Response):
@@ -342,7 +342,7 @@ def test_all_router_method_decorators(test_client_factory: Callable[[NexiosApp],
     async def options_handler(request: Request, response: Response):
         return response.status(200)
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         assert client.get("/api/get").text == "GET"

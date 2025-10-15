@@ -11,8 +11,8 @@ import pytest
 
 app = NexiosApp()
 nested_app = NexiosApp()
-mounted_router = Router()
-ws_router = WSRouter()
+mounted_router = Router(prefix="/mounted_router")
+ws_router = WSRouter(prefix="/ws_router")
 
 
 @app.get("/")
@@ -105,8 +105,8 @@ async def websocket_index2(websocket:WebSocket):
 
 
 
-app.mount_router(mounted_router,path="/mounted_router")
-app.mount_ws_router(ws_router,path="/ws_router")
+app.mount_router(mounted_router)
+app.mount_ws_router(ws_router)
 app.register(nested_app,"/nested")
 
 @pytest.fixture

@@ -394,9 +394,9 @@ class NexiosApp(object):
             WebsocketRoutes(path, handler, middleware=middleware)
         )
 
-    def mount_router(self, router: Router, path: Optional[str] = None) -> None:
+    def mount_router(self, router: Router) -> None:
         """
-        Mounts a router and all its routes to the application.
+        Mounts a router and all its routes to the application using the router's prefix.
 
         This method allows integrating another `Router` instance, registering all its
         defined routes into the current application. It is useful for modularizing routes
@@ -410,16 +410,16 @@ class NexiosApp(object):
 
         Example:
             ```python
-            user_router = Router()
+            user_router = Router(prefix="/users")
 
-            @user_router.route("/users", methods=["GET"])
+            @user_router.route("/list", methods=["GET"])
             def get_users(request, response):
                  response.json({"users": ["Alice", "Bob"]})
 
             app.mount_router(user_router)  # Mounts the user routes into the main app
             ```
         """
-        self.router.mount_router(router, path=path)
+        self.router.mount_router(router)
 
     def mount_ws_router(
         self,
@@ -427,37 +427,31 @@ class NexiosApp(object):
             WSRouter,
             Doc("An instance of Router containing multiple routes to be mounted."),
         ],
-        path: Annotated[
-            Optional[str],
-            Doc("The path to mount the router at."),
-        ] = None,
     ) -> None:
         """
-        Mounts a router and all its routes to the application.
+        Mounts a websocket router and all its routes to the application using the router's prefix.
 
-        This method allows integrating another `Router` instance, registering all its
+        This method allows integrating another `WSRouter` instance, registering all its
         defined routes into the current application. It is useful for modularizing routes
         and organizing large applications.
 
         Args:
-            router (Router): The `Router` instance whose routes will be added.
+            router (WSRouter): The `WSRouter` instance whose routes will be added.
 
         Returns:
             None
 
         Example:
             ```python
-            chat_router = WSRouter()
+            chat_router = WSRouter(prefix="/chat")
 
-            @chat_router.ws("/users")
+            @chat_router.ws("/room")
             def get_users(ws):
                 ...
 
-            app.mount_ws_router(chat_router)  # Mounts the user routes into the main app
+            app.mount_ws_router(chat_router)  # Mounts the websocket routes into the main app
             ```
         """
-        if not router.prefix:
-            router.prefix = path
         self.ws_router.mount_router(router)
 
     async def handle_websocket(
@@ -2192,7 +2186,7 @@ class NexiosApp(object):
                 exc_class_or_status_code, handler
             )
 
-    def url_for(self, _name: str, **path_params: Dict[str, Any]) -> URLPath:
+    def url_for(self, _name: str, **path_params:Any) -> URLPath:
         return self.router.url_for(_name, **path_params)
 
     def wrap_asgi(

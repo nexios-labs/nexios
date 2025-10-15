@@ -128,8 +128,8 @@ def test_exception_handler_middleware_state_access(test_client_factory: Callable
 def test_exception_handler_with_nested_routers(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test exception handler with nested routers"""
     app = NexiosApp()
-    parent_router = Router()
-    child_router = Router()
+    parent_router = Router(prefix="/api")
+    child_router = Router(prefix="/child")
     
     class RouterError(Exception):
         pass
@@ -146,8 +146,8 @@ def test_exception_handler_with_nested_routers(test_client_factory: Callable[[Ne
     async def handler(request: Request, response: Response):
         raise RouterError("Error in nested router")
     
-    parent_router.mount_router(child_router, path="/child")
-    app.mount_router(parent_router, path="/api")
+    parent_router.mount_router(child_router)
+    app.mount_router(parent_router)
     
     with test_client_factory(app) as client:
         resp = client.get("/api/child/test")
@@ -158,8 +158,8 @@ def test_exception_handler_with_nested_routers(test_client_factory: Callable[[Ne
 def test_exception_handler_different_routers(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test exception handler applies across different routers"""
     app = NexiosApp()
-    router1 = Router()
-    router2 = Router()
+    router1 = Router(prefix="/api1")
+    router2 = Router(prefix="/api2")
     
     class SharedError(Exception):
         pass
@@ -180,8 +180,8 @@ def test_exception_handler_different_routers(test_client_factory: Callable[[Nexi
     async def handler2(request: Request, response: Response):
         raise SharedError("Error in router 2")
     
-    app.mount_router(router1, path="/api1")
-    app.mount_router(router2, path="/api2")
+    app.mount_router(router1)
+    app.mount_router(router2)
     
     with test_client_factory(app) as client:
         resp1 = client.get("/api1/test")
@@ -413,7 +413,7 @@ def test_exception_handler_priority_specific_over_general(test_client_factory: C
 def test_exception_handler_complex_scenario(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test exception handler in complex scenario with middleware and routers"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     execution_log = []
     
@@ -443,7 +443,7 @@ def test_exception_handler_complex_scenario(test_client_factory: Callable[[Nexio
         execution_log.append("handler")
         raise ComplexError("Complex error occurred")
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.get("/api/test")

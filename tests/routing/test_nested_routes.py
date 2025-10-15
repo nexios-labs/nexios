@@ -14,13 +14,13 @@ from nexios.testclient import TestClient
 def test_mount_router_basic(test_client_factory: Callable[[NexiosApp], TestClient]):
     """Test basic router mounting"""
     app = NexiosApp()
-    router = Router()
+    router = Router(prefix="/api")
     
     @router.get("/hello")
     async def hello(request: Request, response: Response):
         return response.text("Hello from router")
     
-    app.mount_router(router, path="/api")
+    app.mount_router(router)
     
     with test_client_factory(app) as client:
         resp = client.get("/api/hello")
@@ -49,18 +49,18 @@ def test_mount_multiple_routers(test_client_factory: Callable[[NexiosApp], TestC
     """Test mounting multiple routers"""
     app = NexiosApp()
     
-    users_router = Router()
+    users_router = Router(prefix="/users")
     @users_router.get("/list")
     async def list_users(request: Request, response: Response):
         return response.json({"users": []})
     
-    products_router = Router()
+    products_router = Router(prefix="/products")
     @products_router.get("/list")
     async def list_products(request: Request, response: Response):
         return response.json({"products": []})
     
-    app.mount_router(users_router, path="/users")
-    app.mount_router(products_router, path="/products")
+    app.mount_router(users_router)
+    app.mount_router(products_router)
     
     with test_client_factory(app) as client:
         users_resp = client.get("/users/list")
@@ -77,17 +77,17 @@ def test_nested_routers(test_client_factory: Callable[[NexiosApp], TestClient]):
     app = NexiosApp()
     
     # Inner router
-    inner_router = Router()
+    inner_router = Router(prefix="/inner")
     @inner_router.get("/data")
     async def get_data(request: Request, response: Response):
         return response.json({"data": "nested"})
     
     # Middle router
-    middle_router = Router()
-    middle_router.mount_router(inner_router, path="/inner")
+    middle_router = Router(prefix="/api")
+    middle_router.mount_router(inner_router)
     
     # Mount to app
-    app.mount_router(middle_router, path="/api")
+    app.mount_router(middle_router)
     
     with test_client_factory(app) as client:
         resp = client.get("/api/inner/data")
@@ -100,21 +100,21 @@ def test_deeply_nested_routers(test_client_factory: Callable[[NexiosApp], TestCl
     app = NexiosApp()
     
     # Level 3 (deepest)
-    level3_router = Router()
+    level3_router = Router(prefix="/level3")
     @level3_router.get("/endpoint")
     async def endpoint(request: Request, response: Response):
         return response.json({"level": 3})
     
     # Level 2
-    level2_router = Router()
-    level2_router.mount_router(level3_router, path="/level3")
+    level2_router = Router(prefix="/level2")
+    level2_router.mount_router(level3_router)
     
     # Level 1
-    level1_router = Router()
-    level1_router.mount_router(level2_router, path="/level2")
+    level1_router = Router(prefix="/level1")
+    level1_router.mount_router(level2_router)
     
     # Mount to app
-    app.mount_router(level1_router, path="/level1")
+    app.mount_router(level1_router)
     
     with test_client_factory(app) as client:
         resp = client.get("/level1/level2/level3/endpoint")
@@ -193,18 +193,18 @@ def test_router_isolation(test_client_factory: Callable[[NexiosApp], TestClient]
     """Test that routers are properly isolated"""
     app = NexiosApp()
     
-    router1 = Router()
+    router1 = Router(prefix="/r1")
     @router1.get("/test")
     async def test1(request: Request, response: Response):
         return response.json({"router": 1})
     
-    router2 = Router()
+    router2 = Router(prefix="/r2")
     @router2.get("/test")
     async def test2(request: Request, response: Response):
         return response.json({"router": 2})
     
-    app.mount_router(router1, path="/r1")
-    app.mount_router(router2, path="/r2")
+    app.mount_router(router1)
+    app.mount_router(router2)
     
     with test_client_factory(app) as client:
         r1_resp = client.get("/r1/test")
@@ -218,18 +218,18 @@ def test_nested_router_route_priority(test_client_factory: Callable[[NexiosApp],
     """Test route priority in nested routers"""
     app = NexiosApp()
     
-    specific_router = Router()
+    specific_router = Router(prefix="/items")
     @specific_router.get("/specific")
     async def specific_route(request: Request, response: Response):
         return response.json({"type": "specific"})
     
-    general_router = Router()
+    general_router = Router(prefix="/api")
     @general_router.get("/{resource}")
     async def general_route(request: Request, response: Response, resource: str):
         return response.json({"type": "general", "resource": resource})
     
-    general_router.mount_router(specific_router, path="/items")
-    app.mount_router(general_router, path="/api")
+    general_router.mount_router(specific_router)
+    app.mount_router(general_router)
     
     with test_client_factory(app) as client:
         specific_resp = client.get("/api/items/specific")
