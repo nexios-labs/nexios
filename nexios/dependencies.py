@@ -63,12 +63,7 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
             ctx = current_context.get()
         except LookupError:
             ctx = None
-        for param in params:
-            if (
-                isinstance(param.default, Context)
-                and param.name not in bound_args.arguments
-            ):
-                bound_args.arguments[param.name] = ctx
+        
 
         cleanup_callbacks: List[Callable[[], None]] = []
         # Store cleanup in context if possible
