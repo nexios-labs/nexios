@@ -43,7 +43,6 @@ current_context: contextvars.ContextVar[Context] = contextvars.ContextVar(
     "current_context"
 )
 
-test_var = 1
 
 
 def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
@@ -51,8 +50,7 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
 
     @wraps(handler)
     async def wrapped(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
-        global test_var
-        test_var += 1
+        
         sig = signature(handler)
         bound_args = sig.bind_partial(*args, **kwargs)
         params = list(sig.parameters.values())
@@ -124,11 +122,8 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
 
                 dep_sig = signature(dependency_func)
                 dep_kwargs = {}
-
-                # Pass context to dependencies if they accept it
-
-                # Pass context to dependencies if they have a parameter with Context default
                 for dep_param in dep_sig.parameters.values():
+                    
                     if (
                         dep_param.default != Parameter.empty
                         and isinstance(dep_param.default, Context)
@@ -141,13 +136,6 @@ def inject_dependencies(handler: Callable[..., Any]) -> Callable[..., Any]:
                                 ctx = None
                         dep_kwargs[dep_param.name] = ctx
 
-                
-
-                for dep_param in dep_sig.parameters.values():
-                    if dep_param.name in bound_args.arguments:
-                        dep_kwargs[dep_param.name] = bound_args.arguments[
-                            dep_param.name
-                        ]
                     elif dep_param.default != Parameter.empty and isinstance(
                         dep_param.default, Depend
                     ):
