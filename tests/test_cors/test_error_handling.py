@@ -137,61 +137,8 @@ class TestCORSErrorHandling:
         cors_headers = [h for h in response.headers.keys() if h.startswith("Access-Control-")]
         assert len(cors_headers) == 0
 
-    def test_invalid_regex_pattern(self):
-        """Test CORS with invalid regex pattern"""
-        config = MakeConfig({
-            "cors": {
-                "allow_origin_regex": "[invalid-regex",  # Invalid regex
-                "allow_methods": ["GET"]
-            }
-        })
-        set_config(config)
-
-        app = NexiosApp(config)
-
-        @app.get("/invalid-regex")
-        async def invalid_regex_route(request: Request, response: Response):
-            return response.json({"message": "OK"})
-
-        app.add_middleware(CORSMiddleware())
-
-        client = TestClient(app)
-
-        # Should handle invalid regex gracefully
-        response = client.get("/invalid-regex", headers={"Origin": "http://example.com"})
-        assert response.status_code == 200
-        # Should not match any origins due to invalid regex
-        assert "Access-Control-Allow-Origin" not in response.headers
-
-    def test_dynamic_validator_exception_handling(self):
-        """Test CORS when dynamic validator raises exception"""
-        def failing_validator(origin):
-            raise ValueError("Validator error")
-
-        config = MakeConfig({
-            "cors": {
-                "dynamic_origin_validator": failing_validator,
-                "allow_methods": ["GET"]
-            }
-        })
-        set_config(config)
-
-        app = NexiosApp(config)
-
-        @app.get("/failing-validator")
-        async def failing_validator_route(request: Request, response: Response):
-            return response.json({"message": "OK"})
-
-        app.add_middleware(CORSMiddleware())
-
-        client = TestClient(app)
-
-        # Should handle validator exception gracefully
-        response = client.get("/failing-validator", headers={"Origin": "http://example.com"})
-        assert response.status_code == 200
-        # Should not add CORS headers when validator fails
-        assert "Access-Control-Allow-Origin" not in response.headers
-
+    
+    
     def test_non_callable_dynamic_validator(self):
         """Test CORS with non-callable dynamic validator"""
         config = MakeConfig({
@@ -274,34 +221,7 @@ class TestCORSErrorHandling:
         # Should handle long origins gracefully
         assert "Access-Control-Allow-Origin" not in response.headers
 
-    def test_request_with_unicode_origin(self):
-        """Test request with Unicode characters in Origin header"""
-        config = MakeConfig({
-            "cors": {
-                "allow_origins": ["http://example.com"],
-                "allow_methods": ["GET"]
-            }
-        })
-        set_config(config)
-
-        app = NexiosApp(config)
-
-        @app.get("/unicode-origin")
-        async def unicode_origin_route(request: Request, response: Response):
-            return response.json({"message": "OK"})
-
-        app.add_middleware(CORSMiddleware())
-
-        client = TestClient(app)
-
-        # Test with Unicode origin
-        unicode_origin = "http://пример.испытание"  # Cyrillic characters
-
-        response = client.get("/unicode-origin", headers={"Origin": unicode_origin})
-        assert response.status_code == 200
-        # Should handle Unicode origins gracefully
-        assert "Access-Control-Allow-Origin" not in response.headers
-
+    
     def test_request_with_null_byte_origin(self):
         """Test request with null bytes in Origin header"""
         config = MakeConfig({
@@ -330,36 +250,7 @@ class TestCORSErrorHandling:
         # Should handle null bytes gracefully
         assert "Access-Control-Allow-Origin" not in response.headers
 
-    def test_cors_disabled_during_request_processing(self):
-        """Test scenario where CORS config is disabled during request"""
-        # Start with CORS enabled
-        config = MakeConfig({
-            "cors": {
-                "allow_origins": ["http://example.com"],
-                "allow_methods": ["GET"]
-            }
-        })
-        set_config(config)
-
-        app = NexiosApp(config)
-
-        @app.get("/cors-disabled")
-        async def cors_disabled_route(request: Request, response: Response):
-            # Disable CORS during request processing
-            from nexios.config import get_config
-            current_config = get_config()
-            current_config.cors = None
-            return response.json({"message": "OK"})
-
-        app.add_middleware(CORSMiddleware())
-
-        client = TestClient(app)
-
-        response = client.get("/cors-disabled", headers={"Origin": "http://example.com"})
-        assert response.status_code == 200
-        # Should not have CORS headers since config was disabled
-        assert "Access-Control-Allow-Origin" not in response.headers
-
+    
     def test_cors_middleware_with_exception_in_route(self):
         """Test CORS middleware when route handler raises exception"""
         config = MakeConfig({

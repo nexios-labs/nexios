@@ -29,6 +29,7 @@ class CORSMiddleware(BaseMiddleware):
         self.allow_credentials = (
             config.allow_credentials if config.allow_credentials is not None else True
         )
+
         self.allow_origin_regex = (
             re.compile(config.allow_origin_regex) if config.allow_origin_regex else None
         )
@@ -40,7 +41,7 @@ class CORSMiddleware(BaseMiddleware):
         )
         self.debug = config.debug or False
         self.custom_error_status = config.custom_error_status or 400
-        self.custom_error_messages = getattr(config, "custom_error_messages", {}) or {}
+        self.custom_error_messages: Dict[str, Any] = config.custom_error_messages or {}
 
         self.simple_headers: Dict[str, Any] = {}
         if self.allow_credentials:
@@ -102,12 +103,16 @@ class CORSMiddleware(BaseMiddleware):
         call_next: typing.Callable[..., typing.Awaitable[Any]],
     ):
         config = get_config().cors
+        origin = request.origin
         if not config:
             return None
+        server_error_headers = request.scope.get("server_error_headers", {})
+        server_error_headers["Access-Control-Allow-Origin"] = origin
+        request.scope["server_error_headers"] = server_error_headers
         await call_next()
-        origin = request.origin
 
         if origin and self.is_allowed_origin(origin):
+            
             response.set_header("Access-Control-Allow-Origin", origin, overide=True)
 
             if self.allow_credentials:
@@ -121,7 +126,6 @@ class CORSMiddleware(BaseMiddleware):
                 ", ".join(self.expose_headers),
                 overide=True,
             )
-
     def is_allowed_origin(self, origin: Optional[str]) -> bool:
         if origin in self.blacklist_origins:
             if self.debug:
@@ -131,9 +135,11 @@ class CORSMiddleware(BaseMiddleware):
 
         if "*" in self.allow_origins:
             return True
-
-        if self.allow_origin_regex and self.allow_origin_regex.fullmatch(origin):
-            return True
+        try:
+            if self.allow_origin_regex and self.allow_origin_regex.fullmatch(origin):
+                return True
+        except:
+            return False
 
         if self.dynamic_origin_validator and callable(self.dynamic_origin_validator):
             return self.dynamic_origin_validator(origin)
@@ -226,4 +232,6 @@ class CORSMiddleware(BaseMiddleware):
         return response.json("OK", status_code=201, headers=headers)
 
     def get_error_message(self, error_type: str) -> str:
+        if not self.custom_error_messages:
+            return "CORS request denied."
         return self.custom_error_messages.get(error_type, "CORS request denied.")

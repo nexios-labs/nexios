@@ -878,7 +878,8 @@ class ServerErrorMiddleware(BaseMiddleware):
                 response = self.get_debug_response(request, response, exc)
             else:
                 response = self.error_response(response)
-
+            headers = request.scope.get("server_error_headers", {})
+            response.set_headers(headers)
             err = traceback.format_exc()
             logger.error(err)
             return response

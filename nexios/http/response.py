@@ -200,7 +200,7 @@ class BaseResponse:
             {
                 "type": "http.response.start",
                 "status": self.status_code,
-                "headers": self._headers,
+                "headers": self._headers +  scope.get("pre-response-headers", []),
             }
         )
 
