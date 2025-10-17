@@ -1,0 +1,3 @@
+"""
+CORS middleware tests
+"""

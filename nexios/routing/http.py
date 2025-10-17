@@ -589,7 +589,6 @@ class Router(BaseRouter):
             parameters.extend(route.parameters)  #  type: ignore
             # Construct full path including router prefix and root_path
             full_path = self.prefix + self.root_path + re.sub(r"\{(\w+):\w+\}", r"{\1}", route.raw_path)
-            print(full_path)
             docs.document_endpoint(
                 path=full_path,
                 method=method,
@@ -2352,7 +2351,6 @@ class Router(BaseRouter):
 
         self.sub_routers[path] = app
         self.root_path = self.root_path + path.strip("/")
-        print(self.root_path)
 
     def get_all_routes(self) -> List[Routes]:
         """Returns a flat list of all HTTP routes in this router and all nested sub-routers"""

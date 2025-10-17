@@ -76,8 +76,7 @@ class CORSMiddleware(BaseMiddleware):
 
         if not config:
             await call_next()
-            return None
-
+            return
         origin = request.origin
 
         method = request.scope["method"]
@@ -103,9 +102,9 @@ class CORSMiddleware(BaseMiddleware):
         call_next: typing.Callable[..., typing.Awaitable[Any]],
     ):
         config = get_config().cors
-        await call_next()
         if not config:
             return None
+        await call_next()
         origin = request.origin
 
         if origin and self.is_allowed_origin(origin):
@@ -142,9 +141,11 @@ class CORSMiddleware(BaseMiddleware):
         return origin in self.allow_origins
 
     def is_allowed_method(self, method: Optional[str]) -> bool:
+        if not method or method.strip() == "": 
+            return False
         if "*" in self.allow_methods:
             return True
-        if (method or str()).lower() not in [x.lower() for x in self.allow_methods]:
+        if method.lower() not in [x.lower() for x in self.allow_methods]:
             return False
         return True
 
@@ -172,10 +173,10 @@ class CORSMiddleware(BaseMiddleware):
                 logger.error(
                     f"Preflight request denied: Method '{requested_method}' is not allowed."
                 )
-                return response.json(
-                    self.get_error_message("disallowed_method"),
-                    status_code=self.custom_error_status,
-                )
+            return response.json(
+                self.get_error_message("disallowed_method"),
+                status_code=self.custom_error_status,
+            )
 
         if requested_method:
             headers["Access-Control-Allow-Methods"] = requested_method.upper()

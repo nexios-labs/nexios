@@ -115,7 +115,7 @@ class BaseResponse:
             ):
                 content_type += "; charset=" + self.charset
             self._headers.append((b"content-type", content_type.encode("latin-1")))
-
+        
         self._headers.extend(raw_headers)
 
     def set_cookie(
@@ -195,7 +195,7 @@ class BaseResponse:
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """Make the response callable as an ASGI application."""
         self._init_headers()
-
+        # print("response called"*15)
         await send(
             {
                 "type": "http.response.start",
