@@ -2,7 +2,7 @@ import secrets
 import typing
 import warnings
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Iterable, Union
+from typing import Any, Dict, Iterable, Optional, Union
 
 from nexios.config import MakeConfig, get_config
 
@@ -12,7 +12,7 @@ class BaseSessionInterface:
     accessed = False
     deleted = False
 
-    def __init__(self, session_key: str) -> None:
+    def __init__(self, session_key: Optional[str] = None) -> None:
         self._session_cache: Dict[str, Any] = {}
         config = get_config()
         self.session_key = session_key
@@ -172,10 +172,13 @@ class BaseSessionInterface:
         return secrets.token_hex(32)
 
     def clear(self):
-        self._session_cache = {}
+        self.accessed = True
+        self.modified = True
+        self.deleted = True
+        self._session_cache.clear()
 
-    def get(self, key: str):
-        return self._session_cache.get(key)
+    def get(self, key: str, default: Any = None):
+        return self._session_cache.get(key, default)
 
     def set_expiration_time(self, expiration: datetime) -> None:
         """Set the expiration time for the session."""

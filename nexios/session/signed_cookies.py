@@ -8,7 +8,7 @@ from .base import BaseSessionInterface
 
 
 class SignedSessionManager(BaseSessionInterface):
-    def __init__(self, session_key: str):
+    def __init__(self, session_key: typing.Optional[str] = None):
         super().__init__(session_key)
         config = get_config()
         self.secret_key = config.secret_key
@@ -16,7 +16,6 @@ class SignedSessionManager(BaseSessionInterface):
             secret_key=config.secret_key,  # type:ignore
             salt="nexio.session.signed_cookie",
         )
-        session_key = session_key
 
     def sign_session_data(self, session_data: typing.Dict[str, typing.Any]) -> str:
         """
@@ -78,3 +77,4 @@ class SignedSessionManager(BaseSessionInterface):
 
     def clear(self):
         self._session_cache.clear()
+        self.modified  = True

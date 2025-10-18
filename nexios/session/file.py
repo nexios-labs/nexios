@@ -7,7 +7,7 @@ from .base import BaseSessionInterface
 
 
 class FileSessionManager(BaseSessionInterface):
-    def __init__(self, session_key: str) -> None:
+    def __init__(self, session_key: Optional[str] = None) -> None:
         super().__init__(session_key)
         self.session_key = session_key or self.get_session_key()
         self.session_file_path = os.path.join(
@@ -91,6 +91,7 @@ class FileSessionManager(BaseSessionInterface):
 
     def clear(self):
         """Clear the session data."""
+        self.modified= True
         self._session_cache.clear()
         if os.path.exists(self.session_file_path):
             os.remove(self.session_file_path)
