@@ -38,22 +38,32 @@ flowchart TD
 
 ## Security Middleware Architecture
 
-All four extend `BaseMiddleware` from `core/sillo/middleware/base.py`:
+None of the four extends `BaseMiddleware`. Each is plain raw ASGI —
+`__init__(self, ...)` setting `self.app = None`, and
+`async def __call__(self, scope, receive, send)` — registered the way it
+always has been, as an already-configured instance
+(`app.use(Shield(...))`), which `SilloApp.use()` recognises isn't a bare class
+and binds `next_app` onto directly. See the middleware architecture reference
+(§19) for the shared pieces this makes possible without a shared base class:
+`HttpContext` built directly inside `__call__` rather than through the
+dispatch bridge, and `ResponseHeaders` for editing a response's headers in
+place.
 
-```python
-from sillo import HttpContext
+None of them shares a `dispatch`/`call_next` hook, either — each names its
+own methods for what it actually does:
 
-class BaseMiddleware:
-    async def __call__(self, ctx: HttpContext, call_next):
-        return await self.dispatch(ctx, call_next)
+| Middleware | Methods |
+|---|---|
+| `Shield` | `apply_security_headers(headers)` |
+| `CORSMiddleware` | `check_request(ctx)`, `apply_cors_headers(origin, headers)` |
+| `CSRFMiddleware` | `validate(ctx)`, `set_token_cookie(ctx, headers)` |
+| `RateLimitMiddleware` | `check(ctx)`, `set_limit_headers(headers, result)` |
 
-    async def dispatch(self, ctx: HttpContext, call_next):
-        return await call_next()
-```
-
-Each middleware overrides `dispatch`. There is one hook, and the two phases are
-the two sides of the `await`: what runs before `call_next()` sees the request on
-the way in, what runs after it sees the response on the way out.
+The "before" half (reading the request, deciding whether to short-circuit)
+runs in `__call__` itself before the downstream app; the "after" half
+(editing response headers) runs from a closure `__call__` wraps `send` in,
+called when the downstream app's `http.response.start` message passes
+through.
 
 ---
 
@@ -72,7 +82,7 @@ SecurityMiddleware = Shield
 ### Constructor Parameters
 
 ```python
-class Shield(BaseMiddleware):
+class Shield:
     def __init__(
         self,
         # Content Security Policy
@@ -164,9 +174,12 @@ When `ssl_redirect=True`, any HTTP request is redirected to HTTPS:
 ```python
 from sillo import redirect
 
+# Inside __call__, before the downstream app runs
 if self.ssl_redirect and ctx.url.scheme != "https":
     redirect_url = f"https://{self.ssl_host or ctx.url.hostname}{ctx.url.path}"
-    return redirect(url=redirect_url, status_code=301 if self.ssl_permanent else 302)
+    response = redirect(url=redirect_url, status_code=301 if self.ssl_permanent else 302)
+    await response(scope, receive, send)
+    return
 ```
 
 - `ssl_host`: override the hostname (e.g. for load balancers)
@@ -195,6 +208,19 @@ require-trusted-types-for 'script'; trusted-types <policies>
 
 - `hide_server=True` (default): removes the `Server` header
 - `hide_server=False, server_header="MyApp/1.0"`: sets a custom server header
+
+### How the headers actually get applied
+
+`apply_security_headers(headers)` — the `ResponseHeaders` editor for the
+`http.response.start` message — builds a dict from every header the response
+already has, adds Shield's own into it, and writes the result back with
+`headers.set_headers(computed, override_all=True)`. `override_all=True`
+matters: `set_headers()` defaults to appending each entry rather than
+replacing, and `computed` already contains the response's own pre-existing
+headers alongside Shield's additions, so the default would append a second,
+duplicate copy of every header Shield never meant to touch —
+`Content-Type` and `Content-Length` included. This was a real bug in the
+dispatch-based version of Shield, fixed as part of moving it to raw ASGI.
 
 ---
 
@@ -293,8 +319,8 @@ sequenceDiagram
 ### Simple Requests
 
 For non-preflight requests, the middleware:
-1. Calls `call_next()` to process the request
-2. If the origin is allowed, sets `Access-Control-Allow-Origin` on the response
+1. Runs the downstream app (`check_request` found nothing to reject or answer)
+2. Once its response starts, `apply_cors_headers` sets `Access-Control-Allow-Origin` if the origin is allowed
 3. Sets `Access-Control-Allow-Credentials` if configured
 4. Sets `Access-Control-Expose-Headers` if configured
 
@@ -631,52 +657,79 @@ class RateLimitResult:
 **File:** `core/sillo/security/ratelimit/_middleware.py`
 
 ```python
-class RateLimitMiddleware(BaseMiddleware):
+class RateLimitMiddleware:
     def __init__(self, config=None, **kwargs): ...
+
+    async def __call__(self, scope, receive, send) -> None: ...
 ```
 
-**Counting the hit, then stamping the headers:**
+Plain raw ASGI, not a `BaseMiddleware` subclass. `__call__` calls `check`
+before running the downstream app, and wraps `send` to call
+`set_limit_headers` on the `http.response.start` message:
 
 ```python
 from sillo import HttpContext
 
-async def dispatch(self, ctx: HttpContext, call_next):
+async def check(self, ctx: HttpContext):
     key = self.config._key_func(ctx)
     if key is None:
-        return await call_next()  # No key → skip limiting
+        return None  # No key → skip limiting
 
     full_key = f"{self.config.namespace}:{key}"
     try:
-        result = await self._strategy.hit(
+        return await self._strategy.hit(
             self._backend, full_key, self.config.limit,
             self.config.window, cost=self.config.cost,
         )
     except Exception:
         if not self.config.fail_open:
             raise
-        return await call_next()  # Backend failed, fail_open=True
-
-    self._last_result = result
-    if not result.allowed:
-        return self._deny(ctx, result)      # 429, chain stops here
-
-    response = await call_next()
-    self._set_limit_headers(response)
-    return response
+        return None  # Backend failed, fail_open=True
 ```
 
 ```python
-def _set_limit_headers(self, response) -> None:
-    result = self._last_result
-    if response is None or result is None or not self.config.include_headers:
+async def __call__(self, scope, receive, send) -> None:
+    app = self._inner()
+    if scope["type"] != "http":
+        await app(scope, receive, send)
         return
-    response.set_header("X-RateLimit-Limit", str(result.limit), override=True)
-    response.set_header("X-RateLimit-Remaining", str(result.remaining), override=True)
-    response.set_header("X-RateLimit-Reset", str(int(result.reset_at)), override=True)
+
+    ctx = HttpContext(scope, receive)
+    result = await self.check(ctx)
+
+    if result is not None and not result.allowed:
+        response = self._deny(ctx, result)     # 429, downstream app never runs
+        await response(scope, receive, send)
+        return
+
+    async def send_with_limit_headers(message):
+        if message["type"] == "http.response.start":
+            self.set_limit_headers(ResponseHeaders(message), result)
+        await send(message)
+
+    await app(scope, receive, send_with_limit_headers)
+```
+
+```python
+def set_limit_headers(self, headers, result) -> None:
+    if result is None or not self.config.include_headers:
+        return
+    headers.set_header("X-RateLimit-Limit", str(result.limit), override=True)
+    headers.set_header("X-RateLimit-Remaining", str(result.remaining), override=True)
+    headers.set_header("X-RateLimit-Reset", str(int(result.reset_at)), override=True)
 ```
 
 The headers go on only when the request was allowed through. A denied request
 gets its counts from `_deny`, which builds the 429 with them already set.
+
+Notice `result` is a local variable threaded through the `send_with_limit_headers`
+closure, not stored on `self`. It used to be (`self._last_result = result`)
+in the dispatch-based version — a real bug, since one middleware instance
+serves every concurrent request the application handles: a second request's
+result landing on `self` between it being set and `_set_limit_headers`
+reading it back would have stamped the wrong numbers on the first request's
+response. Fixed as part of moving this to raw ASGI, where each request's
+`result` naturally lives in its own `__call__` invocation instead.
 
 **429 response:**
 

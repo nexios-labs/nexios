@@ -21,6 +21,11 @@ import pytest
 
 from sillo import SilloApp
 from sillo import json
+from sillo.application import (
+    _is_raw_asgi_middleware,
+    _rebinding_factory,
+    _runtime_call_signature,
+)
 from sillo.middleware.bridge import ASGIRequestResponseBridge
 from sillo.core.error.handler import ServerErrorMiddleware
 from sillo.core.http import HttpContext
@@ -55,7 +60,9 @@ class Tagging(BaseMiddleware):
 class StampHeader:
     """A raw ASGI middleware in the ordinary shape: factory taking the next app."""
 
-    def __init__(self, app: ASGIApp, header: str = "x-stamp", value: str = "on") -> None:
+    def __init__(
+        self, app: ASGIApp, header: str = "x-stamp", value: str = "on"
+    ) -> None:
         self.app = app
         self.header = header.encode()
         self.value = value.encode()
@@ -476,3 +483,130 @@ class TestAMiddlewareBuiltWithoutAnInnerApp:
         assert "boom" in ServerErrorMiddleware(debug=True).generate_html(
             RuntimeError("boom"), None
         )
+
+
+class TestRawIsInferredFromTheSignature:
+    """`raw=` need not be passed at all: `use()` reads it off `__call__`."""
+
+    def test_a_bare_asgi_factory_is_detected_as_raw(
+        self, test_client_factory: Callable[[SilloApp], TestClient]
+    ):
+        app = _app()
+        app.use(StampHeader)  # no raw=True
+
+        with test_client_factory(app) as client:
+            assert client.get("/ping").headers["x-stamp"] == "on"
+
+    def test_a_dispatch_instance_is_still_detected_as_dispatch(
+        self, test_client_factory: Callable[[SilloApp], TestClient]
+    ):
+        app = _app()
+        app.use(Tagging("inferred"))  # no raw=False
+
+        with test_client_factory(app) as client:
+            assert client.get("/ping").json()["tags"] == ["inferred"]
+
+    def test_differently_named_parameters_are_still_read_as_asgi(
+        self, test_client_factory: Callable[[SilloApp], TestClient]
+    ):
+        class Renamed:
+            def __init__(self, app: ASGIApp) -> None:
+                self.app = app
+
+            async def __call__(self, s: Scope, r: Receive, w: Send) -> None:
+                await self.app(s, r, w)
+
+        app = _app()
+        app.use(Renamed)
+
+        with test_client_factory(app) as client:
+            assert client.get("/ping").status_code == 200
+
+    def test_an_already_constructed_raw_instance_is_bound_and_used(
+        self, test_client_factory: Callable[[SilloApp], TestClient]
+    ):
+        # The registration style every built-in (SessionMiddleware and
+        # friends) actually uses: a configured instance, not a bare class.
+        stamp = StampHeader.__new__(StampHeader)
+        stamp.header = b"x-stamp"
+        stamp.value = b"on"
+
+        app = _app()
+        app.use(stamp)
+
+        assert stamp.app is not None  # bound by use(), not by StampHeader.__init__
+
+        with test_client_factory(app) as client:
+            assert client.get("/ping").headers["x-stamp"] == "on"
+
+    def test_a_generic_signature_falls_back_to_dispatch(self):
+        # (*args, **kwargs) carries no structural signal either way, so the
+        # pre-existing dispatch default applies -- and dispatch rejects
+        # what look like factory arguments, same as an explicit raw=False.
+        class Generic:
+            async def __call__(self, *args, **kwargs):
+                pass
+
+        app = _app()
+
+        with pytest.raises(TypeError, match="raw ASGI middleware"):
+            app.use(Generic(), "extra")
+
+    def test_raw_can_still_be_stated_explicitly(
+        self, test_client_factory: Callable[[SilloApp], TestClient]
+    ):
+        app = _app()
+        app.use(StampHeader, raw=True)
+
+        with test_client_factory(app) as client:
+            assert client.get("/ping").headers["x-stamp"] == "on"
+
+
+class TestTheInferenceHelpersDirectly:
+    """Unit-level coverage for the edge cases a full request never reaches."""
+
+    def test_a_class_with_no_call_at_all_is_not_raw(self):
+        # `getattr(cls, "__call__")` falls back to the metaclass's own
+        # `__call__` (what makes `cls(...)` construct an instance in the
+        # first place), so this reads as `(*args, **kwargs)` rather than
+        # "no signature at all" -- which still isn't mistaken for either
+        # shape, since a generic signature carries no structural signal.
+        class NotCallable:
+            pass
+
+        assert _is_raw_asgi_middleware(NotCallable) is False
+
+    def test_a_non_callable_instance_is_not_raw(self):
+        assert _is_raw_asgi_middleware(object()) is False
+        assert _runtime_call_signature(object()) is None
+
+    def test_a_call_whose_signature_cannot_be_read_is_not_raw(self):
+        # Built-in callables like `dict().__call__`... most C callables raise
+        # ValueError from inspect.signature; `str.join` is a reliable one.
+        assert _runtime_call_signature(str.join) is not None  # sanity: this one *can*
+        assert (
+            _is_raw_asgi_middleware(len) is False
+        )  # len() -- signature-less in CPython
+
+    def test_four_required_positional_parameters_is_neither_shape(self):
+        class FourParams:
+            async def __call__(self, a, b, c, d):
+                pass
+
+        assert _is_raw_asgi_middleware(FourParams) is False
+
+    def test_rebinding_factory_sets_app_and_returns_the_same_instance(self):
+        class Recorder:
+            app = None
+
+            async def __call__(self, scope, receive, send):
+                pass
+
+        instance = Recorder()
+        factory = _rebinding_factory(instance)
+
+        sentinel = object()
+        result = factory(sentinel)
+
+        assert result is instance
+        assert instance.app is sentinel

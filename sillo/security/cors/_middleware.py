@@ -1,15 +1,13 @@
 import re
-import typing
 from collections.abc import Callable
 from typing import Any
 
 from sillo.core.http import HttpContext
 from sillo.logging import getLogger
-
-# from typing_extensions import Annotated, Doc
-from sillo.middleware.base import BaseMiddleware
+from sillo.middleware.response_headers import ResponseHeaders
 from sillo.responses import json
 from sillo.security.cors.config import CorsConfig
+from sillo.types import ASGIApp, Message, Receive, Scope, Send
 
 logger = getLogger()
 
@@ -18,11 +16,14 @@ BASIC_HEADERS = {"Accept", "Accept-Language", "Content-Language", "Content-Type"
 SAFELISTED_HEADERS = {"accept", "accept-language", "content-language", "content-type"}
 
 
-class CORSMiddleware(BaseMiddleware):
+class CORSMiddleware:
     """Corsmiddleware"""
 
     def __init__(self, config: CorsConfig):
         """Init"""
+        # Bound on afterwards by `use()`: this is registered as a configured
+        # instance, `app.use(CORSMiddleware(config))`.
+        self.app: ASGIApp | None = None
         self.config = config
         self.allow_origins: list[str] = self.config.allow_origins or []
         self.blacklist_origins: list[str] = self.config.blacklist_origins or []
@@ -106,18 +107,51 @@ class CORSMiddleware(BaseMiddleware):
         else:
             self.allow_headers = list(SAFELISTED_HEADERS)
 
-    async def dispatch(
-        self,
-        ctx: HttpContext,
-        call_next: typing.Callable[..., typing.Awaitable[Any]],
-    ):
-        """Apply the CORS policy to one request."""
-        config = getattr(self, "config", None)
-        if not config:
-            return await call_next()
+    def _inner(self) -> ASGIApp:
+        """Return the inner application, refusing to serve without one."""
+        if self.app is None:
+            raise RuntimeError(
+                "CORSMiddleware was constructed without an inner application "
+                "and cannot serve requests. Register it with "
+                "app.use(CORSMiddleware(...))."
+            )
+        return self.app
 
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Apply the CORS policy to one connection."""
+        app = self._inner()
+        if scope["type"] != "http" or not getattr(self, "config", None):
+            await app(scope, receive, send)
+            return
+
+        ctx = HttpContext(scope, receive)
         origin = ctx.origin
 
+        rejection = await self.check_request(ctx)
+        if rejection is not None:
+            await rejection(scope, receive, send)
+            return
+
+        # Read by the server-error handler if the downstream app blows up
+        # before it can stamp its own CORS headers -- an error response is
+        # still a response the browser has to be allowed to read.
+        server_error_headers = ctx.scope.get("server_error_headers", {})
+        server_error_headers["Access-Control-Allow-Origin"] = origin
+        ctx.scope["server_error_headers"] = server_error_headers
+
+        async def send_with_cors_headers(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                self.apply_cors_headers(origin, ResponseHeaders(message))
+            await send(message)
+
+        await app(scope, receive, send_with_cors_headers)
+
+    async def check_request(self, ctx: HttpContext) -> Any | None:
+        """Reject a request missing its Origin under strict checking, or
+        answer a preflight outright. `None` means the request carries on to
+        the downstream app.
+        """
+        origin = ctx.origin
         method = ctx.scope["method"]
 
         if not origin and self.strict_origin_checking:
@@ -127,47 +161,35 @@ class CORSMiddleware(BaseMiddleware):
                 self.get_error_message("missing_origin"),
                 status_code=self.custom_error_status,
             )
+
         if (
             method.lower() == "options"
             and "access-control-request-method" in ctx.headers
         ):
             return await self.preflight_response(ctx)
-        return await self.simple_response(ctx, call_next)
 
-    async def simple_response(
-        self,
-        ctx: HttpContext,
-        call_next: typing.Callable[..., typing.Awaitable[Any]],
-    ):
-        """Run the chain, then stamp the CORS headers on what comes back."""
-        origin = ctx.origin
-        server_error_headers = ctx.scope.get("server_error_headers", {})
-        server_error_headers["Access-Control-Allow-Origin"] = origin
-        ctx.scope["server_error_headers"] = server_error_headers
-        response = await call_next()
+        return None
 
-        if response is None:
-            return None
-
+    def apply_cors_headers(self, origin: str | None, headers: ResponseHeaders) -> None:
+        """Stamp the CORS headers onto a response that ran the downstream app."""
         if origin and self.is_allowed_origin(origin):
-            response.set_header(
+            headers.set_header(
                 "Access-Control-Allow-Origin",
                 self.allow_origin_value(origin),
                 override=True,
             )
 
             if self.allow_credentials:
-                response.set_header(
+                headers.set_header(
                     "Access-Control-Allow-Credentials", "true", override=True
                 )
 
         if self.expose_headers:
-            response.set_header(
+            headers.set_header(
                 "Access-Control-Expose-Headers",
                 ", ".join(self.expose_headers),
                 override=True,
             )
-        return response
 
     def allow_origin_value(self, origin: str) -> str:
         """What to send back in ``Access-Control-Allow-Origin``.

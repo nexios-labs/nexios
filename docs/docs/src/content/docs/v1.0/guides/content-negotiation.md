@@ -119,8 +119,8 @@ app.use(
 async def strict_api(ctx: HttpContext):
     # Returns 406 Not Acceptable if the client doesn't accept JSON/XML
     # or doesn't accept English/Spanish
-    negotiated_type = getattr(ctx, "negotiated_content_type", "application/json")
-    negotiated_lang = getattr(ctx, "negotiated_language", "en")
+    negotiated_type = getattr(ctx.state, "negotiated_content_type", "application/json")
+    negotiated_lang = getattr(ctx.state, "negotiated_language", "en")
     return {
         "data": "Strict API response",
         "content_type": negotiated_type,
@@ -469,7 +469,7 @@ def test_stores_accepts_info():
   `default_content_type` is what they get. Make it the format most clients
   expect.
 - **Ordering of middleware.** `Accepts` sets `Content-Type` only when the
-  response has none, after `call_next` returns. Place it where downstream
+  response has none, once the response starts. Place it where downstream
   middleware won't overwrite `Content-Type` afterward.
 - **Language vs content type.** `negotiate_language` only *computes* a
   language; you must set `Content-Language` and select localized content
@@ -507,8 +507,8 @@ app.use(
 
 @app.use
 async def content_negotiation_logger(ctx: HttpContext, call_next):
-    negotiated_type = getattr(ctx, "negotiated_content_type", "unknown")
-    negotiated_lang = getattr(ctx, "negotiated_language", "unknown")
+    negotiated_type = getattr(ctx.state, "negotiated_content_type", "unknown")
+    negotiated_lang = getattr(ctx.state, "negotiated_language", "unknown")
     print(f"Content-Type: {negotiated_type}, Language: {negotiated_lang}")
     return await call_next()
 ```

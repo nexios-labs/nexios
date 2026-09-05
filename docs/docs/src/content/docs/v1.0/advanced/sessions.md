@@ -24,8 +24,9 @@ classDiagram
     class SessionMiddleware {
         +SessionConfig session_config
         +BaseSessionInterface session_interface
-        +dispatch(ctx, call_next)
-        +_persist(ctx, response)
+        +__call__(scope, receive, send)
+        +load_session(ctx)
+        +persist_session(ctx, headers)
     }
     class SessionConfig {
         -dict _config
@@ -97,20 +98,20 @@ sequenceDiagram
     participant Handler
 
     Client->>Middleware: HTTP Request (Cookie: session_id=abc123)
-    Note over Middleware: dispatch, before call_next
-    Middleware->>Middleware: Read cookie from request
+    Note over Middleware: __call__, before the downstream app runs
+    Middleware->>Middleware: load_session(ctx): read cookie from request
     Middleware->>Backend: create_session("abc123")
     Backend-->>Middleware: Session(interface, "abc123")
     Middleware->>Session: await session.load()
     Session->>Backend: await interface.load(session)
     Backend-->>Session: Populate _session_cache
-    Middleware->>Handler: call_next() (session in scope)
+    Middleware->>Handler: downstream app(scope, receive, send) (session in scope)
 
     Handler->>Session: ctx.session["user_id"] = 42
     Note over Session: modified=True, accessed=True
 
-    Handler-->>Middleware: Response
-    Note over Middleware: dispatch, after call_next
+    Handler-->>Middleware: http.response.start message
+    Note over Middleware: persist_session(ctx, headers), wrapped around send
     Middleware->>Session: Check should_set_cookie
     Middleware->>Session: await session.save()
     Session->>Backend: await interface.save(session)
@@ -453,24 +454,42 @@ Key validation steps:
    `TypeError` if the resolved value is a class rather than an instance, with a
    helpful message showing the correct instantiation pattern.
 
-### dispatch
+### __call__ and load_session
+
+`SessionMiddleware` is plain raw ASGI, not a `BaseMiddleware` subclass:
+`__init__` sets `self.app = None`, and `__call__` takes
+`(scope, receive, send)` directly. It builds its own `HttpContext`, calls
+`load_session` before running the downstream app, and wraps `send` to call
+`persist_session` once the response starts:
 
 ```python
 # core/sillo/session/middleware.py
-async def dispatch(self, ctx: HttpContext, call_next):
+async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+    app = self._inner()
+    if scope["type"] != "http":
+        await app(scope, receive, send)
+        return
+
+    ctx = HttpContext(scope, receive)
+    await self.load_session(ctx)
+
+    async def send_with_session_cookie(message: Message) -> None:
+        if message["type"] == "http.response.start":
+            await self.persist_session(ctx, ResponseHeaders(message))
+        await send(message)
+
+    await app(scope, receive, send_with_session_cookie)
+
+async def load_session(self, ctx: HttpContext) -> None:
     cookie_name = self.session_config.session_cookie_name or "session_id"
     session_key = ctx.cookies.get(cookie_name)
 
     session = self.session_interface.create_session(session_key)
     await session.load()
     ctx.scope["session"] = session
-
-    response = await call_next()
-    await self._persist(ctx, response)
-    return response
 ```
 
-On the way in:
+On the way in, `load_session`:
 
 1. Reads the cookie name from `self.session_config.session_cookie_name`.
 2. Gets `session_key` from `ctx.cookies.get(cookie_name)`.
@@ -478,23 +497,29 @@ On the way in:
 4. Calls `await session.load()` to populate from the backend.
 5. Stores in `ctx.scope["session"]`, which is what `ctx.session` reads.
 
-### _persist
+### persist_session
 
-Everything after the `await` is the write-back, factored into its own method
+The write-back, called from the `send` closure once the response starts,
 because it has three branches:
 
 ```python
 from sillo import HttpContext
+from sillo.middleware.response_headers import ResponseHeaders
 
-async def _persist(self, ctx: HttpContext, response) -> None:
+async def persist_session(self, ctx: HttpContext, headers: ResponseHeaders) -> None:
 ```
+
+`headers` is a `ResponseHeaders` — an editor over the outgoing
+`http.response.start` message's headers, not a response object — but it
+answers to the same `set_cookie`/`delete_cookie` surface a response object
+does, so the branches below read exactly as they would against one.
 
 Three cases:
 
-1. **No session in scope** (line 103): Returns early.
-2. **Empty session that was accessed and modified** (lines 107-115): Calls
+1. **No session in scope**: Returns early.
+2. **Empty session that was accessed and modified**: Calls
    `await session.save()` to let the backend purge its record, then
-   `response.delete_cookie(cookie_name)`. This handles logout. The server-side
+   `headers.delete_cookie(cookie_name)`. This handles logout. The server-side
    store is cleaned up and the cookie is removed.
 3. **should_set_cookie is true** (lines 117-129):
    Calls `await session.save()` to get the cookie value, then sets the cookie

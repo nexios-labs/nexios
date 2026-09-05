@@ -279,7 +279,7 @@ Accept-family headers before the route handler runs.
 **Source**: [`core/sillo/http/accepts.py:926`](../core/sillo/http/accepts.py)
 
 ```python
-class AcceptsMiddleware(BaseMiddleware):
+class AcceptsMiddleware:
     def __init__(
         self,
         *,
@@ -289,14 +289,22 @@ class AcceptsMiddleware(BaseMiddleware):
         set_vary_header: bool = True,
         store_accepts_info: bool = True,
     ): ...
+
+    async def __call__(self, scope, receive, send) -> None: ...
 ```
 
-**Before `await call_next()`**:
+Plain raw ASGI, not a `BaseMiddleware` subclass: `__call__` builds its own
+`HttpContext`, calls `parse_accepts`, then wraps `send` to call `apply_headers`
+on the `http.response.start` message before forwarding it. Neither of those
+two is a hook a base class prescribes — they're just the two halves of what
+this particular middleware does, named for that.
+
+**`parse_accepts(ctx)`, before the downstream app runs**:
 1. Parses all four headers → stores on `ctx.state.accepts` (full dict) and
    `ctx.state.accepts_parsed` (pre-parsed `AcceptItem` lists)
 2. Records which Accept headers are present for Vary header generation
 
-**After it returns**:
+**`apply_headers(ctx, headers, vary)`, once the response starts**:
 1. Merges recorded Accept headers into the `Vary` response header
 2. If no `Content-Type` is set, negotiates one from the client's Accept header
 
@@ -304,8 +312,8 @@ The factory function `Accepts()` creates a pre-configured instance:
 
 ```python
 # Usage
-app = Sillo()
-app.middleware(Accepts(
+app = SilloApp()
+app.use(Accepts(
     default_content_type="application/json",
     set_vary_header=True,
 ))
@@ -377,8 +385,8 @@ flowchart TD
     B -- Yes --> C{Best type in available_types?}
     C -- Yes --> E
     C -- No --> D["Return 406 JSON:<br/>{error, message, available_types}"]
-    E --> F["Set ctx.negotiated_content_type<br/>Set ctx.negotiated_language"]
-    F --> G[call_next → route handler]
+    E --> F["Set ctx.state.negotiated_content_type<br/>Set ctx.state.negotiated_language"]
+    F --> G[downstream app → route handler]
 
     style D fill:#f96,stroke:#c00
 ```
@@ -407,11 +415,12 @@ and then `response.json(data)`, the `json()` method would create a *new*
 response at 200, silently discarding the 406. This is a subtle API invariant.
 
 **Downstream access**: when negotiation succeeds, the negotiated values are
-stored as dynamic attributes on the request:
+stored on `ctx.state`, which every `HttpContext` built for the same
+connection shares:
 
 ```python
-ctx.negotiated_content_type = best_type
-ctx.negotiated_language = best_language
+ctx.state.negotiated_content_type = best_type
+ctx.state.negotiated_language = best_language
 ```
 
 ---
@@ -529,8 +538,8 @@ def etag_matches(
 `is_fresh()` combines ETag matching with request/response:
 
 ```python
-# core/sillo/http/etag.py:94
-def is_fresh(ctx: HttpContext, weak_compare: bool = True) -> bool:
+# core/sillo/http/etag.py
+def is_fresh(ctx: HttpContext, response: _HasHeaders, weak_compare: bool = True) -> bool:
     current = response.headers.get("etag")
     if not current:
         return False
@@ -539,14 +548,25 @@ def is_fresh(ctx: HttpContext, weak_compare: bool = True) -> bool:
     )
 ```
 
+`response` here is typed as `_HasHeaders`, a small `Protocol` -- not
+`BaseResponse` -- since `ETagMiddleware.finish` calls this with a
+`ResponseHeaders` (§19.2), not a response object; a real `BaseResponse`
+satisfies the same protocol structurally, so nothing that already called this
+with one needs to change.
+
 ### 3.4 ETagMiddleware (304)
 
-The middleware automates ETag computation and 304 responses:
+The middleware automates ETag computation and 304 responses. It is plain raw
+ASGI, not a `BaseMiddleware` subclass — and the one built-in that has to be:
+an ETag is a hash of the response body, and deciding between a 304 and the
+original response needs to know the whole body before either can be sent, so
+`__call__` buffers every `http.response.body` chunk before deciding anything,
+the same way `GZipResponder`'s streaming case (§12.6) does.
 
-**Source**: [`core/sillo/http/etag.py:103`](../core/sillo/http/etag.py)
+**Source**: [`core/sillo/http/etag.py`](../core/sillo/http/etag.py)
 
 ```python
-class ETagMiddleware(BaseMiddleware):
+class ETagMiddleware:
     def __init__(
         self,
         *,
@@ -554,50 +574,64 @@ class ETagMiddleware(BaseMiddleware):
         methods: Iterable[str] = ("GET", "HEAD"),
         override: bool = False,
     ): ...
+
+    async def __call__(self, scope, receive, send) -> None: ...
+    async def finish(self, ctx, start_message, body, send) -> None: ...
 ```
 
 **Response processing flow**:
 
 ```mermaid
 flowchart TD
-    A[Route Handler Produces Response] --> B{HTTP method in allowed methods?}
-    B -- No --> Z[Return response unchanged]
-    B -- Yes --> C{Response has body?}
-    C -- No --> Z
-    C -- Yes --> D{ETag already set AND override=False?}
+    A[Downstream app sends its response] --> B{HTTP method in configured methods?}
+    B -- No --> Z[Forward untouched, no buffering]
+    B -- Yes --> C[Buffer http.response.start + every body chunk]
+    C --> D{ETag already set AND override=False?}
     D -- Yes --> E[Use existing ETag]
-    D -- No --> F["compute_and_set_etag(response, body, weak)"]
+    D -- No --> F["compute_and_set_etag(headers, body, weak)"]
     E --> G{If-None-Match matches ETag?}
     F --> G
-    G -- No --> Z
-    G -- Yes --> H["304 Not Modified<br/>body=b''<br/>content-length=0"]
+    G -- No --> H[Send buffered start + body, unchanged]
+    G -- Yes --> I["Send 304 Not Modified<br/>body=b''<br/>only RFC 9110 §15.4.5 headers"]
 
-    style H fill:#ffa,stroke:#aa0
+    style I fill:#ffa,stroke:#aa0
 ```
 
-**Key implementation detail** (`sillo/http/etag.py`, `dispatch`):
+**Key implementation detail** (`sillo/http/etag.py`, `finish`):
 
 ```python
-from sillo import HttpContext
+from sillo.middleware.response_headers import ResponseHeaders
 
-async def dispatch(self, ctx: HttpContext, call_next):
-    response = await call_next()
-    ...
-    if is_fresh(ctx, response, weak_compare=True):
-        return _not_modified(response)
-    return response
+async def finish(self, ctx, start_message, body: bytes, send) -> None:
+    headers = ResponseHeaders(start_message)
+    if not headers.headers.get("etag") or self.override:
+        compute_and_set_etag(headers, body, weak=self.weak, override=True)
+
+    if is_fresh(ctx, headers, weak_compare=True):
+        # only the headers RFC 9110 §15.4.5 requires a 304 to keep
+        await send({"type": "http.response.start", "status": 304, "headers": [...]})
+        await send({"type": "http.response.body", "body": b""})
+        return
+
+    await send(start_message)
+    await send({"type": "http.response.body", "body": body})
 ```
 
-The 304 is a **new response**, not the original one mutated. That is not a
-style choice: what arrives here is usually a streaming response replaying the
-inner application's body, and `set_body` writes an attribute the streaming path
-never reads. Mutating it changed the status to 304 and the length to 0 while
-the original body still went out behind the headers — a 304 carrying a body,
-declaring a length it does not send, which can desync a keep-alive connection.
-Replacing the response outright is the only way to guarantee nothing follows
+The 304 is sent as **new ASGI messages**, not the buffered ones mutated in
+place — for the same reason the old dispatch-based version had to construct a
+new response object rather than mutate the one it had: a 304 must carry no
+body, and its `Content-Length` must agree with what actually goes out, so
+building the 304 from scratch is the only way to guarantee nothing follows
 the headers.
 
-The 304 it returns:
+This buffering is also a correctness fix, not just a port. Through the old
+dispatch bridge, `call_next()` always handed back a `_StreamingResponse` whose
+`.body` was `b""` regardless of what the downstream app actually sent (§10.1)
+— so `compute_and_set_etag` was always hashing an empty body, and every
+response got the same ETag no matter its content. Buffering the real bytes
+here fixes that: two different responses now get two different ETags.
+
+The 304 it sends:
 - Carries **no body** (saves bandwidth)
 - Still carries the `ETag` header (client can cache it)
 - Drops the headers a 304 must not repeat
@@ -606,7 +640,7 @@ The 304 it returns:
 
 ```python
 # Usage
-app.middleware(ETag(weak=True, methods=("GET", "HEAD")))
+app.use(ETag(weak=True, methods=("GET", "HEAD")))
 ```
 
 ### 3.5 set_response_etag / compute_and_set_etag
@@ -1271,7 +1305,7 @@ sequenceDiagram
 Generates, stores, and propagates request IDs for distributed tracing.
 
 ```python
-class RequestIdMiddleware(BaseMiddleware):
+class RequestIdMiddleware:
     def __init__(
         self,
         *,
@@ -1281,38 +1315,49 @@ class RequestIdMiddleware(BaseMiddleware):
         request_attribute_name: str = "request_id",
         include_in_response: bool = True,
     ): ...
+
+    async def __call__(self, scope, receive, send) -> None: ...
 ```
 
-**The whole flow, in one hook**:
+Plain raw ASGI, not a `BaseMiddleware` subclass: `__call__` builds its own
+`HttpContext`, calls `assign_request_id`, then wraps `send` to call
+`set_response_header` on the `http.response.start` message before forwarding
+it.
+
+**The two halves**:
 
 ```python
-from sillo import HttpContext
+from sillo.middleware.response_headers import ResponseHeaders
 
-async def dispatch(self, ctx: HttpContext, call_next):
+def assign_request_id(self, ctx) -> str:
     if self.force_generate:
         request_id = generate_request_id()       # Always fresh UUID4
     else:
         request_id = get_request_id_from_header(ctx, self.header_name)
         if not request_id:
             request_id = get_or_generate_request_id(ctx, self.header_name)
-    self.request_id = request_id
 
     if self.store_in_request:
         store_request_id_in_request(ctx, request_id, self.request_attribute_name)
 
-    response = await call_next()
+    return request_id
 
-    # After the chain, so the header survives anything downstream set.
-    if response is not None and request_id and self.include_in_response:
-        if not response.headers.get(self.header_name):
-            set_request_id_header(response, request_id, self.header_name)
-
-    return response
+def set_response_header(self, headers: ResponseHeaders, request_id: str) -> None:
+    if not request_id or not self.include_in_response:
+        return
+    if not headers.headers.get(self.header_name):
+        set_request_id_header(headers, request_id, self.header_name)
 ```
 
 The ID is resolved on the way in — so anything downstream can read it off
 `ctx.state` — and stamped on the way out, where it cannot be overwritten by a
-handler that built its own response.
+handler that built its own response. Notice it is not kept anywhere on
+`self`: this middleware instance is shared across every concurrent request
+the application handles, so a value written there would belong to whichever
+request happened to write it last, not the one currently in
+`set_response_header`. Each request's ID lives only in that request's
+`ctx.state` and in `assign_request_id`'s return value, threaded through the
+`send` closure `__call__` builds per request.
 
 **Helper functions** (`core/sillo/http/lifecycle/helpers.py`):
 
@@ -1330,7 +1375,7 @@ handler that built its own response.
 
 ```python
 # Usage
-app.middleware(RequestId(
+app.use(RequestId(
     header_name="X-Request-ID",
     force_generate=False,       # Trust client-supplied IDs
     include_in_response=True,   # Echo back to client

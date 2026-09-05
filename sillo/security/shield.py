@@ -11,12 +11,12 @@ Usage::
     app.use(Shield())
 """
 
-from sillo.middleware.base import BaseMiddleware
+from sillo.middleware.response_headers import ResponseHeaders
 from sillo.responses import redirect as _redirect
-from sillo.types import HttpContext
+from sillo.types import ASGIApp, HttpContext, Message, Receive, Scope, Send
 
 
-class Shield(BaseMiddleware):
+class Shield:
     """Shield"""
 
     def __init__(
@@ -75,6 +75,10 @@ class Shield(BaseMiddleware):
         server_header: str | None = None,
     ):
         """Init"""
+        # Bound on afterwards by `use()`: this is registered as a configured
+        # instance, `app.use(Shield(...))`.
+        self.app: ASGIApp | None = None
+
         self.csp_enabled = csp_enabled
         self.csp_policy = csp_policy or {
             "default-src": ["'self'"],
@@ -152,19 +156,42 @@ class Shield(BaseMiddleware):
                 policies.append(f"{feature}=({' '.join(setting)})")
         return ", ".join(policies)
 
-    async def dispatch(self, ctx: HttpContext, call_next):
-        """Redirect to HTTPS if configured, then stamp the security headers."""
+    def _inner(self) -> ASGIApp:
+        """Return the inner application, refusing to serve without one."""
+        if self.app is None:
+            raise RuntimeError(
+                "Shield was constructed without an inner application and "
+                "cannot serve requests. Register it with app.use(Shield(...))."
+            )
+        return self.app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Redirect to HTTPS if configured, then run the app and stamp security headers."""
+        app = self._inner()
+        if scope["type"] != "http":
+            await app(scope, receive, send)
+            return
+
+        ctx = HttpContext(scope, receive)
+
         if self.ssl_redirect and ctx.url.scheme != "https":
             redirect_url = f"https://{self.ssl_host or ctx.url.hostname}{ctx.url.path}"
-            return _redirect(
+            response = _redirect(
                 redirect_url, status_code=301 if self.ssl_permanent else 302
             )
+            await response(scope, receive, send)
+            return
 
-        response = await call_next()
-        if response is None:
-            return None
+        async def send_with_security_headers(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                self.apply_security_headers(ResponseHeaders(message))
+            await send(message)
 
-        headers = dict(response.headers)
+        await app(scope, receive, send_with_security_headers)
+
+    def apply_security_headers(self, response_headers: ResponseHeaders) -> None:
+        """Stamp the configured security headers onto the outgoing response."""
+        headers = dict(response_headers.headers)
 
         if self.csp_enabled:
             header_name = (
@@ -242,5 +269,11 @@ class Shield(BaseMiddleware):
             headers.pop("Server", None)
         elif self.server_header:
             headers["Server"] = self.server_header
-        response.set_headers(headers)
-        return response
+
+        # `override_all=True`: `headers` was seeded from every header the
+        # response already had, so replacing the whole set with it is a
+        # no-op for anything Shield didn't touch and an update for what it
+        # did. The default, appending each entry, doubled every header the
+        # response already carried -- `Content-Type` and `Content-Length`
+        # included -- since they were already in `headers` before this ran.
+        response_headers.set_headers(headers, override_all=True)

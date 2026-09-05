@@ -79,6 +79,33 @@ class TestRequestIdMiddleware:
         response = client.get("/test")
         assert "X-Request-ID" not in response.headers
 
+    def test_assigning_one_request_id_does_not_touch_the_shared_instance(self):
+        """One middleware instance serves every concurrent request.
+
+        `assign_request_id` used to write its result onto `self`, which a
+        second request assigning its own ID -- interleaved with the first,
+        since both share this same instance -- would overwrite before the
+        first request's response echoed it back. Nothing request-specific
+        should land on the instance at all; each request's ID lives only in
+        its own `ctx.state` and this method's return value.
+        """
+        middleware = RequestIdMiddleware()
+
+        class FakeState:
+            def update(self, values: dict) -> None:
+                self.__dict__.update(values)
+
+        class FakeContext:
+            def __init__(self):
+                self.headers: dict = {}
+                self.state = FakeState()
+
+        first_id = middleware.assign_request_id(FakeContext())
+        second_id = middleware.assign_request_id(FakeContext())
+
+        assert first_id != second_id
+        assert not hasattr(middleware, "request_id")
+
 
 class TestRequestIdHelpers:
     def test_generate_request_id_is_valid_uuid(self):

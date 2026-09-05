@@ -132,6 +132,13 @@ from `call_next()`, possibly modified, or one it built itself to short-circuit.
 
 ### Step-by-step: Creating custom middleware
 
+> This is a teaching example of the dispatch pattern, not sillo's own rate
+> limiter — `sillo.security.ratelimit.RateLimitMiddleware` is a separate,
+> raw-ASGI implementation (see the middleware architecture reference, §19).
+> Both names existing side by side is intentional: this shows how *you*
+> would write one this way if you needed to, using a name that happens to
+> match.
+
 ```python
 # core/sillo/my_feature/middleware.py
 
@@ -139,7 +146,7 @@ from sillo.middleware.base import BaseMiddleware
 from sillo import HttpContext, text
 
 
-class RateLimitMiddleware(BaseMiddleware):
+class MyRateLimitMiddleware(BaseMiddleware):
     """Example: simple in-memory rate limiter."""
 
     def __init__(self, max_requests: int = 100, window: int = 60, **kwargs):
@@ -172,7 +179,7 @@ class RateLimitMiddleware(BaseMiddleware):
 from sillo import SilloApp
 
 app = SilloApp()
-app.use(RateLimitMiddleware(max_requests=100, window=60))
+app.use(MyRateLimitMiddleware(max_requests=100, window=60))
 ```
 
 ### Ordering

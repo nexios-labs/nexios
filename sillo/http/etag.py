@@ -2,16 +2,34 @@ from __future__ import annotations
 
 import re
 from base64 import b64encode
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from hashlib import sha1
-from typing import Any
+from typing import Any, Protocol
 
 from sillo.core.http import HttpContext
 from sillo.core.http.response import BaseResponse
-from sillo.middleware.base import BaseMiddleware
+from sillo.middleware.response_headers import ResponseHeaders
+from sillo.types import ASGIApp, Message, Receive, Scope, Send
 
 _WEAK_PREFIX = "W/"
 _ETAG_TOKEN_RE = re.compile(r'^(W/)?\s*"[^"]*"\s*$')
+
+
+class _HasHeaders(Protocol):
+    """What these functions actually need: a header-editing surface.
+
+    A :class:`BaseResponse` satisfies this, and so does a
+    :class:`~sillo.middleware.response_headers.ResponseHeaders` -- the
+    editor `ETagMiddleware` hands these functions when it has buffered a
+    response rather than built one. Neither is named here so this stays
+    correct if a third kind of header-editable object ever needs an ETag
+    stamped on it.
+    """
+
+    @property
+    def headers(self) -> Mapping[str, str]: ...
+
+    def set_header(self, key: str, value: str, override: bool = ...) -> Any: ...
 
 
 def generate_etag_from_bytes(data: bytes, weak: bool = True) -> str:
@@ -33,12 +51,12 @@ def normalize_etag(tag: str) -> str:
     return tag
 
 
-def set_response_etag(response: BaseResponse, etag: str, override: bool = True) -> None:
+def set_response_etag(response: _HasHeaders, etag: str, override: bool = True) -> None:
     response.set_header("etag", normalize_etag(etag), override=override)
 
 
 def compute_and_set_etag(
-    response: BaseResponse, body: bytes = b"", weak: bool = True, override: bool = False
+    response: _HasHeaders, body: bytes = b"", weak: bool = True, override: bool = False
 ) -> str:
     tag = generate_etag_from_bytes(body, weak=weak)
     set_response_etag(response, tag, override=override)
@@ -93,7 +111,7 @@ def etag_matches(
 
 
 def is_fresh(
-    ctx: HttpContext, response: BaseResponse, weak_compare: bool = True
+    ctx: HttpContext, response: _HasHeaders, weak_compare: bool = True
 ) -> bool:
     current = response.headers.get("etag")
     if not current:
@@ -101,8 +119,18 @@ def is_fresh(
     return etag_matches(current, parse_if_none_match(ctx), weak_compare=weak_compare)
 
 
-class ETagMiddleware(BaseMiddleware):
-    """Compute ETag headers and handle ``If-None-Match`` conditionals."""
+class ETagMiddleware:
+    """Compute ETag headers and handle ``If-None-Match`` conditionals.
+
+    An ETag has to be computed from the actual response body, and there is
+    no telling whether the downstream app is done writing that body until it
+    sends a final ``http.response.body`` message with ``more_body`` unset --
+    so unlike the header-only middleware in this package, this one has to
+    fully buffer a matching response before it can decide what to send:
+    a 304 with no body at all, or the original response with an ``ETag``
+    header added. Nothing here needs a body it isn't already going to send,
+    so nothing is held any longer than it takes to make that one decision.
+    """
 
     def __init__(
         self,
@@ -112,28 +140,78 @@ class ETagMiddleware(BaseMiddleware):
         override: bool = False,
         **kwargs: Any,
     ) -> None:
-        super().__init__(**kwargs)
+        # Bound on afterwards by `use()`: this is registered as a configured
+        # instance, `app.use(ETagMiddleware(...))`.
+        self.app: ASGIApp | None = None
         self.weak = weak
         self.methods = tuple(method.upper() for method in methods)
         self.override = override
 
-    async def dispatch(self, ctx: HttpContext, call_next: Any) -> Any:
-        """Run the chain, then attach an ETag and honour ``If-None-Match``."""
-        response = await call_next()
+    def _inner(self) -> ASGIApp:
+        """Return the inner application, refusing to serve without one."""
+        if self.app is None:
+            raise RuntimeError(
+                "ETagMiddleware was constructed without an inner application "
+                "and cannot serve requests. Register it with "
+                "app.use(ETagMiddleware(...))."
+            )
+        return self.app
 
-        if response is None or ctx.method.upper() not in self.methods:
-            return response
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Buffer a matching response, then attach an ETag or answer 304."""
+        app = self._inner()
+        if scope["type"] != "http" or scope["method"].upper() not in self.methods:
+            await app(scope, receive, send)
+            return
 
-        has_existing = bool(response.headers.get("etag"))
+        ctx = HttpContext(scope, receive)
+        start_message: Message | None = None
+        body = bytearray()
+
+        async def buffer(message: Message) -> None:
+            nonlocal start_message
+            if message["type"] == "http.response.start":
+                start_message = message
+            elif message["type"] == "http.response.body":
+                body.extend(message.get("body", b""))
+
+        await app(scope, receive, buffer)
+
+        assert start_message is not None, "downstream app sent no response.start"
+        await self.finish(ctx, start_message, bytes(body), send)
+
+    async def finish(
+        self,
+        ctx: HttpContext,
+        start_message: Message,
+        body: bytes,
+        send: Send,
+    ) -> None:
+        """Decide the ETag, then send either the buffered response or a 304."""
+        headers = ResponseHeaders(start_message)
+
+        has_existing = bool(headers.headers.get("etag"))
         if not has_existing or self.override:
-            body = _response_body(response)
-            if body is not None:
-                compute_and_set_etag(response, body, weak=self.weak, override=True)
+            compute_and_set_etag(headers, body, weak=self.weak, override=True)
 
-        if is_fresh(ctx, response, weak_compare=True):
-            return _not_modified(response)
+        if is_fresh(ctx, headers, weak_compare=True):
+            not_modified_headers = [
+                (name, value)
+                for name, value in start_message["headers"]
+                if name.decode("latin-1").lower() in _NOT_MODIFIED_HEADERS
+            ]
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 304,
+                    "headers": not_modified_headers,
+                }
+            )
+            await send({"type": "http.response.body", "body": b""})
+            return
 
-        return response
+        await send(start_message)
+        await send({"type": "http.response.body", "body": body})
 
 
 #: Headers RFC 9110 §15.4.5 requires a 304 to carry when the corresponding
@@ -148,29 +226,6 @@ _NOT_MODIFIED_HEADERS = (
     "expires",
     "vary",
 )
-
-
-def _not_modified(response: BaseResponse) -> BaseResponse:
-    """Build the 304 to send in place of *response*.
-
-    A fresh response cannot be turned into a 304 by mutating it. What arrives
-    here is a streaming response replaying the inner application's body from a
-    memory stream, and ``set_body`` writes an attribute that the streaming
-    path never reads — so the status changed to 304, ``Content-Length`` was
-    set to 0, and the original body went out behind it. A 304 carrying a body
-    is a protocol violation, and one whose declared length disagrees with what
-    it sends can desync a keep-alive connection.
-
-    Returning a new response replaces the streaming one outright, which is the
-    only way to guarantee nothing follows the headers.
-    """
-    headers = {
-        name: value
-        for name, value in response.headers.items()
-        if name.lower() in _NOT_MODIFIED_HEADERS
-    }
-
-    return BaseResponse(body=b"", status_code=304, headers=headers)
 
 
 def _response_body(response: BaseResponse) -> bytes | None:

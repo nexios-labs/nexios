@@ -5,8 +5,10 @@ from typing import Any
 
 from sillo.core.http import HttpContext
 from sillo.helpers.signing import BadSignature, URLSafeSerializer
-from sillo.middleware.base import BaseMiddleware
+from sillo.middleware.bridge import _CachedRequest
+from sillo.middleware.response_headers import ResponseHeaders
 from sillo.responses import text
+from sillo.types import ASGIApp, Message, Receive, Scope, Send
 
 from .config import CSRFConfig
 
@@ -19,7 +21,7 @@ _FORM_CONTENT_TYPES = (
 )
 
 
-class CSRFMiddleware(BaseMiddleware):
+class CSRFMiddleware:
     """
     Middleware to protect against Cross-Site HttpContext Forgery (CSRF) attacks for sillo.
 
@@ -47,6 +49,10 @@ class CSRFMiddleware(BaseMiddleware):
                 with ``AttributeError: no attribute 'serializer'`` from inside
                 the request path rather than at startup.
         """
+        # Bound on afterwards by `use()`: this is registered as a configured
+        # instance, `app.use(CSRFMiddleware(config))`.
+        self.app: ASGIApp | None = None
+
         if config is not None:
             if not isinstance(config, CSRFConfig):
                 raise TypeError("config must be a CSRFConfig instance")
@@ -92,15 +98,50 @@ class CSRFMiddleware(BaseMiddleware):
         if self.secret and self.serializer is None:
             self.serializer = URLSafeSerializer(self.secret, "csrftoken")
 
-    async def dispatch(
-        self,
-        ctx: HttpContext,
-        call_next: typing.Callable[..., typing.Awaitable[typing.Any]],
-    ):
-        """Validate the CSRF token, then stamp it onto the reply."""
-        if not self.csrf_config or not self.use_csrf:
-            return await call_next()
+    def _inner(self) -> ASGIApp:
+        """Return the inner application, refusing to serve without one."""
+        if self.app is None:
+            raise RuntimeError(
+                "CSRFMiddleware was constructed without an inner application "
+                "and cannot serve requests. Register it with "
+                "app.use(CSRFMiddleware(...))."
+            )
+        return self.app
 
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Validate the CSRF token, then stamp it onto the reply."""
+        app = self._inner()
+        if scope["type"] != "http" or not self.csrf_config or not self.use_csrf:
+            await app(scope, receive, send)
+            return
+
+        # A submitted token can arrive in the form body, which `validate()`
+        # has to read to check it -- so the request is built with the same
+        # buffer/replay wrapper the dispatch bridge uses, and the route
+        # handler downstream still sees a body to read.
+        ctx = _CachedRequest(scope, receive)
+
+        rejection = await self.validate(ctx)
+        if rejection is not None:
+            await rejection(scope, receive, send)
+            return
+
+        scope["_sillo_body_replay"] = ctx.wrapped_receive
+
+        async def send_with_csrf_cookie(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                self.set_token_cookie(ctx, ResponseHeaders(message))
+            await send(message)
+
+        await app(scope, ctx.wrapped_receive, send_with_csrf_cookie)
+
+    async def validate(self, ctx: HttpContext) -> Any | None:
+        """Check the CSRF token, returning a 403 response to reject the request.
+
+        Always sets ``ctx.state.csrf_token`` first, so the token is available
+        (to a template, an API response, ...) whether or not this request
+        needed one checked.
+        """
         csrf_cookie = ctx.cookies.get(self.cookie_name)
 
         # Keep the token the visitor already holds. Minting a new one on every
@@ -125,20 +166,15 @@ class CSRFMiddleware(BaseMiddleware):
             if not self._csrf_tokens_match(csrf_cookie, submitted_csrf_token):
                 return text("CSRF token incorrect", status_code=403)
 
-        response = await call_next()
-        self._set_token_cookie(ctx, response)
-        return response
+        return None
 
-    def _set_token_cookie(self, ctx: HttpContext, response) -> None:
+    def set_token_cookie(self, ctx: HttpContext, headers: ResponseHeaders) -> None:
         """Put the CSRF token on the outgoing response for the client to read."""
-        if response is None:
-            return
-
         csrf_token = getattr(ctx.state, "csrf_token", None)
         if not csrf_token:
             return
 
-        response.set_cookie(
+        headers.set_cookie(
             key=self.cookie_name,
             value=csrf_token,
             path=self.cookie_path,

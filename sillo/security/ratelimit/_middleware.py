@@ -8,12 +8,12 @@ or short-circuits with a ``429`` response carrying ``Retry-After``.
 
 from __future__ import annotations
 
-import typing
 from typing import Any
 
 from sillo.core.http import HttpContext
-from sillo.middleware.base import BaseMiddleware
+from sillo.middleware.response_headers import ResponseHeaders
 from sillo.responses import json
+from sillo.types import ASGIApp, Message, Receive, Scope, Send
 
 from .backends import RateLimitBackend, get_backend
 from .config import RateLimitConfig
@@ -24,7 +24,7 @@ _HEADER_REMAINING = "X-RateLimit-Remaining"
 _HEADER_RESET = "X-RateLimit-Reset"
 
 
-class RateLimitMiddleware(BaseMiddleware):
+class RateLimitMiddleware:
     """Enforce request rate limits per client identity."""
 
     def __init__(
@@ -33,26 +33,62 @@ class RateLimitMiddleware(BaseMiddleware):
         **kwargs: Any,
     ) -> None:
         """Init"""
+        # Bound on afterwards by `use()`: this is registered as a configured
+        # instance, `app.use(RateLimitMiddleware(config))`.
+        self.app: ASGIApp | None = None
+
         if config is not None and not isinstance(config, RateLimitConfig):
             raise TypeError("config must be a RateLimitConfig instance")
         self.config: RateLimitConfig = config or RateLimitConfig()
         self._strategy: RateLimitStrategy = get_strategy(self.config.strategy)
         self._backend: RateLimitBackend = get_backend(self.config.backend)
-        self._last_result = None  # type: ignore[var-annotated]
 
-    async def dispatch(
-        self,
-        ctx: HttpContext,
-        call_next: typing.Callable[..., typing.Awaitable[typing.Any]],
-    ):
+    def _inner(self) -> ASGIApp:
+        """Return the inner application, refusing to serve without one."""
+        if self.app is None:
+            raise RuntimeError(
+                "RateLimitMiddleware was constructed without an inner "
+                "application and cannot serve requests. Register it with "
+                "app.use(RateLimitMiddleware(...))."
+            )
+        return self.app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """Count the hit, deny or continue, then stamp the limit headers."""
+        app = self._inner()
+        if scope["type"] != "http":
+            await app(scope, receive, send)
+            return
+
+        ctx = HttpContext(scope, receive)
+        result = await self.check(ctx)
+
+        if result is not None and not result.allowed:
+            response = self._deny(ctx, result)
+            await response(scope, receive, send)
+            return
+
+        async def send_with_limit_headers(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                self.set_limit_headers(ResponseHeaders(message), result)
+            await send(message)
+
+        await app(scope, receive, send_with_limit_headers)
+
+    async def check(self, ctx: HttpContext) -> Any | None:
+        """Count this request against its client's limit.
+
+        Returns the strategy's result, or `None` when there was nothing to
+        count (no key, or the backend failed open) -- the caller reads
+        `result.allowed` to decide whether to deny it.
+        """
         key = self.config._key_func(ctx)
         if key is None:
-            return await call_next()
+            return None
 
         full_key = f"{self.config.namespace}:{key}"
         try:
-            result = await self._strategy.hit(
+            return await self._strategy.hit(
                 self._backend,
                 full_key,
                 self.config.limit,
@@ -63,24 +99,15 @@ class RateLimitMiddleware(BaseMiddleware):
             if not self.config.fail_open:
                 raise
             # Backend unavailable -> allow, but don't attach limit headers.
-            return await call_next()
+            return None
 
-        self._last_result = result
-        if not result.allowed:
-            return self._deny(ctx, result)
-
-        response = await call_next()
-        self._set_limit_headers(response)
-        return response
-
-    def _set_limit_headers(self, response) -> None:
+    def set_limit_headers(self, headers: ResponseHeaders, result: Any | None) -> None:
         """Write the ``X-RateLimit-*`` headers onto the outgoing response."""
-        result = self._last_result
-        if response is None or result is None or not self.config.include_headers:
+        if result is None or not self.config.include_headers:
             return
-        response.set_header(_HEADER_LIMIT, str(result.limit), override=True)
-        response.set_header(_HEADER_REMAINING, str(result.remaining), override=True)
-        response.set_header(_HEADER_RESET, str(int(result.reset_at)), override=True)
+        headers.set_header(_HEADER_LIMIT, str(result.limit), override=True)
+        headers.set_header(_HEADER_REMAINING, str(result.remaining), override=True)
+        headers.set_header(_HEADER_RESET, str(int(result.reset_at)), override=True)
 
     def _deny(self, ctx: HttpContext, result: Any):
         """Build the 429, or hand off to a configured ``on_exceed``."""

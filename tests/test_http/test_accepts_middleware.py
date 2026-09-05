@@ -225,9 +225,7 @@ def test_strict_negotiation_rejects_an_unsupported_type():
     Note the endpoint must not offer the default content type, or negotiation
     falls back onto it and the request is served after all.
     """
-    client = _app_with(
-        StrictContentNegotiationMiddleware(available_types=["text/csv"])
-    )
+    client = _app_with(StrictContentNegotiationMiddleware(available_types=["text/csv"]))
     resp = client.get("/x", headers={"Accept": "application/xml"})
     assert resp.status_code == 406
     assert "text/csv" in resp.text
@@ -257,6 +255,39 @@ def test_strict_negotiation_with_no_accept_header():
         StrictContentNegotiationMiddleware(available_types=["application/json"])
     )
     assert client.get("/x").status_code in (200, 406)
+
+
+def test_negotiated_values_reach_the_handler():
+    """The route handler gets its own, separately-built HttpContext.
+
+    The negotiated values used to be set as a plain attribute on the
+    middleware's own context object, which the handler's context never saw
+    -- so this reads them the way a handler actually would, off ctx.state,
+    not off the object the middleware happened to negotiate against.
+    """
+    app = SilloApp()
+
+    @app.get("/x")
+    async def x(ctx):
+        return json(
+            {
+                "type": ctx.state.negotiated_content_type,
+                "lang": ctx.state.negotiated_language,
+            }
+        )
+
+    app.use(
+        StrictContentNegotiationMiddleware(
+            available_types=["application/json"], available_languages=["en"]
+        )
+    )
+    client = TestClient(app)
+
+    response = client.get(
+        "/x", headers={"Accept": "application/json", "Accept-Language": "en"}
+    )
+
+    assert response.json() == {"type": "application/json", "lang": "en"}
 
 
 # ── the Accepts factory ──────────────────────────────────────────────────

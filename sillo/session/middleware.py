@@ -1,10 +1,10 @@
-import typing
 import warnings
 from typing import Any
 
 from sillo.core.http import HttpContext
-from sillo.middleware.base import BaseMiddleware
+from sillo.middleware.response_headers import ResponseHeaders
 from sillo.session.session_objects import Session
+from sillo.types import ASGIApp, Message, Receive, Scope, Send
 
 from .base import BaseSessionInterface
 from .config import SessionConfig, reject_unknown_settings
@@ -18,7 +18,7 @@ _COOKIE_LIMIT = 4096
 _COOKIE_ATTRIBUTE_ALLOWANCE = 128
 
 
-class SessionMiddleware(BaseMiddleware):
+class SessionMiddleware:
     """Sessionmiddleware"""
 
     def __init__(
@@ -63,7 +63,9 @@ class SessionMiddleware(BaseMiddleware):
                 "the config or be dropped, and both are surprising."
             )
 
-        super().__init__()
+        # Bound on afterwards by `use()`: this is registered as a configured
+        # instance, `app.use(SessionMiddleware(secret_key=...))`.
+        self.app: ASGIApp | None = None
 
         self.session_config = config or SessionConfig(**settings)
 
@@ -100,12 +102,35 @@ class SessionMiddleware(BaseMiddleware):
                 # filling the gap is a convenience, not a requirement.
                 pass
 
-    async def dispatch(
-        self,
-        ctx: HttpContext,
-        call_next: typing.Callable[..., typing.Awaitable[typing.Any]],
-    ):
-        """Load the session, run the chain, then persist it onto the reply."""
+    def _inner(self) -> ASGIApp:
+        """Return the inner application, refusing to serve without one."""
+        if self.app is None:
+            raise RuntimeError(
+                "SessionMiddleware was constructed without an inner "
+                "application and cannot serve requests. Register it with "
+                "app.use(SessionMiddleware(...))."
+            )
+        return self.app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Load the session, run the downstream app, then persist it onto the reply."""
+        app = self._inner()
+        if scope["type"] != "http":
+            await app(scope, receive, send)
+            return
+
+        ctx = HttpContext(scope, receive)
+        await self.load_session(ctx)
+
+        async def send_with_session_cookie(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                await self.persist_session(ctx, ResponseHeaders(message))
+            await send(message)
+
+        await app(scope, receive, send_with_session_cookie)
+
+    async def load_session(self, ctx: HttpContext) -> None:
+        """Load the session and attach it to the scope for the rest of the chain."""
         cookie_name = self.session_config.session_cookie_name or "session_id"
         session_key = ctx.cookies.get(cookie_name)
 
@@ -114,14 +139,10 @@ class SessionMiddleware(BaseMiddleware):
 
         ctx.scope["session"] = session
 
-        response = await call_next()
-        await self._persist(ctx, response)
-        return response
-
-    async def _persist(self, ctx: HttpContext, response) -> None:
+    async def persist_session(self, ctx: HttpContext, headers: ResponseHeaders) -> None:
         """Save the session and write its cookie onto the outgoing response."""
         session: Session | None = ctx.scope.get("session")
-        if session is None or response is None:
+        if session is None:
             return
 
         cookie_name = self.session_config.session_cookie_name or "session_id"
@@ -137,7 +158,7 @@ class SessionMiddleware(BaseMiddleware):
             # the browser will not accept the deletion — a `__Host-`-prefixed
             # session cookie is rejected outright when the deletion is not
             # marked Secure, and signing out leaves the cookie in place.
-            response.delete_cookie(
+            headers.delete_cookie(
                 key=cookie_name,
                 path=self.session_config.session_cookie_path or "/",
                 domain=self.session_config.session_cookie_domain,
@@ -152,7 +173,7 @@ class SessionMiddleware(BaseMiddleware):
 
             self._warn_if_oversized(cookie_name, value)
 
-            response.set_cookie(
+            headers.set_cookie(
                 key=cookie_name,
                 value=value,
                 domain=self.session_config.session_cookie_domain,

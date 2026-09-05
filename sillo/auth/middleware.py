@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import typing
 from typing import Annotated
 
 from typing_extensions import Doc
@@ -8,13 +7,13 @@ from typing_extensions import Doc
 from sillo import logging
 from sillo.auth.backend import AuthenticationBackend
 from sillo.core.http import HttpContext
-from sillo.middleware.base import BaseMiddleware
+from sillo.types import ASGIApp, Receive, Scope, Send
 from sillo.users import BaseUser, SimpleUser, UnauthenticatedUser
 
 logger = logging.create_logger(__name__)
 
 
-class AuthenticationMiddleware(BaseMiddleware):
+class AuthenticationMiddleware:
     """Middleware responsible for handling user authentication on every request.
 
     This middleware intercepts incoming HTTP requests, processes them through
@@ -61,6 +60,11 @@ class AuthenticationMiddleware(BaseMiddleware):
         a list. If a single backend is provided it is wrapped in a list for
         uniform iteration during request processing.
 
+        This is registered as a configured instance --
+        `app.use(AuthenticationMiddleware(user_model=...))` -- and `use()`
+        binds the next ASGI application onto it afterwards; there is no
+        `app` argument to pass here.
+
         Args:
             user_model: The user model class to use for loading authenticated
                 users. Must implement the ``BaseUser`` protocol including a
@@ -77,6 +81,11 @@ class AuthenticationMiddleware(BaseMiddleware):
             No exceptions are raised during initialisation. Invalid backend
                 types will surface as errors during request processing.
         """
+        # `app` is bound on afterwards by `use()`, not passed here: this is
+        # registered as a configured instance --
+        # `app.use(AuthenticationMiddleware(user_model=...))`.
+        self.app: ASGIApp | None = None
+
         # Narrowed on the backend type rather than on `list`, so the empty
         # default lands as an empty list. Wrapping it produced `[None]`,
         # whose first failure called `None.handle_exception` inside the
@@ -88,15 +97,44 @@ class AuthenticationMiddleware(BaseMiddleware):
             self.backends = list(backend)
         self.user_model = user_model
 
-    async def dispatch(
+    def _inner(self) -> ASGIApp:
+        """Return the inner application, refusing to serve without one.
+
+        ``app`` is bound by ``use()`` after construction, not passed here --
+        so a middleware never registered still names its own mistake instead
+        of surfacing as ``'NoneType' object is not callable``.
+        """
+        if self.app is None:
+            raise RuntimeError(
+                "AuthenticationMiddleware was constructed without an inner "
+                "application and cannot serve requests. Register it with "
+                "app.use(AuthenticationMiddleware(...))."
+            )
+        return self.app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Authenticate the request, then run the downstream app.
+
+        Non-HTTP connections (websocket, lifespan) are forwarded untouched --
+        there is no request here to authenticate.
+        """
+        app = self._inner()
+        if scope["type"] != "http":
+            await app(scope, receive, send)
+            return
+
+        ctx = HttpContext(scope, receive)
+        await self.authenticate(ctx)
+        await app(scope, receive, send)
+
+    async def authenticate(
         self,
         ctx: Annotated[
             HttpContext,
             Doc("The context for this request, carrying the credentials."),
         ],
-        call_next: typing.Callable[..., typing.Awaitable[typing.Any]],
     ) -> None:
-        """Process an incoming request through all authentication backends.
+        """Run this request through all authentication backends.
 
         Iterates through each backend in order, attempting to authenticate
         the request. If a backend successfully authenticates the user, the
@@ -113,19 +151,10 @@ class AuthenticationMiddleware(BaseMiddleware):
             ctx: The context for this request, carrying credentials such as
                 authorization headers, cookies, or session data that backends
                 use to identify the caller.
-            call_next: An async callable representing the next middleware or
-                route handler in the pipeline. Called after authentication
-                processing is complete, regardless of whether a user was
-                successfully authenticated.
-
-        Returns:
-            The return value of ``call_next()``, which is the result of the
-                downstream middleware/handler processing chain.
 
         Raises:
             No exceptions are raised by this method. Backend exceptions are
-                caught and handled internally. Exceptions from ``call_next``
-                propagate normally to the caller.
+                caught and handled internally.
         """
         # Try each backend until one successfully authenticates the user
         for backend in self.backends:
@@ -155,5 +184,3 @@ class AuthenticationMiddleware(BaseMiddleware):
             ctx.scope["user"] = UnauthenticatedUser()
             ctx.scope["auth"] = None
             ctx.scope["auth_scheme"] = None
-
-        return await call_next()

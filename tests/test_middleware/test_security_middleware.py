@@ -177,9 +177,7 @@ def test_frame_options_sameorigin():
 
 def test_frame_options_allow_from():
     app = create_app()
-    app.use(
-        Shield(frame_options_allow_from="https://example.com")
-    )
+    app.use(Shield(frame_options_allow_from="https://example.com"))
 
     with TestClient(app) as client:
         resp = client.get("/test")
@@ -207,9 +205,7 @@ def test_content_type_options_disabled():
 
 def test_referrer_policy():
     app = create_app()
-    app.use(
-        Shield(referrer_policy="strict-origin-when-cross-origin")
-    )
+    app.use(Shield(referrer_policy="strict-origin-when-cross-origin"))
 
     with TestClient(app) as client:
         resp = client.get("/test")
@@ -311,9 +307,7 @@ def test_server_header_hidden():
 
 def test_server_header_custom():
     app = create_app()
-    app.use(
-        Shield(server_header="Custom-Server/1.0", hide_server=False)
-    )
+    app.use(Shield(server_header="Custom-Server/1.0", hide_server=False))
 
     with TestClient(app) as client:
         resp = client.get("/test")
@@ -332,11 +326,7 @@ def test_trusted_types_enabled():
 
 def test_trusted_types_with_policies():
     app = create_app()
-    app.use(
-        Shield(
-            trusted_types=True, trusted_types_policies=["policy1", "policy2"]
-        )
-    )
+    app.use(Shield(trusted_types=True, trusted_types_policies=["policy1", "policy2"]))
 
     with TestClient(app) as client:
         resp = client.get("/test")
@@ -364,3 +354,26 @@ def test_all_security_headers_present():
         ]
         for header in expected_headers:
             assert header in resp.headers, f"Missing: {header}"
+
+
+def test_headers_shield_does_not_touch_are_not_duplicated():
+    """`Content-Type` and `Content-Length` must appear exactly once.
+
+    Shield used to compute its additions into a dict seeded from every
+    header the response already had, then hand the whole thing to
+    `set_headers()` without `override_all` -- which appends rather than
+    replaces, so anything already present (headers Shield never meant to
+    touch, like these two) came out twice.
+    """
+    app = SilloApp()
+    app.use(Shield())
+
+    @app.get("/test")
+    async def test_route(ctx: HttpContext):
+        return json({"message": "OK"})
+
+    with TestClient(app) as client:
+        resp = client.get("/test")
+        names = [name for name, _ in resp.headers.multi_items()]
+        for header in ("content-type", "content-length"):
+            assert names.count(header) == 1, f"{header} appeared {names.count(header)}x"

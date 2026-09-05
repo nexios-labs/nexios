@@ -74,7 +74,6 @@ class TestSessionMiddleware:
         assert "Set-Cookie" in response1.headers
         assert "test_session" in response1.headers["Set-Cookie"]
 
-    
     def test_file_session_middleware(self):
         """Test session middleware with file backend"""
         temp_dir = tempfile.mkdtemp()
@@ -109,7 +108,10 @@ class TestSessionMiddleware:
             assert response1.status_code == 200
             assert response1.json()["counter"] == 1
 
-            response2 = client.get("/file-session-test",headers = {"Cookie": response1.headers["Set-Cookie"]})
+            response2 = client.get(
+                "/file-session-test",
+                headers={"Cookie": response1.headers["Set-Cookie"]},
+            )
             assert response2.status_code == 200
             assert response2.json()["counter"] == 2
 
@@ -152,9 +154,7 @@ class TestSessionMiddleware:
             ctx.session["existing"] = "data"
             return json({"existing": ctx.session["existing"]})
 
-        app.use(
-            SessionMiddleware(config=SessionConfig(), secret_key="test-secret-key")
-        )
+        app.use(SessionMiddleware(config=SessionConfig(), secret_key="test-secret-key"))
 
         client = TestClient(app)
 
@@ -249,9 +249,7 @@ class TestSessionMiddleware:
             except Exception as e:
                 return json({"error": str(e)})
 
-        app.use(
-            SessionMiddleware(config=SessionConfig(), secret_key="test-secret-key")
-        )
+        app.use(SessionMiddleware(config=SessionConfig(), secret_key="test-secret-key"))
 
         client = TestClient(app)
 
@@ -280,7 +278,7 @@ class TestSessionMiddleware:
         assert response.status_code == 200
 
     async def test_persisting_without_a_session_is_a_noop(self):
-        """The post-phase is a no-op when dispatch never loaded a session."""
+        """persist_session() is a no-op when load_session() never ran."""
         middleware = SessionMiddleware(
             config=SessionConfig(), secret_key="test-secret-key"
         )
@@ -289,7 +287,7 @@ class TestSessionMiddleware:
             def __init__(self):
                 self.scope: dict = {}
 
-        result = await middleware._persist(DummyRequest(), None)
+        result = await middleware.persist_session(DummyRequest(), None)
         assert result is None
 
     def test_manager_given_as_class_raises_type_error(self):

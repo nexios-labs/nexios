@@ -527,9 +527,13 @@ The `reversed()` iteration builds from innermost to outermost:
 ### ASGIRequestResponseBridge
 
 The two built-in layers above are raw ASGI and are not wrapped. Middleware
-registered with `app.use()` is wrapped in `ASGIRequestResponseBridge` unless it
-was registered with `raw=True`, in which case it too is called directly with
-`(scope, receive, send)`.
+registered with `app.use()` is wrapped in `ASGIRequestResponseBridge` unless
+it is raw, in which case it too is called directly with
+`(scope, receive, send)`. `use()` infers this from the middleware's `__call__`
+signature (see the middleware reference, §2.4) rather than requiring
+`raw=True` to be passed — every one of sillo's own built-ins (sessions, auth,
+CORS, CSRF, rate limiting, security headers, and more) is raw and registers
+with no such flag.
 
 The bridge:
 

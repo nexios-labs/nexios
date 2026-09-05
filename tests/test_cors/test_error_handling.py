@@ -316,9 +316,7 @@ class TestCORSErrorHandling:
         app = SilloApp()
 
         @app.get("/whitespace-method-preflight")
-        async def whitespace_method_preflight_route(
-            ctx: HttpContext
-        ):
+        async def whitespace_method_preflight_route(ctx: HttpContext):
             return json({"message": "OK"})
 
         app.use(CORSMiddleware(config=cors_config))
@@ -357,10 +355,7 @@ class TestCORSErrorHandling:
             scope = {"method": "GET"}
             headers = {}
 
-        async def call_next():
-            raise AssertionError("should not reach the route handler")
-
-        result = await middleware.dispatch(FakeContext(), call_next)
+        result = await middleware.check_request(FakeContext())
 
         assert result.status_code == 400
 
@@ -483,13 +478,21 @@ class TestCORSErrorHandling:
         middleware = CORSMiddleware(config=cors_config)
         middleware.config = None
 
-        called = {"next": False}
+        called = {"downstream": False}
 
-        async def call_next():
-            called["next"] = True
-            return "ok"
+        async def downstream_app(scope, receive, send):
+            called["downstream"] = True
 
-        result = await middleware.dispatch(None, call_next)
+        middleware.app = downstream_app
 
-        assert result == "ok"
-        assert called["next"] is True
+        scope = {"type": "http", "method": "GET", "headers": [], "path": "/"}
+
+        async def receive():
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        async def send(message):
+            pass
+
+        await middleware(scope, receive, send)
+
+        assert called["downstream"] is True

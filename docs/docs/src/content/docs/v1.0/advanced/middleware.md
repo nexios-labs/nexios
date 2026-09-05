@@ -108,14 +108,17 @@ The bridge exists because:
 3. **Composability.** `ASGIRequestResponseBridge` lets both styles mix in a
    single chain without either side knowing about the other.
 
-### 2.4 Registering raw ASGI middleware: `raw=True`
+### 2.4 Registering raw ASGI middleware: inferred, or `raw=True`
 
-`app.use()` takes either style. By default the argument is a dispatch
-middleware — an instance or function taking `(request, response, call_next)` —
-and sillo wraps it in the bridge.
+`app.use()` takes either style, and does not need to be told which: it reads
+`middleware.__call__`'s signature and infers this on its own. Three required
+positional parameters (ASGI's `scope, receive, send`, whatever they happen to
+be named) is read as raw; two (`ctx, call_next`) is read as dispatch. A
+signature too generic to tell — `(*args, **kwargs)` — is left as dispatch, the
+long-standing default, and `use()` raises if that guess turns out to be wrong
+and factory arguments were also passed.
 
-Passing `raw=True` registers a raw ASGI middleware instead. The argument is
-then a **factory**, usually a class, called as
+A raw ASGI middleware is a **factory**, usually a class, called as
 `middleware(next_app, *args, **kwargs)`, and whatever it returns is called with
 `(scope, receive, send)`:
 
@@ -140,13 +143,23 @@ class RequestId:
         await self.app(scope, receive, send_with_id)
 
 
-app.use(RequestId, raw=True, header="x-trace-id")
+app.use(RequestId, header="x-trace-id")  # no raw=True needed
 ```
 
-Positional and keyword arguments after the factory are forwarded to it. They
-are only accepted with `raw=True`; passing them to the dispatch form raises
-`TypeError` rather than dropping them silently, because a dispatch middleware
-is already configured by the time you hand it over.
+`raw=True` (or `raw=False`) still works, and states the shape explicitly
+rather than leaving it to inference — useful for a callable whose signature
+inference can't read, or simply to be unambiguous in code someone else will
+read. Positional and keyword arguments after the factory are forwarded to it,
+whichever way `raw` was decided. They are only accepted for the raw form;
+passing them to the dispatch form raises `TypeError` rather than dropping them
+silently, because a dispatch middleware is already configured by the time you
+hand it over.
+
+A middleware already built as an instance rather than passed as a bare class —
+`app.use(SessionMiddleware(secret_key=...))`, which is how every one of
+sillo's own built-ins is registered — is handled too: `use()` recognises it is
+not a class and binds `next_app` onto it directly (`instance.app = next_app`)
+rather than trying to construct a second one from it.
 
 **When to reach for it.** Raw middleware costs less: nothing is constructed on
 its behalf, where the dispatch form builds an `HttpContext` and a
@@ -155,10 +168,13 @@ a parsed request — header stamping, metrics, routing on `scope["path"]` — an
 use the dispatch form when it does. ASGI middleware written for other
 frameworks generally drops straight in.
 
-sillo's own `ServerErrorMiddleware` and `ExceptionMiddleware` are written this
-way, for exactly that reason: both only care about a request that raised, so
-building a request and a response for every request that did not was pure
-waste.
+sillo's own `ServerErrorMiddleware`, `ExceptionMiddleware`, and every built-in
+in `sillo.security` and `sillo.http` — sessions, authentication, CORS, CSRF,
+rate limiting, security headers, path normalization, request IDs, ETags,
+content negotiation — are written this way, for exactly that reason: none of
+them need a response object handed back to inspect, only a request to read and
+a `send` to intercept, so paying for a bridge on their behalf bought nothing.
+§19 covers what each one's raw `__call__` actually does.
 
 ---
 
@@ -1073,22 +1089,45 @@ silently dropping the message.
 
 ## 13. app.use(): Application-Level Registration
 
-**File:** `core/sillo/application.py` (lines 889 to 933)
+**File:** `core/sillo/application.py` (`use()` starts around line 996; the
+inference helpers `_runtime_call_signature`, `_is_raw_asgi_middleware`, and
+`_rebinding_factory` sit just above the class, starting around line 72)
 
-`SilloApp.use()` registers a dispatch-style middleware at the application level. It
-wraps the middleware in an `ASGIRequestResponseBridge` and inserts it at **position 0**
-of the middleware list.
+`SilloApp.use()` registers a middleware — either style — at the application
+level, and inserts it at **position 0** of the middleware list. Simplified:
 
 ```python
-def use(self, middleware: MiddlewareType) -> None:
+def use(self, middleware, *args, raw=None, **kwargs) -> None:
+    if raw is None:
+        raw = _is_raw_asgi_middleware(middleware)   # §2.4: read off __call__
+
+    if not raw and (args or kwargs):
+        raise TypeError(...)   # dispatch middleware is already configured
+
+    if raw and not inspect.isclass(middleware):
+        raw_factory = _rebinding_factory(middleware)  # bind .app, don't construct
+    else:
+        raw_factory = middleware
+
     if self.auth_user_model is None:
         self.auth_user_model = getattr(middleware, "user_model", None)
 
     self.http_middleware.insert(
         0,
-        Middleware(ASGIRequestResponseBridge, dispatch=middleware),
+        Middleware(raw_factory, *args, **kwargs)
+        if raw
+        else Middleware(ASGIRequestResponseBridge, dispatch=middleware),
     )
 ```
+
+A dispatch middleware is wrapped in `ASGIRequestResponseBridge`, same as
+always. A raw one skips the bridge entirely: if it arrived as a bare class,
+`_build_request_chain` (§5) constructs it the ordinary ASGI way,
+`cls(next_app, *args, **kwargs)`; if it arrived already built — an instance,
+which is how `app.use(SessionMiddleware(secret_key=...))` and every other
+built-in are registered — `_rebinding_factory` wraps it in a one-shot factory
+that sets `.app` on the existing instance and hands the same instance back,
+rather than trying to construct a second one from it.
 
 ### 13.1 Inside-Out Insertion
 
@@ -1150,7 +1189,12 @@ graph TB
 `app.use()` has a side effect: if `self.auth_user_model` hasn't been set yet, it
 checks the middleware for a `user_model` attribute and adopts it. This lets
 `AuthenticationMiddleware` configure the app's auth model without an explicit
-constructor argument.
+constructor argument — provided it is registered the usual way, as an instance
+(`app.use(AuthenticationMiddleware(user_model=MyUser))`). `user_model` is set
+in `__init__`, so `getattr(middleware, "user_model", None)` only finds it on a
+constructed instance; registering the bare class instead
+(`app.use(AuthenticationMiddleware, user_model=MyUser)`) skips this inference, since
+there is no instance yet to read it off.
 
 ### 13.3 The Full Middleware Assembly
 
@@ -1398,10 +1442,14 @@ the local.
 
 ### 18.2 Short-Circuit Pattern
 
+> This is a teaching example of the dispatch pattern, not sillo's own rate
+> limiter — `sillo.security.ratelimit.RateLimitMiddleware` is a separate,
+> raw-ASGI implementation (§19).
+
 ```python
 from sillo import HttpContext, json
 
-class RateLimitMiddleware(BaseMiddleware):
+class MyRateLimitMiddleware(BaseMiddleware):
     def __init__(self, max_requests: int = 100, window: int = 60, **kwargs):
         super().__init__(**kwargs)
         self.max_requests = max_requests
@@ -1508,40 +1556,126 @@ whatever you `return`.
 
 ---
 
-## 19. Security Middleware
+## 19. The Built-In Middleware Are All Raw ASGI
 
-**File:** `core/sillo/middleware/__init__.py`
+**Files:** `sillo/session/middleware.py`, `sillo/auth/middleware.py`,
+`sillo/security/cors/_middleware.py`, `sillo/security/csrf/_middleware.py`,
+`sillo/security/ratelimit/_middleware.py`, `sillo/security/shield.py`,
+`sillo/normalize/middleware.py`, `sillo/http/lifecycle/middleware.py`,
+`sillo/http/etag.py`, `sillo/http/accepts.py`
 
-The middleware package re-exports two security middleware classes:
+None of `SessionMiddleware`, `AuthenticationMiddleware`, `CORSMiddleware`,
+`CSRFMiddleware`, `RateLimitMiddleware`, `Shield`, `NormalizeMiddleware`,
+`RequestIdMiddleware`, `ETagMiddleware`, or the `AcceptsMiddleware` family
+subclass `BaseMiddleware` or write a `dispatch(ctx, call_next)`. Each is a
+plain class — `__init__(self, ...)` setting `self.app = None`, and
+`async def __call__(self, scope, receive, send)` — registered as an
+already-configured instance the way it always has been
+(`app.use(CORSMiddleware(config))`), which §13 covers.
+
+None of them shares a common base beyond that shape. Each names its own
+methods for what it actually does, rather than being forced through a
+`before`/`after` (or `process_request`/`process_response`) contract common to
+all ten — a request-reading step, a response-editing step, or both, whichever
+apply:
+
+| Middleware | Methods |
+|---|---|
+| `SessionMiddleware` | `load_session(ctx)`, `persist_session(ctx, headers)` |
+| `AuthenticationMiddleware` | `authenticate(ctx)` |
+| `CORSMiddleware` | `check_request(ctx)`, `apply_cors_headers(origin, headers)` |
+| `CSRFMiddleware` | `validate(ctx)`, `set_token_cookie(ctx, headers)` |
+| `RateLimitMiddleware` | `check(ctx)`, `set_limit_headers(headers, result)` |
+| `Shield` | `apply_security_headers(headers)` |
+| `NormalizeMiddleware` | `normalize(ctx)` |
+| `RequestIdMiddleware` | `assign_request_id(ctx)`, `set_response_header(headers, id)` |
+| `ETagMiddleware` | `finish(ctx, start_message, body, send)` |
+| `AcceptsMiddleware` family | `parse_accepts(ctx)`, `apply_headers(ctx, headers, vary)`, `negotiate(ctx)` |
+
+### 19.1 Reading the request without the bridge
+
+Every one of them still reads the request the way dispatch code always has —
+`ctx.cookies`, `ctx.headers`, `ctx.origin`, `ctx.method`, `ctx.form` — because
+each builds its own `HttpContext(scope, receive)` directly inside `__call__`.
+That is cheap: an `HttpContext` is just an object wrapping `scope` and
+`receive`, and building one costs nothing like what
+`ASGIRequestResponseBridge` does (§8) to turn a *response* back into
+something inspectable. None of these ten ever need that — none of them
+inspect or replace a response wholesale except by answering before the
+downstream app runs at all (a CORS preflight reply, a CSRF rejection, a 429),
+which any ASGI-callable response (anything `sillo.responses` builds) can do on
+its own: `await response(scope, receive, send)`.
+
+`CSRFMiddleware` is the one exception that needs the request body
+(`_submitted_token` reads a form field), so it builds a `_CachedRequest`
+instead of a plain `HttpContext` — the same buffer-and-replay wrapper
+`ASGIRequestResponseBridge` uses (§9) — and passes its `wrapped_receive` to
+the downstream app so the route handler can still read the same body CSRF
+already consumed.
+
+### 19.2 Editing the response without the bridge
+
+Where a middleware needs to add a header or a cookie to a response it did not
+build — a `Set-Cookie`, a CORS header, an `X-RateLimit-*` — it wraps `send`
+and intercepts the single `http.response.start` message, editing its headers
+list in place before forwarding it, the same pattern `RequestId` in §2.4 (and
+`GZipResponder`, §12) already use.
+
+`sillo.middleware.response_headers.ResponseHeaders` is the shared piece that
+makes this look exactly like editing a response object: `set_header`,
+`set_cookie`, `delete_cookie` and the rest are `BaseResponse`'s own methods,
+defined in `core/sillo/core/http/response.py` and bound to a thin wrapper
+whose `raw_headers` *is* the ASGI message's own headers list. It is a
+shared **utility**, not a shared middleware base class — nothing about it
+dictates a middleware's method names or call order, and a middleware that
+doesn't need it (`AuthenticationMiddleware`, which only ever mutates `scope`)
+never imports it.
+
+`ETagMiddleware` is the one exception that needs the full response body — an
+ETag is a hash of it, and deciding between a 304 and the original response
+needs to know the whole thing before either can be sent — so it buffers every
+`http.response.body` chunk into memory before making that call, the same way
+`GZipResponder`'s streaming case already does (§12.6). This is also a
+correctness fix, not just a port: through the dispatch bridge, `call_next()`
+always handed back a `_StreamingResponse` whose `.body` was `b""` regardless
+of what the downstream app actually sent (§10), so the ETag was always
+computed over an empty body — every response got the same tag no matter its
+content. Buffering the real bytes fixes that.
+
+### 19.3 Registering them
+
+`app.use()`'s signature inference (§2.4) recognises every one of them as raw
+automatically — three required positional parameters on `__call__` — so none
+of the constructor calls below need `raw=True`:
 
 ```python
-from sillo.security.cors import CORSMiddleware
-from sillo.security.csrf import CSRFMiddleware
-from .base import BaseMiddleware
-
-__all__ = ["BaseMiddleware", "CORSMiddleware", "CSRFMiddleware"]
+app.use(SessionMiddleware(secret_key="..."))
+app.use(AuthenticationMiddleware(user_model=User, backend=JWTAuthBackend(...)))
+app.use(CORSMiddleware(CorsConfig(allow_origins=["https://example.com"])))
+app.use(CSRFMiddleware(CSRFConfig(secret_key="...")))
+app.use(RateLimitMiddleware(RateLimitConfig(limit=100, window=60)))
+app.use(Shield())
+app.use(NormalizeMiddleware())
+app.use(RequestIdMiddleware())
+app.use(ETagMiddleware())
+app.use(AcceptsMiddleware())
 ```
 
-These are importable directly from `sillo.middleware`:
+These are all still importable the way they always were —
+`from sillo.security.cors import CORSMiddleware`,
+`from sillo.security.csrf import CSRFMiddleware`, and so on — including from
+the `sillo.middleware` package, which still re-exports `CORSMiddleware` and
+`CSRFMiddleware` alongside `BaseMiddleware`:
 
 ```python
-from sillo.middleware import CORSMiddleware, CSRFMiddleware
+from sillo.middleware import BaseMiddleware, CORSMiddleware, CSRFMiddleware
 ```
 
-### 19.1 Import Ordering Constraint
-
-The `__init__.py` imports `CORSMiddleware` and `CSRFMiddleware` **before**
-`BaseMiddleware` to avoid circular import issues. The security modules import
-`BaseMiddleware` from `sillo.middleware.base` directly, not from the package
-init, which prevents the cycle:
-
-```
-sillo.middleware.__init__  →  imports CORSMiddleware from sillo.security.cors
-sillo.security.cors        →  imports BaseMiddleware from sillo.middleware.base  (NOT from sillo.middleware)
-sillo.middleware.__init__  →  imports BaseMiddleware from .base
-```
-
-If the ordering were reversed, importing `sillo` would fail with `ImportError`.
+Neither `CORSMiddleware` nor `CSRFMiddleware` imports `BaseMiddleware` any
+more — the import-ordering constraint earlier editions of this document
+described here no longer applies, since there is nothing left to cycle
+through. `sillo/middleware/__init__.py` still imports the security classes
+before `.base` out of habit more than necessity at this point.
 
 ---
 
@@ -1624,7 +1758,11 @@ Every dispatch-style middleware goes through `ASGIRequestResponseBridge`, which 
 - A background task for the inner ASGI app
 
 For performance-critical paths (high-throughput APIs), prefer ASGI-native middleware
-that doesn't need the bridge.
+that doesn't need the bridge. None of sillo's own built-ins pay this cost any
+more: sessions, authentication, CORS, CSRF, rate limiting, security headers,
+path normalization, request IDs, ETags, and content negotiation are all raw
+ASGI (§19) — the bridge only runs for dispatch middleware an application
+registers itself.
 
 ### 21.2 GZip Compression Costs
 
