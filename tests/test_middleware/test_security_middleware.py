@@ -2,6 +2,9 @@
 Tests for Shield (security headers middleware)
 """
 
+import anyio
+import pytest
+
 from sillo import SilloApp
 from sillo import json
 from sillo.core.http import HttpContext
@@ -177,9 +180,7 @@ def test_frame_options_sameorigin():
 
 def test_frame_options_allow_from():
     app = create_app()
-    app.use(
-        Shield(frame_options_allow_from="https://example.com")
-    )
+    app.use(Shield(frame_options_allow_from="https://example.com"))
 
     with TestClient(app) as client:
         resp = client.get("/test")
@@ -207,9 +208,7 @@ def test_content_type_options_disabled():
 
 def test_referrer_policy():
     app = create_app()
-    app.use(
-        Shield(referrer_policy="strict-origin-when-cross-origin")
-    )
+    app.use(Shield(referrer_policy="strict-origin-when-cross-origin"))
 
     with TestClient(app) as client:
         resp = client.get("/test")
@@ -300,6 +299,74 @@ def test_permissions_policy():
         assert "geolocation=self" in pp
 
 
+def test_permissions_policy_with_a_list_value():
+    """A feature can also be scoped to a list of allowed origins."""
+    app = create_app()
+    app.use(Shield(permissions_policy={"geolocation": ["self", "https://example.com"]}))
+
+    with TestClient(app) as client:
+        resp = client.get("/test")
+        assert "geolocation=(self https://example.com)" in resp.headers["Permissions-Policy"]
+
+
+def test_csp_source_given_as_a_bare_string():
+    """A directive's sources may be a single string, not just a list."""
+    app = create_app()
+    app.use(Shield(csp_policy={"default-src": "'self'"}))
+
+    with TestClient(app) as client:
+        resp = client.get("/test")
+        assert "default-src 'self'" in resp.headers["Content-Security-Policy"]
+
+
+def test_expect_ct_enforce_and_report_uri():
+    app = create_app()
+    app.use(
+        Shield(
+            expect_ct=True,
+            expect_ct_enforce=True,
+            expect_ct_report_uri="https://example.com/report",
+        )
+    )
+
+    with TestClient(app) as client:
+        resp = client.get("/test")
+        expect_ct = resp.headers["Expect-CT"]
+        assert "enforce" in expect_ct
+        assert 'report-uri="https://example.com/report"' in expect_ct
+
+
+def test_report_to_header():
+    app = create_app()
+    report_to = {"group": "default", "max_age": 10886400, "endpoints": [{"url": "https://example.com/reports"}]}
+    app.use(Shield(report_to=report_to))
+
+    with TestClient(app) as client:
+        resp = client.get("/test")
+        assert "endpoints" in resp.headers["Report-To"]
+
+
+def test_nel_header():
+    app = create_app()
+    app.use(Shield(nel={"report_to": "default", "max_age": 2592000}))
+
+    with TestClient(app) as client:
+        resp = client.get("/test")
+        assert "default" in resp.headers["NEL"]
+
+
+def test_trusted_types_without_an_existing_csp_header():
+    """When CSP itself is off, trusted-types starts a fresh header rather
+    than appending to one that was never built."""
+    app = create_app()
+    app.http_middleware = []
+    app.use(Shield(csp_enabled=False, trusted_types=True))
+
+    with TestClient(app) as client:
+        resp = client.get("/test")
+        assert resp.headers["Content-Security-Policy"] == "require-trusted-types-for 'script'"
+
+
 def test_server_header_hidden():
     app = create_app()
     app.use(Shield(hide_server=True))
@@ -311,9 +378,7 @@ def test_server_header_hidden():
 
 def test_server_header_custom():
     app = create_app()
-    app.use(
-        Shield(server_header="Custom-Server/1.0", hide_server=False)
-    )
+    app.use(Shield(server_header="Custom-Server/1.0", hide_server=False))
 
     with TestClient(app) as client:
         resp = client.get("/test")
@@ -332,11 +397,7 @@ def test_trusted_types_enabled():
 
 def test_trusted_types_with_policies():
     app = create_app()
-    app.use(
-        Shield(
-            trusted_types=True, trusted_types_policies=["policy1", "policy2"]
-        )
-    )
+    app.use(Shield(trusted_types=True, trusted_types_policies=["policy1", "policy2"]))
 
     with TestClient(app) as client:
         resp = client.get("/test")
@@ -364,3 +425,107 @@ def test_all_security_headers_present():
         ]
         for header in expected_headers:
             assert header in resp.headers, f"Missing: {header}"
+
+
+def test_headers_shield_does_not_touch_are_not_duplicated():
+    """`Content-Type` and `Content-Length` must appear exactly once.
+
+    Shield used to compute its additions into a dict seeded from every
+    header the response already had, then hand the whole thing to
+    `set_headers()` without `override_all` -- which appends rather than
+    replaces, so anything already present (headers Shield never meant to
+    touch, like these two) came out twice.
+    """
+    app = SilloApp()
+    app.use(Shield())
+
+    @app.get("/test")
+    async def test_route(ctx: HttpContext):
+        return json({"message": "OK"})
+
+    with TestClient(app) as client:
+        resp = client.get("/test")
+        names = [name for name, _ in resp.headers.multi_items()]
+        for header in ("content-type", "content-length"):
+            assert names.count(header) == 1, f"{header} appeared {names.count(header)}x"
+
+
+def test_ssl_redirect_answers_before_the_downstream_app_runs():
+    app = SilloApp()
+    app.use(Shield(ssl_redirect=True))
+    called = {"handler": False}
+
+    @app.get("/test")
+    async def test_route(ctx: HttpContext):
+        called["handler"] = True
+        return json({"message": "OK"})
+
+    with TestClient(app) as client:
+        resp = client.get("/test", follow_redirects=False)
+        assert resp.status_code == 301
+        assert resp.headers["location"].startswith("https://")
+        assert called["handler"] is False
+
+
+def test_ssl_redirect_is_302_when_not_permanent():
+    app = SilloApp()
+    app.use(Shield(ssl_redirect=True, ssl_permanent=False))
+
+    @app.get("/test")
+    async def test_route(ctx: HttpContext):
+        return json({"message": "OK"})
+
+    with TestClient(app) as client:
+        resp = client.get("/test", follow_redirects=False)
+        assert resp.status_code == 302
+
+
+def test_ssl_redirect_uses_ssl_host_override():
+    app = SilloApp()
+    app.use(Shield(ssl_redirect=True, ssl_host="secure.example.com"))
+
+    @app.get("/test")
+    async def test_route(ctx: HttpContext):
+        return json({"message": "OK"})
+
+    with TestClient(app) as client:
+        resp = client.get("/test", follow_redirects=False)
+        assert resp.headers["location"].startswith("https://secure.example.com")
+
+
+def test_non_http_scope_passes_through_untouched():
+    middleware = Shield()
+    called = {}
+
+    async def downstream(scope, receive, send):
+        called["scope"] = scope
+
+    middleware.app = downstream
+
+    async def receive():
+        return {"type": "lifespan.startup"}
+
+    async def send(message):
+        pass
+
+    anyio.run(middleware.__call__, {"type": "lifespan"}, receive, send)
+
+    assert called["scope"] == {"type": "lifespan"}
+
+
+def test_without_an_inner_app_raises():
+    middleware = Shield()
+
+    async def receive():
+        return {"type": "http.request"}
+
+    async def send(message):
+        pass
+
+    with pytest.raises(RuntimeError, match="without an inner application"):
+        anyio.run(
+            middleware.__call__,
+            {"type": "http", "path": "/x", "method": "GET", "headers": []},
+            receive,
+            send,
+        )

@@ -31,10 +31,11 @@ With no arguments, `Shield` applies a strict default policy: CSP locked to `'sel
 
 ##  How Shield applies headers
 
-`Shield` is a `BaseMiddleware`. After `call_next` returns it writes each configured
-header onto the response before it leaves the stack. Because it runs late in
-the chain, headers are present even on error responses and redirects, unless a
-later middleware overrides them.
+`Shield` is plain raw ASGI, not a `BaseMiddleware` subclass. It wraps `send`
+and, once the downstream app's response starts, writes each configured header
+onto it before forwarding it on. Because it runs late in the chain, headers
+are present even on error responses and redirects, unless a later middleware
+overrides them.
 
 Defaults that are safe to change:
 

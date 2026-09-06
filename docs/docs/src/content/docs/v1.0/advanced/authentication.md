@@ -19,7 +19,7 @@ Sillo's authentication system is split into three layers that compose cleanly:
 3. **Route gate (`useAuth`)**: per-route enforcement of scheme restrictions,
    permissions, and optional authentication.
 
-The design principle: **the middleware never rejects a request**. It always calls `call_next()`. Rejection is the route gate's job. This lets some routes be public while others require authentication, without the middleware needing to know which is which.
+The design principle: **the middleware never rejects a request**. It always runs the downstream app. Rejection is the route gate's job. This lets some routes be public while others require authentication, without the middleware needing to know which is which.
 
 ```mermaid
 flowchart TD
@@ -31,7 +31,7 @@ flowchart TD
     B1 -->|success| SET[Set scope user/auth/auth_scheme]
     B2 -->|success| SET
     B3 -->|success| SET
-    SET --> NEXT[call_next]
+    SET --> NEXT[downstream app]
     UNAUTH --> NEXT
     NEXT --> ROUTE[Route Handler]
     ROUTE --> GATE{useAuth gate?}
@@ -67,7 +67,8 @@ classDiagram
     class AuthenticationMiddleware {
         +list~AuthenticationBackend~ backends
         +type user_model
-        +dispatch(ctx, call_next)
+        +authenticate(ctx)
+        +__call__(scope, receive, send)
     }
 
     class useAuth {
@@ -184,13 +185,21 @@ Called by the middleware when `authenticate()` raises. The default implementatio
 ### Constructor
 
 ```python
-class AuthenticationMiddleware(BaseMiddleware):
+class AuthenticationMiddleware:
     def __init__(
         self,
         user_model: type[BaseUser] = SimpleUser,
         backend: AuthenticationBackend | list[AuthenticationBackend] = None,
     )
+
+    async def __call__(self, scope, receive, send) -> None: ...
 ```
+
+Plain raw ASGI, not a `BaseMiddleware` subclass — it never touches a
+response, only `scope`, so there was nothing the dispatch bridge's request
+*and* response machinery bought it. `__call__` builds its own `HttpContext`,
+calls `authenticate(ctx)` below to mutate `scope`, then runs the downstream
+app directly.
 
 | Parameter | Default | Purpose |
 |-----------|---------|---------|
@@ -215,7 +224,7 @@ sequenceDiagram
     MW->>MW: scope["user"] = load_user("42")
     MW->>MW: scope["auth"] = "bearerAuth"
     MW->>MW: scope["auth_scheme"] = "bearerAuth"
-    MW->>Handler: call_next()
+    MW->>Handler: downstream app(scope, receive, send)
     Handler-->>Client: Response
 ```
 
@@ -224,32 +233,34 @@ sequenceDiagram
 1. **Iterates backends in order.** Processing stops at the first successful `AuthResult`.
 2. **Sets three scope keys on success:** `"user"`, `"auth"`, `"auth_scheme"`.
 3. **Falls back to `UnauthenticatedUser`** when no backend succeeds. The scope keys `"auth"` and `"auth_scheme"` are set to `None`.
-4. **Always calls `call_next()`**: the middleware never rejects a request.
+4. **Always runs the downstream app**: the middleware never rejects a request.
    Rejection is the route gate's responsibility.
 5. **Catches backend exceptions** and passes them to `handle_exception()`. The middleware continues to the next backend.
 
 ### The `for...else` Pattern
 
-The middleware uses Python's `for...else` construct: the `else` block runs only when the loop completes without `break`. This means the `UnauthenticatedUser` fallback is set exactly when no backend succeeds:
+`authenticate(ctx)` — called from `__call__`, before the downstream app runs
+— uses Python's `for...else` construct: the `else` block runs only when the
+loop completes without `break`. This means the `UnauthenticatedUser` fallback
+is set exactly when no backend succeeds:
 
 ```python
-for backend in self.backends:
-    try:
-        auth_result = await backend.authenticate(ctx)
-        if auth_result.success:
-            ctx.scope["user"] = await self.user_model.load_user(auth_result.identity)
-            ctx.scope["auth"] = auth_result.scope
-            ctx.scope["auth_scheme"] = backend.name
-            break
-    except Exception as e:
-        backend.handle_exception(response, e)
-        continue
-else:
-    ctx.scope["user"] = UnauthenticatedUser()
-    ctx.scope["auth"] = None
-    ctx.scope["auth_scheme"] = None
-
-return await call_next()
+async def authenticate(self, ctx) -> None:
+    for backend in self.backends:
+        try:
+            auth_result = await backend.authenticate(ctx)
+            if auth_result.success:
+                ctx.scope["user"] = await self.user_model.load_user(auth_result.identity)
+                ctx.scope["auth"] = auth_result.scope
+                ctx.scope["auth_scheme"] = backend.name
+                break
+        except Exception as e:
+            backend.handle_exception(ctx, e)
+            continue
+    else:
+        ctx.scope["user"] = UnauthenticatedUser()
+        ctx.scope["auth"] = None
+        ctx.scope["auth_scheme"] = None
 ```
 
 ---
@@ -503,7 +514,7 @@ These are set by the middleware on every request. If the gate has custom backend
 
 ### Why the middleware never rejects
 
-The middleware always calls `call_next()`, even when no backend succeeds. This is intentional: the middleware does not know which routes require authentication. The `useAuth` gate makes that decision. This allows public routes to coexist with authenticated routes in the same application.
+The middleware always runs the downstream app, even when no backend succeeds. This is intentional: the middleware does not know which routes require authentication. The `useAuth` gate makes that decision. This allows public routes to coexist with authenticated routes in the same application.
 
 ### Why `UnauthenticatedUser` instead of `None`
 
@@ -631,12 +642,13 @@ class SignedTimestampBackend(AuthenticationBackend):
 
 ### AuthenticationMiddleware: Complete Internal Flow
 
-Here is the full `dispatch` method with every branch annotated:
+Here is the full `authenticate` method with every branch annotated — the
+half of `__call__` that runs before the downstream app:
 
 ```python
 from sillo import HttpContext
 
-async def dispatch(self, ctx: HttpContext, call_next):
+async def authenticate(self, ctx: HttpContext) -> None:
     # Branch 1: Try each backend in order
     for backend in self.backends:
         try:
@@ -669,8 +681,9 @@ async def dispatch(self, ctx: HttpContext, call_next):
         ctx.scope["auth"] = None
         ctx.scope["auth_scheme"] = None
 
-    # ALWAYS: call the next middleware/handler
-    return await call_next()
+    # Nothing is returned: authentication never answers a request on its
+    # own, it only decides who made it. __call__ runs the downstream app
+    # unconditionally once this returns.
 ```
 
 ### useAuth: Complete Internal Flow

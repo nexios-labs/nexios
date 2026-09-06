@@ -245,7 +245,7 @@ app.use(CORSMiddleware(config=cors_config))
 
 ##  How CORS is enforced
 
-`CORSMiddleware` runs before `call_next` for every request:
+`CORSMiddleware` checks every request before the downstream app runs:
 
 1. If there is no `Origin` header, the request is same-origin: the middleware
    does nothing and the request proceeds.

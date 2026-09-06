@@ -3,8 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 from sillo.core.http import HttpContext
-from sillo.middleware.base import BaseMiddleware
+from sillo.middleware.response_headers import ResponseHeaders
 from sillo.responses import json
+from sillo.types import ASGIApp, Message, Receive, Scope, Send
 
 
 class AcceptItem:
@@ -922,7 +923,7 @@ def get_best_accepted_language(
     return available_languages[0] if available_languages else None
 
 
-class AcceptsMiddleware(BaseMiddleware):
+class AcceptsMiddleware:
     """Middleware that parses and stores Accept-family header information.
 
     Intercepts incoming requests to parse all Accept-family headers and
@@ -968,8 +969,8 @@ class AcceptsMiddleware(BaseMiddleware):
             store_accepts_info: If ``True``, parses and stores Accept data
                 on ``ctx.state`` for downstream handler access.
                 Defaults to ``True``.
-            **kwargs: Additional keyword arguments passed to the parent
-                :class:`~sillo.middleware.base.BaseMiddleware` constructor.
+            **kwargs: Additional keyword arguments, accepted but ignored, for
+                compatibility with generic middleware configuration patterns.
 
         Returns:
             None. This is a constructor and does not return a value.
@@ -977,35 +978,56 @@ class AcceptsMiddleware(BaseMiddleware):
         Raises:
             No exceptions are raised during initialization.
         """
-        super().__init__(**kwargs)
+        # Bound on afterwards by `use()`: this is registered as a configured
+        # instance, `app.use(AcceptsMiddleware(...))`.
+        self.app: ASGIApp | None = None
         self.default_content_type = default_content_type
         self.default_language = default_language
         self.default_charset = default_charset
         self.set_vary_header = set_vary_header
         self.store_accepts_info = store_accepts_info
-        self.vary: list[str] = []
 
-    async def dispatch(self, ctx: HttpContext, call_next: Any) -> Any:
-        """Parse the Accept-family headers, then set Vary on the reply.
+    def _inner(self) -> ASGIApp:
+        """Return the inner application, refusing to serve without one."""
+        if self.app is None:
+            raise RuntimeError(
+                f"{type(self).__name__} was constructed without an inner "
+                f"application and cannot serve requests. Register it with "
+                f"app.use({type(self).__name__}(...))."
+            )
+        return self.app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Parse the Accept-family headers, then set Vary on the reply."""
+        app = self._inner()
+        if scope["type"] != "http":
+            await app(scope, receive, send)
+            return
+
+        ctx = HttpContext(scope, receive)
+        vary = self.parse_accepts(ctx)
+
+        async def send_with_negotiated_headers(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                self.apply_headers(ctx, ResponseHeaders(message), vary)
+            await send(message)
+
+        await app(scope, receive, send_with_negotiated_headers)
+
+    def parse_accepts(self, ctx: HttpContext) -> list[str]:
+        """Parse the Accept-family headers, returning which ones were present.
 
         When ``store_accepts_info`` is enabled, parses all four Accept-family
         headers and stores both a comprehensive info dictionary and a
-        pre-parsed dictionary on the request state. When ``set_vary_header``
-        is enabled, records which Accept-family headers are present so that
-        appropriate ``Vary`` headers can be set on the response.
+        pre-parsed dictionary on the request state.
 
         Args:
             ctx: The context whose headers will be inspected and parsed.
-            call_next: An async callable that invokes the next middleware
-                or request handler in the processing chain.
 
         Returns:
-            The response from the rest of the chain, with ``Vary`` and
-            ``Content-Type`` set as configured.
-
-        Raises:
-            No exceptions are raised directly; any exceptions from the
-            downstream handler are propagated unchanged.
+            The Accept-family header names present on this request, in the
+            order checked -- what ``apply_headers`` needs to build ``Vary``.
+            Empty when ``set_vary_header`` is off.
         """
         if self.store_accepts_info:
             accepts_info = get_accepts_info(ctx)
@@ -1022,20 +1044,22 @@ class AcceptsMiddleware(BaseMiddleware):
                     ctx.headers.get("Accept-Encoding", "")
                 ),
             }
+
+        vary: list[str] = []
         if self.set_vary_header:
             if ctx.headers.get("Accept"):
-                self.vary.append("Accept")
+                vary.append("Accept")
             if ctx.headers.get("Accept-Language"):
-                self.vary.append("Accept-Language")
+                vary.append("Accept-Language")
             if ctx.headers.get("Accept-Charset"):
-                self.vary.append("Accept-Charset")
+                vary.append("Accept-Charset")
             if ctx.headers.get("Accept-Encoding"):
-                self.vary.append("Accept-Encoding")
+                vary.append("Accept-Encoding")
+        return vary
 
-        response = await call_next()
-        return self._decorate(ctx, response)
-
-    def _decorate(self, ctx: HttpContext, response: Any) -> Any:
+    def apply_headers(
+        self, ctx: HttpContext, headers: ResponseHeaders, vary: list[str]
+    ) -> None:
         """Set the Vary and Content-Type headers on the outgoing response.
 
         If any Accept-family headers were detected in the request, adds
@@ -1045,38 +1069,29 @@ class AcceptsMiddleware(BaseMiddleware):
         header or falls back to the configured default.
 
         Args:
-            request: The context used to look up Accept headers for
-                content negotiation.
-            response: The outgoing response whose headers will be updated
-                before sending to the client.
-
-        Returns:
-            The response, with ``Vary`` and ``Content-Type`` headers updated
-            as appropriate.
-
-        Raises:
-            No exceptions are raised during response processing.
+            ctx: The context used to look up Accept headers for content
+                negotiation.
+            headers: An editor over the outgoing response's headers.
+            vary: The Accept-family header names this request carried, from
+                ``parse_accepts``.
         """
-        if response is None:
-            return None
-        if self.vary:
-            existing_vary = response.headers.get("Vary")
-            response.set_header(
-                "Vary", create_vary_header(existing_vary, self.vary), override=True
+        if vary:
+            existing_vary = headers.headers.get("Vary")
+            headers.set_header(
+                "Vary", create_vary_header(existing_vary, vary), override=True
             )
-        if not response.headers.get("Content-Type") and self.default_content_type:
+        if not headers.headers.get("Content-Type") and self.default_content_type:
             accept_header = ctx.headers.get("Accept")
             if accept_header:
                 negotiated_type = negotiate_content_type(
                     accept_header, [self.default_content_type]
                 )
                 if negotiated_type:
-                    response.set_header("Content-Type", negotiated_type, override=True)
+                    headers.set_header("Content-Type", negotiated_type, override=True)
             else:
-                response.set_header(
+                headers.set_header(
                     "Content-Type", self.default_content_type, override=True
                 )
-        return response
 
 
 def Accepts(
@@ -1254,29 +1269,45 @@ class StrictContentNegotiationMiddleware(ContentNegotiationMiddleware):
         self.available_types = available_types
         self.available_languages = available_languages or ["en"]
 
-    async def dispatch(self, ctx: HttpContext, call_next: Any) -> Any:
-        """Enforce strict content negotiation before running the chain.
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Enforce strict content negotiation, then run the app.
+
+        This replaces :meth:`AcceptsMiddleware.__call__` entirely rather than
+        running alongside it -- strict negotiation answers 406 on its own
+        terms, and has never also stamped the ``Vary``/``Content-Type``
+        headers the lenient base class does.
+        """
+        app = self._inner()
+        if scope["type"] != "http":
+            await app(scope, receive, send)
+            return
+
+        ctx = HttpContext(scope, receive)
+        rejection = self.negotiate(ctx)
+        if rejection is not None:
+            await rejection(scope, receive, send)
+            return
+
+        await app(scope, receive, send)
+
+    def negotiate(self, ctx: HttpContext) -> Any | None:
+        """Negotiate content type and language, or reject the request.
 
         Negotiates the best content type and language for the request.
         If the client cannot accept any of the available content types
         and an Accept header was present, returns an HTTP 406 response.
-        Otherwise stores the negotiated values on the request object
-        and proceeds to the next handler.
+        Otherwise stores the negotiated values on the request object.
 
         Args:
             ctx: The context whose Accept headers will be used for strict
                 negotiation.
-            call_next: An async callable that invokes the next middleware
-                or request handler in the processing chain.
 
         Returns:
-            Either an HTTP 406 response if the client cannot accept any
-            available types, or the result of calling the next handler in
-            the chain.
+            An HTTP 406 response if the client cannot accept any available
+            types, or ``None`` to let the request through.
 
         Raises:
-            No exceptions are raised directly; any exceptions from the
-            downstream handler are propagated unchanged.
+            No exceptions are raised directly.
         """
         best_type = self.negotiate_content_type(
             ctx, self.available_types, self.default_content_type
@@ -1296,12 +1327,18 @@ class StrictContentNegotiationMiddleware(ContentNegotiationMiddleware):
                 },
                 status_code=406,
             )
-        # Attached dynamically for downstream handlers to read. These were
-        # written with setattr(), which only had the effect of hiding them from
-        # the type checker — they are not declared on HttpContext either way.
-        ctx.negotiated_content_type = best_type  # ty: ignore[unresolved-attribute]
+        # `ctx.state`, not a plain attribute on `ctx` itself: the router
+        # builds its own fresh `HttpContext` for the handler rather than
+        # reusing this middleware's, so an attribute set here (as this used
+        # to, via `ctx.negotiated_content_type = ...`) never reached it --
+        # silently, since nothing declares that attribute to raise an
+        # AttributeError either. `ctx.state` is backed by the ASGI scope,
+        # which every `HttpContext` for this connection shares, and is the
+        # same mechanism `store_accepts_info` above already relies on to
+        # reach the handler.
+        ctx.state.negotiated_content_type = best_type
         best_language = self.negotiate_language(
             ctx, self.available_languages, self.default_language
         )
-        ctx.negotiated_language = best_language  # ty: ignore[unresolved-attribute]
-        return await call_next()
+        ctx.state.negotiated_language = best_language
+        return None

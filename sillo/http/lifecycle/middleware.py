@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 from sillo.core.http import HttpContext
-from sillo.middleware.base import BaseMiddleware
+from sillo.middleware.response_headers import ResponseHeaders
+from sillo.types import ASGIApp, Message, Receive, Scope, Send
 
 from .helpers import (
     generate_request_id,
@@ -14,7 +15,7 @@ from .helpers import (
 )
 
 
-class RequestIdMiddleware(BaseMiddleware):
+class RequestIdMiddleware:
     """Middleware that manages request ID generation and propagation.
 
     Automatically assigns a unique request ID to each incoming request,
@@ -60,8 +61,9 @@ class RequestIdMiddleware(BaseMiddleware):
             include_in_response (bool, optional): When ``True``, set
                 the request ID as a header on the outgoing response.
                 Defaults to ``True``.
-            **kwargs: Additional keyword arguments forwarded to the
-                ``BaseMiddleware`` parent class.
+            **kwargs: Additional keyword arguments, accepted but ignored,
+                for compatibility with generic middleware configuration
+                patterns.
 
         Returns:
             None.
@@ -69,38 +71,55 @@ class RequestIdMiddleware(BaseMiddleware):
         Raises:
             None.
         """
-        super().__init__(**kwargs)
+        # Bound on afterwards by `use()`: this is registered as a configured
+        # instance, `app.use(RequestIdMiddleware(...))`.
+        self.app: ASGIApp | None = None
         self.header_name = header_name
         self.force_generate = force_generate
         self.store_in_request = store_in_request
         self.request_attribute_name = request_attribute_name
         self.include_in_response = include_in_response
 
-    async def dispatch(
-        self,
-        ctx: HttpContext,
-        call_next: Any,
-    ) -> Any:
-        """Assign a request ID, then guarantee it on the outgoing response.
+    def _inner(self) -> ASGIApp:
+        """Return the inner application, refusing to serve without one."""
+        if self.app is None:
+            raise RuntimeError(
+                "RequestIdMiddleware was constructed without an inner "
+                "application and cannot serve requests. Register it with "
+                "app.use(RequestIdMiddleware(...))."
+            )
+        return self.app
 
-        Determines the request ID by either forcing a fresh UUID4
-        generation or extracting/generating one from the request
-        headers. Optionally stores the ID on the request state and
-        sets it as a response header before delegating to the next
-        middleware or handler in the chain.
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Assign a request ID, then guarantee it on the outgoing response."""
+        app = self._inner()
+        if scope["type"] != "http":
+            await app(scope, receive, send)
+            return
+
+        ctx = HttpContext(scope, receive)
+        request_id = self.assign_request_id(ctx)
+
+        async def send_with_request_id(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                self.set_response_header(ResponseHeaders(message), request_id)
+            await send(message)
+
+        await app(scope, receive, send_with_request_id)
+
+    def assign_request_id(self, ctx: HttpContext) -> str:
+        """Determine this request's ID, and store it on the request state.
+
+        Forces a fresh UUID4, or extracts/generates one from the request
+        headers, per ``force_generate``. Optionally stores the ID on
+        ``ctx.state`` for downstream handlers to read.
 
         Args:
             ctx (HttpContext): The context to inspect and annotate with a
                 request ID.
-            call_next (Any): An awaitable callable representing the
-                next middleware or route handler in the pipeline.
 
         Returns:
-            Any: The return value of ``call_next()``, typically the
-                response produced by downstream handlers.
-
-        Raises:
-            None.
+            str: The request ID assigned to this request.
         """
         if self.force_generate:
             request_id = generate_request_id()
@@ -108,18 +127,25 @@ class RequestIdMiddleware(BaseMiddleware):
             request_id = get_request_id_from_header(ctx, self.header_name)
             if not request_id:
                 request_id = get_or_generate_request_id(ctx, self.header_name)
-        self.request_id = request_id
 
+        # Not kept on `self`: this middleware instance is shared across every
+        # concurrent request the application handles, and a second request's
+        # ID landing on `self` between this and `set_response_header` running
+        # would echo the wrong ID back on the first request's response.
+        # `ctx.state` below is what a caller actually wants -- one per
+        # request -- and this method's own return value carries it the rest
+        # of the way through this request's `__call__`.
         if self.store_in_request:
             store_request_id_in_request(ctx, request_id, self.request_attribute_name)
 
-        response = await call_next()
+        return request_id
 
-        if response is not None and request_id and self.include_in_response:
-            if not response.headers.get(self.header_name):
-                set_request_id_header(response, request_id, self.header_name)
-
-        return response
+    def set_response_header(self, headers: ResponseHeaders, request_id: str) -> None:
+        """Echo the request ID back on the outgoing response, if configured to."""
+        if not request_id or not self.include_in_response:
+            return
+        if not headers.headers.get(self.header_name):
+            set_request_id_header(headers, request_id, self.header_name)
 
 
 def RequestId(

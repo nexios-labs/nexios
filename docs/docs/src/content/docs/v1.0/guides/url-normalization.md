@@ -34,7 +34,7 @@ With the default `REDIRECT_REMOVE`, a request to `/users/` is answered with a **
 
 ##  How a request is normalized
 
-`NormalizeMiddleware.dispatch` runs this sequence before `call_next`, for every request:
+`NormalizeMiddleware.normalize` runs this sequence before the downstream app, for every request:
 
 1. **Skip** paths that contain `.`, `?`, or `#` (files, queries, fragments):
    these are never rewritten.
@@ -42,7 +42,7 @@ With the default `REDIRECT_REMOVE`, a request to `/users/` is answered with a **
 3. **Lowercase** the path when `normalize_case=True`.
 4. **Apply the slash action.** Either mutate `ctx.scope["path"]` in place
    (silent modes) or return a `301`/`302` redirect (redirect modes).
-5. Otherwise call `await call_next()` unchanged.
+5. Otherwise let the request through to the downstream app unchanged.
 
 Because silent modes rewrite `ctx.scope["path"]`, the router matches the cleaned path with no extra round trip. Redirect modes send the client to the canonical URL and stop there.
 
@@ -161,8 +161,8 @@ def test_silent_remove():
 
 ##  Works with
 
-- **Routing.** Normalization runs before `call_next`, so the router always
-  sees the canonical path. Place `Normalize` early in the middleware chain.
+- **Routing.** Normalization runs before the downstream app, so the router
+  always sees the canonical path. Place `Normalize` early in the middleware chain.
 - **Static files.** Asset paths are auto-skipped, so normalization never
   interferes with `static()` mounts.
 - **Security middleware.** Run `Normalize` before CSRF/Shield so they evaluate

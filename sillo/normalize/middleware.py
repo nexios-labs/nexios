@@ -5,8 +5,8 @@ from typing import Any
 from urllib.parse import urlunparse
 
 from sillo.core.http import HttpContext
-from sillo.middleware.base import BaseMiddleware
 from sillo.responses import redirect as _redirect
+from sillo.types import ASGIApp, Receive, Scope, Send
 
 
 class SlashAction(Enum):
@@ -33,7 +33,7 @@ class SlashAction(Enum):
     IGNORE = "ignore"
 
 
-class NormalizeMiddleware(BaseMiddleware):
+class NormalizeMiddleware:
     """
     Middleware that normalizes URL paths by handling trailing slashes and double slashes.
 
@@ -43,9 +43,9 @@ class NormalizeMiddleware(BaseMiddleware):
     HTTP redirects, and ignoring. Additionally, it can collapse consecutive slashes
     and optionally normalize path case for case-insensitive routing.
 
-    The middleware integrates with the sillo middleware system by extending
-    ``BaseMiddleware`` and overriding the ``process_request`` hook to modify
-    the request scope before downstream processing.
+    A plain raw ASGI middleware: it either mutates the request scope's path
+    in place before calling the downstream app, or answers a redirect
+    itself without calling it at all.
     """
 
     def __init__(
@@ -77,6 +77,9 @@ class NormalizeMiddleware(BaseMiddleware):
             **_ (Any): Additional keyword arguments that are accepted but ignored,
                 allowing compatibility with generic middleware configuration patterns.
         """
+        # Bound on afterwards by `use()`: this is registered as a configured
+        # instance, `app.use(NormalizeMiddleware(...))`.
+        self.app: ASGIApp | None = None
         self.slash_action = slash_action
         self.redirect_status_code = redirect_status_code
         self.auto_remove_double_slashes = auto_remove_double_slashes
@@ -179,35 +182,56 @@ class NormalizeMiddleware(BaseMiddleware):
         skip_patterns = [".", "?", "#"]
         return any(pattern in path for pattern in skip_patterns)
 
-    async def dispatch(
-        self,
-        ctx: HttpContext,
-        call_next: Any,
-    ) -> Any:
-        """
-        Processes an incoming HTTP request by applying URL normalization rules.
+    def _inner(self) -> ASGIApp:
+        """Return the inner application, refusing to serve without one."""
+        if self.app is None:
+            raise RuntimeError(
+                "NormalizeMiddleware was constructed without an inner "
+                "application and cannot serve requests. Register it with "
+                "app.use(NormalizeMiddleware(...))."
+            )
+        return self.app
 
-        This method implements the core normalization logic by inspecting the
-        request path and applying the configured slash handling strategy. It
-        first checks whether the path should be skipped, then applies double-slash
-        removal and case normalization. Based on the configured ``slash_action``,
-        it either silently modifies the path in the request scope or issues an
-        HTTP redirect response to the canonical URL form.
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """Normalize the path, or redirect to its canonical form, then run the app."""
+        app = self._inner()
+        if scope["type"] != "http":
+            await app(scope, receive, send)
+            return
+
+        ctx = HttpContext(scope, receive)
+        redirect_response = self.normalize(ctx)
+        if redirect_response is not None:
+            await redirect_response(scope, receive, send)
+            return
+
+        await app(scope, receive, send)
+
+    def normalize(self, ctx: HttpContext) -> Any | None:
+        """
+        Applies URL normalization rules to one request's path.
+
+        Inspects the request path and applies the configured slash handling
+        strategy. First checks whether the path should be skipped, then
+        applies double-slash removal and case normalization. Based on the
+        configured ``slash_action``, it either silently modifies the path in
+        the request scope or returns an HTTP redirect response to the
+        canonical URL form.
 
         Args:
             ctx (HttpContext): The context whose URL path will be inspected
                 and potentially modified during normalization.
-            call_next (Any): An async callable representing the next middleware
-                or route handler in the processing chain.
 
         Returns:
-            Any: Either a redirect response if the path requires canonicalization
-            via redirect, or the result of calling the next handler in the chain.
+            Any | None: A redirect response if the path requires
+            canonicalization via redirect, or ``None`` to let the request
+            through (with the scope's path already normalized in place, if
+            configured to modify silently).
         """
         original_path = ctx.url.path
 
         if self._should_skip_processing(original_path):
-            return await call_next()
+            return None
 
         normalized_path = self._normalize_path(original_path)
 
@@ -261,7 +285,7 @@ class NormalizeMiddleware(BaseMiddleware):
                 )
                 return _redirect(redirect_url, status_code=self.redirect_status_code)
 
-        return await call_next()
+        return None
 
 
 def Normalize(

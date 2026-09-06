@@ -180,6 +180,40 @@ class TestAcceptsInfo:
         response = client.get("/test", headers={"Accept": "text/html, application/json"})
         assert "text/html" in response.json()["types"]
 
+    def test_parses_headers_directly_without_the_middleware_installed(self):
+        """Without AcceptsMiddleware, ctx.state.accepts_parsed was never
+        populated, so each property falls back to parsing its own header
+        directly instead of reading the cache."""
+        app = SilloApp()
+
+        @app.get("/test")
+        async def test_route(ctx: HttpContext):
+            info = AcceptsInfo(ctx)
+            return json(
+                {
+                    "accept": [i.value for i in info.accept],
+                    "language": [i.value for i in info.accept_language],
+                    "charset": [i.value for i in info.accept_charset],
+                    "encoding": [i.value for i in info.accept_encoding],
+                }
+            )
+
+        client = TestClient(app)
+        response = client.get(
+            "/test",
+            headers={
+                "Accept": "application/json",
+                "Accept-Language": "en",
+                "Accept-Charset": "utf-8",
+                "Accept-Encoding": "gzip",
+            },
+        )
+        data = response.json()
+        assert data["accept"] == ["application/json"]
+        assert data["language"] == ["en"]
+        assert data["charset"] == ["utf-8"]
+        assert data["encoding"] == ["gzip"]
+
 
 class TestContentNegotiationMiddleware:
     def test_negotiate_content_type_method(self):

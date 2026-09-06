@@ -57,6 +57,7 @@ if TYPE_CHECKING:
     from sillo.core.http import HttpContext
     from sillo.users import BaseUser
 
+import inspect
 import json
 import warnings
 
@@ -66,6 +67,124 @@ except ImportError:
     uvicorn = None  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
 
 allowed_methods_default = ["get", "post", "delete", "put", "patch", "options"]
+
+
+def _runtime_call_signature(
+    middleware: MiddlewareType | MiddlewareFactory | ASGIApp,
+) -> inspect.Signature | None:
+    """Return the signature that governs how `middleware` is actually called.
+
+    A class registered with `use()` is a *factory*: sillo constructs an
+    instance of it (`cls(next_app, *args, **kwargs)`) and it is that
+    instance's `__call__` -- not the class's `__init__`, which is what
+    `inspect.signature` reads for a class by default -- that runs per
+    request. `getattr(cls, "__call__", None)` is used rather than
+    `cls.__dict__.get("__call__")` so an `__call__` inherited from a base
+    class (as opposed to one only ever present on `object`, i.e. not
+    overridden at all) is found by walking the MRO the same way Python does
+    when it actually calls the instance.
+
+    Anything that isn't a class -- an instance, a bound method, a plain
+    function, a `functools.partial` -- is called directly as-is, so its own
+    signature is what matters. `inspect.unwrap` strips any `functools.wraps`
+    decoration first so a decorated middleware doesn't get misread as
+    `(*args, **kwargs)`.
+
+    Returns `None` when no such signature can be determined at all, which
+    callers must treat as "no structural signal either way."
+    """
+    if inspect.isclass(middleware):
+        # Not the `hasattr(x, "__call__")` anti-pattern `callable()` replaces:
+        # the object fetched here is inspected for its signature, not just
+        # tested for truthiness, and `callable(middleware)` would answer
+        # about the class itself (always true; classes are callable) rather
+        # than about what its *instances* -- what `use()` actually ends up
+        # calling -- will be.
+        target = getattr(middleware, "__call__", None)  # noqa: B004
+        if target is None or target is object.__call__:
+            return None
+    elif callable(middleware):
+        target = middleware
+    else:
+        return None
+
+    try:
+        return inspect.signature(inspect.unwrap(target))
+    except (TypeError, ValueError):
+        return None
+
+
+def _is_raw_asgi_middleware(
+    middleware: MiddlewareType | MiddlewareFactory | ASGIApp,
+) -> bool:
+    """Guess whether `middleware` is a raw ASGI factory rather than dispatch.
+
+    The two calling conventions `use()` accepts -- ASGI's `(scope, receive,
+    send)` and sillo's dispatch `(ctx, call_next)` -- are both called with
+    every argument positional and none defaulted. That makes the *count* of
+    required positional parameters the signal to read, not what their author
+    happened to name them: three is ASGI, two is dispatch, regardless of
+    whether those three are spelled `scope, receive, send` or something else
+    entirely.
+
+    A signature that swallows everything generically (`*args, **kwargs`), or
+    whose count matches neither convention, carries no structural signal in
+    either direction. That is left as dispatch -- the pre-existing default --
+    and `use()` separately raises if that guess turns out to be wrong and
+    factory arguments were also passed, rather than silently misrouting them.
+    """
+    sig = _runtime_call_signature(middleware)
+    if sig is None:
+        return False
+
+    positional_kinds = (
+        inspect.Parameter.POSITIONAL_ONLY,
+        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+    )
+    params = [p for p in sig.parameters.values() if p.name not in ("self", "cls")]
+    has_var_positional = any(p.kind is inspect.Parameter.VAR_POSITIONAL for p in params)
+    required_positional = [
+        p
+        for p in params
+        if p.kind in positional_kinds and p.default is inspect.Parameter.empty
+    ]
+
+    if has_var_positional:
+        return False
+    if len(required_positional) == 3:
+        return True
+    if len(required_positional) == 2:
+        return False
+    return False
+
+
+def _rebinding_factory(instance: ASGIApp) -> MiddlewareFactory:
+    """Wrap an already-constructed raw ASGI middleware as a one-shot factory.
+
+    `_build_request_chain` calls every raw entry as `cls(next_app, *args,
+    **kwargs)` -- the ASGI convention, which assumes `cls` is still waiting
+    to be built. `app.use(SessionMiddleware(secret_key=...))` and every other
+    built-in registered the same way pass an instance instead, already
+    configured and with nowhere to put `next_app` except by setting `.app` on
+    it directly -- which each of those sets to `None` at construction for
+    exactly this. Third-party raw ASGI middleware registered the same way is
+    expected to do likewise; one without a settable `.app` fails here with an
+    `AttributeError` naming the instance, which is a clearer signal than the
+    `TypeError` calling it as a factory would have raised instead.
+
+    `instance` is typed as the `ASGIApp` it already is, not the factory it is
+    about to be wrapped as -- `.app` is set on it with `setattr` rather than
+    attribute access because nothing in the `ASGIApp` shape (just `(scope,
+    receive, send) -> Awaitable`) promises that attribute exists; the
+    `AttributeError` this raises when it does not is the point.
+    """
+
+    def factory(app: ASGIApp) -> ASGIApp:
+        setattr(instance, "app", app)  # noqa: B010
+        return instance
+
+    return cast(MiddlewareFactory, factory)
+
 
 logger = create_logger("sillo")
 lifespan_manager = Callable[
@@ -877,7 +996,7 @@ class SilloApp:
     def use(
         self,
         middleware: Annotated[
-            MiddlewareType | MiddlewareFactory,
+            MiddlewareType | MiddlewareFactory | ASGIApp,
             Doc(
                 "A callable middleware function that processes requests and responses."
             ),
@@ -887,16 +1006,20 @@ class SilloApp:
             Doc("Positional arguments forwarded to a `raw=True` middleware factory."),
         ],
         raw: Annotated[
-            bool,
+            bool | None,
             Doc(
                 "Treat `middleware` as a raw ASGI middleware factory, called as "
                 "`middleware(next_app, *args, **kwargs)`, instead of a dispatch "
-                "function."
+                "function. Left as `None`, sillo infers this from "
+                "`middleware`'s `__call__` signature: three required "
+                "positional parameters (ASGI's `scope, receive, send`, "
+                "whatever they're named) is raw, two (`ctx, call_next`) is "
+                "dispatch. Pass `True`/`False` to state it explicitly instead."
             ),
-        ] = False,
+        ] = None,
         **kwargs: Annotated[
             Any,
-            Doc("Keyword arguments forwarded to a `raw=True` middleware factory."),
+            Doc("Keyword arguments forwarded to a raw middleware factory."),
         ],
     ) -> None:
         """
@@ -906,40 +1029,45 @@ class SilloApp:
         modifications to requests before they reach the route handler and responses
         before they are sent back to the client.
 
-        Two forms are accepted.
+        Two forms are accepted, and sillo tells them apart on its own -- see
+        `raw` below -- so nothing needs to be passed to say which one this is,
+        in the common case.
 
-        The default is sillo's dispatch form: an instance, or a plain function,
-        taking `(ctx, call_next)`. sillo builds the `HttpContext` for it and
-        turns the rest of the chain into something awaitable. That is
-        convenient, and it costs a context object and a background task per
-        layer per request. Return a response to end the chain early.
+        sillo's dispatch form is an instance, or a plain function, taking
+        `(ctx, call_next)`. sillo builds the `HttpContext` for it and turns
+        the rest of the chain into something awaitable. That is convenient,
+        and it costs a context object and a background task per layer per
+        request. Return a response to end the chain early.
 
-        Passing `raw=True` registers a raw ASGI middleware instead. The
-        argument is then a *factory* — usually a class — invoked as
-        `middleware(next_app, *args, **kwargs)`, and whatever it returns is
-        called with `(scope, receive, send)`. Nothing is built on its behalf,
-        so it is the cheaper form and the one to reach for when the middleware
-        does not need a parsed request; it is also how sillo's own
+        A raw ASGI middleware is a *factory* — usually a class — invoked as
+        `middleware(next_app, *args, **kwargs)`, whose `__call__` takes
+        `(scope, receive, send)`. Nothing is built on its behalf, so it is the
+        cheaper form and the one to reach for when the middleware does not
+        need a parsed request; it is also how sillo's own
         `ServerErrorMiddleware` and `ExceptionMiddleware` are written. ASGI
-        middleware from other frameworks generally drops straight in.
+        middleware from other frameworks generally drops straight in this way.
 
         Args:
-            middleware: With `raw=False`, a callable taking an `HttpContext`
-                and a `call_next` callable, returning a response.
-                With `raw=True`, a factory taking the next ASGI application as
-                its first argument and returning an ASGI application.
-            *args: Positional arguments for the factory. `raw=True` only.
-            raw: Whether `middleware` is a raw ASGI middleware factory.
-            **kwargs: Keyword arguments for the factory. `raw=True` only.
+            middleware: A callable taking an `HttpContext` and a `call_next`
+                callable and returning a response (dispatch form), or a
+                factory taking the next ASGI application as its first
+                argument and returning an ASGI application (raw form).
+            *args: Positional arguments for the factory. Raw ASGI middleware
+                only.
+            raw: Whether `middleware` is a raw ASGI middleware factory. Left
+                as `None`, this is inferred from `middleware`'s signature.
+            **kwargs: Keyword arguments for the factory. Raw ASGI middleware
+                only.
 
         Returns:
             None
 
         Raises:
-            TypeError: If extra arguments are passed without `raw=True`. The
-                dispatch form takes a middleware that is already configured, so
-                there is nowhere for them to go and silently dropping them
-                would leave the middleware running on its defaults.
+            TypeError: If extra arguments are passed for middleware that
+                resolves to the dispatch form. The dispatch form takes a
+                middleware that is already configured, so there is nowhere
+                for them to go and silently dropping them would leave the
+                middleware running on its defaults.
 
         Example:
             ```python
@@ -951,7 +1079,8 @@ class SilloApp:
             app.use(logging_middleware)
 
 
-            # raw ASGI form
+            # raw ASGI form -- detected automatically from its three-argument
+            # __call__, no raw=True needed
             class RequestId:
                 def __init__(self, app, header: str = "x-request-id"):
                     self.app = app
@@ -968,15 +1097,34 @@ class SilloApp:
 
                     await self.app(scope, receive, send_with_id)
 
-            app.use(RequestId, raw=True, header="x-trace-id")
+            app.use(RequestId, header="x-trace-id")
             ```
         """
+        if raw is None:
+            raw = _is_raw_asgi_middleware(middleware)
+
         if not raw and (args or kwargs):
             raise TypeError(
                 "use() forwards extra arguments only to raw ASGI middleware. "
-                "Pass raw=True to have them handed to the factory, or "
-                "configure the middleware before registering it."
+                "This middleware's __call__ was read as the dispatch form "
+                "(ctx, call_next), so pass raw=True if it is meant to be a "
+                "raw ASGI factory, or configure the middleware before "
+                "registering it."
             )
+
+        if raw and not inspect.isclass(middleware):
+            if args or kwargs:
+                raise TypeError(
+                    "use() forwards extra arguments only when constructing a "
+                    "raw ASGI middleware, and this one is already "
+                    "constructed. Pass its options to the instance itself, "
+                    f"not to use(): {middleware!r}"
+                )
+            raw_factory: MiddlewareFactory = _rebinding_factory(
+                cast(ASGIApp, middleware)
+            )
+        else:
+            raw_factory = cast(MiddlewareFactory, middleware)
 
         # Authentication can be configured two ways: SilloApp(auth_user_model=…)
         # or AuthenticationMiddleware(user_model=…) passed to use(). Both name
@@ -990,11 +1138,14 @@ class SilloApp:
             0,
             # Raw middleware is the factory itself: the chain builder calls
             # `cls(next_app, *args, **kwargs)`, which is exactly the ASGI
-            # convention, so no wrapper is involved at all. `raw=True` is the
-            # caller stating which half of the union they passed, and nothing
-            # in the type system carries that from the flag to the value, so
-            # the cast is where that claim is recorded.
-            Middleware(cast(MiddlewareFactory, middleware), *args, **kwargs)
+            # convention, so no wrapper is involved at all -- an
+            # already-constructed instance is wrapped in a one-shot factory
+            # above so the same call still works. `raw` is the caller's (or
+            # the inference's) claim about which half of the union
+            # `middleware` is, and nothing in the type system carries that
+            # from the flag to the value, so the cast is where that claim is
+            # recorded.
+            Middleware(raw_factory, *args, **kwargs)
             if raw
             else Middleware(ASGIRequestResponseBridge, dispatch=middleware),
         )

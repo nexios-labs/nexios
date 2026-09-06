@@ -15,22 +15,20 @@ What is where:
     dispatch middleware is mounted above an ASGI application, which cannot
     return a response object on its own.
 ``gzip``, ``security``
-    Middleware that ships with the framework.
+    Middleware that ships with the framework. Every one of them -- here and
+    under ``sillo.http`` (sessions, auth, CORS, CSRF, rate limiting, security
+    headers, path normalization, request IDs, ETags, content negotiation) --
+    is plain raw ASGI: ``__init__(self, app=None, ...)`` and
+    ``async def __call__(self, scope, receive, send)``. None of them subclass
+    ``BaseMiddleware`` or import it, so there is no cycle through ``base`` to
+    worry about here any more.
 ``utils``
     :func:`~sillo.middleware.utils.use_for_route`, to scope a middleware to a
     path pattern.
 
 Only ``base`` and the shipped middleware are public API. ``define`` and
-``bridge`` are how the framework assembles a chain; import them by their module
-path rather than from here, which is also what keeps the security re-exports
-below from becoming a cycle.
-
-Those re-exports reach back into this package's own ``base`` module. Everything
-under ``sillo.security`` imports ``BaseMiddleware`` from ``sillo.middleware.base``
-directly rather than from this package, which is what keeps that from being a
-cycle — importing it from here worked only while this file happened to bind
-``BaseMiddleware`` before triggering the security import, so sorting these two
-lines was enough to raise ImportError on ``import sillo``.
+``bridge`` are how the framework assembles a chain; import them by their
+module path rather than from here.
 """
 
 from sillo.security.cors import CORSMiddleware

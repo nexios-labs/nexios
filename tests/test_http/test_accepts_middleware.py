@@ -106,6 +106,37 @@ def test_best_match_through_a_request(client):
     assert data["language"] == "fr"
 
 
+def test_best_match_falls_back_when_nothing_matches(client):
+    """Neither the type nor the language is one the server offers, so both
+    fall back to the first option -- there is always something to answer with."""
+    resp = client.get(
+        "/best",
+        headers={"Accept": "text/csv", "Accept-Language": "de"},
+    )
+    data = resp.json()
+    assert data["type"] == "application/json"
+    assert data["language"] == "en"
+
+
+def test_best_match_matches_a_language_region_prefix(client):
+    resp = client.get("/best", headers={"Accept-Language": "en-GB"})
+    assert resp.json()["language"] == "en"
+
+
+def test_best_match_matches_a_server_side_region_variant():
+    """A server offering `en-US` satisfies a client that only asked for `en`."""
+    app = SilloApp()
+    app.use(AcceptsMiddleware())
+
+    @app.get("/best-region")
+    async def best_region(ctx):
+        return json({"language": get_best_accepted_language(ctx, ["en-US", "fr"])})
+
+    client = TestClient(app)
+    resp = client.get("/best-region", headers={"Accept-Language": "en-GB"})
+    assert resp.json()["language"] == "en-US"
+
+
 def test_the_accepts_wrapper_is_available(client):
     assert client.get("/wrapper").json()["has_accepts"] is True
 
@@ -196,6 +227,105 @@ def test_accepts_middleware_without_an_accept_header():
     assert client.get("/x").status_code == 200
 
 
+def test_negotiates_content_type_when_the_response_has_none():
+    """`apply_headers` only fills in Content-Type when the response left it blank."""
+    from sillo.core.http.response import BaseResponse
+
+    app = SilloApp()
+
+    @app.get("/x")
+    async def x(ctx):
+        return BaseResponse(body=b"data", content_type=None)
+
+    app.use(AcceptsMiddleware(default_content_type="text/csv"))
+    client = TestClient(app)
+
+    response = client.get("/x", headers={"Accept": "text/csv"})
+    assert response.headers["content-type"] == "text/csv"
+
+
+def test_falls_back_to_the_default_content_type_without_an_accept_header():
+    """No `Accept` header at all -- not even `*/*`, which a real HTTP client
+    always sends, and which would take the *other* branch (negotiating `*/*`
+    against the default, landing on the same value through a different
+    path). Driven at the ASGI level directly so the request can omit it."""
+    import anyio
+
+    from sillo.core.http.response import BaseResponse
+
+    app = SilloApp()
+
+    @app.get("/x")
+    async def x(ctx):
+        return BaseResponse(body=b"data", content_type=None)
+
+    app.use(AcceptsMiddleware(default_content_type="application/xml"))
+
+    sent: list[dict] = []
+
+    async def receive():
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    async def send(message):
+        sent.append(message)
+
+    scope = {
+        "type": "http",
+        "method": "GET",
+        "path": "/x",
+        "headers": [],
+        "query_string": b"",
+    }
+
+    anyio.run(app, scope, receive, send)
+
+    start = next(m for m in sent if m["type"] == "http.response.start")
+    headers = {k.decode(): v.decode() for k, v in start["headers"]}
+    assert headers["content-type"] == "application/xml"
+
+
+def test_non_http_scope_passes_through_untouched():
+    middleware = AcceptsMiddleware()
+    called = {}
+
+    async def downstream(scope, receive, send):
+        called["scope"] = scope
+
+    middleware.app = downstream
+
+    async def receive():
+        return {"type": "lifespan.startup"}
+
+    async def send(message):
+        pass
+
+    import anyio
+
+    anyio.run(middleware.__call__, {"type": "lifespan"}, receive, send)
+
+    assert called["scope"] == {"type": "lifespan"}
+
+
+def test_without_an_inner_app_raises():
+    import anyio
+
+    middleware = AcceptsMiddleware()
+
+    async def receive():
+        return {"type": "http.request"}
+
+    async def send(message):
+        pass
+
+    with pytest.raises(RuntimeError, match="without an inner application"):
+        anyio.run(
+            middleware.__call__,
+            {"type": "http", "path": "/x", "method": "GET", "headers": []},
+            receive,
+            send,
+        )
+
+
 # ── ContentNegotiationMiddleware ─────────────────────────────────────────
 
 
@@ -225,9 +355,7 @@ def test_strict_negotiation_rejects_an_unsupported_type():
     Note the endpoint must not offer the default content type, or negotiation
     falls back onto it and the request is served after all.
     """
-    client = _app_with(
-        StrictContentNegotiationMiddleware(available_types=["text/csv"])
-    )
+    client = _app_with(StrictContentNegotiationMiddleware(available_types=["text/csv"]))
     resp = client.get("/x", headers={"Accept": "application/xml"})
     assert resp.status_code == 406
     assert "text/csv" in resp.text
@@ -257,6 +385,61 @@ def test_strict_negotiation_with_no_accept_header():
         StrictContentNegotiationMiddleware(available_types=["application/json"])
     )
     assert client.get("/x").status_code in (200, 406)
+
+
+def test_strict_negotiation_non_http_scope_passes_through_untouched():
+    middleware = StrictContentNegotiationMiddleware(available_types=["application/json"])
+    called = {}
+
+    async def downstream(scope, receive, send):
+        called["scope"] = scope
+
+    middleware.app = downstream
+
+    async def receive():
+        return {"type": "lifespan.startup"}
+
+    async def send(message):
+        pass
+
+    import anyio
+
+    anyio.run(middleware.__call__, {"type": "lifespan"}, receive, send)
+
+    assert called["scope"] == {"type": "lifespan"}
+
+
+def test_negotiated_values_reach_the_handler():
+    """The route handler gets its own, separately-built HttpContext.
+
+    The negotiated values used to be set as a plain attribute on the
+    middleware's own context object, which the handler's context never saw
+    -- so this reads them the way a handler actually would, off ctx.state,
+    not off the object the middleware happened to negotiate against.
+    """
+    app = SilloApp()
+
+    @app.get("/x")
+    async def x(ctx):
+        return json(
+            {
+                "type": ctx.state.negotiated_content_type,
+                "lang": ctx.state.negotiated_language,
+            }
+        )
+
+    app.use(
+        StrictContentNegotiationMiddleware(
+            available_types=["application/json"], available_languages=["en"]
+        )
+    )
+    client = TestClient(app)
+
+    response = client.get(
+        "/x", headers={"Accept": "application/json", "Accept-Language": "en"}
+    )
+
+    assert response.json() == {"type": "application/json", "lang": "en"}
 
 
 # ── the Accepts factory ──────────────────────────────────────────────────

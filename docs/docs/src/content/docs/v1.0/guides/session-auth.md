@@ -327,7 +327,7 @@ async def logout(ctx: HttpContext):
 ```
 
 `clear()` is the whole logout. It marks the session emptied *and* deleted, and
-`SessionMiddleware`, after `call_next` returns, hands the emptied session to the backend
+`SessionMiddleware`, once the response starts, hands the emptied session to the backend
 before dropping the cookie, so a server-backed store purges its record rather
 than leaving a key that anyone holding the old cookie could still present.
 

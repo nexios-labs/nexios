@@ -248,7 +248,7 @@ app.use(CSRFMiddleware(config=csrf_config))
 
 ##  How a request is checked
 
-`CSRFMiddleware.dispatch` runs this sequence before `call_next`, for every request (only when `enabled=True`):
+`CSRFMiddleware.validate` runs this sequence before the downstream app, for every request (only when `enabled=True`):
 
 1. Generate a fresh signed token and stash it on `ctx.state.csrf_token`.
 2. If the method is in `safe_methods` (`GET`, `HEAD`, `OPTIONS` by default), allow the request through.
@@ -259,7 +259,7 @@ app.use(CSRFMiddleware(config=csrf_config))
    - The submitted token must match the cookie token.
 4. Any failure (missing cookie, missing token, mismatch) returns **`403`** and clears the CSRF cookie.
 
-On the way out, after `call_next` returns, it sets the `csrftoken` cookie so the next
+On the way out, once the response starts, `set_token_cookie` sets the `csrftoken` cookie so the next
 request can present a matching header. The cookie is `HttpOnly` by default, so
 JavaScript cannot read it. The token must travel in the header (or form field),
 which is what makes the pattern resistant to cross-site forgery.
