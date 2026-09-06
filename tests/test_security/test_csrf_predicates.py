@@ -10,6 +10,7 @@ broken".
 
 from __future__ import annotations
 
+import anyio
 import pytest
 
 from sillo.security.csrf import CSRFConfig
@@ -208,3 +209,128 @@ class TestTokens:
 
         assert twin != token
         assert instance._csrf_tokens_match(token, twin) is False
+
+    def test_a_signed_non_string_payload_does_not_match(self):
+        """`_generate_csrf_token` only ever signs a string, but the compare
+        itself must not assume that -- a signed non-string payload (however
+        it got signed) has to be rejected, not raise trying to compare it."""
+        instance = middleware()
+        not_a_string = instance.serializer.dumps(12345)
+        token = instance._generate_csrf_token()
+
+        assert instance._csrf_tokens_match(token, not_a_string) is False
+        assert instance._csrf_tokens_match(not_a_string, not_a_string) is False
+
+
+class TestRequiresValidation:
+    def test_an_unrequired_url_needs_no_token(self):
+        """The wrapper's own short-circuit, not `_url_is_required` in isolation."""
+        instance = middleware(required_urls=[r"/admin/.*"])
+
+        class FakeUrl:
+            path = "/public"
+
+        class FakeCtx:
+            url = FakeUrl()
+
+        assert instance._requires_validation(FakeCtx()) is False
+
+
+class TestSubmittedToken:
+    async def test_an_unparseable_form_body_carries_no_token(self):
+        """A body that claims to be form-encoded but cannot be parsed as one
+        must not blow up the middleware -- that is a 403 below, not a 500."""
+        instance = middleware()
+
+        class FakeCtx:
+            headers = {"content-type": "multipart/form-data"}
+
+            @property
+            async def form(self):
+                raise ValueError("not actually a valid multipart body")
+
+        assert await instance._submitted_token(FakeCtx()) is None
+
+
+class TestSetTokenCookie:
+    def test_is_a_noop_without_a_token_on_state(self):
+        from sillo.middleware.response_headers import ResponseHeaders
+
+        instance = middleware()
+
+        class FakeState:
+            pass
+
+        class FakeCtx:
+            state = FakeState()
+
+        message = {"type": "http.response.start", "status": 200, "headers": []}
+        instance.set_token_cookie(FakeCtx(), ResponseHeaders(message))
+
+        assert message["headers"] == []
+
+
+class TestCallEnvelope:
+    def test_non_http_scope_passes_through_untouched(self):
+        instance = middleware()
+        called = {}
+
+        async def downstream(scope, receive, send):
+            called["scope"] = scope
+
+        instance.app = downstream
+
+        async def receive():
+            return {"type": "lifespan.startup"}
+
+        async def send(message):
+            pass
+
+        anyio.run(instance.__call__, {"type": "lifespan"}, receive, send)
+
+        assert called["scope"] == {"type": "lifespan"}
+
+    def test_a_disabled_middleware_passes_every_request_through(self):
+        """`csrf_config=None` (the default) means "not enabled" -- checked
+        before validate() ever runs, not just answered false by it."""
+        instance = CSRFMiddleware()
+        called = {}
+
+        async def downstream(scope, receive, send):
+            called["ran"] = True
+            await send({"type": "http.response.start", "status": 200, "headers": []})
+            await send({"type": "http.response.body", "body": b""})
+
+        instance.app = downstream
+
+        async def receive():
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        async def send(message):
+            pass
+
+        anyio.run(
+            instance.__call__,
+            {"type": "http", "method": "POST", "path": "/", "headers": [], "query_string": b""},
+            receive,
+            send,
+        )
+
+        assert called["ran"] is True
+
+    def test_without_an_inner_app_raises(self):
+        instance = middleware()
+
+        async def receive():
+            return {"type": "http.request"}
+
+        async def send(message):
+            pass
+
+        with pytest.raises(RuntimeError, match="without an inner application"):
+            anyio.run(
+                instance.__call__,
+                {"type": "http", "path": "/x", "method": "GET", "headers": []},
+                receive,
+                send,
+            )

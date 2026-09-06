@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import anyio
+import pytest
+
 from sillo import SilloApp
 from sillo import json
 from sillo.core.http import HttpContext
@@ -176,3 +179,46 @@ def test_fail_closed_raises_on_backend_error():
     # fail_closed -> backend error propagates and is reported as a 500
     # (the app error handler converts the raised RuntimeError into a response).
     assert client.get("/").status_code == 500
+
+
+def test_a_non_config_object_is_rejected():
+    with pytest.raises(TypeError, match="must be a RateLimitConfig instance"):
+        RateLimitMiddleware(config="not-a-config")
+
+
+def test_non_http_scope_passes_through_untouched():
+    middleware = RateLimitMiddleware()
+    called = {}
+
+    async def downstream(scope, receive, send):
+        called["scope"] = scope
+
+    middleware.app = downstream
+
+    async def receive():
+        return {"type": "lifespan.startup"}
+
+    async def send(message):
+        pass
+
+    anyio.run(middleware.__call__, {"type": "lifespan"}, receive, send)
+
+    assert called["scope"] == {"type": "lifespan"}
+
+
+def test_without_an_inner_app_raises():
+    middleware = RateLimitMiddleware()
+
+    async def receive():
+        return {"type": "http.request"}
+
+    async def send(message):
+        pass
+
+    with pytest.raises(RuntimeError, match="without an inner application"):
+        anyio.run(
+            middleware.__call__,
+            {"type": "http", "path": "/x", "method": "GET", "headers": []},
+            receive,
+            send,
+        )

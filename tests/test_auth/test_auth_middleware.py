@@ -10,6 +10,7 @@ This module tests the authentication middleware including:
 
 from functools import partial
 
+import anyio
 import pytest
 
 from sillo.application import SilloApp
@@ -238,3 +239,42 @@ async def test_auth_middleware_backend_exception_handling(test_client):
         res = await client.get("/protected", headers={"X-Backup-Auth": "backup_valid"})
         assert res.status_code == 200
         assert res.json()["user_id"] == "backup_user"
+
+
+def test_non_http_scope_passes_through_untouched():
+    """Websocket and lifespan connections have no request to authenticate."""
+    middleware = AuthenticationMiddleware()
+    called = {}
+
+    async def downstream(scope, receive, send):
+        called["scope"] = scope
+
+    middleware.app = downstream
+
+    async def receive():
+        return {"type": "lifespan.startup"}
+
+    async def send(message):
+        pass
+
+    anyio.run(middleware.__call__, {"type": "lifespan"}, receive, send)
+
+    assert called["scope"] == {"type": "lifespan"}
+
+
+def test_without_an_inner_app_raises():
+    middleware = AuthenticationMiddleware()
+
+    async def receive():
+        return {"type": "http.request"}
+
+    async def send(message):
+        pass
+
+    with pytest.raises(RuntimeError, match="without an inner application"):
+        anyio.run(
+            middleware.__call__,
+            {"type": "http", "path": "/x", "method": "GET", "headers": []},
+            receive,
+            send,
+        )

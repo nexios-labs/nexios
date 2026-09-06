@@ -1,7 +1,11 @@
+import anyio
+import pytest
+
 from sillo import SilloApp
 from sillo import json
 from sillo.core.http import HttpContext
 from sillo.http.lifecycle import (
+    RequestId,
     RequestIdMiddleware,
     generate_request_id,
     validate_request_id,
@@ -105,6 +109,56 @@ class TestRequestIdMiddleware:
 
         assert first_id != second_id
         assert not hasattr(middleware, "request_id")
+
+    def test_request_id_factory_builds_a_working_middleware(self):
+        app = SilloApp()
+        app.use(
+            RequestId(header_name="X-Custom-ID", force_generate=True)
+        )
+
+        @app.get("/test")
+        async def test_route(ctx: HttpContext):
+            return json({"ok": True})
+
+        client = TestClient(app)
+        response = client.get("/test")
+        assert validate_request_id(response.headers["X-Custom-ID"])
+
+    def test_non_http_scope_passes_through_untouched(self):
+        middleware = RequestIdMiddleware()
+        called = {}
+
+        async def downstream(scope, receive, send):
+            called["scope"] = scope
+
+        middleware.app = downstream
+
+        async def receive():
+            return {"type": "lifespan.startup"}
+
+        async def send(message):
+            pass
+
+        anyio.run(middleware.__call__, {"type": "lifespan"}, receive, send)
+
+        assert called["scope"] == {"type": "lifespan"}
+
+    def test_without_an_inner_app_raises(self):
+        middleware = RequestIdMiddleware()
+
+        async def receive():
+            return {"type": "http.request"}
+
+        async def send(message):
+            pass
+
+        with pytest.raises(RuntimeError, match="without an inner application"):
+            anyio.run(
+                middleware.__call__,
+                {"type": "http", "path": "/x", "method": "GET", "headers": []},
+                receive,
+                send,
+            )
 
 
 class TestRequestIdHelpers:
