@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2.dev1] - 2026-09-07
+
+A development pre-release for testing. Install with `pip install --pre sillo-framework==0.3.2.dev1`.
+
 ### Added
 
 - Dependency injection on WebSocket routes. A `@app.ws_route(...)` handler's signature is now analysed the same way an HTTP handler's is, so it can declare `Depend(...)` parameters — nested, cached, and `yield`-style with teardown that runs when the connection handler returns. The tree is resolved once, when the socket connects, not per message. Documented in [WebSockets → Dependency injection](https://sillo.build/v1.0/guides/websockets/#dependency-injection).
@@ -14,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **A dependency now receives the context as its first positional argument**, exactly like a route handler — an `HttpContext` on an HTTP route, a `WebSocketContext` on a WebSocket route. The `Depend(get_request=True)` / `Depend(get_context=True)` marker is **removed**; write the context as the dependency's first parameter instead (name it `_` if unused). A dependency that declared no parameters (`def get_flag(): ...`) must now take the leading parameter (`def get_flag(_): ...`). Internally, `Depend` no longer accepts a keyword argument, and `Dependant.request_param_names` is gone.
+- **The built-in middleware is now raw ASGI** (#435). CORS, CSRF, rate limiting, session and header-normalisation middleware no longer build a parsed request per hop — each runs as an ASGI layer, and `app.use()` infers whether a middleware is raw or context-based rather than needing `raw=True`. Behaviour is unchanged; the response-header layer moved to `sillo/middleware/response_headers.py`.
 
 ## [0.3.1] - 2026-08-27
 
