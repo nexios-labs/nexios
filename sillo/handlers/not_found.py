@@ -1,5 +1,4 @@
 import http
-import traceback
 import typing
 
 from sillo.core.http import HttpContext
@@ -73,10 +72,12 @@ async def handle_404_error(
     the header expresses no preference, which is the right default for an API.
 
     How much detail the body carries depends on the application's ``debug``
-    flag, read from ``ctx.app``. With debug on, the exception's own
-    ``detail`` is returned along with a traceback; with debug off — and when
-    the flag cannot be read at all — a generic message is returned instead, so
-    a misconfigured application errs towards saying less rather than more.
+    flag, read from ``ctx.app``. With debug on, the exception's own ``detail``
+    is returned; with debug off — and when the flag cannot be read at all — a
+    generic message is returned instead, so a misconfigured application errs
+    towards saying less rather than more. A 404 never carries a traceback:
+    the stack of ``raise NotFoundException`` inside the router describes the
+    framework, not the caller's code, and it would disclose internal paths.
 
     Args:
         ctx: The context for the request, used for the application's debug
@@ -89,15 +90,7 @@ async def handle_404_error(
         text according to what the client asked for.
     """
     debug = _debug_enabled(ctx)
-
-    if debug:
-        error_message = exception.detail
-        traceback_info = traceback.format_exc()
-        if traceback_info.strip() == "NoneType: None":
-            traceback_info = None
-    else:
-        error_message = GENERIC_MESSAGE
-        traceback_info = None
+    error_message = exception.detail if debug else GENERIC_MESSAGE
 
     if _prefers_html(ctx):
         return html(
@@ -110,8 +103,6 @@ async def handle_404_error(
             "error": http.HTTPStatus(404).phrase,
             "message": error_message,
         }
-        if traceback_info:
-            error_details["traceback"] = traceback_info
         return json(error_details, status_code=404)
 
     return text(f"404 - Not Found\n{error_message}", status_code=404)

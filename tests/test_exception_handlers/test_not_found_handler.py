@@ -9,8 +9,7 @@ every 404 in every deployment answered as though debug were on.
 
 import pytest
 
-from sillo import SilloApp
-from sillo import text
+from sillo import SilloApp, text
 from sillo.handlers.not_found import GENERIC_MESSAGE
 from sillo.testclient import TestClient
 
@@ -92,14 +91,20 @@ def test_debug_returns_the_exception_detail(development):
     assert message != GENERIC_MESSAGE
 
 
-def test_debug_includes_a_traceback(development):
-    assert "traceback" in development.get("/missing", headers=API).json()
+def test_debug_still_never_includes_a_traceback(development):
+    """A 404 is not a crash: the stack of ``raise NotFoundException`` is the
+    router's, not the caller's, and it discloses internal paths. Debug mode
+    widens the *message*, never adds a traceback."""
+    body = development.get("/missing", headers=API).json()
+    assert "traceback" not in body
 
 
 def test_the_flag_is_read_from_the_application_not_assumed():
     """Both settings are honoured; neither is hard-coded."""
     on = TestClient(SilloApp(debug=True)).get("/missing", headers=API).json()["message"]
-    off = TestClient(SilloApp(debug=False)).get("/missing", headers=API).json()["message"]
+    off = (
+        TestClient(SilloApp(debug=False)).get("/missing", headers=API).json()["message"]
+    )
 
     assert on != off
     assert off == GENERIC_MESSAGE
