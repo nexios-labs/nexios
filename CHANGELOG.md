@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Overlapping routes now match most-specific-first, not registration-first.** A literal segment beats a parameter at the same position, a narrow converter (`:int`, `:float`, `:uuid`) beats a plain string parameter, and both beat a `:path` catch-all — decided left to right. `@app.get("/users/{id}")` no longer shadows a `@app.get("/users/me")` registered after it. The ordering is computed once, lazily, on the first request after registration, so per-request dispatch is unchanged. Pass `route_order="registration"` to opt out.
+- **A 404 response no longer carries a traceback.** The stack of `raise NotFoundException` is the router's, not the caller's — it named internal framework paths and told a developer nothing about their own code. Debug mode still widens the *message* (the exception's `detail` instead of the generic sentence); it no longer adds a `traceback` field.
 
 ## [0.3.2.dev1] - 2026-09-07
 
