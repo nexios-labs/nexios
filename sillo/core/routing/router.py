@@ -3412,6 +3412,11 @@ class Router(BaseRouter):
             this router's internal route list.
         """
         app._set_inherited_dependencies(self._get_combined_dependencies())
+        # A mounted router inherits the parent's trailing-slash policy unless it
+        # set its own, so `SilloApp(trailing_slash="redirect")` reaches routes
+        # behind a mount too.
+        if getattr(app, "_trailing_slash", "strict") == "strict":
+            app._trailing_slash = self._trailing_slash
         path = app.prefix
         self.routes.append(Group(app=app, path=path, name=name))
         self._routes_sorted = False

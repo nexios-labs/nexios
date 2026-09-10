@@ -436,3 +436,157 @@ def test_request_host_falls_back_to_server_when_no_host_header():
 
     scope = {"type": "http", "headers": [], "server": ("box.local", 8000)}
     assert request_host(scope) == "box.local"
+
+
+def test_ulid_converter_to_string_rejects_a_bad_value():
+    from sillo.core.converters import CONVERTOR_TYPES
+
+    with pytest.raises(ValueError):
+        CONVERTOR_TYPES["ulid"].to_string("not-a-ulid")
+
+
+def test_endpoint_name_is_empty_for_a_missing_handler():
+    from sillo.core.routing.introspect import _endpoint_name
+
+    assert _endpoint_name(None) == ""
+
+
+def test_format_routes_labels_a_mount_row():
+    app = SilloApp()
+    sub = Router(prefix="/area")
+
+    @sub.get("/x")
+    async def x(ctx: HttpContext):
+        return text("x")
+
+    app.mount_router(sub)
+    table = format_routes(app.router)
+    assert "MOUNT" in table
+    assert "/area/*" in table
+
+
+def test_router_print_routes_takes_a_file(tmp_path):
+    app = SilloApp()
+
+    @app.get("/z")
+    async def z(ctx: HttpContext):
+        return text("z")
+
+    out = tmp_path / "routes.txt"
+    with out.open("w") as fh:
+        app.router.print_routes(file=fh)
+    assert "/z" in out.read_text()
+
+
+def test_declarative_redirect_can_drop_the_query_and_take_more_methods():
+    app = SilloApp()
+    app.redirect("/legacy", "/current", methods=("GET", "POST"), include_query=False)
+
+    client = TestClient(app)
+    r = client.get("/legacy?keep=me", follow_redirects=False)
+    assert r.status_code == 307
+    assert r.headers["location"] == "/current"
+
+    r = client.post("/legacy", follow_redirects=False)
+    assert r.status_code == 307
+
+
+def test_trailing_slash_ignore_reaches_a_mounted_route():
+    app = SilloApp(trailing_slash="ignore")
+    sub = Router(prefix="/sub")
+
+    @sub.get("/leaf")
+    async def leaf(ctx: HttpContext):
+        return json({"hit": True})
+
+    app.mount_router(sub)
+    assert TestClient(app).get("/sub/leaf/").json() == {"hit": True}
+
+
+def test_trailing_slash_redirect_leaves_the_root_alone():
+    app = SilloApp(trailing_slash="redirect")
+
+    @app.get("/only")
+    async def only(ctx: HttpContext):
+        return text("ok")
+
+    # "/" toggles to "" which is refused, so a bare "/" still 404s cleanly
+    assert TestClient(app).get("/").status_code == 404
+
+
+async def test_https_redirect_uses_server_when_no_host_header():
+    from sillo.application import _https_redirect
+
+    sent: list = []
+
+    async def send(msg):
+        sent.append(msg)
+
+    scope = {
+        "type": "http",
+        "headers": [],
+        "server": ("box.local", 8443),
+        "path": "/p",
+        "query_string": b"",
+        "root_path": "",
+    }
+    await _https_redirect(scope, send)
+    start = sent[0]
+    assert start["status"] == 308
+    loc = dict(start["headers"])[b"location"]
+    assert loc == b"https://box.local:8443/p"
+
+
+def test_host_router_refuses_a_websocket_from_the_wrong_host():
+    app = SilloApp()
+    live = Router(prefix="/ws", host="live.example.com")
+
+    @live.ws_route("/feed")
+    async def feed(ctx):
+        await ctx.accept()
+        await ctx.send_json({"ok": True})
+        await ctx.close()
+
+    app.mount_router(live)
+    client = TestClient(app)
+
+    from sillo.websockets.base import WebSocketDisconnect
+
+    with client.websocket_connect(
+        "/ws/feed", headers={"host": "live.example.com"}
+    ) as ws:
+        assert ws.receive_json() == {"ok": True}
+
+    with pytest.raises(WebSocketDisconnect) as caught:  # noqa: SIM117
+        with client.websocket_connect("/ws/feed") as ws:
+            ws.receive_json()
+    assert caught.value.code == 4404
+
+
+def test_trailing_slash_redirect_falls_through_on_a_method_mismatch():
+    app = SilloApp(trailing_slash="redirect")
+
+    @app.post("/submit")
+    async def submit(ctx: HttpContext):
+        return text("ok")
+
+    # GET /submit/ toggles to /submit, which exists but only for POST -> no
+    # trailing-slash redirect, the request 404s rather than 405/308
+    assert TestClient(app).get("/submit/", follow_redirects=False).status_code == 404
+
+
+def test_version_router_matches_when_only_host_is_also_set():
+    app = SilloApp()
+    r = Router(prefix="/x", host="h.example.com", version="9")
+
+    @r.get("/y")
+    async def y(ctx: HttpContext):
+        return text("y")
+
+    app.mount_router(r)
+    client = TestClient(app)
+
+    ok = client.get("/x/y", headers={"host": "h.example.com", "X-API-Version": "9"})
+    assert ok.status_code == 200
+    # right host, wrong version
+    assert client.get("/x/y", headers={"host": "h.example.com"}).status_code == 404
