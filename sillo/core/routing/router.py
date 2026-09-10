@@ -54,7 +54,12 @@ from sillo.validation import (
     prefix_errors,
 )
 
-from ._utils import MatchStatus, get_route_path
+from ._utils import (
+    MatchStatus,
+    get_route_path,
+    route_order_key,
+    route_specificity,
+)
 from .base import BaseRoute, BaseRouter
 from .grouping import Group
 from .websocket import WebsocketRoute
@@ -233,6 +238,7 @@ class Route(BaseRoute):
         middleware: list[Any] | None = None,
         exclude_from_schema: bool = False,
         auth: Any | None = None,
+        priority: int = 0,
         **kwargs: Any,
     ) -> None:
         """Initialize a Route instance with full endpoint configuration.
@@ -297,6 +303,12 @@ class Route(BaseRoute):
                 OpenAPI documentation generation entirely.
             auth: Optional authentication gate instance for route-level
                 authentication and authorization checks.
+            priority: Explicit match-ordering weight. Routes are tried in
+                descending priority, then by path specificity (a literal
+                segment beats a parameter at the same position), then in
+                registration order. Raise it to force a route ahead of an
+                overlapping one, or lower it to make a route a deliberate
+                fallback. Defaults to ``0``.
             **kwargs: Additional metadata stored on the route instance
                 for use by plugins or custom extensions.
 
@@ -309,6 +321,10 @@ class Route(BaseRoute):
         if path == "":
             path = "/"
         self.raw_path = path
+        self.priority = priority
+        # Computed once here; read by the router when it orders its routes so
+        # request-time dispatch never inspects the path.
+        self._specificity = route_specificity(path)
         self.handler = handler
         self.auth = auth
         self.handler_signature = inspect.signature(handler)
@@ -792,6 +808,7 @@ class Router(BaseRouter):
         dependencies: list[Depend] | None = None,
         route_class: type[Route] = Route,
         strict_validation: bool = False,
+        route_order: Literal["specificity", "registration"] = "specificity",
     ):
         """Initialize the router with configuration options.
 
@@ -823,8 +840,20 @@ class Router(BaseRouter):
                 into full validation so bad input returns 422 rather than 500.
             route_class: The Route class to use when creating new routes
                 via decorator methods. Defaults to the standard Route class.
+            route_order: How registered routes are ordered before matching.
+                ``"specificity"`` (the default) sorts them so the most
+                specific path wins regardless of registration order — a
+                literal segment beats a parameter at the same position, and
+                an explicit ``priority=`` on a route overrides both.
+                ``"registration"`` keeps the historical first-registered,
+                first-matched behavior.
         """
         self.prefix = prefix or ""
+        self._route_order = route_order
+        # Routes are ordered lazily on the first request after any
+        # registration, so building an app stays append-only and the cost is
+        # paid once rather than per `add_route` call.
+        self._routes_sorted = False
         self.routes = list(routes)
         self.middleware: list[Middleware] = []
         self.sub_routers: dict[str, Router | ASGIApp] = {}
@@ -887,6 +916,19 @@ class Router(BaseRouter):
                 mounted_router = getattr(route, "_base_app", None)
                 if isinstance(mounted_router, Router):
                     mounted_router._set_inherited_dependencies(combined_dependencies)
+
+    def _order_routes(self) -> None:
+        """Order the route list so the most specific route matches first.
+
+        Run once, lazily, on the first request after any registration (see
+        ``_routes_sorted``). The sort is stable, so routes with an equal
+        ``(priority, specificity)`` key keep the order they were registered
+        in. With ``route_order="registration"`` this is a no-op and the
+        historical first-registered, first-matched behavior stands.
+        """
+        if self._route_order == "specificity":
+            self.routes.sort(key=route_order_key)
+        self._routes_sorted = True
 
     def _set_inherited_dependencies(
         self, inherited_dependencies: Sequence[Dependant]
@@ -1145,6 +1187,7 @@ class Router(BaseRouter):
 
         if not isinstance(route, Route):
             self.routes.append(route)
+            self._routes_sorted = False
             return
 
         if route.tags:
@@ -1156,6 +1199,7 @@ class Router(BaseRouter):
         route._router_dependants = list(self._get_combined_dependencies())
 
         self.routes.append(route)
+        self._routes_sorted = False
 
     def use(self, middleware: MiddlewareType) -> None:
         """Register a middleware component on this router.
@@ -2851,6 +2895,7 @@ class Router(BaseRouter):
         | None = None,
         path: str | None = None,
         handler: WsHandlerType | None = None,
+        priority: int = 0,
     ) -> None:
         """Add a WebSocket route to the application router.
 
@@ -2873,6 +2918,9 @@ class Router(BaseRouter):
             handler: The async WebSocket handler function. Required when
                 ``route`` is not provided. Must accept a single
                 ``WebSocketContext`` argument.
+            priority: Match-ordering weight for the route built from ``path``
+                and ``handler``. Ignored when a pre-constructed ``route`` is
+                passed. Defaults to ``0``.
 
         Returns:
             None. The route is appended to the router's internal route list.
@@ -2884,9 +2932,10 @@ class Router(BaseRouter):
         if route is not None:
             self.routes.append(route)
         elif path is not None and handler is not None:
-            self.routes.append(WebsocketRoute(path, handler))
+            self.routes.append(WebsocketRoute(path, handler, priority=priority))
         else:
             raise ValueError("Either route or both path and handler must be provided")
+        self._routes_sorted = False
 
     def ws_route(
         self,
@@ -2897,6 +2946,13 @@ class Router(BaseRouter):
             WsHandlerType | None,
             Doc("The WebSocket handler function. Must be an async function."),
         ] = None,
+        priority: Annotated[
+            int,
+            Doc(
+                "Match-ordering weight. Tried in descending priority, then by "
+                "path specificity, then registration order. Defaults to 0."
+            ),
+        ] = 0,
     ) -> Any:
         """Register a WebSocket route as a decorator or direct call.
 
@@ -2917,6 +2973,9 @@ class Router(BaseRouter):
             handler: Optional async WebSocket handler function. Must be a
                 coroutine function accepting a single ``WebSocketContext`` argument.
                 If provided the route is registered immediately.
+            priority: Match-ordering weight for the route. Tried in descending
+                priority, then by path specificity, then registration order.
+                Defaults to ``0``.
 
         Returns:
             The original handler function if handler was provided directly,
@@ -2929,7 +2988,9 @@ class Router(BaseRouter):
                 construction).
         """
         if handler:
-            return self.add_ws_route(WebsocketRoute(path, handler))
+            return self.add_ws_route(
+                WebsocketRoute(path, handler, priority=priority)
+            )
 
         def decorator(handler: WsHandlerType) -> WsHandlerType:
             """Create a WebSocket route from the handler and register it.
@@ -2948,7 +3009,7 @@ class Router(BaseRouter):
                 The original handler function, unmodified, allowing it to
                 be referenced directly outside of the routing context.
             """
-            self.add_ws_route(WebsocketRoute(path, handler))
+            self.add_ws_route(WebsocketRoute(path, handler, priority=priority))
             return handler
 
         return decorator
@@ -3170,6 +3231,9 @@ class Router(BaseRouter):
         """
         scope["app"] = self
 
+        if not self._routes_sorted:
+            self._order_routes()
+
         path_match = None
         path_match_params: dict[str, Any] = {}
         # Every method the path supports, not just the first route to claim
@@ -3232,6 +3296,7 @@ class Router(BaseRouter):
         app._set_inherited_dependencies(self._get_combined_dependencies())
         path = app.prefix
         self.routes.append(Group(app=app, path=path, name=name))
+        self._routes_sorted = False
 
     def get_all_routes(self) -> list[Route]:
         """Collect all HTTP routes from this router and all nested sub-routers.

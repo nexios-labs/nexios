@@ -8,7 +8,7 @@ from sillo.objects import URLPath
 from sillo.route_builder import RouteBuilder
 from sillo.types import ASGIApp, Receive, Scope, Send
 
-from ._utils import MatchStatus, get_route_path
+from ._utils import MatchStatus, get_route_path, route_specificity
 from .base import BaseRoute
 
 
@@ -90,6 +90,10 @@ class Group(BaseRoute):
         self.pattern = self.route_info.pattern
         self.param_names = self.route_info.param_names
         self.route_type = self.route_info.route_type
+        # A mount always consumes an open-ended suffix, so it ranks after any
+        # literal route sharing its prefix but ahead of a looser parameter.
+        self.priority = 0
+        self._specificity = route_specificity(self.path, trailing_wildcard=True)
 
     @property
     def routes(self) -> list[BaseRoute]:

@@ -680,14 +680,24 @@ async def app(self, scope, receive, send):
 **Dispatch algorithm**:
 
 1. Build the middleware stack (outermost middleware first).
-2. Linear scan through `self.routes` in registration order.
-3. First `FULL` match → dispatch immediately (return).
-4. First `PARTIAL` match → record as the fallback, for its route params.
-5. **Every** `PARTIAL` match → union its methods into `allowed`.
-6. If no `FULL` match found, answer the fallback with a 405 built here.
-7. If no match at all → `NotFoundException` (HTTP) or close frame 4404 (WebSocket).
+2. On the first request after registration, order `self.routes` once by
+   `(-priority, specificity)` — a stable sort, so equal keys keep registration
+   order. Skipped when the router was built with `route_order="registration"`.
+3. Linear scan through `self.routes` in that order.
+4. First `FULL` match → dispatch immediately (return).
+5. First `PARTIAL` match → record as the fallback, for its route params.
+6. **Every** `PARTIAL` match → union its methods into `allowed`.
+7. If no `FULL` match found, answer the fallback with a 405 built here.
+8. If no match at all → `NotFoundException` (HTTP) or close frame 4404 (WebSocket).
 
-> **Important**: Route registration order matters. More specific routes should be registered before catch-all routes.
+**Specificity** is the tuple of per-segment ranks — `0` literal, `1` narrow
+converter (`int`/`float`/`uuid`/custom), `2` string parameter, `3` `:path` or
+regex — compared left to right, lower first. So `/users/me` (`(0, 0)`) is tried
+before `/users/{id}` (`(0, 2)`) whatever order they were registered in. An
+explicit `priority=` integer on a route overrides the computed order.
+
+> **Note**: With `route_order="registration"` (opt-in), registration order
+> matters and more specific routes must be registered before catch-all routes.
 
 #### Why the 405 is built here
 
@@ -1290,19 +1300,24 @@ This catches typos like `response_modle` and suggests `response_model`. The know
 
 ## 19. Common Pitfalls and Maintenance Notes
 
-### Pitfall 1: Route order matters
+### Pitfall 1: Route order
 
-Routes are matched in **registration order**. A catch-all `{path:path}` route registered first will shadow all subsequent routes.
+By default routes are matched **most-specific-first**, so a catch-all
+`{path:path}` route no longer shadows specific routes regardless of registration
+order:
 
 ```python
-# BAD: catch-all first
+# Both orders behave the same under the default route_order="specificity"
 router.get("/{path:path}", fallback)
-router.get("/users", list_users)  # Never reached!
-
-# GOOD: specific first
-router.get("/users", list_users)
-router.get("/{path:path}", fallback)
+router.get("/users", list_users)  # still reached
 ```
+
+Two cases still need care:
+
+- `route_order="registration"` (opt-in) restores the old behavior — then a
+  catch-all registered first *does* shadow everything after it.
+- When two routes are genuinely equally specific, the one registered first
+  wins. Use `priority=` to break the tie explicitly.
 
 ### Pitfall 2: Trailing slashes
 

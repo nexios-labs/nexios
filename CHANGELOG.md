@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`priority=` on routes.** `@app.get(..., priority=10)` (also on `Route(...)`, `add_route(...)`, and `ws_route(...)`) sets an explicit match-ordering weight. Routes are tried in descending priority, then by path specificity, then registration order. Raise it to force a route ahead of an overlapping one; use a negative value to make a route a deliberate fallback.
+- **`SilloApp(route_order=...)` / `Router(route_order=...)`.** `"specificity"` (the new default) or `"registration"` to restore the historical first-registered, first-matched behavior for a whole application. Documented in [Routing → Route matching order](https://sillo.build/v1.0/guides/routing/#route-matching-order).
+
+### Changed
+
+- **Overlapping routes now match most-specific-first, not registration-first.** A literal segment beats a parameter at the same position, a narrow converter (`:int`, `:float`, `:uuid`) beats a plain string parameter, and both beat a `:path` catch-all — decided left to right. `@app.get("/users/{id}")` no longer shadows a `@app.get("/users/me")` registered after it. The ordering is computed once, lazily, on the first request after registration, so per-request dispatch is unchanged. Pass `route_order="registration"` to opt out.
+
 ## [0.3.2.dev1] - 2026-09-07
 
 A development pre-release for testing. Install with `pip install --pre sillo-framework==0.3.2.dev1`.

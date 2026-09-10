@@ -168,6 +168,7 @@ The `Route` constructor is used to define a route within the sillo application. 
 - **deprecated**: A boolean indicating whether the route is deprecated.
 - **parameters**: A list of additional OpenAPI parameters for the route.
 - **exclude_from_schema**: A boolean indicating whether to exclude the route from OpenAPI documentation.
+- **priority**: An integer match-ordering weight (default `0`). Routes are tried in descending priority, then by path specificity, then registration order. Raise it to force a route ahead of an overlapping one; lower it to make a route a fallback.
 - **kwargs**: Additional metadata for the route.
 
 ```text
@@ -187,6 +188,7 @@ Route(
     deprecated: bool = False,                     # Mark as deprecated
     parameters: List[Parameter] = [],             # Additional OpenAPI parameters
     exclude_from_schema: bool = False,            # Hide from OpenAPI docs
+    priority: int = 0,                            # Match-ordering weight
     **kwargs: Dict[str, Any]                      # Additional metadata
 )
 ```
@@ -327,9 +329,15 @@ Router(
     routes: Optional[List[Route]] = None,        # Initial routes to add
     tags: Optional[List[str]] = None,             # Default tags for all routes
     exclude_from_schema: bool = False,            # Hide all routes from docs
-    name: Optional[str] = None                    # Router name
+    name: Optional[str] = None,                   # Router name
+    route_order: str = "specificity",             # or "registration"
 )
 ```
+
+`route_order` controls how registered routes are ordered before matching.
+`"specificity"` (the default) tries the most specific path first regardless of
+registration order; `"registration"` keeps the historical first-registered,
+first-matched behavior. See [Route matching order](#route-matching-order).
 
 <Aside type="tip" title="HTTP Method Best Practices">
 
@@ -380,6 +388,59 @@ app = SilloApp()
 async def get_user(ctx: HttpContext, user_id: str):
     return {"id": user_id}
 ```
+
+##  Route matching order
+
+When more than one route can match a path, sillo picks the **most specific**
+one — not the one registered first. A literal segment beats a parameter at the
+same position, and a narrow converter (`:int`, `:float`, `:uuid`) beats a plain
+string parameter, which in turn beats a `:path` catch-all. The decision is made
+left to right, segment by segment.
+
+```py
+@app.get("/users/{user_id}")
+async def get_user(ctx: HttpContext, user_id: str):
+    return {"kind": "by-id", "user_id": user_id}
+
+@app.get("/users/me")          # declared later, still wins for /users/me
+async def get_me(ctx: HttpContext):
+    return {"kind": "me"}
+```
+
+`GET /users/me` hits `get_me`; `GET /users/42` hits `get_user`. Registration
+order no longer matters, so an early `/{slug}` route can't accidentally shadow a
+specific one added later.
+
+###  Forcing the order with `priority`
+
+Pass `priority=` (an integer, default `0`) to override the computed order.
+Higher priority is tried first; use a negative value to make a route a
+deliberate fallback.
+
+```py
+@app.get("/pages/{slug}", priority=-1)          # last resort
+async def page(ctx: HttpContext, slug: str):
+    return render_page(slug)
+
+@app.get("/pages/{slug:int}")                    # numeric ids handled first
+async def page_by_id(ctx: HttpContext, slug: int):
+    return page_from_db(slug)
+```
+
+`priority` is also accepted on `Route(...)`, `add_route(...)`, and
+`ws_route(...)`.
+
+###  Opting out
+
+To restore the historical "first registered, first matched" behavior for a
+whole application, pass `route_order="registration"`:
+
+```py
+app = SilloApp(route_order="registration")
+```
+
+Ordering is computed once, lazily, on the first request after routes are
+registered — it adds nothing to per-request dispatch.
 
 ##  Route Converters in sillo
 
@@ -1119,6 +1180,12 @@ app = SilloApp(debug=True)
 ```
 
 ##  Performance Considerations
+
+Routes are matched by a linear scan of compiled patterns, ordered so the most
+specific route comes first (see [Route matching order](#route-matching-order)).
+That ordering is computed **once**, lazily, on the first request after the last
+route is registered — repeated `add_route` calls at startup stay cheap, and
+per-request dispatch does no sorting or path inspection.
 
 ##  Route Grouping with `Group`
 
