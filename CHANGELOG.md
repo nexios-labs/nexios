@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **An unhandled request error prints a rendered block, not a raw traceback.** `sillo.handlers.error_report` renders the failure the way you would summarise it: `▍ ops · <Type>`, the message, the one line of *your* code it broke on with a little context, the route and call path (framework frames collapsed to `+N framework`), any `caused by`, and a stable `err_<id>`. `SILLO_TRACE` sets the depth — `off`, `app` (default while `debug` is on), `full` (append the raw traceback). Off a terminal or with `debug` off, nothing is rendered; one structured line goes to the logger instead. Every 500 also stopped logging two-to-three times — `sillo.core.error.handler` was creating a child logger with its own handler that still propagated to the parent's.
 - **Overlapping routes now match most-specific-first, not registration-first.** A literal segment beats a parameter at the same position, a narrow converter (`:int`, `:float`, `:uuid`) beats a plain string parameter, and both beat a `:path` catch-all — decided left to right. `@app.get("/users/{id}")` no longer shadows a `@app.get("/users/me")` registered after it. The ordering is computed once, lazily, on the first request after registration, so per-request dispatch is unchanged. Pass `route_order="registration"` to opt out.
 
 ## [0.3.2.dev1] - 2026-09-07

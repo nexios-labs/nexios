@@ -352,7 +352,14 @@ class ExceptionMiddleware:
         except Exception as exc:
             handler = self._handler_for(exc)
             if handler is None or response_started:
-                logger.error(traceback.format_exc())
+                # No structured logging here: this exception is about to reach
+                # `ServerErrorMiddleware`, which renders it. Logging the raw
+                # traceback now would print the failure twice, once ugly.
+                if response_started:
+                    logger.error(
+                        "%s after the response had started; connection dropped",
+                        type(exc).__name__,
+                    )
                 raise
 
             # Constructed only now. Nothing above this line touches a
