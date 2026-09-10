@@ -590,3 +590,70 @@ def test_version_router_matches_when_only_host_is_also_set():
     assert ok.status_code == 200
     # right host, wrong version
     assert client.get("/x/y", headers={"host": "h.example.com"}).status_code == 404
+
+
+def test_host_router_used_directly_as_the_app_gates_in_its_own_dispatch():
+    # not mounted — the scope check happens in Router.app(), not Group.match.
+    # A bare Router has no exception middleware, so the reject path raises
+    # NotFoundException rather than returning a 404 body.
+    from sillo.exceptions import NotFoundException
+
+    router = Router(host="only.example.com")
+
+    @router.get("/hi")
+    async def hi(ctx: HttpContext):
+        return text("hi")
+
+    client = TestClient(router)
+    assert client.get("/hi", headers={"host": "only.example.com"}).status_code == 200
+    with pytest.raises(NotFoundException):
+        client.get("/hi", headers={"host": "other.example.com"})
+
+
+def test_constructor_middleware_accepts_every_shape():
+    from sillo.middleware.define import DefineMiddleware
+
+    order: list[str] = []
+
+    def dispatch_mw(ctx, call_next):
+        order.append("dispatch")
+        return call_next()
+
+    class Raw:
+        def __init__(self, app):
+            self.app = app
+
+        async def __call__(self, scope, receive, send):
+            order.append("raw")
+            await self.app(scope, receive, send)
+
+    sub = Router(
+        prefix="/m",
+        middleware=[
+            dispatch_mw,  # bare dispatch callable
+            (Raw,),  # 1-tuple: class only
+            DefineMiddleware(Raw),  # a pre-built DefineMiddleware
+        ],
+    )
+
+    @sub.get("/")
+    async def h(ctx: HttpContext):
+        return text("ok")
+
+    app = SilloApp()
+    app.mount_router(sub)
+    assert TestClient(app).get("/m/").status_code == 200
+    assert order == ["dispatch", "raw", "raw"]
+
+
+def test_iter_routes_reports_an_unknown_route_object():
+    router = Router()
+
+    class Weird:
+        raw_path = "/weird"
+        name = None
+
+    router.routes.append(Weird())
+    rows = iter_routes(router)
+    assert rows[0].path == "/weird"
+    assert rows[0].kind == "mount"
