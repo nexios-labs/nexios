@@ -1191,13 +1191,22 @@ class HttpContext(BaseContext):
                 path parameters (e.g. ``id=42``).
 
         Returns:
-            The generated URL path as a string with path parameters substituted.
+            The generated URL path as a string with path parameters
+            substituted. When the application is mounted under a
+            ``root_path`` (a proxy sub-path, or ``SilloApp(root_path=...)``),
+            that prefix is prepended so the link is valid for the client.
 
         Raises:
             KeyError: If the route name is not found or required path
                 parameters are missing.
         """
-        return self.base_app.url_for(_name, **path_params)
+        url = self.base_app.url_for(_name, **path_params)
+        root_path = self.scope.get("root_path", "")
+        if root_path and isinstance(url, str) and url.startswith("/"):
+            # Preserve the URLPath type so callers can still build an
+            # absolute URL from the result.
+            return type(url)(root_path + url)
+        return url
 
     def __str__(self) -> str:
         """Return a human-readable string representation of this request.

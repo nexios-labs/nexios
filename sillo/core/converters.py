@@ -5,6 +5,7 @@ Implemented from Starlette.
 
 from __future__ import annotations
 
+import datetime as _datetime
 import math
 import re
 import typing
@@ -516,6 +517,116 @@ class SlugConvertor(Convertor[str]):
         return value
 
 
+class BoolConvertor(Convertor[bool]):
+    """Converter for boolean path parameters.
+
+    Matches the words a URL commonly carries for a flag —
+    ``true``/``false``, ``1``/``0``, ``yes``/``no``, ``on``/``off`` — in any
+    case, and hands the handler a real ``bool``. ``to_string`` normalises back
+    to ``"true"`` / ``"false"``.
+    """
+
+    regex = "(?i:true|false|1|0|yes|no|on|off)"
+
+    _TRUE = frozenset({"true", "1", "yes", "on"})
+
+    def convert(self, value: str) -> bool:
+        return value.lower() in self._TRUE
+
+    def to_string(self, value: bool) -> str:
+        return "true" if value else "false"
+
+
+class DateConvertor(Convertor[_datetime.date]):
+    """Converter for ISO 8601 calendar dates, ``YYYY-MM-DD``.
+
+    ``/reports/{day:date}`` binds ``day`` as a ``datetime.date``. A
+    syntactically valid but impossible date (``2026-02-30``) matches the regex
+    but raises ``ValueError`` in ``convert``, which the router surfaces the
+    same way it does a bad ``int``.
+    """
+
+    regex = r"[0-9]{4}-[0-9]{2}-[0-9]{2}"
+
+    def convert(self, value: str) -> _datetime.date:
+        return _datetime.date.fromisoformat(value)
+
+    def to_string(self, value: _datetime.date) -> str:
+        return value.isoformat()
+
+
+class DateTimeConvertor(Convertor[_datetime.datetime]):
+    """Converter for ISO 8601 timestamps.
+
+    Accepts ``2026-09-10T13:45:00``, an optional fractional second, and an
+    optional ``Z`` or ``±HH:MM`` offset. ``Z`` is rewritten to ``+00:00``
+    before parsing so it works on Python 3.10 as well.
+    """
+
+    regex = (
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}(:[0-9]{2})?"
+        r"(\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})?"
+    )
+
+    def convert(self, value: str) -> _datetime.datetime:
+        return _datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+    def to_string(self, value: _datetime.datetime) -> str:
+        return value.isoformat()
+
+
+class ULIDConvertor(Convertor[str]):
+    """Converter for ULIDs — 26 Crockford base32 characters.
+
+    Kept as a validated ``str`` rather than a bespoke type, so it drops into a
+    handler and a database column without a conversion either side. Matching is
+    case-insensitive; ``to_string`` upper-cases, which is the canonical form.
+    """
+
+    regex = r"[0-7][0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{25}"
+
+    def convert(self, value: str) -> str:
+        return value.upper()
+
+    def to_string(self, value: str) -> str:
+        value = str(value)
+        if not re.fullmatch(self.regex, value):
+            raise ValueError(f"Invalid ULID: {value}")
+        return value.upper()
+
+
+class AlphaConvertor(Convertor[str]):
+    """Converter for a run of ASCII letters, ``[A-Za-z]+`` — no digits, no
+    separators. Narrower than ``str``, so ``/tags/{name:alpha}`` will not
+    swallow ``/tags/2026``."""
+
+    regex = "[A-Za-z]+"
+
+    def convert(self, value: str) -> str:
+        return value
+
+    def to_string(self, value: str) -> str:
+        value = str(value)
+        assert value.isalpha(), "Must be ASCII letters only"
+        return value
+
+
+class AlnumConvertor(Convertor[str]):
+    """Converter for a run of ASCII letters and digits, ``[A-Za-z0-9]+`` — no
+    hyphens, dots or spaces. The right fit for reference codes and short
+    handles that are looser than a slug but still one opaque token."""
+
+    regex = "[A-Za-z0-9]+"
+
+    def convert(self, value: str) -> str:
+        return value
+
+    def to_string(self, value: str) -> str:
+        value = str(value)
+        assert value.isalnum(), "Must be ASCII letters and digits only"
+        return value
+
+
 CONVERTOR_TYPES: dict[str, Convertor[typing.Any]] = {
     "str": StringConvertor(),
     "path": PathConvertor(),
@@ -523,6 +634,12 @@ CONVERTOR_TYPES: dict[str, Convertor[typing.Any]] = {
     "float": FloatConvertor(),
     "uuid": UUIDConvertor(),
     "slug": SlugConvertor(),
+    "bool": BoolConvertor(),
+    "date": DateConvertor(),
+    "datetime": DateTimeConvertor(),
+    "ulid": ULIDConvertor(),
+    "alpha": AlphaConvertor(),
+    "alnum": AlnumConvertor(),
 }
 """Default registry of built-in URL path converter instances.
 

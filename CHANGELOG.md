@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Host-scoped routers — `Router(host=...)`.** A router only answers requests whose `Host` header matches. Exact (`admin.example.com`) or a single-label wildcard (`*.example.com`). A request to another host falls through to the rest of the app.
+- **Version-scoped routers — `Router(version=...)`.** A router only answers requests carrying a matching `X-API-Version` header, or an `Accept` media type with a `version=<value>` parameter. Lets a `v1` and `v2` router share the same paths and be picked by the client.
+- **`Router(middleware=[...])`.** Register router middleware at construction — dispatch callables, `DefineMiddleware`, or `(cls, args, kwargs)` tuples — instead of a run of `router.use(...)` calls. First in the list is the outermost layer.
+- **`SilloApp(root_path=...)`.** A mount prefix a reverse proxy strips before forwarding. It is folded into `scope["root_path"]`, removed before route matching, and re-added by `ctx.url_for(...)` and the OpenAPI `servers` block, so generated links stay correct.
+- **`SilloApp(force_https=True)`.** Any plain-`http` request is answered with a 308 to the `https` URL. `X-Forwarded-Proto: https` from a proxy is honoured, so a TLS-terminating proxy in front of an `http` app does not loop.
+- **`SilloApp(trailing_slash=...)` / `Router(trailing_slash=...)`.** `"strict"` (default, `/x` ≠ `/x/`), `"redirect"` (308 to the registered form), or `"ignore"` (serve it in place).
+- **Declarative redirects — `app.redirect(path, to, *, status_code=307, ...)`** (and `Router.redirect`). Registers a redirect-only route, no handler. Placeholders shared by both sides are substituted (`app.redirect("/u/{id}", "/users/{id}")`); a mount prefix and the query string are carried across. Hidden from the schema.
+- **`app.print_routes()`** and `sillo.core.routing.{iter_routes, format_routes, print_routes}` — walk the router and every mount, fold prefixes in, and render `METHODS  PATH  handler  (name)` rows for a startup log or a REPL.
+- **New path converters**: `bool` (`true`/`1`/`yes`/`on` and their negatives, any case → real `bool`), `date` (`YYYY-MM-DD` → `datetime.date`), `datetime` (ISO 8601, `Z` accepted → `datetime.datetime`), `ulid` (26 Crockford base32 chars), `alpha` (`[A-Za-z]+`), `alnum` (`[A-Za-z0-9]+`).
 - **`priority=` on routes.** `@app.get(..., priority=10)` (also on `Route(...)`, `add_route(...)`, and `ws_route(...)`) sets an explicit match-ordering weight. Routes are tried in descending priority, then by path specificity, then registration order. Raise it to force a route ahead of an overlapping one; use a negative value to make a route a deliberate fallback.
 - **`SilloApp(route_order=...)` / `Router(route_order=...)`.** `"specificity"` (the new default) or `"registration"` to restore the historical first-registered, first-matched behavior for a whole application. Documented in [Routing → Route matching order](https://sillo.build/v1.0/guides/routing/#route-matching-order).
 

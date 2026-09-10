@@ -28,7 +28,7 @@ from sillo.core.dependencies import (
 from sillo.core.encoding import jsonable_encoder
 from sillo.core.helpers.async_helpers import is_async_callable
 from sillo.core.http import HttpContext
-from sillo.core.http.response import BaseResponse, JSONResponse
+from sillo.core.http.response import BaseResponse, JSONResponse, RedirectResponse
 from sillo.events import EventEmitter
 from sillo.exceptions import HTTPException, NotFoundException
 from sillo.helpers.concurrency import run_in_threadpool
@@ -56,9 +56,12 @@ from sillo.validation import (
 
 from ._utils import (
     MatchStatus,
+    compile_host,
     get_route_path,
+    request_host,
     route_order_key,
     route_specificity,
+    version_matches,
 )
 from .base import BaseRoute, BaseRouter
 from .grouping import Group
@@ -607,10 +610,18 @@ class Route(BaseRoute):
             )
 
         path = self.raw_path
+        convertors = getattr(self.route_info, "convertor", {})
         for param_name, param_value in path_params.items():
-            param_value = str(param_value)
-
-            path = re.sub(rf"\{{{param_name}(:[^}}]+)?}}", param_value, path)
+            convertor = convertors.get(param_name)
+            # Serialize through the param's convertor so a typed segment round
+            # trips — a `date` becomes `2026-01-02`, a `bool` becomes `true` —
+            # falling back to `str()` for an untyped `{x}` segment.
+            rendered = (
+                convertor.to_string(param_value)
+                if convertor is not None
+                else str(param_value)
+            )
+            path = re.sub(rf"\{{{param_name}(:[^}}]+)?}}", rendered, path)
 
         return URLPath(path=path, protocol="http")
 
@@ -809,6 +820,10 @@ class Router(BaseRouter):
         route_class: type[Route] = Route,
         strict_validation: bool = False,
         route_order: Literal["specificity", "registration"] = "specificity",
+        host: str | None = None,
+        version: str | None = None,
+        middleware: Sequence[Any] | None = None,
+        trailing_slash: Literal["strict", "redirect", "ignore"] = "strict",
     ):
         """Initialize the router with configuration options.
 
@@ -847,8 +862,29 @@ class Router(BaseRouter):
                 an explicit ``priority=`` on a route overrides both.
                 ``"registration"`` keeps the historical first-registered,
                 first-matched behavior.
+            host: When set, this router only answers requests whose ``Host``
+                header matches. An exact host (``api.example.com``) or a
+                leading wildcard (``*.example.com``, which matches any single
+                sub-domain label) are both accepted. A request to another
+                host falls through to the rest of the application.
+            version: When set, this router only answers requests carrying a
+                matching ``X-API-Version`` header (or an ``Accept`` media type
+                with a ``version=<value>`` parameter). Lets ``v1`` and ``v2``
+                routers share the same paths and be selected by the client.
+            middleware: Middleware to register on this router at construction,
+                each passed to :meth:`use` in order. Equivalent to calling
+                ``router.use(m)`` for each afterwards.
+            trailing_slash: What to do when a path matches only once its
+                trailing slash is toggled. ``"strict"`` (the default) treats
+                ``/x`` and ``/x/`` as different paths. ``"redirect"`` answers
+                the wrong one with a 308 to the registered form.
+                ``"ignore"`` serves it in place.
         """
         self.prefix = prefix or ""
+        self.host = host
+        self._host_pattern = compile_host(host) if host else None
+        self.version = version
+        self._trailing_slash = trailing_slash
         self._route_order = route_order
         # Routes are ordered lazily on the first request after any
         # registration, so building an app stays append-only and the cost is
@@ -878,6 +914,21 @@ class Router(BaseRouter):
         if self.prefix and not self.prefix.startswith("/"):
             warnings.warn("Router prefix should start with '/'")
             self.prefix = f"/{self.prefix}"
+
+        # Build them in list order: the first entry ends up the outermost
+        # layer (it runs first), which is what a reader of the list expects.
+        constructor_mw: list[Middleware] = []
+        for mw in middleware or []:
+            if isinstance(mw, Middleware):
+                constructor_mw.append(mw)
+            elif isinstance(mw, (tuple, list)):
+                cls = mw[0]
+                args = tuple(mw[1]) if len(mw) > 1 else ()
+                kwargs = dict(mw[2]) if len(mw) > 2 else {}
+                constructor_mw.append(Middleware(cls, *args, **kwargs))
+            else:
+                constructor_mw.append(wrap_middleware(mw))
+        self.middleware = constructor_mw + self.middleware
 
         self._refresh_route_dependencies()
 
@@ -929,6 +980,62 @@ class Router(BaseRouter):
         if self._route_order == "specificity":
             self.routes.sort(key=route_order_key)
         self._routes_sorted = True
+
+    async def _try_trailing_slash(
+        self, scope: Scope, receive: Receive, send: Send
+    ) -> bool:
+        """Retry the scan with the path's trailing slash toggled.
+
+        Only reached when nothing matched the path as written and
+        ``trailing_slash`` is not ``"strict"``. Returns True when it produced
+        a response — a 308 to the registered form under ``"redirect"``, or the
+        handler served in place under ``"ignore"`` — and False to let the
+        normal 404 stand.
+        """
+        original = scope["path"]
+        toggled = original[:-1] if original.endswith("/") else original + "/"
+        if toggled in ("", "/") or toggled == original:
+            return False
+
+        scope["path"] = toggled
+        try:
+            for route in self.routes:
+                match, matched_params = route.match(scope)
+                if match != MatchStatus.FULL:
+                    continue
+                if self._trailing_slash == "ignore":
+                    scope["route_params"] = RouteParam(matched_params)
+                    await route.handle(scope, receive, send)
+                    return True
+                # "redirect": send the client to the form that exists,
+                # carrying any mount prefix so the client hits the app again.
+                scope["path"] = original
+                query = scope.get("query_string", b"")
+                location = (
+                    scope.get("root_path", "")
+                    + toggled
+                    + ("?" + query.decode("latin-1") if query else "")
+                )
+                await RedirectResponse(location, status_code=308)(scope, receive, send)
+                return True
+        finally:
+            scope["path"] = original
+        return False
+
+    def _selects_request(self, scope: Scope) -> bool:
+        """Whether this router's ``host`` / ``version`` scope admits ``scope``.
+
+        Always true for a plain router. A host- or version-scoped router
+        returns false for a request that asked for a different one, and the
+        caller then treats it as holding no matching route.
+        """
+        if self._host_pattern is not None:
+            if not self._host_pattern.match(request_host(scope)):
+                return False
+        if self.version is not None:
+            if not version_matches(scope, self.version):
+                return False
+        return True
 
     def _set_inherited_dependencies(
         self, inherited_dependencies: Sequence[Dependant]
@@ -3229,6 +3336,15 @@ class Router(BaseRouter):
         """
         scope["app"] = self
 
+        if not self._selects_request(scope):
+            # This router is scoped to a host or API version the request did
+            # not ask for. Behave exactly as if it held no matching route so
+            # the rest of the application gets its turn.
+            if scope.get("type") == "http":
+                raise NotFoundException
+            await send({"type": "websocket.close", "code": 4404})
+            return
+
         if not self._routes_sorted:
             self._order_routes()
 
@@ -3250,6 +3366,10 @@ class Router(BaseRouter):
                 if path_match is None:
                     path_match = route
                     path_match_params = matched_params
+
+        if path_match is None and self._trailing_slash != "strict":
+            if await self._try_trailing_slash(scope, receive, send):
+                return
 
         if path_match is not None:
             scope["route_params"] = RouteParam(path_match_params)
@@ -3292,9 +3412,80 @@ class Router(BaseRouter):
             this router's internal route list.
         """
         app._set_inherited_dependencies(self._get_combined_dependencies())
+        # A mounted router inherits the parent's trailing-slash policy unless it
+        # set its own, so `SilloApp(trailing_slash="redirect")` reaches routes
+        # behind a mount too.
+        if getattr(app, "_trailing_slash", "strict") == "strict":
+            app._trailing_slash = self._trailing_slash
         path = app.prefix
         self.routes.append(Group(app=app, path=path, name=name))
         self._routes_sorted = False
+
+    def redirect(
+        self,
+        path: str,
+        to: str,
+        *,
+        status_code: int = 307,
+        name: str | None = None,
+        methods: Sequence[str] = ("GET",),
+        include_query: bool = True,
+    ) -> None:
+        """Register a route that only redirects, with no handler to write.
+
+        ``app.redirect("/docs", "/docs/latest")`` answers ``/docs`` with a
+        redirect to ``/docs/latest``. Path parameters shared by both sides are
+        substituted, so ``app.redirect("/u/{id}", "/users/{id}")`` works and
+        ``/u/7`` lands on ``/users/7``. The default 307 preserves the method
+        and body; pass ``status_code=301`` or ``308`` for a permanent move,
+        ``302``/``303`` to allow the method to change.
+
+        Args:
+            path: The path to answer (the same pattern syntax as any route).
+            to: The destination. May contain ``{name}`` placeholders that are
+                filled from the matched path parameters.
+            status_code: The redirect status. Defaults to ``307``.
+            name: Optional route name for ``url_for``.
+            methods: Methods to answer. Defaults to ``GET`` only.
+            include_query: When true (the default) the incoming query string
+                is appended to the destination.
+        """
+        target = to
+        has_placeholders = "{" in target
+
+        async def _redirect(ctx: Any, **params: Any) -> RedirectResponse:
+            location = target.format(**params) if has_placeholders else target
+            # A path-absolute destination is resolved by the client against the
+            # origin, so behind a proxy that mounts the app under a prefix it
+            # has to carry that prefix. A full URL is left untouched.
+            if location.startswith("/"):
+                location = ctx.scope.get("root_path", "") + location
+            if include_query:
+                query = ctx.scope.get("query_string", b"")
+                if query:
+                    sep = "&" if "?" in location else "?"
+                    location = f"{location}{sep}{query.decode('latin-1')}"
+            return RedirectResponse(location, status_code=status_code)
+
+        self.add_route(
+            path=path,
+            handler=_redirect,
+            methods=list(methods),
+            name=name,
+            exclude_from_schema=True,
+        )
+
+    def print_routes(self, *, file: Any | None = None) -> None:
+        """Print every registered route as an aligned table.
+
+        Walks this router and all mounted sub-routers, folding each prefix
+        into the path, and writes ``METHODS  PATH  handler  (name)`` rows to
+        ``file`` (stdout by default). Useful from a startup hook or a REPL to
+        see what the app actually answers.
+        """
+        from .introspect import print_routes as _print_routes
+
+        _print_routes(self, file=file)
 
     def get_all_routes(self) -> list[Route]:
         """Collect all HTTP routes from this router and all nested sub-routers.

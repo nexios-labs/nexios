@@ -1,5 +1,6 @@
 import re
 from enum import Enum
+from re import Pattern
 
 from sillo.types import Scope
 
@@ -138,3 +139,55 @@ def get_route_path(scope: Scope) -> str:
         return ""
 
     return path.removeprefix(root_path)
+
+
+def header_value(scope: Scope, name: str) -> str:
+    """Read one request header from an ASGI scope, case-insensitively.
+
+    Returns the empty string when the header is absent, so callers can compare
+    without a ``None`` check. Repeated headers return the first occurrence.
+    """
+    wanted = name.lower().encode("latin-1")
+    for key, value in scope.get("headers", []) or []:
+        if key.lower() == wanted:
+            return value.decode("latin-1")
+    return ""
+
+
+def request_host(scope: Scope) -> str:
+    """The request's host, without the port, lower-cased.
+
+    Prefers the ``Host`` header and falls back to ``scope["server"]`` for the
+    rare client that sends none (HTTP/1.0, some test harnesses).
+    """
+    host = header_value(scope, "host")
+    if not host:
+        server = scope.get("server") or ()
+        host = server[0] if server else ""
+    return host.split(":", 1)[0].strip().lower()
+
+
+def compile_host(host: str) -> Pattern[str]:
+    """Compile a router ``host=`` value into a matcher.
+
+    ``api.example.com`` matches that host exactly. ``*.example.com`` matches
+    any single left-most label (``a.example.com`` but not ``a.b.example.com``
+    and not the bare ``example.com``).
+    """
+    host = host.strip().lower()
+    if host.startswith("*."):
+        return re.compile(r"[^.]+\." + re.escape(host[2:]) + r"$")
+    return re.compile(re.escape(host) + r"$")
+
+
+def version_matches(scope: Scope, version: str) -> bool:
+    """Whether the request selects ``version``.
+
+    True when ``X-API-Version`` equals it, or when the ``Accept`` header
+    carries a ``version=<value>`` media-type parameter that does.
+    """
+    if header_value(scope, "x-api-version").strip() == version:
+        return True
+    accept = header_value(scope, "accept")
+    match = re.search(r";\s*version\s*=\s*\"?([^\";,\s]+)", accept)
+    return bool(match and match.group(1) == version)
