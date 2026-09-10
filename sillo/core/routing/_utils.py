@@ -54,9 +54,7 @@ def route_specificity(
     first. ``trailing_wildcard`` appends a catch-all rank, used for mounted
     sub-routers, which always consume an open-ended suffix.
     """
-    ranks = [
-        _segment_rank(s) for s in raw_path.strip("/").split("/") if s
-    ]
+    ranks = [_segment_rank(s) for s in raw_path.strip("/").split("/") if s]
     if trailing_wildcard:
         ranks.append(_RANK_WILDCARD)
     return tuple(ranks)

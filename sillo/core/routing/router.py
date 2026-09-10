@@ -2988,9 +2988,7 @@ class Router(BaseRouter):
                 construction).
         """
         if handler:
-            return self.add_ws_route(
-                WebsocketRoute(path, handler, priority=priority)
-            )
+            return self.add_ws_route(WebsocketRoute(path, handler, priority=priority))
 
         def decorator(handler: WsHandlerType) -> WsHandlerType:
             """Create a WebSocket route from the handler and register it.

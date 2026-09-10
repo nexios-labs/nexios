@@ -7,6 +7,8 @@ now orders routes by path specificity before matching, with an explicit
 ``route_order="registration"`` to opt back into the historical behavior.
 """
 
+from types import SimpleNamespace
+
 import pytest
 
 from sillo import SilloApp, json, text
@@ -48,6 +50,14 @@ def test_specificity_mixed_literal_and_param_segment_is_loose():
     assert route_specificity("/v{n}/users") > route_specificity("/{x}/users")
 
 
+def test_specificity_named_convertor_ranks_as_tight_param():
+    # a registered non-str convertor (`slug`) narrows the segment, so it ranks
+    # ahead of a plain string parameter and behind a literal
+    assert route_specificity("/p/me") < route_specificity("/p/{s:slug}")
+    assert route_specificity("/p/{s:slug}") < route_specificity("/p/{s}")
+    assert route_specificity("/p/{s:slug}") < route_specificity("/p/{s:path}")
+
+
 # ========== route_order_key ==========
 
 
@@ -59,6 +69,18 @@ def test_order_key_priority_dominates_specificity():
     dynamic_high = Route("/users/{id}", h, methods=["GET"], priority=10)
 
     assert route_order_key(dynamic_high) < route_order_key(literal)
+
+
+def test_order_key_falls_back_to_raw_path_without_cached_specificity():
+    # a bare BaseRoute-like object that never computed `_specificity`
+    plain = SimpleNamespace(raw_path="/a/b")
+    assert route_order_key(plain) == (0, (0, 0))
+
+    # a class literally named "Group" triggers the implicit trailing wildcard
+    class Group:
+        raw_path = "/a"
+
+    assert route_order_key(Group()) == (0, (0, 3))
 
 
 # ========== end-to-end dispatch ==========
