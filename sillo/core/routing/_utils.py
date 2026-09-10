@@ -1,6 +1,80 @@
+import re
 from enum import Enum
 
 from sillo.types import Scope
+
+# Path convertors whose regex is narrower than the default string segment
+# (`[^/]+`). A route that pins a segment to one of these is more specific
+# than one that accepts any string there, so it should be tried first.
+_TIGHT_CONVERTORS = frozenset({"int", "float", "uuid"})
+
+_SEGMENT_PARAM = re.compile(r"\{([a-zA-Z_]\w*)(?::([^}]+))?\}")
+
+# Per-segment specificity ranks. Lower is more specific.
+_RANK_LITERAL = 0
+_RANK_TIGHT_PARAM = 1
+_RANK_STRING_PARAM = 2
+_RANK_WILDCARD = 3
+
+
+def _segment_rank(segment: str) -> int:
+    """Rank one path segment by how tightly it constrains a match.
+
+    ``0`` a literal segment (``users``), ``1`` a parameter pinned to a narrow
+    convertor (``{id:int}``), ``2`` a plain string parameter (``{name}`` or
+    ``{name:str}``), ``3`` a catch-all — the ``path`` convertor, a regex
+    segment, or a segment that mixes a literal and a parameter.
+    """
+    if "{" not in segment:
+        return _RANK_LITERAL
+    match = _SEGMENT_PARAM.fullmatch(segment)
+    if match is None:
+        # `/v{n}` style or an unparseable regex segment — treat as loose.
+        return _RANK_WILDCARD
+    convertor = match.group(2)
+    if convertor is None or convertor == "str":
+        return _RANK_STRING_PARAM
+    if convertor in _TIGHT_CONVERTORS:
+        return _RANK_TIGHT_PARAM
+    if convertor == "path" or "." in convertor or "*" in convertor:
+        return _RANK_WILDCARD
+    # Any other named convertor is still a single narrowed segment.
+    return _RANK_TIGHT_PARAM
+
+
+def route_specificity(
+    raw_path: str, *, trailing_wildcard: bool = False
+) -> tuple[int, ...]:
+    """Build the match-ordering key for a route path.
+
+    The key is the tuple of per-segment ranks, compared lexicographically, so
+    a literal segment always beats a parameter at the same position and the
+    leftmost segment that differs decides. ``/users/me`` (``(0, 0)``) therefore
+    sorts ahead of ``/users/{id}`` (``(0, 2)``) no matter which was registered
+    first. ``trailing_wildcard`` appends a catch-all rank, used for mounted
+    sub-routers, which always consume an open-ended suffix.
+    """
+    ranks = [_segment_rank(s) for s in raw_path.strip("/").split("/") if s]
+    if trailing_wildcard:
+        ranks.append(_RANK_WILDCARD)
+    return tuple(ranks)
+
+
+def route_order_key(route: object) -> tuple:
+    """Sort key that puts the most specific, highest-priority route first.
+
+    ``priority`` (an explicit integer, default ``0``) dominates; within the
+    same priority the specificity tuple decides; equal keys keep registration
+    order because the sort is stable.
+    """
+    priority = getattr(route, "priority", 0)
+    spec = getattr(route, "_specificity", None)
+    if spec is None:
+        trailing = type(route).__name__ == "Group"
+        spec = route_specificity(
+            getattr(route, "raw_path", ""), trailing_wildcard=trailing
+        )
+    return (-priority, spec)
 
 
 class MatchStatus(Enum):

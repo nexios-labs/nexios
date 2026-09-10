@@ -364,6 +364,23 @@ class SilloApp:
                     their current behavior; recommended for new applications.
                 """),
         ] = False,
+        route_order: Annotated[
+            Literal["specificity", "registration"],
+            Doc("""
+                    How registered routes are ordered before matching.
+
+                    ``"specificity"`` (the default) sorts them so the most
+                    specific path always wins, whatever order they were
+                    registered in: a literal segment beats a parameter at the
+                    same position, so ``/users/me`` is matched before
+                    ``/users/{id}`` even when it is declared later. An explicit
+                    ``priority=`` on a route overrides the computed order.
+
+                    ``"registration"`` keeps the historical behavior — routes
+                    are tried in the order they were added, and an earlier
+                    dynamic route can shadow a later literal one.
+                """),
+        ] = "specificity",
         auth: Annotated[
             Sequence[AuthenticationBackend] | None,
             Doc("""
@@ -487,6 +504,7 @@ class SilloApp:
             dependencies=self.dependencies,
             route_class=self.route_class,
             strict_validation=strict_validation,
+            route_order=route_order,
         )
         self.exceptions_handler = ExceptionMiddleware()
         self.router = self.app
@@ -1193,6 +1211,7 @@ class SilloApp:
         | None = None,
         path: str | None = None,
         handler: WsHandlerType | None = None,
+        priority: int = 0,
     ) -> None:
         """
         Adds a WebSocket route to the application.
@@ -1225,7 +1244,7 @@ class SilloApp:
                 "path and handler are required when 'route' is not provided."
             )
 
-        self.router.add_ws_route(WebsocketRoute(path, handler))
+        self.router.add_ws_route(WebsocketRoute(path, handler, priority=priority))
 
     def add_command(self, command: type[Command]) -> type[Command]:
         """Register a console command on this application.
@@ -3043,6 +3062,13 @@ class SilloApp:
                     await websocket.send("Welcome to the chat!")
             """),
         ] = None,
+        priority: Annotated[
+            int,
+            Doc(
+                "Match-ordering weight. Tried in descending priority, then by "
+                "path specificity, then registration order. Defaults to 0."
+            ),
+        ] = 0,
     ):
         """
         Register a WebSocket route with the application.
@@ -3051,6 +3077,7 @@ class SilloApp:
             path (str): URL path pattern for the WebSocket route.
             handler (Callable): Async handler function for WebSocket connections.
                 Example: async def chat_handler(websocket, path): pass
+            priority (int): Match-ordering weight for the route. Defaults to 0.
 
         Returns:
             Callable: A decorator to register the WebSocket route.
@@ -3058,6 +3085,7 @@ class SilloApp:
         return self.router.ws_route(
             path=path,
             handler=handler,
+            priority=priority,
         )
 
     def __str__(self) -> str:

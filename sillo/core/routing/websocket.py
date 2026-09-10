@@ -16,7 +16,7 @@ from sillo.types import (
 from sillo.websockets import WebSocketContext
 from sillo.websockets.errors import WebSocketErrorMiddleware
 
-from ._utils import MatchStatus, get_route_path
+from ._utils import MatchStatus, get_route_path, route_specificity
 from .base import BaseRoute
 
 if TYPE_CHECKING:
@@ -143,6 +143,14 @@ class WebsocketRoute(BaseRoute):
                 - websocket.close(): Close the connection
                 """),
         ],
+        priority: Annotated[
+            int,
+            Doc("""
+                Explicit match-ordering weight. WebSocket routes are tried in
+                descending priority, then by path specificity, then in
+                registration order. Defaults to ``0``.
+                """),
+        ] = 0,
     ):
         """Initialize a WebSocket route with path pattern and handler.
 
@@ -174,6 +182,8 @@ class WebsocketRoute(BaseRoute):
         assert callable(handler), "Route handler must be callable"
         assert inspect.iscoroutinefunction(handler), "Route handler must be async"
         self.raw_path = path
+        self.priority = priority
+        self._specificity = route_specificity(path)
         self.handler: WsHandlerType = handler
         self.dependant: Dependant = get_dependant(handler)
         self.route_info = RouteBuilder.create_pattern(path)
