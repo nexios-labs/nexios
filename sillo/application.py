@@ -192,6 +192,47 @@ lifespan_manager = Callable[
 ]
 
 
+def _request_scheme(scope: Scope) -> str:
+    """The effective scheme, trusting ``X-Forwarded-Proto`` when a proxy set it.
+
+    A TLS-terminating proxy forwards over plain ``http`` but records the
+    original scheme in the header; without honouring it, ``force_https`` would
+    redirect forever.
+    """
+    for key, value in scope.get("headers", []) or []:
+        if key.lower() == b"x-forwarded-proto":
+            return value.decode("latin-1").split(",", 1)[0].strip().lower()
+    return scope.get("scheme", "http")
+
+
+async def _https_redirect(scope: Scope, send: Send) -> None:
+    """Send a 308 to the ``https`` form of the current URL."""
+    host = ""
+    for key, value in scope.get("headers", []) or []:
+        if key.lower() == b"host":
+            host = value.decode("latin-1")
+            break
+    if not host:
+        server = scope.get("server") or ("localhost", None)
+        host = server[0] + (f":{server[1]}" if server[1] else "")
+    path = scope.get("root_path", "") + scope["path"]
+    query = scope.get("query_string", b"")
+    location = f"https://{host}{path}" + (
+        "?" + query.decode("latin-1") if query else ""
+    )
+    await send(
+        {
+            "type": "http.response.start",
+            "status": 308,
+            "headers": [
+                (b"location", location.encode("latin-1")),
+                (b"content-length", b"0"),
+            ],
+        }
+    )
+    await send({"type": "http.response.body", "body": b""})
+
+
 class SilloApp:
     """
     Core application class for the sillo ASGI web framework.
@@ -420,6 +461,36 @@ class SilloApp:
                     applications keep building; recommended for new ones.
                 """),
         ] = False,
+        root_path: Annotated[
+            str,
+            Doc("""
+                    A path prefix the application is mounted under, for when a
+                    reverse proxy strips it before forwarding (``/api`` on the
+                    proxy, the app sees ``/users``). It is prepended to
+                    whatever ``root_path`` the ASGI server set, removed before
+                    route matching, and added back by ``url_for`` and the
+                    OpenAPI ``servers`` block so generated links stay correct.
+                """),
+        ] = "",
+        force_https: Annotated[
+            bool,
+            Doc("""
+                    Answer any plain-``http`` request with a 308 redirect to
+                    the same URL over ``https``. ``X-Forwarded-Proto: https``
+                    from a trusted proxy is honoured, so a TLS-terminating
+                    proxy in front of an ``http`` app does not cause a loop.
+                    Off by default.
+                """),
+        ] = False,
+        trailing_slash: Annotated[
+            Literal["strict", "redirect", "ignore"],
+            Doc("""
+                    How to treat a path that matches only once its trailing
+                    slash is toggled. ``"strict"`` (default) keeps ``/x`` and
+                    ``/x/`` distinct. ``"redirect"`` sends a 308 to the
+                    registered form. ``"ignore"`` serves it in place.
+                """),
+        ] = "strict",
     ) -> None:
         """
         Initialize the sillo application with all core subsystems.
@@ -497,6 +568,8 @@ class SilloApp:
 
         self.route_class = route_class
         self.strict_validation = strict_validation
+        self._root_path = root_path.rstrip("/")
+        self._force_https = force_https
         # Serialized OpenAPI document per mount prefix, built once.
         self._openapi_documents: dict[str, str] = {}
         self.app = Router(
@@ -505,6 +578,7 @@ class SilloApp:
             route_class=self.route_class,
             strict_validation=strict_validation,
             route_order=route_order,
+            trailing_slash=trailing_slash,
         )
         self.exceptions_handler = ExceptionMiddleware()
         self.router = self.app
@@ -1478,7 +1552,25 @@ class SilloApp:
 
         if scope["type"] == "lifespan":
             await self.handle_lifespan(receive, send)
-        elif scope["type"] in ["http", "websocket"]:
+            return
+
+        if scope["type"] in ("http", "websocket"):
+            if self._root_path:
+                scope["root_path"] = self._root_path + scope.get("root_path", "")
+                # If the proxy forwarded the prefix in the path (it did not
+                # strip it itself), move it into root_path so mounts and route
+                # matching see the tail. A proxy that already stripped it
+                # leaves `path` not starting with the prefix, and this is a
+                # no-op.
+                if scope["path"].startswith(self._root_path):
+                    scope["path"] = scope["path"][len(self._root_path) :] or "/"
+            if (
+                self._force_https
+                and scope["type"] == "http"
+                and _request_scheme(scope) == "http"
+            ):
+                await _https_redirect(scope, send)
+                return
             await self.handle_request(scope, receive, send)
 
     def get(
@@ -3043,6 +3135,41 @@ class SilloApp:
             ```
         """
         return self.router.get_all_routes()
+
+    def print_routes(self, *, file: Any | None = None) -> None:
+        """Print every registered route as an aligned table.
+
+        Walks the router and all mounted sub-routers and writes
+        ``METHODS  PATH  handler  (name)`` rows to ``file`` (stdout by
+        default). Handy from a startup hook or a REPL.
+        """
+        self.router.print_routes(file=file)
+
+    def redirect(
+        self,
+        path: str,
+        to: str,
+        *,
+        status_code: int = 307,
+        name: str | None = None,
+        methods: Sequence[str] = ("GET",),
+        include_query: bool = True,
+    ) -> None:
+        """Register a redirect-only route — no handler to write.
+
+        ``app.redirect("/docs", "/docs/latest")``. Placeholders shared by both
+        sides are substituted (``app.redirect("/u/{id}", "/users/{id}")``).
+        The default 307 preserves the method; use ``301``/``308`` for a
+        permanent move. See :meth:`Router.redirect`.
+        """
+        self.router.redirect(
+            path,
+            to,
+            status_code=status_code,
+            name=name,
+            methods=methods,
+            include_query=include_query,
+        )
 
     def ws_route(
         self,

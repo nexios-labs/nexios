@@ -331,6 +331,10 @@ Router(
     exclude_from_schema: bool = False,            # Hide all routes from docs
     name: Optional[str] = None,                   # Router name
     route_order: str = "specificity",             # or "registration"
+    host: Optional[str] = None,                   # only answer this Host
+    version: Optional[str] = None,                # only answer this X-API-Version
+    middleware: Optional[list] = None,            # middleware to register at build time
+    trailing_slash: str = "strict",               # "redirect" | "ignore"
 )
 ```
 
@@ -338,6 +342,9 @@ Router(
 `"specificity"` (the default) tries the most specific path first regardless of
 registration order; `"registration"` keeps the historical first-registered,
 first-matched behavior. See [Route matching order](#route-matching-order).
+`host` / `version` scope the whole router — see
+[Host and version routers](#host-and-version-routers). `trailing_slash` is
+described under [Trailing slashes](#trailing-slashes).
 
 <Aside type="tip" title="HTTP Method Best Practices">
 
@@ -514,6 +521,27 @@ async def get_order(ctx: HttpContext, order_id: int):
 | `float`   | Float   | `[0-9]+(\.[0-9]+)?`                                                               | Positive floats              |
 | `uuid`    | UUID    | `[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}` | UUID format                  |
 | `slug`    | String  | `[a-z0-9]+(?:-[a-z0-9]+)*`                                                        | URL-friendly strings         |
+| `bool`    | Bool    | `true\|false\|1\|0\|yes\|no\|on\|off` (any case)                                  | Bound as a real `bool`       |
+| `date`    | `date`  | `YYYY-MM-DD`                                                                      | ISO 8601 calendar date       |
+| `datetime`| `datetime` | ISO 8601, `Z` or `±HH:MM` offset accepted                                     | ISO 8601 timestamp           |
+| `ulid`    | String  | 26 Crockford base32 characters                                                    | Validated ULID, upper-cased  |
+| `alpha`   | String  | `[A-Za-z]+`                                                                       | ASCII letters only           |
+| `alnum`   | String  | `[A-Za-z0-9]+`                                                                    | ASCII letters and digits     |
+
+```python
+from datetime import date
+
+@app.get("/reports/{day:date}")
+async def report(ctx: HttpContext, day: date):        # day is a datetime.date
+    return {"day": day.isoformat()}
+
+@app.get("/flags/{on:bool}")
+async def flag(ctx: HttpContext, on: bool):            # on is True / False
+    return {"on": on}
+```
+
+A value that matches the pattern but cannot convert — `/reports/2026-02-30` —
+raises in the converter, which the router reports the way it does a bad `int`.
 
 ##  Custom Path Converters
 
@@ -1125,7 +1153,82 @@ for route_config in routes_config:
 
 ##  Route Testing and Debugging
 
-##  Getting All Route
+##  Host and version routers
+
+A `Router` can be scoped so it only answers a subset of requests. A scoped
+router that does not apply is skipped entirely, so the rest of the application
+— including another scoped router on the same paths — gets its turn.
+
+### `host=`
+
+```python
+admin = Router(prefix="/admin", host="admin.example.com")
+app.mount_router(admin)
+```
+
+`admin.example.com/admin/...` reaches it; every other host does not. A single
+leading-label wildcard is allowed: `host="*.example.com"` matches
+`a.example.com` but not `a.b.example.com` and not the bare `example.com`.
+
+### `version=`
+
+```python
+v1 = Router(prefix="/items", version="1")
+v2 = Router(prefix="/items", version="2")
+app.mount_router(v1)
+app.mount_router(v2)
+```
+
+The client selects one with `X-API-Version: 2`, or with an `Accept` media type
+carrying a `version=2` parameter (`Accept: application/json; version=2`). The
+two routers share `/items/...` and never collide.
+
+##  Behind a proxy
+
+When a reverse proxy serves the app under a sub-path and strips it before
+forwarding, tell the app with `root_path` so route matching, `ctx.url_for(...)`
+and the OpenAPI `servers` block all agree on where the app lives:
+
+```python
+app = SilloApp(root_path="/api")     # proxy forwards /api/users as /users (or /api/users)
+```
+
+It is prepended to whatever `root_path` the ASGI server set, removed before
+matching, and added back to generated links. A proxy that already strips the
+prefix and sets its own `root_path` needs nothing here.
+
+`SilloApp(force_https=True)` answers any plain-`http` request with a 308 to the
+`https` URL; `X-Forwarded-Proto: https` from the proxy is trusted, so a
+TLS-terminating proxy in front of an `http` app does not cause a redirect loop.
+
+##  Redirects
+
+`app.redirect(path, to)` registers a route that only redirects — there is no
+handler to write.
+
+```python
+app.redirect("/docs", "/docs/latest")
+app.redirect("/u/{user_id}", "/users/{user_id}", status_code=301)
+```
+
+Placeholders shared by both sides are substituted, so `/u/42` lands on
+`/users/42`. The incoming query string is carried across, and behind a proxy
+the mount prefix is added to the destination. The default `307` preserves the
+method and body; use `301`/`308` for a permanent move, `302`/`303` to let the
+method change. These routes are hidden from the OpenAPI schema.
+
+##  Trailing slashes
+
+By default `/x` and `/x/` are different paths. `SilloApp(trailing_slash=...)`
+(also on `Router`) changes that:
+
+| Value | Behaviour |
+| --- | --- |
+| `"strict"` | Default. `/x` and `/x/` are distinct; the wrong one is a 404. |
+| `"redirect"` | The wrong one gets a 308 to the registered form (query and mount prefix preserved). |
+| `"ignore"` | The wrong one is served in place. |
+
+##  Getting all routes
 
 You can inspect all registered routes:
 
@@ -1139,6 +1242,21 @@ for route in routes:
     print(f"Name: {route.name}")
     print(f"Tags: {route.tags}")
     print("---")
+```
+
+For a quick human-readable dump — every route and every mount, prefixes folded
+in — use `print_routes`:
+
+```python
+app.print_routes()
+# GET,HEAD  /users/{user_id:int}  myapp.views.user  (user)
+# MOUNT     /admin/*              sillo.core.routing.router.Router
+# GET,HEAD  /admin/               myapp.admin.index
+
+# Or get it as data / a string:
+from sillo.core.routing import iter_routes, format_routes
+rows = iter_routes(app.router)        # list[RouteInfo]
+text = format_routes(app.router)      # the aligned table as a str
 ```
 
 ##  Route Matching

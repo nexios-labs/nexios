@@ -133,6 +133,13 @@ class Group(BaseRoute):
             with parameters on success, or MatchStatus.NONE with an
             empty dict on failure.
         """
+        # A mounted router scoped to a host or API version the request did not
+        # ask for should not match at all, so the parent keeps looking (a
+        # sibling mount for another version can then claim the same path).
+        selects = getattr(self._base_app, "_selects_request", None)
+        if callable(selects) and not selects(scope):
+            return MatchStatus.NONE, {}
+
         match = self.pattern.match(get_route_path(scope))
         if match:
             matched_params = match.groupdict()
