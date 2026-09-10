@@ -332,7 +332,7 @@ def _remember_type(staging: Path, target: Path, content_type: str) -> None:
         content_type: What it will be served as.
     """
     try:
-        os.setxattr(staging, XATTR, content_type.encode())  # type: ignore[attr-defined]
+        os.setxattr(staging, XATTR, content_type.encode())  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
         return
     except (AttributeError, OSError):
         # No extended attributes here — a different filesystem, or a platform
@@ -353,7 +353,7 @@ def _recall_type(path: Path) -> str:
         What it was stored as, or the neutral fallback.
     """
     try:
-        return os.getxattr(path, XATTR).decode()  # type: ignore[attr-defined]
+        return os.getxattr(path, XATTR).decode()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     except (AttributeError, OSError):
         pass
 
@@ -400,7 +400,7 @@ def _xattrs_work(root: Path) -> bool:
     probe = root / ".sillo-xattr-probe"
     try:
         probe.touch()
-        os.setxattr(probe, XATTR, b"probe")  # type: ignore[attr-defined]
+        os.setxattr(probe, XATTR, b"probe")  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
         return True
     except (AttributeError, OSError):
         return False
