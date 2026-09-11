@@ -62,7 +62,9 @@ def test_first_line_is_emoji_word_type_and_message():
     assert first == "💥 oops — ValueError: seat 12A is taken"
 
 
-def test_frames_show_file_line_function_and_the_line(tmp_path, monkeypatch):
+def test_calling_frames_are_one_line_the_broken_frame_gets_a_window(
+    tmp_path, monkeypatch
+):
     (tmp_path / "erp_frames.py").write_text(
         "def outer():\n"
         "    inner()\n"
@@ -75,26 +77,42 @@ def test_frames_show_file_line_function_and_the_line(tmp_path, monkeypatch):
     monkeypatch.syspath_prepend(str(tmp_path))
     import importlib
 
-    svc = importlib.import_module("erp_frames")
-    block = error_report.render(_raise(svc.outer), palette=PLAIN)
+    block = error_report.render(
+        _raise(importlib.import_module("erp_frames").outer), palette=PLAIN
+    )
 
     assert "at        erp_frames.py:2   in outer" in block
-    assert "→ inner()" in block
+    assert "→ inner()" in block  # the calling frame: one line
     assert "at        erp_frames.py:6   in inner" in block
-    assert "› raise RuntimeError('nope')" in block  # deepest frame, marked
+    # the broken frame: numbered window, the raising line marked
+    lines = block.splitlines()
+    ctx_5 = next(ln for ln in lines if ln.rstrip().endswith("value = 1"))
+    marked = next(ln for ln in lines if "raise RuntimeError('nope')" in ln)
+    assert ctx_5.lstrip().startswith("5")  # a plain numbered context line
+    assert marked.lstrip().startswith("›")  # the raising line, marked
+    assert "6" in marked
 
 
-def test_a_multiline_statement_is_reassembled(tmp_path, monkeypatch):
-    (tmp_path / "erp_multi.py").write_text(
-        "def boom():\n    raise ValueError(\n        'the seat is taken'\n    )\n"
+def test_the_caret_underlines_the_failing_expression(tmp_path, monkeypatch):
+    (tmp_path / "erp_caret.py").write_text(
+        "def price(catalog, sku):\n    return catalog['items'][sku]\n"
     )
     monkeypatch.setenv("SILLO_APP_ROOT", str(tmp_path))
     monkeypatch.syspath_prepend(str(tmp_path))
     import importlib
 
-    m = importlib.import_module("erp_multi")
-    block = error_report.render(_raise(m.boom), palette=PLAIN)
-    assert "› raise ValueError( 'the seat is taken' )" in block
+    block = error_report.render(
+        _raise(lambda: importlib.import_module("erp_caret").price({"items": {}}, "X")),
+        palette=PLAIN,
+    )
+    lines = block.splitlines()
+    src_i = next(
+        i for i, ln in enumerate(lines) if "return catalog['items'][sku]" in ln
+    )
+    caret = lines[src_i + 1]
+    assert set(caret.strip()) == {"^"}
+    # the carets sit under `catalog['items'][sku]`, not the leading `return `
+    assert caret.index("^") == lines[src_i].index("catalog['items'][sku]")
 
 
 def test_request_line_is_shown_when_a_context_is_given():
@@ -104,7 +122,9 @@ def test_request_line_is_shown_when_a_context_is_given():
     assert "    request   POST /pay" in block
 
 
-def test_no_request_line_without_a_context():
+def test_no_request_line_without_a_context(tmp_path, monkeypatch):
+    # app root at an empty dir → no frame windows to pull stray words from
+    monkeypatch.setenv("SILLO_APP_ROOT", str(tmp_path))
     block = error_report.render(_raise(lambda: 1 / 0), palette=PLAIN)
     assert "request" not in block
 
@@ -156,7 +176,8 @@ def test_a_big_container_local_is_summarised_by_length(tmp_path, monkeypatch):
     assert "payload=<dict len=50>" in block
 
 
-def test_no_error_id_or_footer():
+def test_no_error_id_or_footer(tmp_path, monkeypatch):
+    monkeypatch.setenv("SILLO_APP_ROOT", str(tmp_path))
     block = error_report.render(_raise(lambda: 1 / 0), _ctx("GET", "/x"), palette=PLAIN)
     assert "err_" not in block
     assert "SILLO_TRACE" not in block

@@ -1,24 +1,26 @@
 """The block Sillo logs when a request raises and nothing handled it.
 
 A Python traceback is a transcript — every frame, framework and stdlib and
-your code weighted the same. This keeps only the frames in *your* code and
-lays them out as log lines you can read at a glance: what broke, then each of
-your frames as ``file:line  in function`` with the line itself under it, the
-raising line marked.
+your code weighted the same. This keeps only the frames in *your* code: each
+calling frame is one line, and the frame it broke on gets a window of source
+with the line marked and a caret under the exact expression.
 
-    💥 oops — ValueError: seat 12A on flight BA2490 is already taken
-        request   POST /flights/BA2490/book
-        at        routes/flights.py:9   in book_seat
-                  → await reserve_seat(code, "12A")
-        at        booking/service.py:12   in reserve_seat
-                › raise ValueError(f"seat {label} on flight {flight} is already taken")
-        with      flight='BA2490', label='12A', hold_token=***, passenger=<dict len=2>
-        from      KeyError: '12A'   at booking/service.py:5
+    💥 oops — KeyError: 'ABC-9'
+        request   GET /catalog/ABC-9
+        at        api/catalog.py:14   in show
+                  → price = lookup(catalog, sku)
+        at        pricing/rules.py:2   in lookup
+                     1   def lookup(catalog, sku):
+                 ›   2       price = catalog["items"][sku]["price"]
+                                     ^^^^^^^^^^^^^^^^^^^^^
+                     3       return price * 1.2
+        with      catalog={'items': {}}, sku='ABC-9'
 
 The ``file:line`` is coloured (cyan, the line number bright), the function
-name bold; ``with`` lists the raising frame's own locals — scalars and small
-containers verbatim, a big one as ``<dict len=N>``, anything whose name reads
-like a secret as ``***``.
+name bold; the marked line's code stays bright while its neighbours dim; the
+caret needs Python 3.11+ and a single-line expression. ``with`` lists the
+raising frame's own locals — scalars and small containers verbatim, a big one
+as ``<dict len=N>``, anything whose name reads like a secret as ``***``.
 
 `SILLO_TRACE` sets the depth: ``off`` logs nothing here (the 500's own log
 line still stands), ``app`` (the default while ``debug`` is on) logs the
@@ -148,6 +150,58 @@ def _bracket_depth(text: str) -> int:
     return depth
 
 
+_CONTEXT_WIDTH = 76
+
+
+def _context(
+    filename: str, lineno: int, radius: int = 2
+) -> tuple[list[tuple[int, str]], int]:
+    """A window of real source around ``lineno``.
+
+    Returns ``(rows, dedent)`` — ``rows`` is ``(number, code)`` with the
+    window's common leading whitespace removed and each line trimmed to a
+    readable width; ``dedent`` is how many columns were removed, so a caret
+    can be shifted to match.
+    """
+    try:
+        with open(filename, encoding="utf-8", errors="replace") as handle:
+            src = handle.read().splitlines()
+    except OSError:
+        return [], 0
+    if not 1 <= lineno <= len(src):
+        return [], 0
+    lo = max(1, lineno - radius)
+    hi = min(len(src), lineno + radius)
+    window = [src[n - 1].expandtabs(4) for n in range(lo, hi + 1)]
+    dedent = min((len(w) - len(w.lstrip()) for w in window if w.strip()), default=0)
+    rows = []
+    for offset, text in enumerate(window):
+        code = text[dedent:].rstrip()
+        if len(code) > _CONTEXT_WIDTH:
+            code = code[: _CONTEXT_WIDTH - 1] + "…"
+        rows.append((lo + offset, code))
+    return rows, dedent
+
+
+def _caret(fs: traceback.FrameSummary, dedent: int) -> tuple[int, int] | None:
+    """``(start, length)`` for a caret under the exact sub-expression.
+
+    Python 3.11+ records the column span of the failing expression on the
+    ``FrameSummary``. Returned only when it sits on the one line and lands
+    inside the trimmed window.
+    """
+    end_lineno = getattr(fs, "end_lineno", None)
+    colno = getattr(fs, "colno", None)
+    end_colno = getattr(fs, "end_colno", None)
+    if end_lineno != fs.lineno or colno is None or end_colno is None:
+        return None
+    start = colno - dedent
+    length = end_colno - colno
+    if start < 0 or length <= 0 or start + length > _CONTEXT_WIDTH:
+        return None
+    return start, length
+
+
 def _clip(text: str, width: int = 100) -> str:
     text = " ".join(text.split())
     return text if len(text) <= width else text[: width - 1] + "…"
@@ -269,8 +323,11 @@ def render(
 
     # -- your frames, outermost first -----------------------------
     frames = _app_frames(exc)
+    windowed = bool(frames)
     if not frames:
-        # The error is entirely inside a dependency; still show where.
+        # The error is entirely inside a dependency: show the deepest frame
+        # as one line, without a source window — the window is a "your code"
+        # affordance and this is not.
         tail = traceback.extract_tb(exc.__traceback__)
         if tail:
             frames = [tail[-1]]
@@ -280,16 +337,40 @@ def render(
             f"{c(_short(fs.filename), _LOC)}{c(':', _LOC)}{c(str(fs.lineno), _LOC_N)}"
         )
         out.append(f"{label('at')}{where}   in {c(fs.name, _BOLD)}")
-        src = _line_at(fs.filename, fs.lineno or 0)
-        if src:
-            if last:
-                out.append(f"            {c(THROW, PRIMARY)} {src}")
+
+        if not last or not windowed:
+            # A calling frame, or a dependency fallback: just the one line.
+            src = _line_at(fs.filename, fs.lineno or 0)
+            if src:
+                mark = THROW if last else CALL
+                style = PRIMARY if last else MUTED
+                body = src if last else c(src, MUTED)
+                out.append(f"              {c(mark, style)} {body}")
+            continue
+
+        # The frame it broke on: a window of source, the line marked, and a
+        # caret under the exact expression when the interpreter recorded one.
+        rows, dedent = _context(fs.filename, fs.lineno or 0)
+        for n, code in rows:
+            if n == fs.lineno:
+                out.append(
+                    f"            {c(THROW, PRIMARY)} {c(f'{n:>4}', _LOC_N)}   {code}"
+                )
+                span = _caret(fs, dedent)
+                if span is not None:
+                    start, length = span
+                    # code begins at display column 21 on the line above
+                    out.append(" " * (21 + start) + c("^" * length, PRIMARY))
             else:
-                out.append(f"              {c(CALL, MUTED)} {c(src, MUTED)}")
-        if last:
-            values = _locals_line(_deepest_app_frame(exc))
-            if values:
-                out.append(f"{label('with')}{c(values, MUTED)}")
+                out.append(f"              {c(f'{n:>4}', MUTED)}   {c(code, MUTED)}")
+        if not rows:  # unreadable source — fall back to one reassembled line
+            src = _line_at(fs.filename, fs.lineno or 0)
+            if src:
+                out.append(f"            {c(THROW, PRIMARY)} {src}")
+
+        values = _locals_line(_deepest_app_frame(exc))
+        if values:
+            out.append(f"{label('with')}{c(values, MUTED)}")
 
     # -- what it was raised from ---------------------------------
     cause = _cause(exc)
