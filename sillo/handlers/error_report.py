@@ -75,7 +75,7 @@ try:
         os.path.realpath(p)
         for p in (*site.getsitepackages(), site.getusersitepackages())
     )
-except AttributeError:  # a virtualenv without getsitepackages
+except AttributeError:  # pragma: no cover - a virtualenv without getsitepackages
     _SITE = ()
 
 

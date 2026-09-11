@@ -219,6 +219,103 @@ def test_emit_respects_trace_off(monkeypatch, capsys):
     assert capsys.readouterr().err == ""
 
 
+def test_emit_writes_the_block_to_a_terminal(monkeypatch):
+    import io
+
+    class Tty(io.StringIO):
+        def isatty(self):
+            return True
+
+    fake = Tty()
+    monkeypatch.setattr(error_report.sys, "stderr", fake)
+    error_report.emit(_raise(lambda: 1 / 0), _ctx("GET", "/x"), debug=True)
+    assert "💥 oops" in fake.getvalue()
+
+
+# ── helper branches ────────────────────────────────────────────────────
+
+
+def test_line_and_context_readers_degrade_on_a_bad_target():
+    assert error_report._line_at("/no/such/file.py", 1) == ""
+    assert error_report._line_at(__file__, 10**7) == ""
+    assert error_report._context("/no/such/file.py", 1) == ([], 0)
+    assert error_report._context(__file__, 10**7) == ([], 0)
+
+
+def test_line_at_reassembles_a_call_split_across_lines(tmp_path):
+    f = tmp_path / "c.py"
+    f.write_text("x = dict(\n    a=1,\n)\n")
+    assert error_report._line_at(str(f), 1) == "x = dict( a=1, )"
+
+
+def test_caret_is_skipped_without_column_info():
+    fs = SimpleNamespace(lineno=1, end_lineno=1, colno=None, end_colno=None)
+    assert error_report._caret(fs, 0) is None
+    fs = SimpleNamespace(lineno=1, end_lineno=1, colno=200, end_colno=210)
+    assert error_report._caret(fs, 0) is None  # past the trimmed width
+
+
+def test_cause_falls_back_to_implicit_context():
+    def inner():
+        try:
+            {}["k"]
+        except KeyError:
+            raise ValueError("wrapped")  # no `from` -> __context__
+
+    block = error_report.render(_raise(inner), palette=PLAIN)
+    assert "from      KeyError" in block
+
+
+def test_short_repr_covers_the_odd_shapes():
+    class Sized:
+        def __len__(self):
+            return 3
+
+    class Broken:
+        def __len__(self):
+            raise RuntimeError
+
+    class Plain:
+        pass
+
+    assert error_report._short_repr(Sized()) == "<Sized len=3>"
+    assert error_report._short_repr(Broken()) == "<Broken>"
+    assert error_report._short_repr(Plain()) == "<Plain>"
+    assert error_report._short_repr("z" * 80).endswith("…")
+
+
+def test_locals_line_edge_cases():
+    import os as _os
+
+    assert error_report._locals_line(None) == ""
+
+    frame = SimpleNamespace(
+        f_locals={
+            "self": object(),
+            "__hidden__": 1,
+            "mod": _os,
+            "a": 1,
+            "b": 2,
+            "c": 3,
+            "d": 4,
+            "e": 5,
+            "f": 6,
+            "g": 7,
+        }
+    )
+    line = error_report._locals_line(frame)
+    assert "self=" not in line and "__hidden__" not in line  # skipped
+    assert "mod=" not in line  # a module is skipped
+    assert line.count("=") == 6  # capped at six
+
+
+def test_render_falls_back_to_one_line_when_source_is_unreadable(monkeypatch):
+    monkeypatch.setattr(error_report, "_context", lambda *a, **k: ([], 0))
+    block = error_report.render(_raise(lambda: 1 / 0), palette=PLAIN)
+    # no numbered window, but still a marked line for the broken frame
+    assert "›" in block
+
+
 # ── end to end ─────────────────────────────────────────────────────────
 
 
@@ -236,3 +333,24 @@ def test_a_500_logs_exactly_one_structured_line(caplog):
     hits = [r for r in caplog.records if "kaboom" in r.getMessage()]
     assert len(hits) == 1
     assert hits[0].getMessage().startswith("500 GET /boom ValueError: kaboom")
+
+
+def test_an_error_after_the_response_started_is_logged_and_reraised(caplog):
+    from sillo.responses import stream
+
+    app = SilloApp(debug=False)
+
+    async def chunks():
+        yield b"partial "
+        raise RuntimeError("mid-stream")
+
+    @app.get("/leak")
+    async def leak(ctx: HttpContext):
+        return stream(chunks())
+
+    with caplog.at_level("ERROR", logger="sillo"), pytest.raises(RuntimeError):
+        TestClient(app).get("/leak")
+
+    assert any(
+        "after the response had started" in r.getMessage() for r in caplog.records
+    )
