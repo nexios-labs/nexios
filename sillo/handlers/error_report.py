@@ -23,10 +23,15 @@ raising frame's own locals — scalars and small containers verbatim, a big one
 as ``<dict len=N>``, anything whose name reads like a secret as ``***``.
 
 `SILLO_TRACE` sets the depth: ``off`` logs nothing here (the 500's own log
-line still stands), ``app`` (the default while ``debug`` is on) logs the
-block, ``full`` appends the raw traceback under it. Off a terminal, or with
-``debug`` off, the block is skipped and one structured line is logged
-instead — what a log shipper wants.
+line still stands), ``app`` (the default when attached to a terminal) logs
+the block, ``full`` appends the raw traceback under it. Off a terminal the
+block is skipped and one structured line is logged instead — what a log
+shipper wants.
+
+This is independent of ``debug``: ``debug`` controls what a *client* can see
+— the debug HTML page, a 404's own message instead of a generic one — while
+this block only ever reaches the server's own terminal, so a developer
+running ``debug=False`` locally still gets it.
 """
 
 from __future__ import annotations
@@ -89,11 +94,24 @@ def _app_root() -> str:
 
 
 def trace_mode(debug: bool) -> str:
-    """Resolve ``SILLO_TRACE``: an explicit value, else follow ``debug``."""
+    """Resolve ``SILLO_TRACE``: an explicit value, else follow the terminal.
+
+    ``debug`` no longer decides this by itself. It gates what a client can
+    see — nothing here ever reaches a client — so a project that (correctly)
+    runs with ``debug=False`` in local development should not lose the
+    pretty trace along with the debug HTML page. Attached to a real
+    terminal, the block still helps; piped to a file or a log collector, one
+    structured line is the right shape either way. ``debug=True`` still
+    forces it on even off a terminal, for parity with what the debug HTML
+    page already shows a browser.
+    """
     raw = os.environ.get("SILLO_TRACE", "").strip().lower()
     if raw in _MODES:
         return raw
-    return "app" if debug else "off"
+    if debug:
+        return "app"
+    at_terminal = bool(getattr(sys.stderr, "isatty", lambda: False)())
+    return "app" if at_terminal else "off"
 
 
 def _is_app_frame(filename: str) -> bool:

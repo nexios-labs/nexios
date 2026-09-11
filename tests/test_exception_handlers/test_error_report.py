@@ -40,7 +40,6 @@ def _ctx(method: str, path: str) -> SimpleNamespace:
     "env,debug,expected",
     [
         (None, True, "app"),
-        (None, False, "off"),
         ("off", True, "off"),
         ("full", False, "full"),
         ("nonsense", True, "app"),
@@ -52,6 +51,21 @@ def test_trace_mode_follows_env_then_debug(monkeypatch, env, debug, expected):
     else:
         monkeypatch.setenv("SILLO_TRACE", env)
     assert error_report.trace_mode(debug) == expected
+
+
+def test_trace_mode_with_debug_off_follows_terminal(monkeypatch):
+    """Off a terminal, `debug=False` still means the block is skipped."""
+    monkeypatch.delenv("SILLO_TRACE", raising=False)
+    monkeypatch.setattr(error_report.sys.stderr, "isatty", lambda: False)
+    assert error_report.trace_mode(False) == "off"
+
+
+def test_trace_mode_with_debug_off_shows_at_a_real_terminal(monkeypatch):
+    """`debug=False` no longer silences the trace at an actual terminal —
+    only the client-facing debug page is gated by `debug`."""
+    monkeypatch.delenv("SILLO_TRACE", raising=False)
+    monkeypatch.setattr(error_report.sys.stderr, "isatty", lambda: True)
+    assert error_report.trace_mode(False) == "app"
 
 
 # ── the block ───────────────────────────────────────────────────────────
