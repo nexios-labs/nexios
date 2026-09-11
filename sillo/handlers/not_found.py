@@ -37,25 +37,64 @@ def generate_html_page(title: str, message: str) -> str:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
     <style>
+        :root {{
+            /* Sillo's own palette — the same one the terminal error log and
+            the debug page use, so a 404 does not look like it came from a
+            different framework. */
+            --background: #0b0d10;
+            --surface: #14171c;
+            --border: #262b33;
+            --text: #e8e8ea;
+            --text-secondary: #9aa1ac;
+            --primary: #fc0345;
+        }}
+        * {{
+            box-sizing: border-box;
+        }}
         body {{
-            font-family: Arial, sans-serif;
+            font-family: 'SFMono-Regular', 'JetBrains Mono', 'Fira Code', Menlo,
+                Consolas, 'Liberation Mono', monospace;
+            background-color: var(--background);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px;
+        }}
+        .card {{
+            max-width: 480px;
+            width: 100%;
             text-align: center;
-            margin: 50px;
-            color: #333;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 40px 32px;
         }}
         h1 {{
-            font-size: 48px;
-            color: #d9534f;
+            font-size: 22px;
+            font-weight: 600;
+            margin: 0 0 12px;
+            color: var(--text);
+        }}
+        h1::before {{
+            content: "› ";
+            color: var(--primary);
         }}
         p {{
-            font-size: 18px;
-            margin-top: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin: 0;
         }}
     </style>
 </head>
 <body>
-    <h1>{title}</h1>
-    <p>{message}</p>
+    <div class="card">
+        <h1>{title}</h1>
+        <p>{message}</p>
+    </div>
 </body>
 </html>"""
 

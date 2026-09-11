@@ -561,6 +561,7 @@ async def _execute_dependency(
     func = dependant.call
     if func is None:
         raise RuntimeError("Dependant node has no callable to execute")
+    func = _resolve_override(func, ctx)
 
     if dependant.is_async_generator:
         agen = func(ctx, **kwargs)
@@ -578,3 +579,32 @@ async def _execute_dependency(
         return await func(ctx, **kwargs)
 
     return func(ctx, **kwargs)
+
+
+def _resolve_override(
+    func: Callable[..., Any], ctx: HttpContext | None
+) -> Callable[..., Any]:
+    """Swap in a test double registered on ``app.dependency_overrides``.
+
+    ``func`` is looked up by identity against the *original* dependency
+    callable — the one written in the ``Depend(...)`` default, which is also
+    what the caching key and the ``is_coroutine`` / ``is_generator`` /
+    ``is_async_generator`` flags on the ``Dependant`` were derived from at
+    registration time. An override therefore has to share that shape: a
+    generator dependency needs a generator override, and so on — this call
+    site does not re-inspect the replacement.
+
+    Overrides live on the application (``scope["base_app"]``), reached
+    through the context, so one dict covers every route and every nested
+    dependency in one request regardless of which router matched it. Outside
+    a request — ``ctx`` is ``None``, or the app was never asked to build one
+    — there is nothing to look the override up on, and ``func`` runs as
+    written.
+    """
+    if ctx is None:
+        return func
+    app = getattr(ctx, "scope", {}).get("base_app")
+    overrides = getattr(app, "dependency_overrides", None)
+    if not overrides:
+        return func
+    return overrides.get(func, func)

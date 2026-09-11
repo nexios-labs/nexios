@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Iterator, Sequence
+from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -270,9 +271,19 @@ class SilloApp:
         debug: Annotated[
             bool,
             Doc("""
-                    Whether to enable debug mode.
+                    Whether to enable debug mode: unhandled exceptions render
+                    the full debug page (or, for a 404, the exception's own
+                    detail) instead of a generic message, and the terminal
+                    error log shows the source window instead of a one-line
+                    summary.
+
+                    Off by default. A `SilloApp()` a developer forgets to
+                    flip back before deploying should fail closed — generic
+                    error pages and no internals on the wire — not leak a
+                    stack trace and a source listing to whoever finds the
+                    route that 500s. Turn it on for local development.
                     """),
-        ] = True,
+        ] = False,
         title: Annotated[
             str | None,
             Doc("""
@@ -560,6 +571,12 @@ class SilloApp:
         self._debug = debug
         self.dependencies = dependencies or []
         self.custom_encoders: dict[type, Callable[[Any], Any]] = {}
+        #: Test doubles for ``Depend(...)`` callables, keyed by the original
+        #: function. ``sillo.core.dependencies.base._resolve_override`` reads
+        #: this by identity every time it is about to run a dependency, so
+        #: assigning here takes effect on the very next request — nothing to
+        #: rebuild. Prefer :meth:`override` for automatic cleanup.
+        self.dependency_overrides: dict[Callable[..., Any], Callable[..., Any]] = {}
 
         self.http_middleware: list[Middleware] = []
         self.startup_handlers: list[Callable[[], Awaitable[None]]] = []
@@ -1275,6 +1292,65 @@ class SilloApp:
         self.custom_encoders[type_] = encoder
         CUSTOM_ENCODERS[type_] = encoder
         register_encoder(type_, encoder)
+
+    @contextmanager
+    def override(
+        self,
+        original: Callable[..., Any],
+        replacement: Callable[..., Any],
+    ) -> Iterator[None]:
+        """Swap a ``Depend(...)`` callable for a test double, then restore it.
+
+        A handler written as ``async def me(ctx, db=Depend(get_db))`` cannot
+        be tested without a real database unless something stands in for
+        ``get_db``. This is that something:
+
+            async def fake_db(ctx):
+                return FakeSession()
+
+            with app.override(get_db, fake_db):
+                response = client.get("/me")
+
+        The swap is by identity — ``original`` must be the exact function
+        object passed to `Depend`, not a copy or a re-import under another
+        name — and the replacement is looked up on every dependency in the
+        tree, not only the top-level one, so overriding a shared dependency
+        (`get_db`) reaches every route and every nested `Depend(...)` that
+        uses it. The replacement must match what it replaces in shape: a
+        generator dependency needs a generator override, an async one an
+        async override, since the resolver was built from the original's
+        signature and does not re-inspect the double.
+
+        For a suite-wide swap that should not need a `with` block in every
+        test, assign `app.dependency_overrides[original] = replacement`
+        directly and clear it in teardown — this context manager is the
+        same dict, scoped.
+
+        Args:
+            original: The dependency callable to replace, exactly as passed
+                to `Depend(...)`.
+            replacement: The callable to run in its place for the duration
+                of the block.
+
+        Yields:
+            None. Requests made inside the block see `replacement`; the
+            previous mapping (present or absent) is restored on exit even if
+            the block raises.
+        """
+        had_previous = original in self.dependency_overrides
+        # Fall back to `replacement` itself when there was nothing to save —
+        # `had_previous` gates whether it's ever read, so the fallback value
+        # is never actually used, but it keeps `previous` typed as a plain
+        # callable instead of `Callable | None`.
+        previous = self.dependency_overrides.get(original, replacement)
+        self.dependency_overrides[original] = replacement
+        try:
+            yield
+        finally:
+            if had_previous:
+                self.dependency_overrides[original] = previous
+            else:
+                self.dependency_overrides.pop(original, None)
 
     def add_ws_route(
         self,

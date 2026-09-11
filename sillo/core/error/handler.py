@@ -24,28 +24,30 @@ from sillo.types import ASGIApp, Message, Receive, Scope, Send
 logger = create_logger("sillo")
 STYLES = """
 :root {
-    --primary: #3b82f6;
-    --primary-dark: #2563eb;
-    --primary-light: #dbeafe;
-    --secondary: #10b981;
-    --background: #ffffff;
-    --surface: #f8fafc;
-    --surface-light: #f1f5f9;
-    --error: #02ba42;
-    --error-light: #fef2f2;
-    --warning: #f59e0b;
-    --success: #10b981;
-    --text: #1e293b;
-    --text-secondary: #64748b;
-    --text-tertiary: #94a3b8;
-    --border: #e2e8f0;
-    --border-light: #f1f5f9;
-    --code-bg: #1e293b;
-    --code-fg: #e2e8f0;
-    --highlight: #fbbf24;
-    --highlight-bg: rgba(251, 191, 36, 0.1);
-    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    /* Sillo's own palette: dark, monospace, brand red for --primary/--error —
+       matches the terminal block this page followed the request out of. */
+    --primary: #fc0345;
+    --primary-dark: #c40336;
+    --primary-light: rgba(252, 3, 69, 0.14);
+    --secondary: #22d3ee;
+    --background: #0b0d10;
+    --surface: #14171c;
+    --surface-light: #1b1f26;
+    --error: #fc0345;
+    --error-light: rgba(252, 3, 69, 0.12);
+    --warning: #f5a623;
+    --success: #22c55e;
+    --text: #e8e8ea;
+    --text-secondary: #9aa1ac;
+    --text-tertiary: #6b7280;
+    --border: #262b33;
+    --border-light: #1b1f26;
+    --code-bg: #05070a;
+    --code-fg: #e8e8ea;
+    --highlight: #fc0345;
+    --highlight-bg: rgba(252, 3, 69, 0.14);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -55,7 +57,7 @@ STYLES = """
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: 'SFMono-Regular', 'JetBrains Mono', 'Fira Code', Menlo, Consolas, 'Liberation Mono', monospace;
     background-color: var(--background);
     color: var(--text);
     margin: 0;
@@ -99,7 +101,7 @@ h3 {
 }
 
 .error-header {
-    background: linear-gradient(135deg, #02ba42 0%, #02bb42 100%);
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
     color: white;
     padding: 32px 24px;
     margin: -32px -24px 32px -24px;
@@ -323,7 +325,7 @@ h3 {
 }
 
 .info-block {
-    background: white;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 20px;
@@ -393,7 +395,7 @@ h3 {
 }
 
 .suggestion {
-    background: white;
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 16px;
@@ -1151,9 +1153,9 @@ class ServerErrorMiddleware:
                 if len(value_str) > 500:  # Truncate long values
                     value_str = value_str[:500] + "..."
 
-                locals_html += f"<div><span style='color: #f39c12;'>{html.escape(var_name)}</span> = {value_str}</div>\n"
+                locals_html += f"<div><span style='color: var(--secondary);'>{html.escape(var_name)}</span> = {value_str}</div>\n"
             except Exception:
-                locals_html += f"<div><span style='color: #f39c12;'>{html.escape(var_name)}</span> = <error displaying value></div>\n"
+                locals_html += f"<div><span style='color: var(--secondary);'>{html.escape(var_name)}</span> = <error displaying value></div>\n"
 
         locals_html += "</div>"
         return locals_html

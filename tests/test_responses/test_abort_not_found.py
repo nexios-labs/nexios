@@ -10,10 +10,9 @@ ways:
 
 import pytest
 
-from sillo import SilloApp
-from sillo import abort, json, not_found
-from sillo.exceptions import HTTPException, NotFoundException
+from sillo import SilloApp, abort, json, not_found
 from sillo.core.http import HttpContext
+from sillo.exceptions import HTTPException, NotFoundException
 from sillo.testclient import TestClient
 
 
@@ -95,7 +94,10 @@ def test_abort_does_not_return_body_after_raise(
 def test_not_found_rendered_as_404(
     test_client_factory: callable,
 ):
-    app = SilloApp()
+    # debug=True: the 404 handler only echoes the exception's own detail
+    # message with debug on; off, it returns the generic sentence instead so
+    # a production app doesn't leak per-item detail strings.
+    app = SilloApp(debug=True)
 
     @app.get("/items/{item_id:int}")
     async def get_item(ctx: HttpContext, item_id: int):
