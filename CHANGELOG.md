@@ -32,10 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                 → await reserve_seat(code, "12A")
       at        booking/service.py:12   in reserve_seat
               › raise ValueError(f"seat {label} on flight {flight} is already taken")
+      with      flight='BA2490', label='12A', hold_token=***
       from      KeyError: '12A'   at booking/service.py:5
   ```
 
-  Every frame as `file:line  in function` with the statement under it; the raising line marked `›`, the calls `→`; a multi-line statement is reassembled. `SILLO_TRACE` sets the depth — `off`, `app` (default while `debug` is on), `full` (append the raw traceback). Off a terminal or with `debug` off, nothing is rendered; one structured line goes to the logger instead. Every 500 also stopped logging two-to-three times — `sillo.core.error.handler` was creating a child logger with its own handler that still propagated to the parent's.
+  Every frame as `file:line  in function` (the location cyan, the function bold) with the statement under it; the raising line marked `›`, the calls `→`; a multi-line statement is reassembled. `with` lists the raising frame's own locals — scalars and small containers verbatim, a big one as `<dict len=N>`, anything whose name reads like a secret as `***`. `SILLO_TRACE` sets the depth — `off`, `app` (default while `debug` is on), `full` (append the raw traceback). Off a terminal or with `debug` off, nothing is rendered; one structured line goes to the logger instead. Every 500 also stopped logging two-to-three times — `sillo.core.error.handler` was creating a child logger with its own handler that still propagated to the parent's.
 - **Overlapping routes now match most-specific-first, not registration-first.** A literal segment beats a parameter at the same position, a narrow converter (`:int`, `:float`, `:uuid`) beats a plain string parameter, and both beat a `:path` catch-all — decided left to right. `@app.get("/users/{id}")` no longer shadows a `@app.get("/users/me")` registered after it. The ordering is computed once, lazily, on the first request after registration, so per-request dispatch is unchanged. Pass `route_order="registration"` to opt out.
 
 ## [0.3.2.dev1] - 2026-09-07

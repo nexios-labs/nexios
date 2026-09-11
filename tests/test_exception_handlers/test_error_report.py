@@ -63,7 +63,7 @@ def test_first_line_is_emoji_word_type_and_message():
 
 
 def test_frames_show_file_line_function_and_the_line(tmp_path, monkeypatch):
-    (tmp_path / "svc.py").write_text(
+    (tmp_path / "erp_frames.py").write_text(
         "def outer():\n"
         "    inner()\n"
         "\n"
@@ -75,24 +75,24 @@ def test_frames_show_file_line_function_and_the_line(tmp_path, monkeypatch):
     monkeypatch.syspath_prepend(str(tmp_path))
     import importlib
 
-    svc = importlib.import_module("svc")
+    svc = importlib.import_module("erp_frames")
     block = error_report.render(_raise(svc.outer), palette=PLAIN)
 
-    assert "at        svc.py:2   in outer" in block
+    assert "at        erp_frames.py:2   in outer" in block
     assert "→ inner()" in block
-    assert "at        svc.py:6   in inner" in block
+    assert "at        erp_frames.py:6   in inner" in block
     assert "› raise RuntimeError('nope')" in block  # deepest frame, marked
 
 
 def test_a_multiline_statement_is_reassembled(tmp_path, monkeypatch):
-    (tmp_path / "m.py").write_text(
+    (tmp_path / "erp_multi.py").write_text(
         "def boom():\n    raise ValueError(\n        'the seat is taken'\n    )\n"
     )
     monkeypatch.setenv("SILLO_APP_ROOT", str(tmp_path))
     monkeypatch.syspath_prepend(str(tmp_path))
     import importlib
 
-    m = importlib.import_module("m")
+    m = importlib.import_module("erp_multi")
     block = error_report.render(_raise(m.boom), palette=PLAIN)
     assert "› raise ValueError( 'the seat is taken' )" in block
 
@@ -120,6 +120,40 @@ def test_chained_cause_is_one_line():
     from_lines = [ln for ln in block.splitlines() if ln.lstrip().startswith("from")]
     assert len(from_lines) == 1
     assert "KeyError: 'k'" in from_lines[0]
+
+
+def test_with_line_lists_the_raising_frames_locals(tmp_path, monkeypatch):
+    (tmp_path / "erp_locals.py").write_text(
+        "def book(flight, label, hold_token='tok_x'):\n"
+        "    rows = [1, 2, 3]\n"
+        "    raise RuntimeError('taken')\n"
+    )
+    monkeypatch.setenv("SILLO_APP_ROOT", str(tmp_path))
+    monkeypatch.syspath_prepend(str(tmp_path))
+    import importlib
+
+    svc = importlib.import_module("erp_locals")
+    block = error_report.render(_raise(lambda: svc.book("BA1", "12A")), palette=PLAIN)
+    with_line = next(ln for ln in block.splitlines() if ln.lstrip().startswith("with"))
+    assert "flight='BA1'" in with_line
+    assert "label='12A'" in with_line
+    assert "rows=[1, 2, 3]" in with_line
+    assert "hold_token=***" in with_line  # redacted by name
+
+
+def test_a_big_container_local_is_summarised_by_length(tmp_path, monkeypatch):
+    (tmp_path / "erp_big.py").write_text(
+        "def go():\n"
+        "    payload = {'k%d' % i: i for i in range(50)}\n"
+        "    raise RuntimeError('x')\n"
+    )
+    monkeypatch.setenv("SILLO_APP_ROOT", str(tmp_path))
+    monkeypatch.syspath_prepend(str(tmp_path))
+    import importlib
+
+    big = importlib.import_module("erp_big")
+    block = error_report.render(_raise(big.go), palette=PLAIN)
+    assert "payload=<dict len=50>" in block
 
 
 def test_no_error_id_or_footer():

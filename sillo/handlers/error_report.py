@@ -12,7 +12,13 @@ raising line marked.
                   → await reserve_seat(code, "12A")
         at        booking/service.py:12   in reserve_seat
                 › raise ValueError(f"seat {label} on flight {flight} is already taken")
+        with      flight='BA2490', label='12A', hold_token=***, passenger=<dict len=2>
         from      KeyError: '12A'   at booking/service.py:5
+
+The ``file:line`` is coloured (cyan, the line number bright), the function
+name bold; ``with`` lists the raising frame's own locals — scalars and small
+containers verbatim, a big one as ``<dict len=N>``, anything whose name reads
+like a secret as ``***``.
 
 `SILLO_TRACE` sets the depth: ``off`` logs nothing here (the 500's own log
 line still stands), ``app`` (the default while ``debug`` is on) logs the
@@ -30,7 +36,7 @@ import sysconfig
 import traceback
 import typing
 
-from sillo.console.style import DANGER, MUTED, PRIMARY, Palette, Style
+from sillo.console.style import DANGER, INFO, MUTED, PRIMARY, Palette, Style
 
 if typing.TYPE_CHECKING:
     from sillo.core.http import HttpContext
@@ -42,6 +48,25 @@ CALL = "→"
 
 _MODES = ("off", "app", "full")
 _BOLD = Style(bold=True)
+_LOC = INFO  # file paths and line numbers: a readable location colour
+_LOC_N = INFO | Style(bold=True)  # the line number itself
+
+#: Local names whose value is never printed, however it is spelled.
+_SECRET = (
+    "password",
+    "passwd",
+    "secret",
+    "token",
+    "api_key",
+    "apikey",
+    "authorization",
+    "auth",
+    "cookie",
+    "session",
+    "credential",
+    "private_key",
+    "signature",
+)
 _STDLIB = os.path.realpath(sysconfig.get_paths()["stdlib"])
 try:
     _SITE = tuple(
@@ -144,6 +169,67 @@ def _cause(exc: BaseException) -> BaseException | None:
     return None
 
 
+def _deepest_app_frame(exc: BaseException):
+    """The live frame object for the deepest frame in the project's code.
+
+    ``traceback.extract_tb`` throws the frames away, and locals live on the
+    frame — so the traceback list is walked here directly.
+    """
+    tb = exc.__traceback__
+    found = None
+    while tb is not None:
+        if _is_app_frame(tb.tb_frame.f_code.co_filename):
+            found = tb.tb_frame
+        tb = tb.tb_next
+    return found
+
+
+def _short_repr(value: object) -> str:
+    """A one-glance value.
+
+    Scalars and small containers as their own ``repr``; a big container as
+    ``<dict len=42>``; anything else as ``<ClassName>``.
+    """
+    if isinstance(value, (str, bytes, int, float, bool)) or value is None:
+        text = repr(value)
+        return text if len(text) <= 48 else text[:47] + "…"
+    if isinstance(value, (dict, list, tuple, set, frozenset)):
+        text = repr(value)
+        return text if len(text) <= 48 else f"<{type(value).__name__} len={len(value)}>"
+    name = type(value).__name__
+    sized = getattr(value, "__len__", None)
+    if callable(sized):
+        try:
+            return f"<{name} len={sized()}>"
+        except Exception:
+            pass
+    return f"<{name}>"
+
+
+def _locals_line(frame) -> str:
+    """A ``name=value`` summary of a frame's own locals — redacted, capped.
+
+    Only the simple, immediately useful names: no ``self`` / ``cls``, no
+    dunders, no imported modules, and anything whose name reads like a secret
+    is shown as ``***``.
+    """
+    if frame is None:
+        return ""
+    pairs: list[str] = []
+    for name, value in frame.f_locals.items():
+        if name in ("self", "cls") or name.startswith("__"):
+            continue
+        if type(value).__name__ == "module":
+            continue
+        if any(s in name.lower() for s in _SECRET):
+            pairs.append(f"{name}=***")
+        else:
+            pairs.append(f"{name}={_short_repr(value)}")
+        if len(pairs) == 6:
+            break
+    return ", ".join(pairs)
+
+
 def render(
     exc: BaseException,
     ctx: HttpContext | None = None,
@@ -190,17 +276,20 @@ def render(
             frames = [tail[-1]]
     for i, fs in enumerate(frames):
         last = i == len(frames) - 1
-        out.append(
-            f"{label('at')}{c(f'{_short(fs.filename)}:{fs.lineno}', MUTED)}"
-            f"   in {fs.name}"
+        where = (
+            f"{c(_short(fs.filename), _LOC)}{c(':', _LOC)}{c(str(fs.lineno), _LOC_N)}"
         )
+        out.append(f"{label('at')}{where}   in {c(fs.name, _BOLD)}")
         src = _line_at(fs.filename, fs.lineno or 0)
-        if not src:
-            continue
+        if src:
+            if last:
+                out.append(f"            {c(THROW, PRIMARY)} {src}")
+            else:
+                out.append(f"              {c(CALL, MUTED)} {c(src, MUTED)}")
         if last:
-            out.append(f"            {c(THROW, PRIMARY)} {src}")
-        else:
-            out.append(f"              {c(CALL, MUTED)} {c(src, MUTED)}")
+            values = _locals_line(_deepest_app_frame(exc))
+            if values:
+                out.append(f"{label('with')}{c(values, MUTED)}")
 
     # -- what it was raised from ---------------------------------
     cause = _cause(exc)
@@ -209,7 +298,10 @@ def render(
         c_frames = _app_frames(cause) or traceback.extract_tb(cause.__traceback__)
         if c_frames:
             f = c_frames[-1]
-            at = c(f"   at {_short(f.filename)}:{f.lineno}", MUTED)
+            at = (
+                f"   at {c(_short(f.filename), _LOC)}"
+                f"{c(':', _LOC)}{c(str(f.lineno), _LOC_N)}"
+            )
         out.append(
             f"{label('from')}{type(cause).__name__}: {_clip(str(cause), 70)}{at}"
         )
