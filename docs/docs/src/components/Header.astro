@@ -12,11 +12,17 @@
  * lives under `components/overrides/parts/`, which the package does not
  * export, so a deep import would fail to resolve at build time. It is a
  * button targeting the `drawer` popover that PageFrame renders.
+ *
+ * The "dev" flag beside the logo is the one place that marks every page of a
+ * `preview` version (see `versions.mjs`) as unreleased — the notice in
+ * `MarkdownContent.astro` only repeats that in full on the manual's front
+ * door, so this is what a reader still sees on page two.
  */
 import Search from 'lucode-starlight/components/overrides/Search.astro';
 import SiteTitle from 'lucode-starlight/components/overrides/SiteTitle.astro';
 import config from 'virtual:starlight/user-config';
 import SectionNav from './SectionNav.astro';
+import { routeParts } from '../versions.mjs';
 
 const GITHUB = 'https://github.com/sillohq/core';
 const INSTALL = 'uv add sillo-framework';
@@ -25,6 +31,11 @@ const INSTALL = 'uv add sillo-framework';
 const shouldRenderSearch =
     config.pagefind ||
     config.components.Search !== '@astrojs/starlight/components/Search.astro';
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+const pathname = Astro.url.pathname;
+const withoutBase = BASE && pathname.startsWith(BASE) ? pathname.slice(BASE.length) : pathname;
+const { version } = routeParts(withoutBase);
 ---
 
 <div class="header-shell">
@@ -44,6 +55,7 @@ const shouldRenderSearch =
             </svg>
         </button>
         <SiteTitle />
+        {version?.preview && <span class="dev-flag">dev</span>}
     </div>
 
     <div class="header-search">
@@ -126,6 +138,19 @@ const shouldRenderSearch =
         max-height: 1.6rem;
         width: auto;
         max-width: none;
+    }
+
+    /* Marks a `preview` version (see `versions.mjs`) beside the logo — the
+       one flag that follows a reader across every page of that version. */
+    .dev-flag {
+        padding-inline: calc(var(--spacing) * 1);
+        border-radius: calc(var(--spacing) * 0.75);
+        background: color-mix(in oklab, var(--foreground) 10%, transparent);
+        font-size: 0.5625rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted-foreground);
     }
 
     .header-search {
@@ -349,7 +374,8 @@ const shouldRenderSearch =
             justify-self: auto;
         }
 
-        .header-left :global(.site-title) {
+        .header-left :global(.site-title),
+        .header-left .dev-flag {
             display: none;
         }
 
