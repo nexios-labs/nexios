@@ -57,7 +57,6 @@ const targets = VERSIONS.map((entry) => {
         <span class="cap">Version</span>
         <span class="now">
             {current.label}
-            {current.preview && <span class="flag">dev</span>}
         </span>
         <svg class="chev" viewBox="0 0 16 16" aria-hidden="true"
             ><path d="m4.5 6.5 3.5 3.5 3.5-3.5"></path></svg
@@ -122,18 +121,6 @@ const targets = VERSIONS.map((entry) => {
         font-weight: 600;
         font-variant-numeric: tabular-nums;
         color: var(--foreground);
-    }
-
-    /* Marks a version with no release yet — see `preview` in src/versions.mjs. */
-    .flag {
-        padding-inline: calc(var(--spacing) * 1);
-        border-radius: calc(var(--spacing) * 0.75);
-        background: color-mix(in oklab, var(--foreground) 10%, transparent);
-        font-size: 0.5625rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: var(--muted-foreground);
     }
 
     .chev {

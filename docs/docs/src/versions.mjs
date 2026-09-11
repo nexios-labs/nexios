@@ -26,8 +26,10 @@ import { join } from 'node:path';
  * @property {string} slug   First URL segment, and the content directory name.
  * @property {string} label  What the switcher shows.
  * @property {string} [note] A short qualifier beside the label in the menu.
- * @property {boolean} [preview] Renders the "in development" treatment and
- *   puts a banner at the top of every page in the version.
+ * @property {boolean} [preview] Renders the "in development" treatment: a
+ *   "dev" flag beside the logo in the nav on every page (`Header.astro`),
+ *   and the full unreleased-version notice on the manual's front door only
+ *   (`MarkdownContent.astro`).
  */
 
 /** @type {DocsVersion[]} */
