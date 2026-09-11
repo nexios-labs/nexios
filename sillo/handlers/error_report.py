@@ -1,56 +1,47 @@
-"""The block Sillo prints when a request raises and nothing handled it.
+"""The block Sillo logs when a request raises and nothing handled it.
 
-A Python traceback is a transcript: every frame, deepest last, framework and
-stdlib and your code given equal weight. Reading it is work. This renders the
-same failure the way you would summarise it to someone: what broke, the one
-line of *your* code it broke on, the path the request took to get there, and an
-id to grep for — inside a brand gutter so it stands out of the request stream
-without a box swallowing the terminal.
+A Python traceback is a transcript — every frame, framework and stdlib and
+your code weighted the same. This keeps only the frames in *your* code and
+lays them out as log lines you can read at a glance: what broke, then each of
+your frames as ``file:line  in function`` with the line itself under it, the
+raising line marked.
 
-    ▍ ops · ValueError
-    ▍ seat 12A on flight BA2490 is already taken
-    ▍
-    ▍ app/booking/service.py:88  in reserve_seat
-    ▍    87    if seat.taken:
-    ▍  › 88        raise ValueError(f"seat {label} ...")
-    ▍    89    seat.taken = True
-    ▍
-    ▍ route  POST /flights/BA2490/book → book_seat → reserve_seat  · +7 framework
-    ▍ caused by  KeyError: 'seat_map'  at service.py:72
-    ▍ err_7f3a91 · 20:14:07 · full trace → SILLO_TRACE=full
+    💥 oops — ValueError: seat 12A on flight BA2490 is already taken
+        request   POST /flights/BA2490/book
+        at        routes/flights.py:9   in book_seat
+                  → await reserve_seat(code, "12A")
+        at        booking/service.py:12   in reserve_seat
+                › raise ValueError(f"seat {label} on flight {flight} is already taken")
+        from      KeyError: '12A'   at booking/service.py:5
 
-`SILLO_TRACE` decides the depth: ``off`` prints nothing here (the access-log
-line for the 500 still stands), ``app`` (the default while ``debug`` is on)
-prints the block, ``full`` appends the raw traceback under it. Off a TTY, or
-with ``debug`` off, none of this renders — a single structured line goes to the
-logger instead, which is what a log shipper wants.
+`SILLO_TRACE` sets the depth: ``off`` logs nothing here (the 500's own log
+line still stands), ``app`` (the default while ``debug`` is on) logs the
+block, ``full`` appends the raw traceback under it. Off a terminal, or with
+``debug`` off, the block is skipped and one structured line is logged
+instead — what a log shipper wants.
 """
 
 from __future__ import annotations
 
-import hashlib
 import os
 import site
 import sys
 import sysconfig
-import time
 import traceback
 import typing
 
-from sillo.console.style import DANGER, MUTED, PRIMARY, WARNING, Palette, Style
+from sillo.console.style import DANGER, MUTED, PRIMARY, Palette, Style
 
 if typing.TYPE_CHECKING:
     from sillo.core.http import HttpContext
 
-BAR = "▍"
-MARK = "›"
-LABEL = "ops"
+EMOJI = "💥"
+WORD = "oops"
+THROW = "›"
+CALL = "→"
 
-#: How the block is rendered. Set from ``SILLO_TRACE`` at call time so a test
-#: or a running process can change it without a restart.
 _MODES = ("off", "app", "full")
-
-_HANDLER = Style(bold=True)
+_BOLD = Style(bold=True)
 _STDLIB = os.path.realpath(sysconfig.get_paths()["stdlib"])
 try:
     _SITE = tuple(
@@ -62,21 +53,16 @@ except AttributeError:  # a virtualenv without getsitepackages
 
 
 def _app_root() -> str:
-    """Where the project's own code lives.
+    """Where the project's own code lives — ``SILLO_APP_ROOT`` or the cwd.
 
-    ``SILLO_APP_ROOT`` when set, otherwise the working directory. Read fresh
-    each call rather than frozen at import: the process may ``chdir`` after
-    import, and a test needs to point it somewhere else.
+    Read fresh each call: the process may ``chdir`` after import, and a test
+    needs to point it elsewhere.
     """
     return os.path.realpath(os.environ.get("SILLO_APP_ROOT", os.getcwd()))
 
 
 def trace_mode(debug: bool) -> str:
-    """Resolve the effective ``SILLO_TRACE`` level.
-
-    Unset, it follows ``debug``: the block while developing, silence in
-    production. An explicit value always wins.
-    """
+    """Resolve ``SILLO_TRACE``: an explicit value, else follow ``debug``."""
     raw = os.environ.get("SILLO_TRACE", "").strip().lower()
     if raw in _MODES:
         return raw
@@ -84,12 +70,7 @@ def trace_mode(debug: bool) -> str:
 
 
 def _is_app_frame(filename: str) -> bool:
-    """Whether a frame belongs to the project rather than a dependency.
-
-    Project code lives under the working directory (or ``SILLO_APP_ROOT``);
-    the stdlib, installed packages and sillo itself do not count, even when a
-    checkout of one happens to sit under the same root.
-    """
+    """Whether a frame is the project's own code, not a dependency."""
     path = os.path.realpath(filename)
     if path.startswith(_STDLIB) or any(path.startswith(p) for p in _SITE):
         return False
@@ -99,7 +80,7 @@ def _is_app_frame(filename: str) -> bool:
 
 
 def _short(filename: str) -> str:
-    """A frame's path, made relative to the project root when it is under it."""
+    """A frame's path, relative to the project root when it is under it."""
     path = os.path.realpath(filename)
     root = _app_root()
     if path.startswith(root):
@@ -107,55 +88,44 @@ def _short(filename: str) -> str:
     return os.path.basename(path)
 
 
-def _module_of(filename: str) -> str:
-    """A dependency frame's top package name, for the ``+N framework`` tally."""
-    path = os.path.realpath(filename)
-    for root in _SITE:
-        if path.startswith(root):
-            rest = path[len(root) :].lstrip(os.sep)
-            return rest.split(os.sep, 1)[0].removesuffix(".py")
-    if f"{os.sep}sillo{os.sep}" in path:
-        return "sillo"
-    if path.startswith(_STDLIB):
-        return os.path.basename(path).removesuffix(".py")
-    return "?"
+def _line_at(filename: str, lineno: int) -> str:
+    """The statement at ``lineno``, trimmed to one line.
 
-
-def _clip(text: str, width: int = 96) -> str:
-    text = " ".join(text.split())
-    return text if len(text) <= width else text[: width - 1] + "…"
-
-
-def _source(filename: str, lineno: int, radius: int = 1) -> list[tuple[int, str]]:
-    """A few real source lines around ``lineno``, or nothing if unreadable."""
+    A statement split across lines — ``raise ValueError(\\n  "msg"\\n)`` — is
+    reassembled by reading on while brackets are unbalanced, up to two extra
+    lines, so the marked line is not just ``raise ValueError(``.
+    """
     try:
         with open(filename, encoding="utf-8", errors="replace") as handle:
             lines = handle.read().splitlines()
     except OSError:
-        return []
-    lo = max(1, lineno - radius)
-    hi = min(len(lines), lineno + radius)
-    return [(n, lines[n - 1]) for n in range(lo, hi + 1)]
+        return ""
+    if not 1 <= lineno <= len(lines):
+        return ""
+    parts = [lines[lineno - 1]]
+    depth = _bracket_depth(parts[0])
+    extra = lineno
+    while depth > 0 and extra < len(lines) and extra - lineno < 2:
+        parts.append(lines[extra])
+        depth += _bracket_depth(lines[extra])
+        extra += 1
+    text = " ".join(p.strip() for p in parts).expandtabs(4)
+    return text if len(text) <= 100 else text[:99] + "…"
 
 
-def error_id(exc: BaseException) -> str:
-    """A short, stable id for this failure's *signature*.
+def _bracket_depth(text: str) -> int:
+    depth = 0
+    for ch in text:
+        if ch in "([{":
+            depth += 1
+        elif ch in ")]}":
+            depth -= 1
+    return depth
 
-    The exception type plus the deepest app frame — so the same bug lands on
-    the same id across requests and restarts, and the id in the log matches the
-    one on the response.
-    """
-    tb = exc.__traceback__
-    site_key = ""
-    while tb is not None:
-        f = tb.tb_frame
-        if _is_app_frame(f.f_code.co_filename):
-            site_key = f"{f.f_code.co_filename}:{tb.tb_lineno}"
-        tb = tb.tb_next
-    digest = hashlib.sha1(
-        f"{type(exc).__name__}:{site_key or exc}".encode()
-    ).hexdigest()
-    return digest[:6]
+
+def _clip(text: str, width: int = 100) -> str:
+    text = " ".join(text.split())
+    return text if len(text) <= width else text[: width - 1] + "…"
 
 
 def _app_frames(exc: BaseException) -> list[traceback.FrameSummary]:
@@ -166,17 +136,12 @@ def _app_frames(exc: BaseException) -> list[traceback.FrameSummary]:
     ]
 
 
-def _framework_tally(exc: BaseException) -> tuple[int, list[str]]:
-    seen: list[str] = []
-    count = 0
-    for fs in traceback.extract_tb(exc.__traceback__):
-        if _is_app_frame(fs.filename):
-            continue
-        count += 1
-        mod = _module_of(fs.filename)
-        if mod not in seen and mod != "?":
-            seen.append(mod)
-    return count, seen[:3]
+def _cause(exc: BaseException) -> BaseException | None:
+    if exc.__cause__ is not None:
+        return exc.__cause__
+    if exc.__context__ is not None and not exc.__suppress_context__:
+        return exc.__context__
+    return None
 
 
 def render(
@@ -188,90 +153,69 @@ def render(
 ) -> str:
     """Build the block for ``exc``.
 
-    ``mode`` is one of ``app`` (the block) or ``full`` (the block plus the raw
-    traceback). ``palette`` colours it; a disabled palette returns plain text,
-    which is what a file or a pipe should get.
+    ``mode`` is ``app`` (the block) or ``full`` (the block then the raw
+    traceback). A disabled ``palette`` returns plain text.
     """
     p = palette or Palette()
 
-    def paint(text: str, style: Style) -> str:
+    def c(text: str, style: Style) -> str:
         return p.render(text, style)
 
-    bar = paint(BAR, PRIMARY)
-    out: list[str] = [""]
+    def label(word: str) -> str:
+        # Pad before colouring: ANSI codes have no display width.
+        return "    " + c(word.ljust(10), MUTED)
 
-    def row(text: str = "") -> None:
-        out.append(f"{bar} {text}".rstrip())
+    out: list[str] = []
 
-    # -- what broke ----------------------------------------------------
-    row(f"{paint(LABEL, PRIMARY)} · {paint(type(exc).__name__, DANGER | _HANDLER)}")
-    message = _clip(str(exc)) or paint("(no message)", MUTED)
-    row(message)
+    # -- what broke --------------------------------------------------
+    message = _clip(str(exc)) or "(no message)"
+    out.append(
+        f"{EMOJI} {c(WORD, PRIMARY)} — "
+        f"{c(type(exc).__name__, DANGER | _BOLD)}: {message}"
+    )
 
-    # -- the line of your code it broke on ---------------------------
-    app = _app_frames(exc)
-    if app:
-        deepest = app[-1]
-        where = f"{_short(deepest.filename)}:{deepest.lineno}"
-        row()
-        row(f"{where}  {paint(f'in {deepest.name}', MUTED)}")
-        block_lines = _source(deepest.filename, deepest.lineno or 0)
-        # Re-indent the snippet against its own shallowest line so a nested
-        # statement does not push off the right edge, but relative structure
-        # is kept.
-        common = min(
-            (len(t) - len(t.lstrip()) for _, t in block_lines if t.strip()),
-            default=0,
-        )
-        for n, text in block_lines:
-            code = text[common:].rstrip().expandtabs(4)
-            if len(code) > 84:
-                code = code[:83] + "…"
-            hit = n == deepest.lineno
-            gutter = (
-                paint(f"{MARK} {n:>3}", PRIMARY) if hit else paint(f"  {n:>3}", MUTED)
-            )
-            row(f"  {gutter}  {code if hit else paint(code, MUTED)}")
-
-    # -- how the request got there ----------------------------------
-    row()
-    steps = " → ".join(fs.name for fs in app) if app else "—"
-    count, mods = _framework_tally(exc)
-    if count:
-        named = f" ({', '.join(mods)})" if mods else ""
-        tail = f"  · {paint(f'+{count} framework{named}', MUTED)}"
-    else:
-        tail = ""
     if ctx is not None:
-        verb = getattr(ctx, "method", "?")
+        method = getattr(ctx, "method", "?")
         path = getattr(getattr(ctx, "url", None), "path", "") or ctx.scope.get(
             "path", "?"
         )
-        row(f"{paint('route', MUTED)}  {verb} {path} → {steps}{tail}")
-    else:
-        row(f"{paint('path', MUTED)}  {steps}{tail}")
+        out.append(f"{label('request')}{method} {path}")
 
-    # -- the cause it was raised from -------------------------------
-    cause = exc.__cause__ or (exc.__context__ if not exc.__suppress_context__ else None)
+    # -- your frames, outermost first -----------------------------
+    frames = _app_frames(exc)
+    if not frames:
+        # The error is entirely inside a dependency; still show where.
+        tail = traceback.extract_tb(exc.__traceback__)
+        if tail:
+            frames = [tail[-1]]
+    for i, fs in enumerate(frames):
+        last = i == len(frames) - 1
+        out.append(
+            f"{label('at')}{c(f'{_short(fs.filename)}:{fs.lineno}', MUTED)}"
+            f"   in {fs.name}"
+        )
+        src = _line_at(fs.filename, fs.lineno or 0)
+        if not src:
+            continue
+        if last:
+            out.append(f"            {c(THROW, PRIMARY)} {src}")
+        else:
+            out.append(f"              {c(CALL, MUTED)} {c(src, MUTED)}")
+
+    # -- what it was raised from ---------------------------------
+    cause = _cause(exc)
     if cause is not None:
-        c_at = ""
+        at = ""
         c_frames = _app_frames(cause) or traceback.extract_tb(cause.__traceback__)
         if c_frames:
-            last = c_frames[-1]
-            c_at = f"  {paint(f'at {os.path.basename(last.filename)}:{last.lineno}', MUTED)}"
-        row(
-            f"{paint('caused by', WARNING)}  "
-            f"{type(cause).__name__}: {_clip(str(cause), 60)}{c_at}"
+            f = c_frames[-1]
+            at = c(f"   at {_short(f.filename)}:{f.lineno}", MUTED)
+        out.append(
+            f"{label('from')}{type(cause).__name__}: {_clip(str(cause), 70)}{at}"
         )
 
-    # -- the footer ------------------------------------------------
-    eid = error_id(exc)
-    when = time.strftime("%H:%M:%S")
-    hint = "full trace → SILLO_TRACE=full" if mode != "full" else "raw trace below"
-    row(paint(f"err_{eid} · {when} · {hint}", MUTED))
-    out.append("")
-
     if mode == "full":
+        out.append("")
         out.append(
             "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
         )
@@ -280,40 +224,31 @@ def render(
 
 
 def one_line(exc: BaseException, ctx: HttpContext | None) -> str:
-    """The single structured line for a log shipper — no colour, no block.
-
-    What a non-TTY sink (a file, journald, Loki) gets: greppable, one record,
-    the same ``err_`` id the block and the response carry.
-    """
-    app = _app_frames(exc)
-    at = ""
-    if app:
-        at = f" at={_short(app[-1].filename)}:{app[-1].lineno}"
+    """The single structured line for a non-terminal sink — no colour, no block."""
+    frames = _app_frames(exc)
+    at = f" at={_short(frames[-1].filename)}:{frames[-1].lineno}" if frames else ""
     where = ""
     if ctx is not None:
         path = getattr(getattr(ctx, "url", None), "path", "") or ctx.scope.get(
             "path", "?"
         )
         where = f" {getattr(ctx, 'method', '?')} {path}"
-    return (
-        f"500{where} {type(exc).__name__}: {_clip(str(exc), 120)} "
-        f"err_id={error_id(exc)}{at}"
-    )
+    return f"500{where} {type(exc).__name__}: {_clip(str(exc), 120)}{at}"
 
 
 def emit(exc: BaseException, ctx: HttpContext | None, *, debug: bool) -> str:
-    """Render the failure to the terminal and hand back the one-line summary.
+    """Write the block to the terminal, return the one-line summary to log.
 
-    The block goes straight to ``stderr`` — wrapping it in the logger's
-    ``[time] LEVEL in module:`` prefix would fight the layout, and it is a
-    thing to read, not a record to ship. When ``stderr`` is not a terminal, or
-    ``SILLO_TRACE`` is ``off``, nothing is written here; the returned string is
-    logged instead so the sink still sees the 500.
+    The block goes straight to ``stderr`` — the logger's ``[time] LEVEL in
+    module:`` prefix would fight the layout. When ``stderr`` is not a
+    terminal, or ``SILLO_TRACE`` is ``off``, nothing is written and the
+    returned line is logged instead.
     """
     mode = trace_mode(debug)
     at_terminal = bool(getattr(sys.stderr, "isatty", lambda: False)())
     if mode != "off" and at_terminal:
-        block = render(exc, ctx, palette=Palette(sys.stderr), mode=mode)
-        sys.stderr.write(block + "\n")
+        sys.stderr.write(
+            render(exc, ctx, palette=Palette(sys.stderr), mode=mode) + "\n"
+        )
         sys.stderr.flush()
     return one_line(exc, ctx)
