@@ -6,6 +6,7 @@ would carry.
 
 from __future__ import annotations
 
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -93,6 +94,10 @@ def test_calling_frames_are_one_line_the_broken_frame_gets_a_window(
     assert "6" in marked
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 11),
+    reason="fine-grained error locations (PEP 657) are 3.11+",
+)
 def test_the_caret_underlines_the_failing_expression(tmp_path, monkeypatch):
     (tmp_path / "erp_caret.py").write_text(
         "def price(catalog, sku):\n    return catalog['items'][sku]\n"
