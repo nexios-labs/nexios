@@ -23,6 +23,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **An unhandled request error logs a structured block, not a raw traceback.** `sillo.handlers.error_report` keeps only the frames in *your* code:
+
+  ```
+  💥 oops — KeyError: 'ABC-9'
+      request   GET /catalog/ABC-9
+      at        api/catalog.py:14   in show
+                → price = lookup(catalog, sku)
+      at        pricing/rules.py:2   in lookup
+                   1   def lookup(catalog, sku):
+               ›   2       price = catalog["items"][sku]["price"]
+                                   ^^^^^^^^^^^^^^^^^^^^^
+                   3       return price * 1.2
+      with      catalog={'items': {}}, sku='ABC-9'
+  ```
+
+  Each calling frame is one line; the frame it broke on gets a window of real source with the line marked `›` (bright, its neighbours dim) and a caret under the exact expression (Python 3.11+, single-line). `file:line` is cyan, the function bold. `with` lists the raising frame's own locals — scalars and small containers verbatim, a big one as `<dict len=N>`, a name that reads like a secret as `***`. `SILLO_TRACE` sets the depth — `off`, `app` (default while `debug` is on), `full` (append the raw traceback). Off a terminal or with `debug` off, nothing is rendered; one structured line goes to the logger instead. Every 500 also stopped logging two-to-three times — `sillo.core.error.handler` was creating a child logger with its own handler that still propagated to the parent's.
 - **Overlapping routes now match most-specific-first, not registration-first.** A literal segment beats a parameter at the same position, a narrow converter (`:int`, `:float`, `:uuid`) beats a plain string parameter, and both beat a `:path` catch-all — decided left to right. `@app.get("/users/{id}")` no longer shadows a `@app.get("/users/me")` registered after it. The ordering is computed once, lazily, on the first request after registration, so per-request dispatch is unchanged. Pass `route_order="registration"` to opt out.
 - **A 404 response no longer carries a traceback.** The stack of `raise NotFoundException` is the router's, not the caller's — it named internal framework paths and told a developer nothing about their own code. Debug mode still widens the *message* (the exception's `detail` instead of the generic sentence); it no longer adds a `traceback` field.
 

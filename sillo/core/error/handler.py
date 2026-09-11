@@ -13,12 +13,15 @@ from typing import cast
 from sillo import __version__ as sillo_version
 from sillo.core.helpers.async_helpers import collapse_excgroups
 from sillo.core.http import HttpContext
-from sillo.logging import DEBUG, create_logger
+from sillo.logging import create_logger
 from sillo.responses import html as html_response
 from sillo.responses import text as text_response
 from sillo.types import ASGIApp, Message, Receive, Scope, Send
 
-logger = create_logger(__name__, log_level=DEBUG)
+# The shared "sillo" logger, not a `sillo.core.error.handler` child: a child
+# created by `create_logger` gets its own stderr handler *and* still
+# propagates to the parent's, so every 500 was logged twice.
+logger = create_logger("sillo")
 STYLES = """
 :root {
     --primary: #3b82f6;
@@ -1016,8 +1019,13 @@ class ServerErrorMiddleware:
 
             headers = scope.get("server_error_headers", {})
             response.set_headers(headers)
-            err = traceback.format_exc()
-            logger.error(err)
+            # The terminal gets the rendered block; the logger gets one
+            # structured line for whatever ships logs. `error_report.emit`
+            # decides which of those actually happen from `SILLO_TRACE` and
+            # whether stderr is a terminal.
+            from sillo.handlers.error_report import emit
+
+            logger.error(emit(exc, ctx, debug=self.debug))
             await response(scope, receive, send)
 
     def error_response(self):
