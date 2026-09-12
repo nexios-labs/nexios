@@ -1510,7 +1510,7 @@ async def test_handle_404_json():
 ### 16.2 Integration Testing via TestClient
 
 ```python
-from sillo.testing import TestClient
+from sillo.testclient import TestClient
 from sillo import HttpContext
 
 def test_custom_exception_handler():

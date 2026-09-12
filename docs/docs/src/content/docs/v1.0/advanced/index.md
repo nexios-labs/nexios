@@ -135,14 +135,14 @@ description: "How Sillo works internally, documented subsystem by subsystem."
 
 ## Source Traceability
 
-All technical claims in this documentation are derived from actual source code analysis of the Sillo repository at `/Users/admin/sillo.build/`. File paths reference the working tree as of 2026-08-11.
+All technical claims in this documentation are derived from actual source code analysis of the Sillo repository at ``. File paths reference the working tree as of 2026-08-11.
 
 Key source locations:
-- **Core framework:** `/Users/admin/sillo.build/core/sillo/`
-- **Tests:** `/Users/admin/sillo.build/core/tests/`
-- **OAuth:** `/Users/admin/sillo.build/oauth/sillo_oauth/`
-- **Inertia:** `/Users/admin/sillo.build/inertia/sillo_inertia/`
-- **Start:** `/Users/admin/sillo.build/start/sillo_start/`
-- **Starter:** `/Users/admin/sillo.build/starter/`
-- **Atlas:** `/Users/admin/sillo.build/atlas/src/`
-- **records-orm:** `/Users/admin/sillo.build/records-orm/records_orm/`
+- **Core framework:** `core/sillo/`
+- **Tests:** `core/tests/`
+- **OAuth:** `oauth/sillo_oauth/`
+- **Inertia:** `inertia/sillo_inertia/`
+- **Start:** `start/sillo_start/`
+- **Starter:** `starter/`
+- **Atlas:** `atlas/src/`
+- **records-orm:** `records-orm/records_orm/`

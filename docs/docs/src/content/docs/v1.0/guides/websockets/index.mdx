@@ -364,8 +364,8 @@ the client must act on should be a normal message sent before closing.
 
 <Aside type="danger" title="Groups live in one process's memory">
 
-`ChannelBox.CHANNEL_GROUPS` is a plain class-level dictionary. It is not
-shared between processes, workers, or machines.
+A `Hub` keeps its room registry in ordinary instance state — a dictionary in
+one process's memory. It is not shared between processes, workers, or machines.
 
 Run `uvicorn --workers 4` and you have four independent group registries.
 A user connected to worker 1 will never receive a broadcast issued on
@@ -378,10 +378,12 @@ Three ways out, in increasing order of effort:
 worker at the load balancer. Simple, and it caps a room's size at one
 process.
 
-**A Redis pub/sub fan-out layer.** Every worker subscribes to the rooms
-its local connections care about, and `broadcast` publishes to Redis
-instead of iterating a local dict. This is what Django Channels' channel
-layer does, and it is roughly a hundred lines here.
+**A Redis or NATS pub/sub fan-out layer.** Every worker subscribes to the rooms
+its local connections care about, and `broadcast` publishes to the bus instead
+of iterating a local dict. This is what Django Channels' channel layer does.
+Note that a [`Backlog`](/packages/wire/backlog/) alone is not enough: it gives
+a joining peer its replay, but it does not carry a live broadcast to peers
+connected to another process — that needs a transport as well.
 
 **A dedicated realtime service.** Move WebSocket termination out of the
 application entirely.

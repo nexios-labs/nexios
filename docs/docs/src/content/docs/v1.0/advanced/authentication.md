@@ -538,17 +538,17 @@ The middleware's `for...else` is Python's less-known control flow: the `else` ru
 
 | Component | File | Lines |
 |-----------|------|-------|
-| `AuthResult` | `core/sillo/auth/model.py` | 1-35 |
-| `AuthenticationBackend` | `core/sillo/auth/backend.py` | 1-144 |
-| `AuthenticationMiddleware` | `core/sillo/auth/middleware.py` | 1-168 |
-| `useAuth` | `core/sillo/auth/use_auth.py` | 1-390 |
+| `AuthResult` | `core/sillo/auth/model.py` | 4-35 |
+| `AuthenticationBackend` | `core/sillo/auth/backend.py` | 15-144 |
+| `AuthenticationMiddleware` | `core/sillo/auth/middleware.py` | 16-186 |
+| `useAuth` | `core/sillo/auth/use_auth.py` | 142-490 |
 | `LEGACY_SCOPE_ALIASES` | `core/sillo/auth/use_auth.py` | 62-66 |
-| `accepted_identifiers` | `core/sillo/auth/use_auth.py` | 69-87 |
-| `request_identifiers` | `core/sillo/auth/use_auth.py` | 90-97 |
+| `accepted_identifiers` | `core/sillo/auth/use_auth.py` | 111-129 |
+| `request_identifiers` | `core/sillo/auth/use_auth.py` | 132-139 |
 | `AuthException` | `core/sillo/auth/exceptions.py` | 16-68 |
 | `AuthenticationFailed` | `core/sillo/auth/exceptions.py` | 71-114 |
 | `PermissionDenied` | `core/sillo/auth/exceptions.py` | 117-161 |
-| `AuthErrorHandler` | `core/sillo/auth/exceptions.py` | 164-197 |
+| `AuthErrorHandler` | `core/sillo/auth/exceptions.py` | 165-193 |
 | Package exports | `core/sillo/auth/__init__.py` | 1-69 |
 
 ---
@@ -941,7 +941,7 @@ This ensures that `AuthenticationFailed` and `PermissionDenied` exceptions produ
 The auth package uses `deferred()` to avoid importing Tortoise ORM or PyJWT at module load time:
 
 ```python
-from sillo._internals.lazy import deferred
+from sillo.helpers.lazy import deferred
 
 __getattr__ = deferred(
     __name__,

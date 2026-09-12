@@ -53,56 +53,72 @@ eventually be serving two message formats at once.
 
 ##  Dispatching inbound messages
 
-The naive version is a chain of `if` statements in `on_receive`. It works
+Rooms, broadcast and the class-based consumer live in
+[`sillo-wire`](/packages/wire/), not in the core. Install it first:
+
+```bash
+pip install sillo-wire
+```
+
+The naive version is a chain of `if` statements in `on_message`. It works
 until there are six types, and then it never gets refactored. Start with
 a registry.
 
 ```python title="a dispatch table on the consumer"
-import json
-from typing import Any, Awaitable, Callable
+import logging
 
-from sillo.websockets import WebSocketConsumer
+from sillo.wire import RoomConsumer
+
+logger = logging.getLogger(__name__)
 
 
-from sillo import WebSocketContext
+def handles(message_type: str):
+    """Mark a method as the handler for a message type."""
+    def decorator(func):
+        func._handles = message_type
+        return func
+    return decorator
 
-class Dispatcher(WebSocketConsumer):
+
+class Dispatcher(RoomConsumer):
     handlers: dict[str, str] = {}
 
-    @classmethod
-    def handles(cls, message_type: str):
-        """Register a method as the handler for a message type."""
-        def decorator(func):
-            cls.handlers[message_type] = func.__name__
-            return func
-        return decorator
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        # Copy, so a subclass inherits its parent's types without writing
+        # into the dictionary its siblings are reading.
+        cls.handlers = dict(cls.handlers)
+        for name, member in vars(cls).items():
+            message_type = getattr(member, "_handles", None)
+            if message_type is not None:
+                cls.handlers[message_type] = name
 
-    async def on_receive(self, websocket: WebSocketContext, data):
-        try:
-            envelope = json.loads(data) if isinstance(data, str) else data
-        except (json.JSONDecodeError, TypeError):
-            await self.reply(websocket, None, "error", {"detail": "invalid JSON"})
+    async def on_message(self, data):
+        # With the default JSON encoding the read loop hands you a decoded
+        # object, so there is no json.loads here — but there is also no
+        # guarantee it is a dict.
+        if not isinstance(data, dict):
+            await self.respond(None, "error", {"detail": "expected an object"})
             return
 
-        message_type = envelope.get("type")
+        message_type = data.get("type")
         method_name = self.handlers.get(message_type)
         if method_name is None:
-            await self.reply(
-                websocket, envelope.get("id"), "error",
+            await self.respond(
+                data.get("id"), "error",
                 {"detail": f"unknown type {message_type!r}"},
             )
             return
 
         try:
-            await getattr(self, method_name)(websocket, envelope)
+            await getattr(self, method_name)(data)
         except Exception:
-            self.logger.exception("handler for %s failed", message_type)
-            await self.reply(
-                websocket, envelope.get("id"), "error", {"detail": "internal error"}
-            )
+            logger.exception("handler for %s failed", message_type)
+            await self.respond(data.get("id"), "error", {"detail": "internal error"})
 
-    async def reply(self, websocket: WebSocketContext, correlation_id, message_type, payload):
-        await websocket.send_json(
+    async def respond(self, correlation_id, message_type, payload):
+        # RoomConsumer.reply sends to this connection alone.
+        await self.reply(
             {"type": message_type, "id": correlation_id, "data": payload}
         )
 ```
@@ -110,37 +126,56 @@ class Dispatcher(WebSocketConsumer):
 Then handlers are declarative:
 
 ```python title="using the dispatcher"
-from sillo import WebSocketContext
+from sillo.wire import Hub
+
+hub = Hub()
+
 
 class ChatConsumer(Dispatcher):
-    handlers = {}          # each subclass needs its own registry
+    hub = hub
 
-    async def on_connect(self, websocket: WebSocketContext):
-        await websocket.accept()
-        self.room = f"room:{websocket.path_params['room_id']}"
-        await self.join_group(self.room)
+    async def identify(self, ctx):
+        return ctx.query_params.get("user")
 
-    @Dispatcher.handles("chat.message")
-    async def handle_message(self, websocket: WebSocketContext, envelope):
-        text = str(envelope["data"].get("text", ""))[:2000]
-        await self.broadcast(
-            {"type": "chat.message", "data": {"text": text}}, group_name=self.room
-        )
-        await self.reply(websocket, envelope.get("id"), "chat.ack", {"ok": True})
+    async def rooms(self, ctx):
+        # Returned rooms are joined before on_connect runs.
+        return [f"room:{ctx.path_params['room_id']}"]
 
-    @Dispatcher.handles("chat.typing")
-    async def handle_typing(self, websocket: WebSocketContext, envelope):
-        await self.broadcast(
-            {"type": "chat.typing", "data": {}}, group_name=self.room
-        )
+    @handles("chat.message")
+    async def handle_message(self, data):
+        text = str((data.get("data") or {}).get("text", ""))[:2000]
+        await self.broadcast({"type": "chat.message", "data": {"text": text}})
+        await self.respond(data.get("id"), "chat.ack", {"ok": True})
+
+    @handles("chat.typing")
+    async def handle_typing(self, data):
+        await self.broadcast({"type": "chat.typing", "data": {}})
+
+
+app.add_ws_route(path="/ws/rooms/{room_id}", handler=ChatConsumer.as_handler())
 ```
 
-Note `handlers = {}` redeclared on the subclass. Without it, every subclass
-shares the base class's dictionary and registers into the same table, one
-consumer's message types silently become available on another's endpoint.
+`broadcast` with no room argument targets the first room joined, which is why
+`rooms()` returning a single room is the common shape. Pass a room explicitly
+when a consumer is in several.
 
-The catch-all `except Exception` is load-bearing. Without it, one bad
-message propagates out of `on_receive` and terminates the connection.
+The two send paths differ, and the difference is visible to clients.
+`reply` writes to this one socket immediately and raises `PeerGone` if it
+cannot. `broadcast` *queues* to every member's outbound buffer and returns a
+`DeliveryReport` without awaiting the writes, so one slow client cannot stall
+the fan-out. A consequence: in the handler above the `chat.ack` can reach the
+sender before the `chat.message` it acknowledges, even though the broadcast was
+issued first. Do not encode an ordering assumption between the two.
+
+`__init_subclass__` is what makes this safe. A decorator that wrote straight
+into `Dispatcher.handlers` would put every subclass's types into one shared
+dictionary, and one consumer's message types would silently become available on
+another's endpoint. Copying per subclass gives each one its own table while
+still inheriting the parent's.
+
+The catch-all `except Exception` is load-bearing. `RoomConsumer` runs the read
+loop in a `try/finally`, so an escaping exception is cleaned up properly — but
+it still ends the connection. One malformed message should not do that.
 
 ##  Validating message payloads
 
@@ -164,7 +199,7 @@ class Reaction(BaseModel):
 SCHEMAS = {"chat.message": ChatMessage, "chat.react": Reaction}
 
 
-async def parse(envelope: dict):
+def parse(envelope: dict):
     schema = SCHEMAS.get(envelope.get("type"))
     if schema is None:
         raise ValueError(f"unknown type {envelope.get('type')!r}")
@@ -172,26 +207,20 @@ async def parse(envelope: dict):
 ```
 
 ```python title="using it in a handler"
-from sillo import WebSocketContext
-
 @Dispatcher.handles("chat.message")
-async def handle_message(self, websocket: WebSocketContext, envelope):
+async def handle_message(self, data):
     try:
-        payload = await parse(envelope)
+        payload = parse(data)
     except ValidationError as exc:
-        await self.reply(websocket, envelope.get("id"), "error",
-                         {"detail": exc.errors()})
+        await self.respond(data.get("id"), "error", {"detail": exc.errors()})
         return
-    await self.broadcast(
-        {"type": "chat.message", "data": {"text": payload.text}},
-        group_name=self.room,
-    )
+    await self.broadcast({"type": "chat.message", "data": {"text": payload.text}})
 ```
 
 <Aside type="caution" title="Every message is untrusted input, and there is no framework validation">
 
 An HTTP route with `request_model=` gets a 422 for free. A WebSocket message
-gets nothing. Whatever the client sends arrives in `on_receive` unexamined.
+gets nothing. Whatever the client sends arrives in `on_message` unexamined.
 
 Three things follow. Validate every payload before use, exactly as you
 would an HTTP body. Enforce a size limit yourself, because a client can
@@ -201,17 +230,23 @@ connection opened an hour ago belongs to a user whose permissions may
 have changed, or whose session may have been revoked.
 
 ```python
-from sillo import WebSocketContext
+from sillo.websockets import status
 
-async def on_receive(self, websocket: WebSocketContext, data):
-    if len(data) > 64 * 1024:
-        await websocket.close(code=status.WS_1009_MESSAGE_TOO_BIG)
+
+async def on_message(self, data):
+    if len(str(data)) > 64 * 1024:
+        await self.ctx.close(code=status.WS_1009_MESSAGE_TOO_BIG)
         return
-    if not await still_authorized(self.user, self.room):
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+    if not await still_authorized(self.peer.identity, self.joined):
+        await self.ctx.close(code=status.WS_1008_POLICY_VIOLATION)
         return
     ...
 ```
+
+`self.ctx` is the `WebSocketContext` for this connection and `self.peer` is its
+[`Peer`](/packages/wire/peers/); `self.peer.identity` is whatever `identify()`
+returned. Closing the socket ends the read loop, and `RoomConsumer`'s `finally`
+removes the peer from its rooms.
 
 </Aside>
 
@@ -225,14 +260,12 @@ ends.
 import time
 
 
-from sillo import WebSocketContext
-
 class RateLimited(Dispatcher):
     rate = 10          # messages
     per = 1.0          # seconds
 
-    async def on_connect(self, websocket: WebSocketContext):
-        await super().on_connect(websocket)
+    async def on_connect(self):
+        await super().on_connect()
         self._tokens = float(self.rate)
         self._last = time.monotonic()
 
@@ -247,58 +280,64 @@ class RateLimited(Dispatcher):
         self._tokens -= 1
         return True
 
-    async def on_receive(self, websocket: WebSocketContext, data):
+    async def on_message(self, data):
         if not self._allow():
-            await websocket.send_json({"type": "error", "data": {"detail": "slow down"}})
+            await self.reply({"type": "error", "data": {"detail": "slow down"}})
             return
-        await super().on_receive(websocket, data)
+        await super().on_message(data)
 ```
 
-State lives on the instance, and instances are per-connection, so this is
-naturally scoped correctly. Replying rather than disconnecting is usually
-kinder. A well-behaved client backs off, and a misbehaving one can be closed
-after N violations.
+A fresh consumer instance is created per connection, so `self` is per-connection
+state and this is naturally scoped correctly — unlike the hub, which every
+connection shares. Replying rather than disconnecting is usually kinder. A
+well-behaved client backs off, and a misbehaving one can be closed after N
+violations.
 
 ##  Outbound: bridging domain events
 
 The more valuable direction. Something happens elsewhere in the
 application and connected clients should learn about it.
 
-`ChannelBox.group_send` is callable from anywhere in the process, so the
+`Hub.broadcast` is callable from anywhere that can reach the hub object, so the
 simplest bridge is a direct call:
 
 ```python title="broadcasting from an HTTP handler"
-from sillo.websockets import ChannelBox
+from sillo import HttpContext, json
+
+from myapp.sockets import hub          # the same Hub the consumer uses
 
 
-from sillo import HttpContext
-
-@app.post("/orders/{order_id}/ship")
-async def ship_order(ctx: HttpContext):
-    order = await Order.get(id=ctx.path_params["order_id"])
+@app.post("/orders/{order_id:int}/ship")
+async def ship_order(ctx: HttpContext, order_id: int):
+    order = await Order.get(id=order_id)
     await order.mark_shipped()
 
-    await ChannelBox.group_send(
+    await hub.broadcast(
         f"order:{order.id}",
         {"type": "order.shipped", "data": {"id": order.id, "at": order.shipped_at}},
     )
-    return {"ok": True}
+    return json({"ok": True})
 ```
 
-That couples the order endpoint to the WebSocket layer. For anything
+The hub has to be the *same object* the consumers joined — a `Hub()` is
+ordinary instance state, not process-global. Define it once in a module and
+import it, as above.
+
+That still couples the order endpoint to the WebSocket layer. For anything
 beyond a couple of call sites, put sillo's event emitter in between so
 the domain code emits and the transport subscribes.
 
 ```python title="decoupling via the event emitter"
-from sillo.events import AsyncEventEmitter
-from sillo.websockets import ChannelBox
+from sillo.events import EventEmitter
 
-events = AsyncEventEmitter()
+from myapp.sockets import hub
+
+events = EventEmitter()
 
 
 @events.on("order.shipped")
 async def push_order_shipped(payload):
-    await ChannelBox.group_send(
+    await hub.broadcast(
         f"order:{payload['id']}",
         {"type": "order.shipped", "data": payload},
     )
@@ -322,6 +361,9 @@ the request. And listeners run in priority order, `HIGHEST` through `LOWEST`,
 defaulting to `NORMAL`:
 
 ```python
+from sillo.events import EventPriority
+
+
 @events.on("order.shipped", priority=EventPriority.HIGHEST)
 async def audit_first(payload):
     await audit.record(payload)
@@ -335,7 +377,7 @@ continuing. The full emitter API is covered in [Events](/v1.0/guides/events/).
 Use the same vocabulary in both directions. If clients send `chat.message`, the
 broadcast that results should also be `chat.message`: the client's rendering
 code then handles its own messages and other people's identically, which is
-what you want, since `group_send` includes the sender anyway.
+what you want, since `Hub.broadcast` includes the sender anyway.
 
 Keep server-only types clearly distinguishable: `presence.join`,
 `order.shipped`, `system.reconnect`. A client that receives an unknown
@@ -348,42 +390,51 @@ Connections drop. Phones change networks, laptops sleep, load balancers
 recycle, and deployments restart every worker. Any design that assumes a
 connection lasts is a design that loses messages.
 
-Nothing in `ChannelBox` addresses this. A broadcast issued while a client is
-reconnecting is gone. It was written to a socket that no longer exists, and
-`_send` swallowed the error. Message history is per-process and, with the
-default manager, unbounded and prone to being wiped wholesale.
+A `Hub`'s [backlog](/packages/wire/backlog/) replays recent messages to a peer
+that joins, which covers a brief blip. It does not cover a client that was away
+for an hour: the default `MemoryBacklog` is bounded, per-process, and lost on
+restart. For durable catch-up the database is the source of truth.
 
 The pattern that works is a sequence number plus a catch-up query.
 
 ```python title="messages carry a monotonic cursor"
-from sillo import HttpContext
+from sillo import HttpContext, json
 
-@app.post("/rooms/{room_id}/messages")
-async def post_message(ctx: HttpContext):
+from myapp.sockets import hub
+
+
+@app.post("/rooms/{room_id:int}/messages")
+async def post_message(ctx: HttpContext, room_id: int):
     body = await ctx.json
-    message = await Message.create(room_id=..., text=body["text"])
+    message = await Message.create(room_id=room_id, text=body["text"])
 
-    await ChannelBox.group_send(
+    await hub.broadcast(
         f"room:{message.room_id}",
         {"type": "chat.message", "seq": message.id, "data": {"text": message.text}},
     )
-    return {"id": message.id}
+    return json({"id": message.id})
 ```
 
 ```python title="the client asks for what it missed"
-from sillo import WebSocketContext
+class ChatConsumer(Dispatcher):
+    hub = hub
 
-async def on_connect(self, websocket: WebSocketContext):
-    await websocket.accept()
-    await self.join_group(self.room)
+    async def rooms(self, ctx):
+        return [f"room:{ctx.path_params['room_id']}"]
 
-    since = websocket.query_params.get("since")
-    if since:
-        missed = await Message.filter(
-            room_id=self.room_id, id__gt=int(since)
-        ).order_by("id").limit(500)
+    async def on_connect(self):
+        # Rooms are already joined by the time this runs, which is exactly
+        # the ordering the catch-up needs.
+        since = self.ctx.query_params.get("since")
+        if not since:
+            return
+        missed = await (
+            Message.filter(room_id=self.ctx.path_params["room_id"], id__gt=int(since))
+            .order_by("id")
+            .limit(500)
+        )
         for m in missed:
-            await websocket.send_json(
+            await self.reply(
                 {"type": "chat.message", "seq": m.id, "data": {"text": m.text}}
             )
 ```
@@ -392,12 +443,13 @@ The client stores the highest `seq` it has seen and passes it as `since`
 on reconnect. The database is the source of truth; the socket is a
 low-latency optimisation over polling, not the record.
 
-Two details matter. Join the group *before* running the catch-up query, so a
+Two details matter. The catch-up must run *after* the room is joined, so a
 message arriving mid-catch-up is delivered rather than falling into the gap
-between the query and the subscription. The client will occasionally see a
-duplicate, which is why messages carry an id it can deduplicate on. And cap the
-catch-up: a client returning after a week should get a bounded page and a
-"history truncated" marker, not thirty thousand frames.
+between the query and the subscription — `RoomConsumer` gives you that ordering
+for free, since `rooms()` is joined before `on_connect()` is called. The client
+will occasionally see a duplicate, which is why messages carry an id it can
+deduplicate on. And cap the catch-up: a client returning after a week should get
+a bounded page and a "history truncated" marker, not thirty thousand frames.
 
 This also means at-least-once delivery, not exactly-once. Design clients
 to be idempotent per `seq` and the whole class of problems disappears.
@@ -407,8 +459,8 @@ to be idempotent per `seq` and the whole class of problems disappears.
 **Do not dispatch with a chain of `if` statements.** It never gets
 refactored.
 
-**Do not share a `handlers` dict between consumer subclasses.**
-Redeclare it per class.
+**Do not share one `handlers` dict between consumer subclasses.**
+Give each subclass its own copy, as `__init_subclass__` does above.
 
 **Do not trust any field of an incoming message.** There is no
 framework-level validation on a socket.
@@ -416,7 +468,7 @@ framework-level validation on a socket.
 **Do not check authorization only at connect.** Long-lived connections
 outlive permissions.
 
-**Do not let an exception escape `on_receive`.** It terminates the
+**Do not let an exception escape `on_message`.** It terminates the
 connection.
 
 **Do not skip a size limit.** A single frame can be arbitrarily large.
@@ -453,7 +505,7 @@ this too, which is one more reason to add them early.
 Dispatch through a dictionary is O(1) and irrelevant to your latency
 budget. What matters is what handlers do.
 
-Anything slow inside `on_receive` stalls that connection's entire receive loop.
+Anything slow inside `on_message` stalls that connection's entire read loop.
 The client can send, but nothing is read until the handler returns. Push slow
 work to a background task or a job queue and reply immediately with an
 acknowledgement.
@@ -462,7 +514,7 @@ Validation is cheap; `pydantic-core` is Rust. Building a schema per message is
 not, construct them once at import time.
 
 Broadcast fan-out is the real cost. One message from one client that
-triggers a broadcast to a thousand-member group is a thousand sends. At
+triggers a broadcast to a thousand-member room is a thousand sends. At
 ten messages per second from fifty active clients, that is 500,000 sends
 per second, which is not achievable. Coalesce: batch typing indicators on
 a timer, aggregate presence changes, and send diffs rather than full

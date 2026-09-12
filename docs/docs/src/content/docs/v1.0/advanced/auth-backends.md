@@ -588,10 +588,10 @@ The `PermissionMixin` should come first so its `has_permission` method takes pre
 |-----------|------|-------|
 | `login()` | `core/sillo/auth/session_auth/backend.py` | 22-63 |
 | `logout()` | `core/sillo/auth/session_auth/backend.py` | 66-91 |
-| `SessionAuthBackend` | `core/sillo/auth/session_auth/backend.py` | 94-197 |
-| `Session` model | `core/sillo/auth/session_auth/models.py` | 10-184 |
+| `SessionAuthBackend` | `core/sillo/auth/session_auth/backend.py` | 111-214 |
+| `Session` model | `core/sillo/auth/session_auth/models.py` | 10-189 |
 | `SessionUserMixin` | `core/sillo/auth/session_auth/mixins.py` | 8-163 |
-| `SessionGuard` | `core/sillo/auth/session_auth/guard.py` | 16-287 |
+| `SessionGuard` | `core/sillo/auth/session_auth/guard.py` | 16-283 |
 | `create_jwt` | `core/sillo/auth/jwt_auth/__init__.py` | 11-42 |
 | `decode_jwt` | `core/sillo/auth/jwt_auth/__init__.py` | 45-76 |
 | `JWTAuthBackend` | `core/sillo/auth/jwt_auth/backend.py` | 39-173 |

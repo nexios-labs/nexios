@@ -112,7 +112,7 @@ element, guarded by an ID check to prevent double-injection.
 
 ## 3. createApiReference Entry Point
 
-**Source**: `/Users/admin/sillo.build/atlas/src/index.ts`
+**Source**: `atlas/src/index.ts`
 
 ```typescript
 function createApiReference(
@@ -154,7 +154,7 @@ interface AtlasInstance {
 
 ### Standalone Entry
 
-**Source**: `/Users/admin/sillo.build/atlas/src/standalone.ts`
+**Source**: `atlas/src/standalone.ts`
 
 ```html
 <script src="atlas.standalone.js" data-url="/openapi.json"></script>
@@ -176,7 +176,7 @@ mounting.
 
 ## 4. Spec Parsing
 
-**Source**: `/Users/admin/sillo.build/atlas/src/spec/parse.ts` (356 lines)
+**Source**: `atlas/src/spec/parse.ts` (356 lines)
 
 ```typescript
 function parseSpec(document: OpenAPIDocument): ParsedSpec
@@ -256,7 +256,7 @@ interface ParsedSpec {
 
 ## 5. RefResolver
 
-**Source**: `/Users/admin/sillo.build/atlas/src/spec/resolve.ts` (225 lines)
+**Source**: `atlas/src/spec/resolve.ts` (225 lines)
 
 Handles lazy, cycle-safe `$ref` resolution within a single document.
 
@@ -315,7 +315,7 @@ as diagnostics.
 
 ## 6. walkSchema
 
-**Source**: `/Users/admin/sillo.build/atlas/src/spec/resolve.ts`
+**Source**: `atlas/src/spec/resolve.ts`
 
 ```typescript
 function walkSchema(
@@ -350,7 +350,7 @@ on the path, calls `onCycle` callback and does not descend further.
 
 ## 7. Server Resolution
 
-**Source**: `/Users/admin/sillo.build/atlas/src/spec/servers.ts` (114 lines)
+**Source**: `atlas/src/spec/servers.ts` (114 lines)
 
 ```typescript
 function resolveServers(
@@ -389,7 +389,7 @@ graph TD
 
 ## 8. Example Generation
 
-**Source**: `/Users/admin/sillo.build/atlas/src/spec/example.ts` (221 lines)
+**Source**: `atlas/src/spec/example.ts` (221 lines)
 
 ```typescript
 function exampleFromSchema(
@@ -458,7 +458,7 @@ Generates one-line type labels: `array<Widget>`, `string . date-time`,
 
 ## 9. DOM Construction
 
-**Source**: `/Users/admin/sillo.build/atlas/src/ui/dom.ts` (222 lines)
+**Source**: `atlas/src/ui/dom.ts` (222 lines)
 
 Atlas builds DOM **directly**: no framework, no virtual DOM, no `innerHTML`.
 Every user-supplied string reaches the page as a text node.
@@ -495,7 +495,7 @@ fundamental XSS defense, a JSON string in a response body cannot become markup.
 
 ## 10. Search Scoring
 
-**Source**: `/Users/admin/sillo.build/atlas/src/ui/search.ts` (166 lines)
+**Source**: `atlas/src/ui/search.ts` (166 lines)
 
 ```typescript
 function searchOperations(
@@ -535,7 +535,7 @@ function searchOperations(
 
 ## 11. Request Client
 
-**Source**: `/Users/admin/sillo.build/atlas/src/client/request.ts` (282 lines)
+**Source**: `atlas/src/client/request.ts` (282 lines)
 
 ### prepareRequest
 
@@ -611,7 +611,7 @@ Returns: `status`, `statusText`, `headers`, `body`, `parsedJson`, `durationMs`,
 
 ## 12. Code Snippets
 
-**Source**: `/Users/admin/sillo.build/atlas/src/client/snippets.ts` (351 lines)
+**Source**: `atlas/src/client/snippets.ts` (351 lines)
 
 ### 9 Language Generators
 
@@ -661,7 +661,7 @@ Converts JSON values to Python literals: `True`/`False`/`None` instead of
 
 ## 13. Syntax Highlighting
 
-**Source**: `/Users/admin/sillo.build/atlas/src/ui/highlight.ts` (287 lines)
+**Source**: `atlas/src/ui/highlight.ts` (287 lines)
 
 ```typescript
 function tokenize(code: string, syntax: string): Token[]
@@ -706,7 +706,7 @@ Tokenizes to data (`Token[]`), never to HTML strings.  The renderer in
 
 ## 14. Markdown Parser
 
-**Source**: `/Users/admin/sillo.build/atlas/src/ui/markdown.ts` (248 lines)
+**Source**: `atlas/src/ui/markdown.ts` (248 lines)
 
 ```typescript
 function parseMarkdown(source: string): Block[]
@@ -755,7 +755,7 @@ before checking (browsers interpret `java\tscript:` as `javascript:`).
 
 ## 15. Panel System
 
-**Source**: `/Users/admin/sillo.build/atlas/src/ui/panel.ts` (410 lines)
+**Source**: `atlas/src/ui/panel.ts` (410 lines)
 
 ```typescript
 function createPanel(
@@ -817,7 +817,7 @@ the focused element.
 
 ## 16. Theme System
 
-**Source**: `/Users/admin/sillo.build/atlas/src/styles/atlas.css` (1189 lines)
+**Source**: `atlas/src/styles/atlas.css` (1189 lines)
 
 ### CSS Custom Properties
 
@@ -883,7 +883,7 @@ graph TD
 
 ## 17. Application Shell
 
-**Source**: `/Users/admin/sillo.build/atlas/src/ui/app.ts` (334 lines)
+**Source**: `atlas/src/ui/app.ts` (334 lines)
 
 ### AtlasApp
 
@@ -932,14 +932,14 @@ history.  `openFromHash()` reads `location.hash` on load.
 
 ### Build
 
-**Source**: `/Users/admin/sillo.build/atlas/scripts/build.mjs`
+**Source**: `atlas/scripts/build.mjs`
 
 Uses esbuild with three output formats.  Targets ES2021, Chrome/Firefox 100,
 Safari 15.  Sourcemaps enabled.
 
 ### Dev Server
 
-**Source**: `/Users/admin/sillo.build/atlas/scripts/dev.mjs`
+**Source**: `atlas/scripts/dev.mjs`
 
 Builds first (to avoid serving empty dist), then starts a file server on port
 5173.  Runs esbuild watch in parallel.  Guards against path traversal.

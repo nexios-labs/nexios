@@ -5,8 +5,8 @@ description: "Task class, lifecycle, priorities, hooks, serialization"
 
 **Module:** `sillo.work.task` · `sillo.work.types`
 **Source files:**
-- `/Users/admin/sillo.build/core/sillo/work/task.py` (461 lines)
-- `/Users/admin/sillo.build/core/sillo/work/types.py` (300 lines)
+- `core/sillo/work/task.py` (461 lines)
+- `core/sillo/work/types.py` (300 lines)
 
 **Version:** 2026-08-11
 **Audience:** Core maintainers, framework architects
@@ -48,7 +48,7 @@ All types are centralized in `sillo.work.types` to prevent circular dependencies
 
 ### 2.1 TaskPriority Enum
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/types.py`, line 27
+**File:** `core/sillo/work/types.py`, line 27
 
 ```python
 class TaskPriority(enum.IntEnum):
@@ -74,7 +74,7 @@ class TaskPriority(enum.IntEnum):
 
 ### 2.2 TaskStatus Enum
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/types.py`, line 46
+**File:** `core/sillo/work/types.py`, line 46
 
 ```python
 class TaskStatus(enum.Enum):
@@ -115,7 +115,7 @@ task is still in flight.
 
 ### 2.3 TaskResult Dataclass
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/types.py`, line 138
+**File:** `core/sillo/work/types.py`, line 138
 
 ```python
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -156,7 +156,7 @@ class TaskResult:
 
 ### 2.4 Other Health/Stats Dataclasses
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/types.py`
+**File:** `core/sillo/work/types.py`
 
 ```python
 @dataclasses.dataclass
@@ -229,7 +229,7 @@ class QueueHealth(enum.Enum):
 
 ## 3. The `@task` Decorator
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/task.py`, line 429
+**File:** `core/sillo/work/task.py`, line 429
 
 ```python
 def task(
@@ -302,7 +302,7 @@ if getattr(func, "_work_task", False):
 
 ## 4. The Task Class
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/task.py`, line 39
+**File:** `core/sillo/work/task.py`, line 39
 
 ### 4.1 Constructor
 
@@ -367,7 +367,7 @@ The in-memory `MemoryBackend` uses `asyncio.PriorityQueue` which relies on this 
 
 ## 5. The `run()` Algorithm
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/task.py`, line 207
+**File:** `core/sillo/work/task.py`, line 207
 
 ```mermaid
 flowchart TD
@@ -525,7 +525,7 @@ sequenceDiagram
 
 ## 7. Hook System
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/task.py`, lines 161 to 342
+**File:** `core/sillo/work/task.py`, lines 161 to 342
 
 ### 7.1 Four Hook Groups
 
@@ -736,7 +736,7 @@ This is a **snapshot** of the task's current state, suitable for dashboards and 
 
 ## 11. Task Middleware
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/middleware.py` (109 lines)
+**File:** `core/sillo/work/middleware.py` (109 lines)
 
 Three middleware classes operate on `Task` instances (distinct from queue `Job` middleware):
 

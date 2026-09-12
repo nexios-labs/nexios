@@ -553,11 +553,11 @@ Email is the more unique identifier (unique constraint + index). Username is tri
 
 | Component | File | Lines |
 |-----------|------|-------|
-| `UserProtocol` | `core/sillo/users/protocol.py` | 107-190 |
+| `UserProtocol` | `core/sillo/users/protocol.py` | 110-192 |
 | `BaseUser` alias | `core/sillo/users/protocol.py` | 194 |
-| `AnonymousUser` | `core/sillo/users/protocol.py` | 197-240 |
+| `AnonymousUser` | `core/sillo/users/protocol.py` | 200-243 |
 | `make_password` | `core/sillo/users/protocol.py` | 33-63 |
-| `check_password` | `core/sillo/users/protocol.py` | 66-104 |
+| `check_password` | `core/sillo/users/protocol.py` | 66-107 |
 | `SimpleUser` | `core/sillo/users/simple.py` | 4-34 |
 | `UnauthenticatedUser` | `core/sillo/users/simple.py` | 37-62 |
 | `UserBaseModel` | `core/sillo/users/base.py` | 42-178 |
@@ -570,14 +570,14 @@ Email is the more unique identifier (unique constraint + index). Username is tri
 | `set_active` | `core/sillo/users/commands.py` | 160-180 |
 | `set_staff` | `core/sillo/users/commands.py` | 183-200 |
 | `list_users` | `core/sillo/users/commands.py` | 203-217 |
-| `Create` command | `core/sillo/users/console.py` | 144-177 |
-| `CreateAdmin` command | `core/sillo/users/console.py` | 179-207 |
-| `ListUsers` command | `core/sillo/users/console.py` | 210-234 |
-| `Show` command | `core/sillo/users/console.py` | 237-262 |
-| `SetPassword` command | `core/sillo/users/console.py` | 265-285 |
-| `SetActive` command | `core/sillo/users/console.py` | 288-314 |
-| `SetStaff` command | `core/sillo/users/console.py` | 317-337 |
-| `user_commands` | `core/sillo/users/console.py` | 352-389 |
+| `Create` command | `core/sillo/users/console.py` | 178-210 |
+| `CreateAdmin` command | `core/sillo/users/console.py` | 213-241 |
+| `ListUsers` command | `core/sillo/users/console.py` | 244-268 |
+| `Show` command | `core/sillo/users/console.py` | 271-296 |
+| `SetPassword` command | `core/sillo/users/console.py` | 299-319 |
+| `SetActive` command | `core/sillo/users/console.py` | 322-348 |
+| `SetStaff` command | `core/sillo/users/console.py` | 351-371 |
+| `user_commands` | `core/sillo/users/console.py` | 386-423 |
 
 ---
 

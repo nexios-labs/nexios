@@ -4,7 +4,7 @@ description: "Symptom → cause → resolution chains, inspection points"
 ---
 
 > **Scope**: Debugging chains for common failure modes in Sillo applications.
-> **Source**: `/Users/admin/sillo.build/core/sillo/`
+> **Source**: `core/sillo/`
 
 ---
 

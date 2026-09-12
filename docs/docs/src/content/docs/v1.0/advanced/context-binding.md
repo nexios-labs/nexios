@@ -6,7 +6,7 @@ description: "The shared mechanism behind current_storage(), current_mail(), and
 > Internal engineering reference for a small piece of infrastructure shared
 > across subsystems.
 >
-> Source: `core/sillo/_internals/registry.py` (~90 lines)
+> Source: `core/sillo/helpers/registry.py` (~100 lines)
 
 ---
 

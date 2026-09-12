@@ -81,24 +81,24 @@ graph TD
 
 | Module | Path |
 |---|---|
-| `__init__` | `/Users/admin/sillo.build/start/sillo_start/__init__.py` |
-| `__main__` | `/Users/admin/sillo.build/start/sillo_start/__main__.py` |
-| `exceptions` | `/Users/admin/sillo.build/start/sillo_start/exceptions.py` |
-| `cli/__init__` | `/Users/admin/sillo.build/start/sillo_start/cli/__init__.py` |
-| `cli/app` | `/Users/admin/sillo.build/start/sillo_start/cli/app.py` |
-| `cli/create` | `/Users/admin/sillo.build/start/sillo_start/cli/create.py` |
-| `project/__init__` | `/Users/admin/sillo.build/start/sillo_start/project/__init__.py` |
-| `project/template` | `/Users/admin/sillo.build/start/sillo_start/project/template.py` |
-| `utils/console` | `/Users/admin/sillo.build/start/sillo_start/utils/console.py` |
-| `utils/naming` | `/Users/admin/sillo.build/start/sillo_start/utils/naming.py` |
-| `utils/pkgmanagers` | `/Users/admin/sillo.build/start/sillo_start/utils/pkgmanagers.py` |
-| `utils/subprocess` | `/Users/admin/sillo.build/start/sillo_start/utils/subprocess.py` |
+| `__init__` | `start/sillo_start/__init__.py` |
+| `__main__` | `start/sillo_start/__main__.py` |
+| `exceptions` | `start/sillo_start/exceptions.py` |
+| `cli/__init__` | `start/sillo_start/cli/__init__.py` |
+| `cli/app` | `start/sillo_start/cli/app.py` |
+| `cli/create` | `start/sillo_start/cli/create.py` |
+| `project/__init__` | `start/sillo_start/project/__init__.py` |
+| `project/template` | `start/sillo_start/project/template.py` |
+| `utils/console` | `start/sillo_start/utils/console.py` |
+| `utils/naming` | `start/sillo_start/utils/naming.py` |
+| `utils/pkgmanagers` | `start/sillo_start/utils/pkgmanagers.py` |
+| `utils/subprocess` | `start/sillo_start/utils/subprocess.py` |
 
 ---
 
 ## 3. Template Dataclass
 
-**Source**: `/Users/admin/sillo.build/start/sillo_start/project/template.py`
+**Source**: `start/sillo_start/project/template.py`
 
 ```python
 @dataclass(frozen=True)
@@ -166,7 +166,7 @@ that demonstrates all Sillo features.
 
 ## 4. Tarball Fetching
 
-**Source**: `/Users/admin/sillo.build/start/sillo_start/project/template.py`
+**Source**: `start/sillo_start/project/template.py`
 
 ```python
 def fetch(template: Template, destination: Path) -> None
@@ -223,7 +223,7 @@ usually fast, but slow networks need room.
 
 ## 5. Personalisation
 
-**Source**: `/Users/admin/sillo.build/start/sillo_start/project/template.py`
+**Source**: `start/sillo_start/project/template.py`
 
 ```python
 def personalise(
@@ -279,7 +279,7 @@ def _write_env(root: Path, name: str) -> bool
 
 ## 6. Secret Key Generation
 
-**Source**: `/Users/admin/sillo.build/start/sillo_start/project/template.py`
+**Source**: `start/sillo_start/project/template.py`
 
 ```python
 def generate_secret_key(length: int = 50) -> str:
@@ -296,7 +296,7 @@ def generate_secret_key(length: int = 50) -> str:
 
 ## 7. Naming Utilities
 
-**Source**: `/Users/admin/sillo.build/start/sillo_start/utils/naming.py` (148 lines)
+**Source**: `start/sillo_start/utils/naming.py` (148 lines)
 
 ### 7.1 Word Splitting
 
@@ -391,7 +391,7 @@ def is_valid_project_name(value: str) -> bool
 
 ## 8. Package Manager Abstractions
 
-**Source**: `/Users/admin/sillo.build/start/sillo_start/utils/pkgmanagers.py` (283 lines)
+**Source**: `start/sillo_start/utils/pkgmanagers.py` (283 lines)
 
 ### 8.1 Python Package Managers
 
@@ -448,7 +448,7 @@ def detect_frontend_manager(project_dir: Path | None = None) -> FrontendPackageM
 
 ## 9. Rich Console
 
-**Source**: `/Users/admin/sillo.build/start/sillo_start/utils/console.py` (220 lines)
+**Source**: `start/sillo_start/utils/console.py` (220 lines)
 
 ### 9.1 Console Class
 
@@ -536,7 +536,7 @@ The CLI reconfigures it once from the root callback with `--verbose` and
 
 ## 10. Subprocess Wrapper
 
-**Source**: `/Users/admin/sillo.build/start/sillo_start/utils/subprocess.py` (179 lines)
+**Source**: `start/sillo_start/utils/subprocess.py` (179 lines)
 
 ### 10.1 CommandResult
 
@@ -620,7 +620,7 @@ DEFAULT_TIMEOUT = 600  # 10 minutes, for dependency resolution
 
 ### 11.1 Entry Point
 
-**Source**: `/Users/admin/sillo.build/start/sillo_start/__main__.py`
+**Source**: `start/sillo_start/__main__.py`
 
 ```python
 def main():
@@ -636,7 +636,7 @@ sillo-start = "sillo_start.__main__:main"
 
 ### 11.2 Typer Application
 
-**Source**: `/Users/admin/sillo.build/start/sillo_start/cli/app.py`
+**Source**: `start/sillo_start/cli/app.py`
 
 ```python
 app = typer.Typer(
@@ -658,7 +658,7 @@ app = typer.Typer(
 
 ### 11.3 create-app Command
 
-**Source**: `/Users/admin/sillo.build/start/sillo_start/cli/create.py`
+**Source**: `start/sillo_start/cli/create.py`
 
 ```mermaid
 graph TD
@@ -700,7 +700,7 @@ graph TD
 
 ## 12. Error Handling
 
-**Source**: `/Users/admin/sillo.build/start/sillo_start/exceptions.py`
+**Source**: `start/sillo_start/exceptions.py`
 
 ### Exception Hierarchy
 

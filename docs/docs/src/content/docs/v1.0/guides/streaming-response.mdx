@@ -161,7 +161,7 @@ retry: <milliseconds>
 headers, and the keepalive:
 
 ```python
-from sillo import HttpContext, sse, BaseResponse
+from sillo import HttpContext, sse
 
 @app.get("/events")
 async def events(ctx: HttpContext):

@@ -854,14 +854,14 @@ app.use(RateLimit(limit=100, window=60))
 
 | Component | File | Lines |
 |-----------|------|-------|
-| `Shield` | `core/sillo/security/shield.py` | 18-245 |
+| `Shield` | `core/sillo/security/shield.py` | 19-279 |
 | `SecurityMiddleware` alias | `core/sillo/middleware/security.py` | 5 |
-| `CorsConfig` | `core/sillo/security/cors/config.py` | 5-125 |
-| `CORSMiddleware` | `core/sillo/security/cors/_middleware.py` | 20-249 |
-| `CSRFConfig` | `core/sillo/security/csrf/config.py` | 5-117 |
-| `CSRFMiddleware` | `core/sillo/security/csrf/_middleware.py` | 14-162 |
+| `CorsConfig` | `core/sillo/security/cors/config.py` | 5-130 |
+| `CORSMiddleware` | `core/sillo/security/cors/_middleware.py` | 19-320 |
+| `CSRFConfig` | `core/sillo/security/csrf/config.py` | 62-230 |
+| `CSRFMiddleware` | `core/sillo/security/csrf/_middleware.py` | 24-288 |
 | `RateLimitConfig` | `core/sillo/security/ratelimit/config.py` | 13-71 |
-| `RateLimitMiddleware` | `core/sillo/security/ratelimit/_middleware.py` | 26-100 |
+| `RateLimitMiddleware` | `core/sillo/security/ratelimit/_middleware.py` | 27-130 |
 | `RateLimit` | `core/sillo/security/ratelimit/__init__.py` | 51-87 |
 | `RateLimitStrategy` | `core/sillo/security/ratelimit/strategies/base.py` | 19-64 |
 | `TokenBucketStrategy` | `core/sillo/security/ratelimit/strategies/token_bucket.py` | 19-57 |

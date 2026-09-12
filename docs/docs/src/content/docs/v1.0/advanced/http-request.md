@@ -175,7 +175,7 @@ for both `HttpContext` (HTTP) and `WebSocketContext` handlers.
 ### 3.1 Constructor
 
 ```python
-# core/sillo/core/http/ctx.py:146
+# core/sillo/core/http/context.py:146
 def __init__(self, scope: Scope, receive: Receive) -> None:
     assert scope["type"] in ("http", "websocket")
     self.scope = scope
@@ -303,7 +303,7 @@ negotiation, session/user integration, and disconnect detection.
 ### 4.1 Constructor
 
 ```python
-# core/sillo/core/http/ctx.py:658
+# core/sillo/core/http/context.py:658
 def __init__(self, scope, receive=empty_receive, send=empty_send):
     super().__init__(scope, receive)
     assert scope["type"] == "http"

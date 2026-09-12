@@ -589,11 +589,11 @@ The `md5` and `sha256` functions are fast hash functions designed for checksums,
 | `is_scheme_available` | `core/sillo/hashing/config.py` | 68-82 |
 | `install_hint` | `core/sillo/hashing/config.py` | 85-95 |
 | `get_available_schemes` | `core/sillo/hashing/config.py` | 98-100 |
-| `hash_password` | `core/sillo/hashing/core.py` | 33-109 |
-| `verify_password` | `core/sillo/hashing/core.py` | 112-163 |
-| `needs_update` | `core/sillo/hashing/core.py` | 166-187 |
-| `set_default_scheme` | `core/sillo/hashing/core.py` | 190-210 |
-| `needs_rehash` | `core/sillo/hashing/core.py` | 226-256 |
+| `hash_password` | `core/sillo/hashing/core.py` | 70-146 |
+| `verify_password` | `core/sillo/hashing/core.py` | 149-200 |
+| `needs_update` | `core/sillo/hashing/core.py` | 203-232 |
+| `set_default_scheme` | `core/sillo/hashing/core.py` | 275-295 |
+| `needs_rehash` | `core/sillo/hashing/core.py` | 311-344 |
 | `HashingError` | `core/sillo/hashing/exceptions.py` | 4 |
 | `InvalidSchemeError` | `core/sillo/hashing/exceptions.py` | 8 |
 | `VerificationError` | `core/sillo/hashing/exceptions.py` | 12 |
@@ -606,7 +606,7 @@ The `md5` and `sha256` functions are fast hash functions designed for checksums,
 | `md5` | `core/sillo/hashing/utils.py` | 133-147 |
 | `sha256` | `core/sillo/hashing/utils.py` | 150-164 |
 | `make_password` | `core/sillo/users/protocol.py` | 33-63 |
-| `check_password` | `core/sillo/users/protocol.py` | 66-104 |
+| `check_password` | `core/sillo/users/protocol.py` | 66-107 |
 | Backward-compat helpers | `core/sillo/helpers/hashing.py` | 1-184 |
 
 ---

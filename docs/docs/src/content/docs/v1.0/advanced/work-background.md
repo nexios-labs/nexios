@@ -5,10 +5,10 @@ description: "BackgroundTask, Supervisor, restart policies, circuit breaker"
 
 **Module:** `sillo.work.background`
 **Source files:**
-- `/Users/admin/sillo.build/core/sillo/work/background/tasks.py` (235 lines)
-- `/Users/admin/sillo.build/core/sillo/work/background/supervisor.py` (137 lines)
-- `/Users/admin/sillo.build/core/sillo/work/__init__.py` (73 lines)
-- `/Users/admin/sillo.build/core/sillo/work/types.py` (300 lines)
+- `core/sillo/work/background/tasks.py` (235 lines)
+- `core/sillo/work/background/supervisor.py` (137 lines)
+- `core/sillo/work/__init__.py` (73 lines)
+- `core/sillo/work/types.py` (300 lines)
 
 **Version:** 2026-08-11
 **Audience:** Core maintainers, framework architects
@@ -38,7 +38,7 @@ graph TD
 
 ## 2. BackgroundTask
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/background/tasks.py` (235 lines)
+**File:** `core/sillo/work/background/tasks.py` (235 lines)
 
 ### 2.1 Class-Level Tracking
 
@@ -225,7 +225,7 @@ def to_dict(self) -> dict[str, Any]:
 
 ## 3. Supervisor
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/background/supervisor.py` (137 lines)
+**File:** `core/sillo/work/background/supervisor.py` (137 lines)
 
 ### 3.1 RestartPolicy Enum
 
@@ -365,7 +365,7 @@ delay = min(self.base_delay * (2 ** self._restarts), self.max_delay)
 
 ## 4. Circuit Breaker
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/types.py`
+**File:** `core/sillo/work/types.py`
 
 ### 4.1 CircuitState Enum
 
@@ -473,7 +473,7 @@ class TaskResult:
 
 ## 6. `setup_work()` Wiring
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/__init__.py`
+**File:** `core/sillo/work/__init__.py`
 
 ```python
 def setup_work(app, *, queue_backend=None, queue_name="default") -> dict:
@@ -494,7 +494,7 @@ def setup_work(app, *, queue_backend=None, queue_name="default") -> dict:
 
 ### 6.2 DI Providers
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/dependency.py`
+**File:** `core/sillo/work/dependency.py`
 
 ```python
 scheduler = _make_provider("scheduler")
@@ -583,9 +583,9 @@ The `min(base * 2^n, max_delay)` formula prevents unbounded delay growth while s
 
 | Component | File | Lines |
 |-----------|------|-------|
-| `BackgroundTask` | `core/sillo/work/background/tasks.py` | 27-235 |
+| `BackgroundTask` | `core/sillo/work/background/tasks.py` | 27-239 |
 | `RestartPolicy` enum | `core/sillo/work/background/supervisor.py` | 24-30 |
-| `Supervisor` | `core/sillo/work/background/supervisor.py` | 33-137 |
+| `Supervisor` | `core/sillo/work/background/supervisor.py` | 33-149 |
 | `CircuitState` enum | `core/sillo/work/types.py` | 75-80 |
 | `QueueHealth` enum | `core/sillo/work/types.py` | 83-88 |
 | `QueueStats` | `core/sillo/work/types.py` | 236-256 |
@@ -593,7 +593,7 @@ The `min(base * 2^n, max_delay)` formula prevents unbounded delay growth while s
 | `SchedulerStats` | `core/sillo/work/types.py` | 282-300 |
 | `TaskResult` | `core/sillo/work/types.py` | 138-233 |
 | `setup_work()` | `core/sillo/work/__init__.py` | 1-73 |
-| DI providers | `core/sillo/work/dependency.py` | 1-49 |
+| DI providers | `core/sillo/work/dependency.py` | 1-47 |
 
 ---
 

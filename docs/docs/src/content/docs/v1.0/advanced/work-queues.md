@@ -5,16 +5,16 @@ description: "Queue backends, job dispatch, workers, middleware, batches, failed
 
 **Module:** `sillo.work.queue`
 **Source files:**
-- `/Users/admin/sillo.build/core/sillo/work/queue/connection.py` (453 lines)
-- `/Users/admin/sillo.build/core/sillo/work/queue/job.py` (292 lines)
-- `/Users/admin/sillo.build/core/sillo/work/queue/workers.py` (304 lines)
-- `/Users/admin/sillo.build/core/sillo/work/queue/payloads.py` (77 lines)
-- `/Users/admin/sillo.build/core/sillo/work/queue/middleware.py` (145 lines)
-- `/Users/admin/sillo.build/core/sillo/work/queue/batches.py` (158 lines)
-- `/Users/admin/sillo.build/core/sillo/work/queue/events.py` (201 lines)
-- `/Users/admin/sillo.build/core/sillo/work/queue/listener.py` (154 lines)
-- `/Users/admin/sillo.build/core/sillo/work/queue/failed.py` (117 lines)
-- `/Users/admin/sillo.build/core/sillo/work/backends.py` (379 lines)
+- `core/sillo/work/queue/connection.py` (453 lines)
+- `core/sillo/work/queue/job.py` (292 lines)
+- `core/sillo/work/queue/workers.py` (304 lines)
+- `core/sillo/work/queue/payloads.py` (77 lines)
+- `core/sillo/work/queue/middleware.py` (145 lines)
+- `core/sillo/work/queue/batches.py` (158 lines)
+- `core/sillo/work/queue/events.py` (201 lines)
+- `core/sillo/work/queue/listener.py` (154 lines)
+- `core/sillo/work/queue/failed.py` (117 lines)
+- `core/sillo/work/backends.py` (379 lines)
 
 **Version:** 2026-08-11 **Audience:** Core maintainers, framework architects
 **Purpose:** Deep documentation of the queue subsystem: backends, connections,
@@ -47,7 +47,7 @@ graph TD
 
 ## 2. Legacy Backends
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/backends.py` (379 lines)
+**File:** `core/sillo/work/backends.py` (379 lines)
 
 The legacy backends (`MemoryBackend`, `RedisBackend`) are the original persistence layer. They operate on `Task` objects directly and are used by the lower-level task system. The newer queue system uses `QueueConnection` abstractions instead.
 
@@ -89,7 +89,7 @@ class RedisBackend:
 
 ## 3. QueueConnection ABC
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/queue/connection.py`, line 29
+**File:** `core/sillo/work/queue/connection.py`, line 29
 
 ```python
 class QueueConnection(ABC):
@@ -113,7 +113,7 @@ The abstract interface defines six operations. `push`, `pop`, and `size` are abs
 
 ## 4. SyncConnection
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/queue/connection.py`, line 80
+**File:** `core/sillo/work/queue/connection.py`, line 80
 
 ```python
 class SyncConnection(QueueConnection):
@@ -182,7 +182,7 @@ def _release_delayed(self, name: str) -> None:
 
 ## 5. RedisConnection
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/queue/connection.py`, line 226
+**File:** `core/sillo/work/queue/connection.py`, line 226
 
 ```python
 class RedisConnection(QueueConnection):
@@ -214,7 +214,7 @@ def _keys(self, queue_name: str) -> tuple[str, str, str, str]:
 
 ### 5.2 Four Lua Scripts
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/queue/connection.py`, lines
+**File:** `core/sillo/work/queue/connection.py`, lines
 162 to 223
 
 #### `_MIGRATE_LUA`: Move Due Delayed Jobs
@@ -355,7 +355,7 @@ sequenceDiagram
 
 ## 6. ConnectionManager
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/queue/connection.py`, line 420
+**File:** `core/sillo/work/queue/connection.py`, line 420
 
 ```python
 class ConnectionManager:
@@ -378,7 +378,7 @@ A simple broker that maps string names to connection instances. `add()` returns 
 
 ## 7. Dispatchable Mixin and Job Base Class
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/queue/job.py`
+**File:** `core/sillo/work/queue/job.py`
 
 ### 7.1 Dispatchable Mixin
 
@@ -461,7 +461,7 @@ The payload records the fully-qualified class name so the worker can import and 
 
 ## 8. PayloadSerializer
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/queue/payloads.py`
+**File:** `core/sillo/work/queue/payloads.py`
 
 ```python
 class PayloadSerializer:
@@ -483,7 +483,7 @@ class PayloadSerializer:
 
 ## 9. Queue Middleware
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/queue/middleware.py`
+**File:** `core/sillo/work/queue/middleware.py`
 
 Three middleware classes for the queue `Job` pipeline (distinct from task middleware):
 
@@ -534,7 +534,7 @@ class TimeoutMiddleware:
 
 ## 10. QueueWorker
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/queue/workers.py`, line 64
+**File:** `core/sillo/work/queue/workers.py`, line 64
 
 ### 10.1 WorkerOptions
 
@@ -641,7 +641,7 @@ The worker resolves job classes by:
 
 ## 11. WorkerPool
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/queue/workers.py`, line 275
+**File:** `core/sillo/work/queue/workers.py`, line 275
 
 ```python
 class WorkerPool:
@@ -666,7 +666,7 @@ class WorkerPool:
 
 ## 12. Event System (Queue-Level)
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/queue/events.py`
+**File:** `core/sillo/work/queue/events.py`
 
 ### 12.1 Event Base Class
 
@@ -714,7 +714,7 @@ class EventDispatcher:
 
 ### 12.4 WildcardListener
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/queue/listener.py`
+**File:** `core/sillo/work/queue/listener.py`
 
 ```python
 class WildcardListener:
@@ -733,7 +733,7 @@ class WildcardListener:
 
 ## 13. Batches
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/queue/batches.py`
+**File:** `core/sillo/work/queue/batches.py`
 
 ### 13.1 Batch
 
@@ -776,7 +776,7 @@ class JobChain:
 
 ## 14. FailedJobRepository
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/queue/failed.py`
+**File:** `core/sillo/work/queue/failed.py`
 
 ### 14.1 FailedJob Dataclass
 
@@ -827,7 +827,7 @@ class MemoryFailedRepository(FailedJobRepository):
 
 ## 15. `setup_work()` Wiring
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/__init__.py`
+**File:** `core/sillo/work/__init__.py`
 
 ```python
 def setup_work(app, *, queue_backend=None, queue_name="default") -> dict:
@@ -862,13 +862,13 @@ def setup_work(app, *, queue_backend=None, queue_name="default") -> dict:
 | Lua scripts | `core/sillo/work/queue/connection.py` | 155-223 |
 | `Dispatchable` mixin | `core/sillo/work/queue/job.py` | 63-196 |
 | `Job` base class | `core/sillo/work/queue/job.py` | 198-283 |
-| `PayloadSerializer` | `core/sillo/work/queue/payloads.py` | 1-77 |
+| `PayloadSerializer` | `core/sillo/work/queue/payloads.py` | 45-77 |
 | Queue middleware | `core/sillo/work/queue/middleware.py` | 1-145 |
 | `QueueWorker` | `core/sillo/work/queue/workers.py` | 64-272 |
 | `WorkerPool` | `core/sillo/work/queue/workers.py` | 275-304 |
 | `Event` (queue-level) | `core/sillo/work/queue/events.py` | 44-54 |
 | `EventDispatcher` | `core/sillo/work/queue/events.py` | 87-201 |
-| `Batch` | `core/sillo/work/queue/batches.py` | 1-158 |
-| `FailedJobRepository` | `core/sillo/work/queue/failed.py` | 1-117 |
-| `MemoryBackend` | `core/sillo/work/backends.py` | 1-180 |
-| `RedisBackend` | `core/sillo/work/backends.py` | 180-379 |
+| `Batch` | `core/sillo/work/queue/batches.py` | 22-125 |
+| `FailedJobRepository` | `core/sillo/work/queue/failed.py` | 35-74 |
+| `MemoryBackend` | `core/sillo/work/backends.py` | 48-188 |
+| `RedisBackend` | `core/sillo/work/backends.py` | 191-383 |

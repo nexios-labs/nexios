@@ -586,20 +586,25 @@ async def list_events(ctx: HttpContext):
     return PaginatedResponse(result).to_dict()
 ```
 
-### Admin Integration
+### How `apaginate()` uses it
 
-The admin `list_view` uses pagination internally:
+The `apaginate()` response builder is a thin wrapper over `AsyncPaginator`, and
+it is the shortest complete example of wiring one up. The context supplies both
+the base URL the links are built from and the query parameters the strategy
+reads:
 
 ```python
-# core/sillo/admin/routes.py, line 873
+# core/sillo/responses.py
 paginator = AsyncPaginator(
-    data_handler=TortoiseDataHandler(queryset),
-    pagination_strategy=PageNumberPagination(
-        default_page_size=admin.list_per_page,
-    ),
-    base_url=f"{site.prefix}/{model_slug}/",
+    data_handler=data_handler(objects),
+    pagination_strategy=_resolve_strategy(strategy, kwargs),
+    base_url=str(ctx.url),
     request_params=dict(ctx.query_params),
-    validate_total_items=False,  # Empty list for out-of-range pages
 )
-result = await paginator.paginate()
+return json(await paginator.paginate(**kwargs))
 ```
+
+This is why `paginate()` and `apaginate()` take `ctx` first — see
+[Sending responses](/v1.0/guides/sending-responses/). Pass
+`TortoiseDataHandler` as the `data_handler` to count and slice in the database
+instead of in memory.

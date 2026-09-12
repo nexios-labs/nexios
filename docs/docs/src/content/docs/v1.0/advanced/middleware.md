@@ -1685,7 +1685,7 @@ before `.base` out of habit more than necessity at this point.
 
 ```python
 import pytest
-from sillo.testing import TestClient
+from sillo.testclient import TestClient
 from sillo import SilloApp, HttpContext
 
 class TestTimingMiddleware:

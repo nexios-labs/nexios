@@ -3,10 +3,18 @@ title: "records-orm"
 description: "Standalone pypika-based ORM, backend abstraction, SQLite backend"
 ---
 
-> **Package**: `records-orm` v0.1.0
+> **Package**: `records-orm` v0.1.0 — a **separate, pre-release package**
 > **Repository**: https://github.com/sillohq/records-orm
-> **Source root**: `records-orm/records_orm/`
+> **Source root**: `records-orm/records_orm/` (in that repository, not in `core`)
 > **Status**: Backend abstraction layer implemented; Model/QuerySet/Fields planned
+
+:::caution[Not part of Sillo v1]
+`records-orm` does not ship with sillo and is not importable from a sillo
+install. Nothing on this page describes the ORM that v1 actually uses — that is
+`sillo.record`, documented under [Records ORM](/v1.0/orm/). This page is an
+engineering reference for a future standalone package, and most of its surface
+is still marked *Planned* below.
+:::
 
 ---
 
@@ -84,17 +92,17 @@ graph TD
 
 | Module | Path |
 |---|---|
-| `__init__` | `/Users/admin/sillo.build/records-orm/records_orm/__init__.py` |
-| `config` | `/Users/admin/sillo.build/records-orm/records_orm/config.py` |
-| `backends/__init__` | `/Users/admin/sillo.build/records-orm/records_orm/backends/__init__.py` |
-| `backends/base` | `/Users/admin/sillo.build/records-orm/records_orm/backends/base.py` |
-| `backends/sqlite` | `/Users/admin/sillo.build/records-orm/records_orm/backends/sqlite.py` |
+| `__init__` | `records-orm/records_orm/__init__.py` |
+| `config` | `records-orm/records_orm/config.py` |
+| `backends/__init__` | `records-orm/records_orm/backends/__init__.py` |
+| `backends/base` | `records-orm/records_orm/backends/base.py` |
+| `backends/sqlite` | `records-orm/records_orm/backends/sqlite.py` |
 
 ---
 
 ## 3. DatabaseConfig
 
-**Source**: `/Users/admin/sillo.build/records-orm/records_orm/config.py` (108 lines)
+**Source**: `records-orm/records_orm/config.py` (108 lines)
 
 ```python
 @dataclass
@@ -173,7 +181,7 @@ def to_dict(self) -> dict[str, Any]
 
 ## 4. DatabaseBackend Enum
 
-**Source**: `/Users/admin/sillo.build/records-orm/records_orm/config.py`
+**Source**: `records-orm/records_orm/config.py`
 
 ```python
 class DatabaseBackend(Enum):
@@ -189,7 +197,7 @@ Used for backend detection and dispatching.  The `__post_init__` method on
 
 ## 5. BaseBackend ABC
 
-**Source**: `/Users/admin/sillo.build/records-orm/records_orm/backends/base.py` (151 lines)
+**Source**: `records-orm/records_orm/backends/base.py` (151 lines)
 
 ```python
 class BaseBackend(ABC):
@@ -240,7 +248,7 @@ Returns `"sqlite"`, `"postgres"`, or `"mysql"`.
 
 ## 6. ColumnInfo & IndexInfo
 
-**Source**: `/Users/admin/sillo.build/records-orm/records_orm/backends/base.py`
+**Source**: `records-orm/records_orm/backends/base.py`
 
 ### ColumnInfo
 
@@ -283,7 +291,7 @@ class IndexInfo:
 
 ## 7. SQLiteBackend
 
-**Source**: `/Users/admin/sillo.build/records-orm/records_orm/backends/sqlite.py` (184 lines)
+**Source**: `records-orm/records_orm/backends/sqlite.py` (184 lines)
 
 ```python
 class SQLiteBackend(BaseBackend):
@@ -366,7 +374,7 @@ Auto-increment detected when `pk` is true AND type contains `"INTEGER"`.
 
 ## 8. get_backend Factory
 
-**Source**: `/Users/admin/sillo.build/records-orm/records_orm/backends/__init__.py` (31 lines)
+**Source**: `records-orm/records_orm/backends/__init__.py` (31 lines)
 
 ```python
 def get_backend(name: str) -> type[BaseBackend]:
@@ -405,7 +413,7 @@ await backend.connect()
 
 ## 9. Exported API
 
-**Source**: `/Users/admin/sillo.build/records-orm/records_orm/__init__.py` (64 lines)
+**Source**: `records-orm/records_orm/__init__.py` (64 lines)
 
 ```python
 __version__ = "0.1.0"

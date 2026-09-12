@@ -904,10 +904,23 @@ posts = await Post.published().recent(days=30).by_author(user.id).all()
 
 ### 11.2 Global Scope for Multi-Tenancy
 
+The tenant has to come from somewhere request-scoped. `RequestContext` is a
+`ContextVar`-backed namespace that any code in the same request can read, so
+middleware sets the tenant once and the scope reads it back:
+
 ```python
+from sillo.http.lifecycle import RequestContext
+
+
 def tenant_scope(queryset):
-    from sillo.context import get_current_tenant
-    return queryset.filter(tenant_id=get_current_tenant())
+    ctx = RequestContext.current()
+    if ctx is None:                 # console command, worker, test — no request
+        return queryset
+    tenant_id = ctx.get("tenant_id")
+    if tenant_id is None:
+        return queryset
+    return queryset.filter(tenant_id=tenant_id)
+
 
 class TenantModel(Model):
     class Meta:
@@ -918,6 +931,25 @@ class TenantModel(Model):
         super().__init_subclass__(**kwargs)
         cls.add_global_scope(tenant_scope)
 ```
+
+The middleware that opens the context:
+
+```python
+from sillo.http.lifecycle import RequestContext
+from sillo.middleware import BaseMiddleware
+
+
+class TenantMiddleware(BaseMiddleware):
+    async def dispatch(self, ctx, call_next):
+        with RequestContext() as rc:
+            rc.set("tenant_id", ctx.headers.get("x-tenant-id"))
+            return await call_next(ctx)
+```
+
+Returning `queryset` unfiltered when no context is active is deliberate. The
+alternative — raising — makes every management command and every test that
+touches a tenant model fail. Decide which of the two your application wants;
+silently returning *all* tenants' rows is the dangerous half of this trade.
 
 ### 11.3 Combining Casts with Scopes
 

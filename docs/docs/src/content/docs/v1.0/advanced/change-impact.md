@@ -521,7 +521,7 @@ support both old and new signatures for one release.
 
 ## PermissionMixin
 
-**File:** `core/sillo/users/permissions/mixins.py`
+**File:** `core/sillo/permissions/mixins.py`
 **Risk level:** 🟡 HIGH
 
 ### What directly depends on it

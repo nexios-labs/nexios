@@ -375,7 +375,7 @@ CORS_MAX_AGE=86400
 ### Usage with Middleware
 
 ```python
-from sillo.middleware.security import CORSMiddleware
+from sillo.middleware import CORSMiddleware
 
 cors_config = CorsConfig(
     allow_origins=["http://localhost:3000"],

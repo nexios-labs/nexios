@@ -62,12 +62,12 @@ graph TD
 
 | Module | Path |
 |---|---|
-| `__init__` | `/Users/admin/sillo.build/oauth/sillo_oauth/__init__.py` |
-| `errors` | `/Users/admin/sillo.build/oauth/sillo_oauth/errors.py` |
-| `models` | `/Users/admin/sillo.build/oauth/sillo_oauth/models.py` |
-| `providers` | `/Users/admin/sillo.build/oauth/sillo_oauth/providers.py` |
-| `state` | `/Users/admin/sillo.build/oauth/sillo_oauth/state.py` |
-| `flow` | `/Users/admin/sillo.build/oauth/sillo_oauth/flow.py` |
+| `__init__` | `oauth/sillo_oauth/__init__.py` |
+| `errors` | `oauth/sillo_oauth/errors.py` |
+| `models` | `oauth/sillo_oauth/models.py` |
+| `providers` | `oauth/sillo_oauth/providers.py` |
+| `state` | `oauth/sillo_oauth/state.py` |
+| `flow` | `oauth/sillo_oauth/flow.py` |
 
 The `__init__.py` re-exports 25 symbols via `__all__`:
 
@@ -97,7 +97,7 @@ across tasks, or compare.
 
 ### 3.1 AuthorizeURL
 
-**Source**: `/Users/admin/sillo.build/oauth/sillo_oauth/models.py`
+**Source**: `oauth/sillo_oauth/models.py`
 
 ```python
 @dataclass(frozen=True)
@@ -144,7 +144,7 @@ JavaScript from reading the state cookie (XSS defense in depth).
 
 ### 3.2 OAuthTokens
 
-**Source**: `/Users/admin/sillo.build/oauth/sillo_oauth/models.py`
+**Source**: `oauth/sillo_oauth/models.py`
 
 ```python
 @dataclass(frozen=True, repr=False)
@@ -180,7 +180,7 @@ OAuthTokens(access_token=<redacted>, token_type='Bearer', expires_in=3600,
 
 ### 3.3 OAuthProfile
 
-**Source**: `/Users/admin/sillo.build/oauth/sillo_oauth/models.py`
+**Source**: `oauth/sillo_oauth/models.py`
 
 ```python
 @dataclass(frozen=True)
@@ -218,7 +218,7 @@ renamed; provider+subject do not.
 
 ## 4. Error Hierarchy
 
-**Source**: `/Users/admin/sillo.build/oauth/sillo_oauth/errors.py` (130 lines)
+**Source**: `oauth/sillo_oauth/errors.py` (130 lines)
 
 All errors are direct children of `OAuthError`. Each has a class-level `code`
 attribute: a stable, URL-safe, underscore-delimited string that callers can
@@ -272,7 +272,7 @@ want a safety net catch `OAuthError`.
 
 ## 5. Provider System
 
-**Source**: `/Users/admin/sillo.build/oauth/sillo_oauth/providers.py` (667 lines)
+**Source**: `oauth/sillo_oauth/providers.py` (667 lines)
 
 ### 5.1 OAuthProvider Base
 
@@ -432,7 +432,7 @@ because Microsoft's userinfo endpoint never states verification status.
 
 ## 6. authorize_url - The Redirect Step
 
-**Source**: `/Users/admin/sillo.build/oauth/sillo_oauth/flow.py`
+**Source**: `oauth/sillo_oauth/flow.py`
 
 ```python
 def authorize_url(
@@ -601,7 +601,7 @@ another way (e.g., server-to-server, or a custom state mechanism).
 
 ## 8. State Management & PKCE
 
-**Source**: `/Users/admin/sillo.build/oauth/sillo_oauth/state.py` (233 lines)
+**Source**: `oauth/sillo_oauth/state.py` (233 lines)
 
 ### 8.1 Constants
 
@@ -786,7 +786,7 @@ to fetch the profile without going through the OAuth flow again.
 
 ## 10. Testing Infrastructure
 
-**Source**: `/Users/admin/sillo.build/oauth/tests/` (8 test files + conftest)
+**Source**: `oauth/tests/` (8 test files + conftest)
 
 ### 10.1 Network Guard
 

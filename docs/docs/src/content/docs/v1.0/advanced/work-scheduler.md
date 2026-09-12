@@ -5,11 +5,11 @@ description: "Cron parser, triggers, scheduler manager, middleware"
 
 **Module:** `sillo.work.scheduler`
 **Source files:**
-- `/Users/admin/sillo.build/core/sillo/work/scheduler/cron.py` (102 lines)
-- `/Users/admin/sillo.build/core/sillo/work/scheduler/triggers.py` (149 lines)
-- `/Users/admin/sillo.build/core/sillo/work/scheduler/jobs.py` (149 lines)
-- `/Users/admin/sillo.build/core/sillo/work/scheduler/manager.py` (250 lines)
-- `/Users/admin/sillo.build/core/sillo/work/scheduler/middleware.py` (97 lines)
+- `core/sillo/work/scheduler/cron.py` (102 lines)
+- `core/sillo/work/scheduler/triggers.py` (149 lines)
+- `core/sillo/work/scheduler/jobs.py` (149 lines)
+- `core/sillo/work/scheduler/manager.py` (250 lines)
+- `core/sillo/work/scheduler/middleware.py` (97 lines)
 
 **Version:** 2026-08-11
 **Audience:** Core maintainers, framework architects
@@ -41,7 +41,7 @@ graph TD
 
 ## 2. CronParser
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/scheduler/cron.py` (102 lines)
+**File:** `core/sillo/work/scheduler/cron.py` (102 lines)
 
 ### 2.1 Constructor
 
@@ -110,7 +110,7 @@ def next(self, after: float, *, tz=None) -> float:
 
 ## 3. Triggers
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/scheduler/triggers.py` (149 lines)
+**File:** `core/sillo/work/scheduler/triggers.py` (149 lines)
 
 ### 3.1 TriggerType Enum
 
@@ -209,7 +209,7 @@ class CompoundLogic(Enum):
 
 ## 4. ScheduledJob
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/scheduler/jobs.py` (149 lines)
+**File:** `core/sillo/work/scheduler/jobs.py` (149 lines)
 
 ### 4.1 JobStatus Enum
 
@@ -332,7 +332,7 @@ def to_dict(self) -> dict[str, Any]:
 
 ## 5. SchedulerManager
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/scheduler/manager.py` (250 lines)
+**File:** `core/sillo/work/scheduler/manager.py` (250 lines)
 
 ### 5.1 Constructor
 
@@ -497,7 +497,7 @@ async def stop(self) -> None:
 
 ## 6. `setup_scheduler()`
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/scheduler/manager.py`, line 232
+**File:** `core/sillo/work/scheduler/manager.py`, line 232
 
 ```python
 def setup_scheduler(app) -> SchedulerManager:
@@ -519,7 +519,7 @@ Wires the scheduler into the app lifecycle:
 
 ## 7. Scheduler Middleware
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/scheduler/middleware.py` (97 lines)
+**File:** `core/sillo/work/scheduler/middleware.py` (97 lines)
 
 Three middleware functions (not classes) for scheduled jobs:
 
@@ -1066,7 +1066,7 @@ Middleware is applied in reverse order, so `timeout_middleware` (listed second) 
 
 ## 16. Console Commands
 
-**File:** `/Users/admin/sillo.build/core/sillo/work/console.py`
+**File:** `core/sillo/work/console.py`
 
 The scheduler exposes CLI commands:
 

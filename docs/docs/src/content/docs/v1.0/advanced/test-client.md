@@ -378,7 +378,7 @@ Directly `await`s the ASGI app.
 ### UpgradeException
 
 ```python
-# core/sillo/testclient/_internal/exceptions.py, line 9
+# core/sillo/testclient/exceptions.py, line 9
 class UpgradeException(Exception):
     def __init__(self, session: WebSocketTestSession):
         self.session = session

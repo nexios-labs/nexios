@@ -728,11 +728,11 @@ core/sillo/websockets/                 — WebSocket support
 
 ```
 core/sillo/core/routing/               — Router, Route, WebsocketRoute, path matching
-core/sillo/core/dependencies/base.py   — 589 lines  — DI system
-core/sillo/core/encoding.py            — 393 lines  — jsonable_encoder
-core/sillo/core/http/                  — Request, Response, StreamingResponse
-core/sillo/core/error/handler.py       — 1604 lines — ServerErrorMiddleware, debug pages
-core/sillo/_internals/_middleware.py   — 546 lines  — ASGIRequestResponseBridge
+core/sillo/core/dependencies/base.py   — 610 lines  — DI system
+core/sillo/core/encoding.py            — 427 lines  — jsonable_encoder
+core/sillo/core/http/                  — BaseContext, HttpContext, responses
+core/sillo/core/error/handler.py       — 1687 lines — ServerErrorMiddleware, debug pages
+core/sillo/middleware/bridge.py        — 478 lines  — ASGIRequestResponseBridge
 core/sillo/middleware/                  — BaseMiddleware, gzip, security utilities
 ```
 

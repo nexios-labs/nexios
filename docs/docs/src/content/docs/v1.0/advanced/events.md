@@ -5,18 +5,18 @@ description: "Event, EventEmitter, transports (memory/redis/persistent/record), 
 
 **Module:** `sillo.events`
 **Source files:**
-- `/Users/admin/sillo.build/core/sillo/events/core.py` (866 lines)
-- `/Users/admin/sillo.build/core/sillo/events/emitter.py` (691 lines)
-- `/Users/admin/sillo.build/core/sillo/events/enums.py` (53 lines)
-- `/Users/admin/sillo.build/core/sillo/events/exceptions.py` (98 lines)
-- `/Users/admin/sillo.build/core/sillo/events/types.py` (151 lines)
-- `/Users/admin/sillo.build/core/sillo/events/mixins.py` (108 lines)
-- `/Users/admin/sillo.build/core/sillo/events/transports/__init__.py` (183 lines)
-- `/Users/admin/sillo.build/core/sillo/events/transports/base.py` (580 lines)
-- `/Users/admin/sillo.build/core/sillo/events/transports/memory.py` (77 lines)
-- `/Users/admin/sillo.build/core/sillo/events/transports/redis.py` (263 lines)
-- `/Users/admin/sillo.build/core/sillo/events/transports/persistent.py` (288 lines)
-- `/Users/admin/sillo.build/core/sillo/events/transports/record.py` (231 lines)
+- `core/sillo/events/core.py` (866 lines)
+- `core/sillo/events/emitter.py` (691 lines)
+- `core/sillo/events/enums.py` (53 lines)
+- `core/sillo/events/exceptions.py` (98 lines)
+- `core/sillo/events/types.py` (151 lines)
+- `core/sillo/events/mixins.py` (108 lines)
+- `core/sillo/events/transports/__init__.py` (183 lines)
+- `core/sillo/events/transports/base.py` (580 lines)
+- `core/sillo/events/transports/memory.py` (77 lines)
+- `core/sillo/events/transports/redis.py` (263 lines)
+- `core/sillo/events/transports/persistent.py` (288 lines)
+- `core/sillo/events/transports/record.py` (231 lines)
 
 **Version:** 2026-08-11
 **Audience:** Core maintainers, framework architects
@@ -49,7 +49,7 @@ graph TD
 
 ## 2. Enums
 
-**File:** `/Users/admin/sillo.build/core/sillo/events/enums.py` (53 lines)
+**File:** `core/sillo/events/enums.py` (53 lines)
 
 ### 2.1 EventPriority
 
@@ -81,7 +81,7 @@ Mirrors the DOM event propagation model (see Section 6).
 
 ### 3.1 EventContext
 
-**File:** `/Users/admin/sillo.build/core/sillo/events/types.py`, line 20
+**File:** `core/sillo/events/types.py`, line 20
 
 ```python
 @dataclass
@@ -119,7 +119,7 @@ class EventProtocol(Protocol):
 
 ### 3.4 Exceptions
 
-**File:** `/Users/admin/sillo.build/core/sillo/events/exceptions.py`
+**File:** `core/sillo/events/exceptions.py`
 
 ```mermaid
 graph TD
@@ -133,7 +133,7 @@ graph TD
 
 ## 4. The Event Class
 
-**File:** `/Users/admin/sillo.build/core/sillo/events/core.py` (866 lines)
+**File:** `core/sillo/events/core.py` (866 lines)
 
 The `Event` class is the core of the system: 866 lines implementing
 priority-based dispatch, DOM-style propagation, thread safety, metrics, and
@@ -489,7 +489,7 @@ def prevent_default(self):
 
 ## 8. EventEmitter
 
-**File:** `/Users/admin/sillo.build/core/sillo/events/emitter.py` (691 lines)
+**File:** `core/sillo/events/emitter.py` (691 lines)
 
 ### 8.1 Constructor
 
@@ -639,7 +639,7 @@ Every backend speaks the same JSON envelope:
 
 ### 9.2 BaseTransport
 
-**File:** `/Users/admin/sillo.build/core/sillo/events/transports/base.py` (580 lines)
+**File:** `core/sillo/events/transports/base.py` (580 lines)
 
 ```python
 class BaseTransport(abc.ABC):
@@ -690,7 +690,7 @@ async def _deliver(self, channel, envelope):
 
 ### 9.3 MemoryTransport
 
-**File:** `/Users/admin/sillo.build/core/sillo/events/transports/memory.py` (77 lines)
+**File:** `core/sillo/events/transports/memory.py` (77 lines)
 
 ```python
 class MemoryTransport(BaseTransport):
@@ -704,7 +704,7 @@ Direct in-process dispatch. No background loop needed.
 
 ### 9.4 RedisTransport
 
-**File:** `/Users/admin/sillo.build/core/sillo/events/transports/redis.py` (263 lines)
+**File:** `core/sillo/events/transports/redis.py` (263 lines)
 
 ```python
 class RedisTransport(BaseTransport):
@@ -727,7 +727,7 @@ Uses Redis pub/sub for cross-instance fan-out.
 
 ### 9.5 PersistentTransport
 
-**File:** `/Users/admin/sillo.build/core/sillo/events/transports/persistent.py` (288 lines)
+**File:** `core/sillo/events/transports/persistent.py` (288 lines)
 
 ```python
 class PersistentTransport(BaseTransport):
@@ -740,7 +740,7 @@ Durable Redis list with at-least-once delivery. Messages are pushed to a Redis l
 
 ### 9.6 RecordTransport
 
-**File:** `/Users/admin/sillo.build/core/sillo/events/transports/record.py` (231 lines)
+**File:** `core/sillo/events/transports/record.py` (231 lines)
 
 ```python
 class RecordTransport(BaseTransport):
@@ -767,7 +767,7 @@ Includes `replay()` for re-processing failed/pending messages.
 
 ## 10. Transport Registry
 
-**File:** `/Users/admin/sillo.build/core/sillo/events/transports/__init__.py`
+**File:** `core/sillo/events/transports/__init__.py`
 
 ### 10.1 `register_transport()`
 
@@ -880,13 +880,12 @@ await emitter.emit_async("order.placed", order_data)
 | Component | File | Lines |
 |-----------|------|-------|
 | `Event` class | `core/sillo/events/core.py` | 26-866 |
-| `EventEmitter` | `core/sillo/events/emitter.py` | 14-525 |
-| `EventNamespace` | `core/sillo/events/emitter.py` | 527-628 |
-| `AsyncEventEmitter` (deprecated) | `core/sillo/events/emitter.py` | 631-691 |
+| `EventEmitter` | `core/sillo/events/emitter.py` | 12-523 |
+| `EventNamespace` | `core/sillo/events/emitter.py` | 525-626 |
 | `EventPriority` enum | `core/sillo/events/enums.py` | 4-29 |
 | `EventPhase` enum | `core/sillo/events/enums.py` | 32-53 |
 | `EventContext` | `core/sillo/events/types.py` | 20-59 |
-| `EventProtocol` | `core/sillo/events/types.py` | 69-122 |
+| `EventProtocol` | `core/sillo/events/types.py` | 69-151 |
 | Exceptions | `core/sillo/events/exceptions.py` | 1-98 |
 | `EventSerializationMixin` | `core/sillo/events/mixins.py` | 6-108 |
 | `BaseTransport` | `core/sillo/events/transports/base.py` | 241-580 |

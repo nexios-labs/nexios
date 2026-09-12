@@ -73,14 +73,14 @@ graph TD
 
 | Module | Path |
 |---|---|
-| `__init__` | `/Users/admin/sillo.build/inertia/sillo_inertia/__init__.py` |
-| `adapter` | `/Users/admin/sillo.build/inertia/sillo_inertia/adapter.py` |
-| `config` | `/Users/admin/sillo.build/inertia/sillo_inertia/config.py` |
-| `context` | `/Users/admin/sillo.build/inertia/sillo_inertia/context.py` |
-| `props` | `/Users/admin/sillo.build/inertia/sillo_inertia/props.py` |
-| `vite` | `/Users/admin/sillo.build/inertia/sillo_inertia/vite.py` |
+| `__init__` | `inertia/sillo_inertia/__init__.py` |
+| `adapter` | `inertia/sillo_inertia/adapter.py` |
+| `config` | `inertia/sillo_inertia/config.py` |
+| `context` | `inertia/sillo_inertia/context.py` |
+| `props` | `inertia/sillo_inertia/props.py` |
+| `vite` | `inertia/sillo_inertia/vite.py` |
 
-**Test file**: `/Users/admin/sillo.build/inertia/tests/test_inertia.py` (1101 lines)
+**Test file**: `inertia/tests/test_inertia.py` (1101 lines)
 
 ### Public API (`__all__`)
 
@@ -111,7 +111,7 @@ async def dashboard(ctx: HttpContext):
 
 ## 3. Inertia Dataclass
 
-**Source**: `/Users/admin/sillo.build/inertia/sillo_inertia/adapter.py`
+**Source**: `inertia/sillo_inertia/adapter.py`
 
 ```python
 @dataclass(slots=True)
@@ -141,7 +141,7 @@ class Inertia:
 
 ### InertiaConfig
 
-**Source**: `/Users/admin/sillo.build/inertia/sillo_inertia/config.py`
+**Source**: `inertia/sillo_inertia/config.py`
 
 ```python
 @dataclass(slots=True)
@@ -174,7 +174,7 @@ serving.
 
 ## 4. render() - HTML vs JSON
 
-**Source**: `/Users/admin/sillo.build/inertia/sillo_inertia/adapter.py`
+**Source**: `inertia/sillo_inertia/adapter.py`
 
 ```python
 from sillo import HttpContext
@@ -360,7 +360,7 @@ full browser visit.  Used for:
 
 ## 6. handle_request Middleware
 
-**Source**: `/Users/admin/sillo.build/inertia/sillo_inertia/adapter.py`
+**Source**: `inertia/sillo_inertia/adapter.py`
 
 ```python
 from sillo import HttpContext
@@ -414,7 +414,7 @@ This allows dynamic versioning (e.g., reading from a file hash).
 
 ## 7. ContextVar System
 
-**Source**: `/Users/admin/sillo.build/inertia/sillo_inertia/context.py`
+**Source**: `inertia/sillo_inertia/context.py`
 
 ### The ContextVar
 
@@ -473,7 +473,7 @@ detailed multi-line message naming three possible causes:
 
 ## 8. Props System
 
-**Source**: `/Users/admin/sillo.build/inertia/sillo_inertia/props.py`
+**Source**: `inertia/sillo_inertia/props.py`
 
 ### 8.1 PropCallback Type Alias
 
@@ -570,7 +570,7 @@ True, otherwise `callback()`.
 
 ## 9. HTML Rendering
 
-**Source**: `/Users/admin/sillo.build/inertia/sillo_inertia/adapter.py`
+**Source**: `inertia/sillo_inertia/adapter.py`
 
 ### 9.1 Template Replacements
 
@@ -640,7 +640,7 @@ def _view_value(self, value: Any) -> str:
 
 ## 10. Vite Integration
 
-**Source**: `/Users/admin/sillo.build/inertia/sillo_inertia/vite.py`
+**Source**: `inertia/sillo_inertia/vite.py`
 
 ### 10.1 Class Hierarchy
 
@@ -741,7 +741,7 @@ leading `assets/`).
 
 ## 11. page Decorator
 
-**Source**: `/Users/admin/sillo.build/inertia/sillo_inertia/adapter.py`
+**Source**: `inertia/sillo_inertia/adapter.py`
 
 ```python
 def page(
@@ -791,7 +791,7 @@ inner function does not use them), so the router can:
 
 ## 12. Testing Patterns
 
-**Source**: `/Users/admin/sillo.build/inertia/tests/test_inertia.py` (1101 lines)
+**Source**: `inertia/tests/test_inertia.py` (1101 lines)
 
 ### 12.1 Test Helpers
 

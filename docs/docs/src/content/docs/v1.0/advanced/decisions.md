@@ -5,8 +5,8 @@ description: "Key design choices, trade-offs, rejected alternatives"
 
 > **Scope**: 15 architectural decisions with problem/context/constraints/
 > chosen solution/trade-offs.
-> **Source**: `/Users/admin/sillo.build/core/sillo/`, `/Users/admin/sillo.build/oauth/`,
-> `/Users/admin/sillo.build/inertia/`, `/Users/admin/sillo.build/start/`
+> **Source**: `core/sillo/`, `oauth/`,
+> `inertia/`, `start/`
 
 ---
 

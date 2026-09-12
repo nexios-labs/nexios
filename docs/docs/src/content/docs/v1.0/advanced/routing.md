@@ -1392,7 +1392,8 @@ def test_compile_path_duplicate_param():
 ### Unit testing `Route.match`
 
 ```python
-from sillo.core.routing import Route, MatchStatus
+from sillo.core.routing import Route
+from sillo.core.routing._utils import MatchStatus
 
 def test_route_match_full():
     route = Route("/users/{id:int}", handler=lambda r, resp: None, methods=["GET"])
@@ -1419,7 +1420,8 @@ def test_route_match_none():
 ### Testing Group prefix stripping
 
 ```python
-from sillo.core.routing import Group, Router, Route, MatchStatus
+from sillo.core.routing import Group, Router, Route
+from sillo.core.routing._utils import MatchStatus
 
 def test_group_strips_prefix():
     inner = Router(routes=[

@@ -1035,14 +1035,15 @@ parts = [
     str(ctx.url),
 ]
 if include_query and ctx.url.query:
-    parts.append(ctx.url.query.decode("utf-8", errors="replace"))
+    parts.append(ctx.url.query)
 if include_headers and cache_key_headers:
     for header_name in cache_key_headers:
         value = ctx.headers.get(header_name)
         if value:
             parts.append(f"{header_name.lower()}:{value}")
-if ctx.content:
-    parts.append(sha256(ctx.content).hexdigest()[:16])
+body = await ctx.body
+if body:
+    parts.append(sha256(body).hexdigest()[:16])
 
 key = sha256("|".join(parts).encode("utf-8")).hexdigest()
 if prefix:

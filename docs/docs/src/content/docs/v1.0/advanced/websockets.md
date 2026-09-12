@@ -1,22 +1,18 @@
 ---
 title: "WebSockets"
-description: "WebSocket state machine, consumers, channels, groups, history"
+description: "WebSocket state machine, routing, close codes, and where rooms and broadcast now live"
 ---
 
 **Module:** `sillo.websockets`
 **Source files:**
-- `/Users/admin/sillo.build/core/sillo/websockets/base.py` (231 lines)
-- `/Users/admin/sillo.build/core/sillo/websockets/consumers.py` (213 lines)
-- `/Users/admin/sillo.build/core/sillo/websockets/channels.py` (277 lines)
-- `/Users/admin/sillo.build/core/sillo/websockets/history.py` (124 lines)
-- `/Users/admin/sillo.build/core/sillo/websockets/errors.py` (40 lines)
-- `/Users/admin/sillo.build/core/sillo/websockets/status.py` (66 lines)
-- `/Users/admin/sillo.build/core/sillo/websockets/utils.py` (48 lines)
-- `/Users/admin/sillo.build/core/sillo/core/routing/websocket.py` (308 lines)
+- `core/sillo/websockets/base.py` (231 lines)
+- `core/sillo/websockets/errors.py` (40 lines)
+- `core/sillo/websockets/status.py` (64 lines)
+- `core/sillo/core/routing/websocket.py` (362 lines)
 
 **Version:** 2026-08-11
 **Audience:** Core maintainers, framework architects
-**Purpose:** Deep documentation of the WebSocket state machine, consumers, channels, groups, history management, and error handling
+**Purpose:** Deep documentation of the WebSocket state machine, routing, close codes and error handling. Rooms, broadcast, presence and replay live in [`sillo-wire`](/packages/wire/).
 
 ---
 
@@ -49,7 +45,7 @@ graph TD
 
 ## 2. WebSocketState
 
-**File:** `/Users/admin/sillo.build/core/sillo/websockets/base.py`, line 15
+**File:** `core/sillo/websockets/base.py`, line 15
 
 ```python
 class WebSocketState(enum.Enum):
@@ -66,7 +62,7 @@ connection is rejected, the response is sent as an HTTP response.
 
 ## 3. The WebSocket Class
 
-**File:** `/Users/admin/sillo.build/core/sillo/websockets/base.py` (231 lines)
+**File:** `core/sillo/websockets/base.py` (231 lines)
 
 ```python
 from sillo import WebSocketContext, BaseContext
@@ -299,7 +295,7 @@ once groups have to outlive a single worker process.
 
 ## 5. Error Handling
 
-**File:** `/Users/admin/sillo.build/core/sillo/websockets/errors.py` (40 lines)
+**File:** `core/sillo/websockets/errors.py` (40 lines)
 
 ### 8.1 WebSocketErrorMiddleware
 
@@ -334,7 +330,7 @@ async def websocket_exception_handler(websocket: WebSocketContext, exc: WebSocke
 
 ## 6. IANA Status Codes
 
-**File:** `/Users/admin/sillo.build/core/sillo/websockets/status.py` (66 lines)
+**File:** `core/sillo/websockets/status.py` (66 lines)
 
 | Constant | Code | Description |
 |----------|------|-------------|
@@ -362,7 +358,7 @@ async def websocket_exception_handler(websocket: WebSocketContext, exc: WebSocke
 
 ## 7. WebSocket Routing
 
-**File:** `/Users/admin/sillo.build/core/sillo/core/routing/websocket.py` (308 lines)
+**File:** `core/sillo/core/routing/websocket.py` (308 lines)
 
 ```python
 from sillo import WebSocketContext
@@ -403,7 +399,7 @@ async def websocket_handler(websocket: WebSocketContext):
     except WebSocketDisconnect:
         pass
 
-app.websocket("/ws/echo")(websocket_handler)
+app.ws_route("/ws/echo", websocket_handler)
 ```
 
 ### 8.2 Rooms and broadcast
@@ -430,27 +426,37 @@ async def chat(socket: WebSocketContext, room: str):
 
 ## 9. Supporting Enums
 
-**File:** `/Users/admin/sillo.build/core/sillo/websockets/utils.py`
+The core ships one enum, the connection state machine (§2):
+
+**File:** `core/sillo/websockets/base.py`
 
 ```python
-class ChannelAddStatusEnum(Enum):
-    CHANNEL_ADDED = "CHANNEL_ADDED"
-    CHANNEL_EXIST = "CHANNEL_EXIST"
+class WebSocketState(Enum):
+    CONNECTING = 0
+    CONNECTED = 1
+    DISCONNECTED = 2
+    RESPONSE = 3
+```
 
-class ChannelRemoveStatusEnum(Enum):
-    CHANNEL_REMOVED = "CHANNEL_REMOVED"
-    CHANNEL_DOES_NOT_EXIST = "CHANNEL_DOES_NOT_EXIST"
-    GROUP_REMOVED = "GROUP_REMOVED"
-    GROUP_DOES_NOT_EXIST = "GROUP_DOES_NOT_EXIST"
+The v0 `ChannelAddStatusEnum`, `ChannelRemoveStatusEnum`, `GroupSendStatusEnum`
+and `PayloadTypeEnum` are gone along with `ChannelBox`. Their replacements live
+in [`sillo-wire`](/packages/wire/), and they are narrower: membership changes
+return a plain `bool` rather than a status enum, and a fan-out returns a
+`DeliveryReport` rather than one enum for the whole group.
 
-class GroupSendStatusEnum(Enum):
-    GROUP_SEND = "GROUP_SEND"
-    NO_SUCH_GROUP = "NO_SUCH_GROUP"
+**File:** `sillo_wire/enums.py`
 
-class PayloadTypeEnum(Enum):
+```python
+class Encoding(Enum):        # replaces PayloadTypeEnum
     JSON = "json"
     TEXT = "text"
     BYTES = "bytes"
+
+
+class Overflow(Enum):        # no v0 equivalent: what a full send queue means
+    DROP_OLDEST = "drop_oldest"
+    DROP_NEWEST = "drop_newest"
+    CLOSE = "close"
 ```
 
 ---
@@ -477,6 +483,6 @@ a cross-process backend without the core acquiring a Redis dependency.
 | `WebSocketDisconnect` | `core/sillo/websockets/base.py` | 24-30 |
 | `WebSocketContext` class | `core/sillo/websockets/base.py` | 33-231 |
 | `WebSocketErrorMiddleware` | `core/sillo/websockets/errors.py` | 20-40 |
-| Status codes | `core/sillo/websockets/status.py` | 1-66 |
+| Status codes | `core/sillo/websockets/status.py` | 1-64 |
 | `Hub`, `Peer`, `RoomConsumer`, `Backlog` | [`sillo-wire`](/packages/wire/) | separate package |
-| `WebsocketRoute` | `core/sillo/core/routing/websocket.py` | 21-308 |
+| `WebsocketRoute` | `core/sillo/core/routing/websocket.py` | 26-359 |
