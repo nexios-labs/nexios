@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0a1] - 2026-09-12
+
+The first alpha of 1.0 — **the context rewrite**. This is a breaking release
+with no compatibility shims. Install with
+`pip install --pre sillo-framework==1.0.0a1`.
+
+An alpha: the surface below is what 1.0 is expected to look like, but it is not
+frozen yet, and API may still change before `1.0.0`.
+
 ### Added
 
 - **Host-scoped routers — `Router(host=...)`.** A router only answers requests whose `Host` header matches. Exact (`admin.example.com`) or a single-label wildcard (`*.example.com`). A request to another host falls through to the rest of the app.
@@ -23,6 +32,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`app.dependency_overrides`** and **`app.override(original, replacement)`.** Swap a `Depend(...)` callable for a test double, FastAPI-style. Matched by identity against the exact function passed to `Depend`, and reached through every nested dependency in the tree, not only the top-level one. `app.override(...)` is a context manager that restores the previous mapping (present or absent) on exit, including on exception; assign `app.dependency_overrides[original] = replacement` directly for a suite-wide swap that outlives a single `with` block.
 
 ### Changed
+
+- **A handler takes one leading argument: the context.** `HttpContext` on an
+  HTTP route, `WebSocketContext` on a WebSocket route. Path parameters,
+  dependencies and validation markers follow it, bound by name as before:
+
+  ```python
+  from sillo import SilloApp, HttpContext, json
+
+  app = SilloApp()
+
+  @app.get("/users/{id:int}")
+  def show(ctx: HttpContext, id: int):
+      return json({"id": id})
+  ```
+
+  `BaseContext` carries `scope`, `headers`, `cookies`, `path_params`,
+  `query_params`, `state`, `user`, `client`, `app` and `url_for`.
+  `HttpContext` adds `method`, `await ctx.json`, `await ctx.body`,
+  `await ctx.form`, `ctx.files` and `ctx.validated_data`.
+
+- **Responses are functions, in `sillo.responses`**, every name re-exported
+  from `sillo` — bodies (`json`, `text`, `html`, `xml`, `raw`, `empty`), status
+  shorthands (`created`, `accepted`, `no_content`), redirects, files
+  (`file`, `download`), streaming (`stream`, `ndjson`, `sse`), pagination
+  (`paginate`, `apaginate`, which take `ctx` first) and `abort` / `not_found`,
+  which raise rather than return. Each builder returns a `BaseResponse`
+  subclass carrying the chainable half (`status`, `cache`, `set_header`,
+  `set_cookie`, …), each returning `self`. Import from the module when the file
+  also needs the stdlib `json`/`html` or the `file` builtin.
+
+- **WebSocket routes bind path parameters.** They were read from
+  `scope["path_params"]`, which the router never writes, so the keyword
+  arguments a handler declared were always empty. Note that the registration
+  name is `ws_route` / `add_ws_route`; there is no `@app.websocket(...)`.
 
 - **An unhandled request error logs a structured block, not a raw traceback.** `sillo.handlers.error_report` keeps only the frames in *your* code:
 
@@ -45,6 +88,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The 404 and debug (500) HTML pages are restyled** to match Sillo's own terminal aesthetic — dark background, monospace, brand red (`#fc0345`) — instead of a light Arial page for 404s and a page whose `--error`/accent variable was, by mistake, green (`#02ba42`) rather than red for the debug page. Both pages, and two other spots on the debug page that bypassed the CSS variables with a hardcoded color, now flow from the same palette as the terminal error log.
 - **`SilloApp(debug=...)` now defaults to `False`.** It previously defaulted to `True`, so a project that never passed `debug` explicitly shipped with the full debug page — and a verbose terminal error log — on by default. An app that wants debug output in local development now has to say so.
 - **The terminal error trace no longer depends on `debug`.** It only ever prints to the server's own terminal — nothing in it reaches a client — so it now defaults on whenever `stderr` is an actual terminal, regardless of `debug`. Previously it rode on `debug`'s default, so the flip above would otherwise have silently taken the pretty trace away from local development along with the (correct) HTTP-facing change. `SILLO_TRACE` still overrides either way.
+
+### Removed
+
+- **`Request`, the `Response` manager and the `Responder` builder are gone**,
+  and nothing is shimmed. `sillo/core/http/request.py` no longer exists.
+- **The built-in admin panel is no longer part of the framework.** It is its
+  own package now — [`warder`](https://sillo.build/packages/warder/).
+- **`Depend(get_request=True)` / `Depend(get_context=True)`** — a dependency
+  takes the context as its first positional parameter instead.
+
 
 ## [0.3.2.dev1] - 2026-09-07
 

@@ -8,9 +8,30 @@ sillo = "sillo.__main__:main"
 [tool.hatch.build.targets.wheel]
 packages = ["sillo"]
 
+# Without this the sdist is "everything git does not ignore", which on a working
+# checkout means docs/ (with node_modules), benchmarks/, and any .venv sitting
+# in the tree -- well over a gigabyte, and a hard build failure the moment one
+# of those virtualenvs holds an absolute symlink. List what ships instead.
+[tool.hatch.build.targets.sdist]
+include = [
+    "/sillo",
+    "/tests",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/LICENSE",
+    "/SECURITY.md",
+]
+exclude = [
+    "**/__pycache__",
+    "**/*.py[cod]",
+    "**/.pytest_cache",
+    "**/*.sqlite3",
+    "**/*.db",
+]
+
 [project]
 name = "sillo-framework"
-version = "0.3.2.dev1"
+version = "1.0.0a1"
 description = "Python with the pieces already in place: an async web framework whose ORM, auth, admin, queues, scheduler and WebSockets share one configuration model."
 authors = [
     {name = "Chidebele Dunamis", email = "techwithdunamix@gmail.com"}
@@ -344,7 +365,7 @@ ignore = [
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.3.2.dev1"
+version = "1.0.0a1"
 version_files = [
     "pyproject.toml:version",
     "sillo/__init__.py:__version__"
