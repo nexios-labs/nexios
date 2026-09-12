@@ -8,7 +8,7 @@ of application code, and the ceremony is where the leaks are. `RoomConsumer`
 writes it once.
 
 ```python
-from sillo.wire import Hub, RoomConsumer
+from sillo_wire import Hub, RoomConsumer
 
 hub = Hub()
 

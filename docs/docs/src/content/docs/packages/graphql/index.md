@@ -9,14 +9,14 @@ A production GraphQL endpoint over a Strawberry schema.
 pip install sillo-graphql
 ```
 
-Installs as `sillo-graphql`, imports as `sillo.graphql`. Strawberry keeps the
+Installs as `sillo-graphql`, imports as `sillo_graphql`. Strawberry keeps the
 schema; this package owns everything around it — the transports, the safety,
 and the observability.
 
 ```python
 import strawberry
 from sillo import Depend, HttpContext, SilloApp
-from sillo.graphql import Graph, Limits, field
+from sillo_graphql import Graph, Limits, field
 
 
 @strawberry.type
@@ -101,17 +101,12 @@ If you are moving from the framework's module, the shortest path is
 `Mapping`, so the old subscript keeps working and a schema can migrate one
 resolver at a time.
 
-## The two import paths
+## Not the framework's `sillo.graphql`
 
-`sillo.graphql` and `sillo_graphql` are the same module object. The code lives
-in the top-level `sillo_graphql` package; a `.pth` registers a meta-path finder
-at interpreter startup, and PEP 561 partial stubs serve type checkers, which
-never run import hooks. Nothing is written into the framework's `sillo/`
-directory.
-
-Because the framework shipped its own `sillo.graphql` before 1.0, the alias
-**refuses to load** against an older framework rather than silently shadowing
-it, and says which two things disagree.
+Versions of `sillo-framework` before 1.0 shipped a GraphQL module of their own
+at `sillo.graphql`. This package is its replacement, not an upgrade of it: it
+installs separately, imports as `sillo_graphql`, and requires framework 1.0 or
+newer. The table above is the migration.
 
 ## Requirements
 

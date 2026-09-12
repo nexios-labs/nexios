@@ -7,7 +7,7 @@ A `Peer` is one connection: a socket, an outbound queue, and a task that drains
 one into the other.
 
 ```python
-from sillo.wire import Peer
+from sillo_wire import Peer
 
 peer = Peer(socket, identity="ada")
 ```
@@ -62,7 +62,7 @@ This is a choice about your data, and there is no default that is right for
 everyone.
 
 ```python
-from sillo.wire import Overflow, Peer
+from sillo_wire import Overflow, Peer
 
 Peer(socket, overflow=Overflow.DROP_OLDEST)   # keep current
 Peer(socket, overflow=Overflow.DROP_NEWEST)   # keep order

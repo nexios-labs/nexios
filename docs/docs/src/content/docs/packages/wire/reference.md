@@ -1,9 +1,9 @@
 ---
 title: API Reference
-description: Every public name in sillo.wire — signatures, defaults and what each one returns.
+description: Every public name in sillo_wire — signatures, defaults and what each one returns.
 ---
 
-Everything importable from `sillo.wire`. Types are as annotated in the package;
+Everything importable from `sillo_wire`. Types are as annotated in the package;
 `Any` means the value is yours and the library only carries it.
 
 ## Hub
@@ -164,7 +164,7 @@ because one client going away is not a failure of the broadcast.
 
 ## Testing
 
-`sillo.wire.testing`. See [Testing](/packages/wire/testing/).
+`sillo_wire.testing`. See [Testing](/packages/wire/testing/).
 
 | | |
 |---|---|
@@ -174,5 +174,5 @@ because one client going away is not a failure of the broadcast.
 ## Version
 
 ```python
-from sillo.wire import __version__
+from sillo_wire import __version__
 ```

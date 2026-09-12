@@ -139,7 +139,7 @@ Prefer a tuple over a dict — a tuple hashes, so it caches.
 Background jobs and tests can open a scope of their own:
 
 ```python
-from sillo.graphql import LoaderRegistry
+from sillo_graphql import LoaderRegistry
 
 
 async def nightly_digest():

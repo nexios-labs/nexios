@@ -209,15 +209,15 @@ Four things leave the framework and become packages of their own:
 | Built-in [admin panel](/v0.x/orm/admin/) | [`warder`](/packages/warder/), a separate install with a React interface |
 | [HTML templating layer](/v0.x/guides/templating/) (Jinja) | Gone from core; mail templates are the one place Jinja remains |
 | [WebSocket rooms, channels and groups](/v0.x/guides/websockets/channels/) | [`sillo-wire`](/packages/wire/) |
-| [`sillo.graphql`](/v0.x/guides/graphql/) | [`sillo-graphql`](/packages/graphql/), which claims that same import name |
+| [`sillo.graphql`](/v0.x/guides/graphql/) | [`sillo-graphql`](/packages/graphql/), which imports as `sillo_graphql` |
 
 Each of those leaves for the same reason: a dependency, a release cadence, or a
 scope that core should not carry on everyone's behalf. See
 [What's in the Box](/v0.x/guides/ecosystem/).
 
-One practical consequence today: because 0.x still ships `sillo.graphql`, the
-`sillo-graphql` package refuses to load against it rather than shadowing the
-module. On 0.x, use the [built-in GraphQL support](/v0.x/guides/graphql/).
+One practical consequence today: `sillo-graphql` requires framework 1.0 or
+newer, so it will not install against this line at all. On 0.x, use the
+[built-in GraphQL support](/v0.x/guides/graphql/).
 
 ###  Will there be an upgrade guide?
 

@@ -7,7 +7,7 @@ description: Free builders with stable codes, masking of anything unexpected, an
 `redirect()`. Errors here follow the same shape.
 
 ```python
-from sillo.graphql import forbidden, not_found
+from sillo_graphql import forbidden, not_found
 
 
 @field
@@ -87,7 +87,7 @@ unusable; masking a `RuntimeError` is the whole point.
 ### Configuring it
 
 ```python
-from sillo.graphql import ErrorPolicy
+from sillo_graphql import ErrorPolicy
 
 Graph(schema, errors=ErrorPolicy(
     mask=True,                          # the default
@@ -120,7 +120,7 @@ An application raises its own exceptions, and masking them is the right default
 and a poor experience.
 
 ```python
-from sillo.graphql import bad_input, conflict, not_found
+from sillo_graphql import bad_input, conflict, not_found
 
 
 @graph.on_error(RecordNotFound)

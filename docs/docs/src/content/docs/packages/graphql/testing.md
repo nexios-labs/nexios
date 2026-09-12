@@ -7,7 +7,7 @@ A GraphQL test written through a plain HTTP client is four lines of JSON
 assembly and a dictionary walk before it reaches the thing under test.
 
 ```python
-from sillo.graphql.testing import GraphClient
+from sillo_graphql.testing import GraphClient
 
 
 def test_me():
@@ -155,7 +155,7 @@ slow afternoon.
 Outside a request, open a scope:
 
 ```python
-from sillo.graphql import LoaderRegistry
+from sillo_graphql import LoaderRegistry
 
 
 async def test_the_batch_function_aligns_its_results():
@@ -183,7 +183,7 @@ test cannot leak:
 ```python
 import pytest
 from sillo import SilloApp
-from sillo.graphql import Graph, Limits
+from sillo_graphql import Graph, Limits
 
 
 @pytest.fixture

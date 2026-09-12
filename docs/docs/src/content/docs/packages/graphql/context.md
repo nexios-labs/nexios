@@ -19,7 +19,7 @@ What Strawberry is handed as `context_value`, and what a resolver gets by
 annotating `GraphContext`.
 
 ```python
-from sillo.graphql import GraphContext
+from sillo_graphql import GraphContext
 
 
 @field

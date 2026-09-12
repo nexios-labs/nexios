@@ -9,13 +9,13 @@ Rooms, presence and fan-out for WebSockets.
 pip install sillo-wire
 ```
 
-Installs as `sillo-wire`, imports as `sillo.wire`. The core keeps the socket
+Installs as `sillo-wire`, imports as `sillo_wire`. The core keeps the socket
 itself — [`WebSocketContext`](/v1.0/guides/websockets/) — and this adds
 everything about talking to more than one of them at a time.
 
 ```python
 from sillo import SilloApp
-from sillo.wire import Hub, Peer
+from sillo_wire import Hub, Peer
 
 app = SilloApp()
 hub = Hub()
@@ -104,19 +104,6 @@ counted in payload bytes and evicts oldest-first.
 
 The status enums are gone. `join` and `leave` return a plain `bool`, and
 `broadcast` returns a [`DeliveryReport`](/packages/wire/reference/).
-
-## The two import paths
-
-`sillo.wire` and `sillo_wire` are the same module object, not two copies. The
-code lives in the top-level `sillo_wire` package; a `.pth` shipped with the
-distribution registers a meta-path finder at interpreter startup, and PEP 561
-partial stubs serve type checkers, which never run import hooks.
-
-Nothing is written into the framework's own `sillo/` directory. Two
-distributions sharing one package directory goes wrong in both directions —
-installing the framework from a checkout orphans whatever the other package
-left in site-packages, and removing the framework leaves a directory standing
-with no `__init__.py` in it.
 
 ## Requirements
 

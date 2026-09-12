@@ -41,7 +41,7 @@ a client parse a body to discover.
 ## Requests
 
 ```python
-from sillo.graphql import Transport
+from sillo_graphql import Transport
 
 Graph(schema, transport=Transport(
     get_queries=True,
@@ -101,7 +101,7 @@ that accepts files has a materially larger attack surface than one that does
 not, and that should be a decision.
 
 ```python
-from sillo.graphql import Uploads
+from sillo_graphql import Uploads
 
 Graph(schema, uploads=Uploads(
     enabled=True,
@@ -138,7 +138,7 @@ than a 500 on the first large request.
 ## The explorer
 
 ```python
-from sillo.graphql import IDE
+from sillo_graphql import IDE
 
 Graph(schema, ide=True)                                  # bundled, offline
 Graph(schema, ide=IDE(enabled=True, assets="cdn"))       # GraphiQL from unpkg

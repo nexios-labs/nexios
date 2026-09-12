@@ -14,7 +14,7 @@ your application actually sends is generated at build time, and the server
 executes nothing else.
 
 ```python
-from sillo.graphql import Persisted
+from sillo_graphql import Persisted
 
 Graph(schema, persisted=Persisted(apq=True))                        # bandwidth
 Graph(schema, persisted=Persisted(trusted="operations.json"))       # safety
@@ -47,7 +47,7 @@ separately, which is correct and merely wasteful, so a shared store is worth
 configuring once there is more than one.
 
 ```python
-from sillo.graphql import MemoryStore
+from sillo_graphql import MemoryStore
 
 Graph(schema, store=MemoryStore(max_entries=5_000))
 ```
@@ -88,7 +88,7 @@ Generate it from your client's operations at build time and ship it with the
 server. It can also be passed inline, which is what a test wants:
 
 ```python
-from sillo.graphql import hash_document
+from sillo_graphql import hash_document
 
 document = "{ hello }"
 Graph(schema, persisted=Persisted(trusted={hash_document(document): document}))

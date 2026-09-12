@@ -7,7 +7,7 @@ A `Hub` is a set of rooms, and a room is a set of peers. Everything that
 reaches more than one connection goes through it.
 
 ```python
-from sillo.wire import Hub
+from sillo_wire import Hub
 
 hub = Hub()
 ```
