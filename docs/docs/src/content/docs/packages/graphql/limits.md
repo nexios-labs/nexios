@@ -17,7 +17,7 @@ So the document is measured **before** execution and refused if it is too
 large. Refusing afterwards would mean having already done the work.
 
 ```python
-from sillo.graphql import Graph, Limits
+from sillo_graphql import Graph, Limits
 
 Graph(schema, limits=Limits(depth=10, cost=1_000, aliases=15)).mount(app)
 ```
@@ -153,7 +153,7 @@ are refused.
 
 ```python
 from graphql import parse
-from sillo.graphql import Limits, analyze
+from sillo_graphql import Limits, analyze
 
 result = analyze(parse(document), limits=Limits(), schema=graph.schema._schema)
 result.depth, result.cost, result.aliases, result.breadth, result.fields

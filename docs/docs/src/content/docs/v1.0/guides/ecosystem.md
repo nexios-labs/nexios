@@ -104,18 +104,17 @@ scope that the framework should not carry on everybody's behalf.
 
 | Package | Install | Import | What it is |
 |---|---|---|---|
-| [Wire](/packages/wire/) | `sillo-wire` | `sillo.wire` | Rooms, presence, replay and fan-out for WebSockets |
-| [GraphQL](/packages/graphql/) | `sillo-graphql` | `sillo.graphql` | A production GraphQL endpoint over a Strawberry schema |
+| [Wire](/packages/wire/) | `sillo-wire` | `sillo_wire` | Rooms, presence, replay and fan-out for WebSockets |
+| [GraphQL](/packages/graphql/) | `sillo-graphql` | `sillo_graphql` | A production GraphQL endpoint over a Strawberry schema |
 | [Warder](/packages/warder/) | `warder` | `warder` | A declarative admin panel over your models, with a React interface |
 | [Inertia](/v1.0/guides/inertia/) | `sillo-inertia` | `sillo_inertia` | Server-driven pages with React or Vue, no API layer |
 | [OAuth](/v1.0/guides/oauth/) | `sillo-oauth` | `sillo_oauth` | Social login and OAuth2 providers |
 
-Wire and GraphQL extend the framework's own surface, so they also take a name
-inside it: `from sillo.wire import Hub` and `from sillo_wire import Hub` bind
-the same class. The others keep their own top-level names — Warder most
-deliberately of all, because it is not an extension of `sillo` but an
-application you mount on yours. The [Packages index](/packages/) explains how
-the aliasing works and why it is not a directory shipped into the framework.
+Every one of them is a plain top-level package: install `sillo-wire`, import
+`sillo_wire`. Warder is the exception to the naming, most deliberately of all,
+because it is not an extension of `sillo` but an application you mount on
+yours. Nothing here is ever installed into the framework's own `sillo`
+directory — the [Packages index](/packages/) explains why that matters.
 
 ##  The tools
 
@@ -138,7 +137,7 @@ used to be.
 | Built-in admin panel | [`warder`](/packages/warder/) |
 | HTML templating layer (Jinja) | Removed; `mail` is the one place a template is still rendered |
 | WebSocket rooms, channels and groups | [`sillo-wire`](/packages/wire/) |
-| `sillo.graphql` in the framework | [`sillo-graphql`](/packages/graphql/), claiming the same import name |
+| `sillo.graphql` in the framework | [`sillo-graphql`](/packages/graphql/), imported as `sillo_graphql` |
 
 The same reason applies to all four: each had grown a dependency, a release
 cadence or a scope of its own. A package that claims a name the framework still

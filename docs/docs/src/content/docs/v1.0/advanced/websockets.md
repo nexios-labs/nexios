@@ -281,7 +281,7 @@ These moved to [`sillo-wire`](/packages/wire/) in v1 and are documented there.
 The core keeps the connection; the package adds everything about addressing
 more than one of them at once.
 
-| Was, in this module | Is, in `sillo.wire` |
+| Was, in this module | Is, in `sillo_wire` |
 |---|---|
 | `WebSocketConsumer` | `RoomConsumer` |
 | `Channel` | `Peer` |
@@ -407,7 +407,7 @@ app.ws_route("/ws/echo", websocket_handler)
 Both live in [`sillo-wire`](/packages/wire/):
 
 ```python
-from sillo.wire import Hub, Peer
+from sillo_wire import Hub, Peer
 
 hub = Hub()
 

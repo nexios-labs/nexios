@@ -10,8 +10,8 @@ cadence, or a scope that the core should not carry on everybody's behalf.
 
 | Package | Install | Import | What it is |
 |---|---|---|---|
-| [Wire](/packages/wire/) | `sillo-wire` | `sillo.wire` | Rooms, presence and fan-out for WebSockets |
-| [GraphQL](/packages/graphql/) | `sillo-graphql` | `sillo.graphql` | A production GraphQL endpoint over a Strawberry schema |
+| [Wire](/packages/wire/) | `sillo-wire` | `sillo_wire` | Rooms, presence and fan-out for WebSockets |
+| [GraphQL](/packages/graphql/) | `sillo-graphql` | `sillo_graphql` | A production GraphQL endpoint over a Strawberry schema |
 | [Warder](/packages/warder/) | `warder` | `warder` | A declarative admin over your models |
 
 Each has a manual of its own — pick one above and the sidebar becomes its
@@ -19,40 +19,38 @@ table of contents.
 
 ## How they attach
 
-Wire and GraphQL extend the framework's own surface, so they take a name inside
-it. The code lives in a top-level package — `sillo_wire`, `sillo_graphql` — and
-the framework name is an alias for it. Both bind the same objects:
+Every package is a plain top-level distribution with a plain top-level import
+name. Install `sillo-wire`, import `sillo_wire`:
 
 ```python
-from sillo.wire import Hub     # both of these
-from sillo_wire import Hub     # name the same class
+from sillo_wire import Hub, Peer
+from sillo_graphql import Graph, field
 ```
 
-Warder does not, and the difference is deliberate. It is not an extension of
-`sillo` — it is an application you mount on yours, the way you would mount any
-other. So it keeps its own name:
+Warder is the exception to the naming rule, and the difference is deliberate.
+It is not an extension of `sillo` — it is an application you mount on yours,
+the way you would mount any other — so it keeps its own name:
 
 ```python
 from warder import Admin
 admin.mount(app)
 ```
 
-The alias is a meta-path finder the package registers through a `.pth` at
-interpreter startup, plus PEP 561 partial stubs so type checkers resolve it
-too. Nothing is written into the `sillo` package directory.
+Nothing is ever written into the framework's own `sillo` package directory.
+Shipping `sillo/wire/` in there is simpler, and it is what Wire did first — but
+two distributions sharing one directory goes wrong in both directions.
+Installing the framework from a checkout moves where `sillo` resolves and
+orphans the copy in site-packages; removing or replacing the framework leaves
+that directory standing with no `__init__.py` in it, which is an override
+rather than an addition. Uninstalling either package leaves the other
+untouched.
 
-That last part is the point. Shipping `sillo/wire/` into the framework's own
-directory is simpler, and it is what Wire did first — but two distributions
-sharing one directory goes wrong in both directions. Installing the framework
-from a checkout moves where `sillo` resolves and orphans the copy in
-site-packages; removing or replacing the framework leaves that directory
-standing with no `__init__.py` in it, which is an override rather than an
-addition. Uninstalling either package now leaves the other untouched.
-
-One consequence is worth stating plainly: a package cannot claim a name the
-framework still uses. `sillo-graphql` claims `sillo.graphql`, which the
-framework shipped until 1.0 — so against an older framework the alias
-refuses to load and says why, rather than quietly shadowing it.
+Wire and GraphQL previously also answered to `sillo.wire` and `sillo.graphql`,
+through a meta-path finder registered by a `.pth` at interpreter startup and a
+second set of PEP 561 stubs to serve type checkers. It read as part of the
+framework, at the cost of a `.pth` running on every interpreter start and type
+declarations kept in two places. Those aliases are gone; the `sillo_` names
+above are the only ones.
 
 ## What stays in core
 

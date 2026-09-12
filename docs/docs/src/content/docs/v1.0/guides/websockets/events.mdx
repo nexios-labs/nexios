@@ -67,7 +67,7 @@ a registry.
 ```python title="a dispatch table on the consumer"
 import logging
 
-from sillo.wire import RoomConsumer
+from sillo_wire import RoomConsumer
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +126,7 @@ class Dispatcher(RoomConsumer):
 Then handlers are declarative:
 
 ```python title="using the dispatcher"
-from sillo.wire import Hub
+from sillo_wire import Hub
 
 hub = Hub()
 

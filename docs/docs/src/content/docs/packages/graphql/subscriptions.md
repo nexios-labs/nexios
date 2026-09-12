@@ -8,7 +8,7 @@ from typing import AsyncGenerator
 
 import strawberry
 from sillo import WebSocketContext
-from sillo.graphql import subscription
+from sillo_graphql import subscription
 
 
 @strawberry.type
@@ -72,7 +72,7 @@ the `connection_init` payload instead. `@graph.on_connect` is given it before
 any operation runs.
 
 ```python
-from sillo.graphql import unauthenticated
+from sillo_graphql import unauthenticated
 
 
 @graph.on_connect
@@ -111,7 +111,7 @@ and counted.
 ## Tuning
 
 ```python
-from sillo.graphql.transport.ws import WebSocketTransport
+from sillo_graphql.transport.ws import WebSocketTransport
 
 graph.ws = WebSocketTransport(graph, init_timeout=5.0, keepalive=20.0)
 ```

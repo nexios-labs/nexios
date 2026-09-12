@@ -204,7 +204,7 @@ Four things left the framework and became packages of their own:
 | Built-in admin panel | [`warder`](/packages/warder/), a separate install with a React interface |
 | HTML templating layer (Jinja) | Gone from core; mail templates are the one place Jinja remains |
 | WebSocket rooms, channels and groups | [`sillo-wire`](/packages/wire/) |
-| `sillo.graphql` | [`sillo-graphql`](/packages/graphql/), which claims that same import name |
+| `sillo.graphql` | [`sillo-graphql`](/packages/graphql/), which imports as `sillo_graphql` |
 
 Each of those left for the same reason: a dependency, a release cadence, or a
 scope that core should not carry on everyone's behalf. See

@@ -4,11 +4,11 @@ description: FakeSocket and drain — testing realtime code without a server, in
 ---
 
 A unit test of realtime code is missing exactly one thing: a socket.
-`sillo.wire.testing` supplies it.
+`sillo_wire.testing` supplies it.
 
 ```python
-from sillo.wire import Hub, Peer
-from sillo.wire.testing import FakeSocket, drain
+from sillo_wire import Hub, Peer
+from sillo_wire.testing import FakeSocket, drain
 
 
 async def test_a_broadcast_reaches_the_room():
@@ -105,7 +105,7 @@ differs per application and a change to it is easy to make by accident:
 
 ```python
 import pytest
-from sillo.wire import Overflow
+from sillo_wire import Overflow
 
 
 @pytest.mark.parametrize(

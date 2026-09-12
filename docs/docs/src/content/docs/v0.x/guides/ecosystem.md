@@ -129,24 +129,23 @@ scope that the framework should not carry on everybody's behalf.
 
 | Package | Install | Import | What it is |
 |---|---|---|---|
-| [Wire](/packages/wire/) | `sillo-wire` | `sillo.wire` | Rooms, presence, replay and fan-out for WebSockets |
-| [GraphQL](/packages/graphql/) | `sillo-graphql` | `sillo.graphql` | A production GraphQL endpoint over a Strawberry schema — see the caveat below |
+| [Wire](/packages/wire/) | `sillo-wire` | `sillo_wire` | Rooms, presence, replay and fan-out for WebSockets |
+| [GraphQL](/packages/graphql/) | `sillo-graphql` | `sillo_graphql` | A production GraphQL endpoint over a Strawberry schema — see the caveat below |
 | [Warder](/packages/warder/) | `warder` | `warder` | A declarative admin panel over your models, with a React interface |
 | [Inertia](/v0.x/guides/inertia/) | `sillo-inertia` | `sillo_inertia` | Server-driven pages with React or Vue, no API layer |
 | [OAuth](/v0.x/guides/oauth/) | `sillo-oauth` | `sillo_oauth` | Social login and OAuth2 providers |
 
-Wire and GraphQL extend the framework's own surface, so they also take a name
-inside it: `from sillo.wire import Hub` and `from sillo_wire import Hub` bind
-the same class. The others keep their own top-level names — Warder most
-deliberately of all, because it is not an extension of `sillo` but an
-application you mount on yours. The [Packages index](/packages/) explains how
-the aliasing works and why it is not a directory shipped into the framework.
+Every one of them is a plain top-level package: install `sillo-wire`, import
+`sillo_wire`. Warder is the exception to the naming, most deliberately of all,
+because it is not an extension of `sillo` but an application you mount on
+yours. Nothing here is ever installed into the framework's own `sillo`
+directory — the [Packages index](/packages/) explains why that matters.
 
 :::caution
-`sillo-graphql` claims `sillo.graphql`, which the framework itself still ships
-on this line. A package cannot claim a name the framework is using, so against
-0.x the alias refuses to load and says why — rather than quietly shadowing the
-built-in module. On 0.x, use the
+`sillo-graphql` requires framework 1.0 or newer — its resolver bridge is built
+on the context-handler API, which does not exist on this line. It imports as
+`sillo_graphql`, so it no longer collides with the `sillo.graphql` this line
+ships, but the version floor still rules it out. On 0.x, use the
 [framework's own GraphQL support](/v0.x/guides/graphql/); `sillo-graphql` is
 for 1.0.
 :::
@@ -173,7 +172,7 @@ about rather than discover later.
 | Built-in [admin panel](/v0.x/orm/admin/) | [`warder`](/packages/warder/) |
 | [HTML templating layer](/v0.x/guides/templating/) (Jinja) | Removed; templated email bodies are the one place a template is still rendered |
 | [WebSocket rooms, channels and groups](/v0.x/guides/websockets/channels/) | [`sillo-wire`](/packages/wire/) |
-| [`sillo.graphql`](/v0.x/guides/graphql/) in the framework | [`sillo-graphql`](/packages/graphql/), claiming the same import name |
+| [`sillo.graphql`](/v0.x/guides/graphql/) in the framework | [`sillo-graphql`](/packages/graphql/), imported as `sillo_graphql` |
 
 The same reason applies to all four: each had grown a dependency, a release
 cadence or a scope of its own, and keeping it in core made everybody carry it.

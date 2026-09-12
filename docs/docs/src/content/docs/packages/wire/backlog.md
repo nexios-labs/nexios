@@ -7,7 +7,7 @@ Mobile clients disconnect. Laptops sleep. A backlog is what turns that from
 data loss into a gap the client can ask about.
 
 ```python
-from sillo.wire import Hub, MemoryBacklog
+from sillo_wire import Hub, MemoryBacklog
 
 hub = Hub(backlog=MemoryBacklog(capacity_bytes=4 * 1024 * 1024))
 ```
@@ -122,7 +122,7 @@ backlog at all.
 ## No backlog
 
 ```python
-from sillo.wire import Hub, NullBacklog
+from sillo_wire import Hub, NullBacklog
 
 hub = Hub(backlog=NullBacklog())    # the same as Hub()
 ```

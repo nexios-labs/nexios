@@ -9,7 +9,7 @@ it needs. A resolver here is the same thing.
 ```python
 import strawberry
 from sillo import Depend, HttpContext
-from sillo.graphql import field, mutation, subscription
+from sillo_graphql import field, mutation, subscription
 
 
 @strawberry.type

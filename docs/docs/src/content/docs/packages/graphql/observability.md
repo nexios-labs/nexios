@@ -11,7 +11,7 @@ year of rows are the same endpoint.
 What is worth measuring is per **operation**.
 
 ```python
-from sillo.graphql import Metrics, OperationLog
+from sillo_graphql import Metrics, OperationLog
 
 graph.on_operation(OperationLog(slower_than=0.5))
 
@@ -108,7 +108,7 @@ Pass a logger of your own as the first argument; it defaults to
 
 ```python
 from opentelemetry import trace
-from sillo.graphql import opentelemetry
+from sillo_graphql import opentelemetry
 
 graph.on_operation(opentelemetry(trace.get_tracer("graphql")))
 ```
